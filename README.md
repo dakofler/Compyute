@@ -1,1 +1,1 @@
-# reimagined-system
+# Convolutional Neural Networks from scratch
