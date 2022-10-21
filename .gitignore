@@ -5,10 +5,7 @@ bin-release/
 [Bb]in/
 
 # Other files and folders
-testnotebooks
 __pycache__
-test.html
-test.ipynb
 
 # Executables
 *.swf
