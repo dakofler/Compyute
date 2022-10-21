@@ -2,6 +2,18 @@ class Network():
     def __init__(self) -> None:
         pass
 
+    def validate(self, X, Y):
+        pass
+
+    def predict(self, input):
+        if input.shape != self.layers[0].input_shape:
+            print('Input shape does not match configuration.')
+            return None
+        self.layers[0].input = input
+        self.__propagate()
+        return self.layers[-1].output   
+
+
 class FeedForward(Network):
     def __init__(self, layers=[]) -> None:
         super().__init__()
@@ -18,14 +30,11 @@ class FeedForward(Network):
     def __propagate(self):
         for layer in self.layers:
             layer.process()
-    
-    def predict(self, input):
-        if input.shape != self.layers[0].input_shape:
-            print('Input shape does not match configuration.')
-            return
-        self.layers[0].input = input
-        self.__propagate()
-        return self.layers[-1].output   
+
+    def train(self, X, Y):
+        pass
+
+
 
 
 # class Network:
