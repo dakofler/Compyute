@@ -32,7 +32,7 @@ class Flatten(Layers):
         
 
 class Dense(Layers):
-    def __init__(self, nr_neurons, activation) -> None:
+    def __init__(self, nr_neurons, activation=None) -> None:
         super().__init__()
         self.nr_neurons = nr_neurons
         self.activation = activation

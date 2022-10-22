@@ -6,9 +6,6 @@ class Network():
         pass
 
     def predict (self, input):
-        if input.shape != self.layers[0].input_shape:
-            print('Input shape does not match configuration.')
-            return None
         self.layers[0].input = input
 
 
@@ -29,10 +26,13 @@ class FeedForward(Network):
         for layer in self.layers:
             layer.process()
 
-    def train(self, X, Y):
-        pass
+    def train(self, train_data, epochs=100, learning_rate=0.5):
+        if train_data.ndim != 3: return
+        for i in range(1, epochs + 1):
+            pass
 
     def predict(self, input):
+        if input.ndim != 2: return
         super().predict(input)
         self.__propagate()
         return self.layers[-1].output  
