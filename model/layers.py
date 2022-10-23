@@ -9,53 +9,53 @@ class Layers:
         self.prev_layer = prev_layer
 
     def process(self):
-        pass
+        if self.prev_layer is not None:
+            self.input = self.prev_layer.output
 
 
-class Flatten(Layers):
-    def __init__(self, input_shape=None) -> None:
+class Input(Layers):
+    def __init__(self, input_shape) -> None:
         super().__init__()
         self.input_shape = input_shape
 
-    def integrate(self, id, prev_layer=None):
-        super().integrate(id, prev_layer)
-        if self.prev_layer is not None:
-            self.input_shape = self.prev_layer.output.shape
-        self.output = np.ones((self.input_shape[0] ** 2, 1))
+    def integrate(self, id):
+        super().integrate(id, None)
+        self.output = np.ones(self.input_shape)
 
     def process(self):
         super().process()
-        if self.prev_layer is not None:
-            self.output = self.prev_layer.output.reshape(self.output.shape)
-        else:
-            self.input.reshape(self.output.shape)
+        self.output = self.input
+
+
+class Flatten(Layers):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def integrate(self, id, prev_layer):
+        super().integrate(id, prev_layer)
+        self.process()
+
+    def process(self):
+        super().process()
+        self.output = self.input.reshape((self.input.shape[0] ** 2, 1))
         
 
 class Dense(Layers):
-    def __init__(self, nr_neurons, activation=None) -> None:
+    def __init__(self, nr_neurons, activation) -> None:
         super().__init__()
         self.nr_neurons = nr_neurons
         self.activation = activation
 
-    def integrate(self, id, prev_layer=None):
+    def integrate(self, id, prev_layer):
         super().integrate(id, prev_layer)
-
-        if self.prev_layer is not None:
-            self.input_shape = self.prev_layer.output.shape
-            self.weights = np.random.rand(self.nr_neurons, self.prev_layer.output.shape[0] + 1) * 2.0 - 1.0 # +1 for the bias neuron weights
-        else: self.input_shape = (self.nr_neurons, 1)
-
-        self.output = np.ones((self.nr_neurons, 1))
+        self.weights = np.random.rand(self.nr_neurons, self.prev_layer.output.shape[0] + 1) * 2.0 - 1.0 # +1 for the bias neuron weights
+        self.process()
 
     def process(self):
         super().process()
-        if self.prev_layer is not None:
-            input = np.append(self.prev_layer.output, [[1.0]], axis=0) # add bias neuron
-            self.net = np.dot(self.weights, input)
-            self.output = self.activation(self.net)
-        else:
-            self.output = self.input
-
+        input = np.append(self.input, [[1.0]], axis=0) # add bias neuron
+        self.net = np.dot(self.weights, input)
+        self.output = self.activation(self.net)
 
 
 class MaxPooling(Layers):
@@ -63,27 +63,27 @@ class MaxPooling(Layers):
         super().__init__()
         self.pooling_window = pooling_window
 
-    def integrate(self, id, prev_layer=None):
+    def integrate(self, id, prev_layer):
         super().integrate(id, prev_layer)
-
-
-class Convolutional(Layers):
-    def __init__(self, nr_kernels, kernel_size, input_shape=None) -> None:
-        super().__init__()
-        self.nr_kernels = nr_kernels
-        self.kernel_size = kernel_size
-        self.input_shape = input_shape
-
-    def integrate(self, id, prev_layer=None):
-        super().integrate(id, prev_layer)
-
-        if self.prev_layer is not None:
-            self.input_shape = self.prev_layer.output.shape
-        self.output = np.ones(self.input_shape)
+        self.process()
     
     def process(self):
         super().process()
-        if self.prev_layer is not None:
-            self.input = self.prev_layer.output
-        
-        self.output = self.input
+        # ToDo, meanwhile
+        self.output = np.ones((int(self.input.shape[0] / self.pooling_window[0]),  int(self.input.shape[1] / self.pooling_window[1])))
+
+
+class Convolutional(Layers):
+    def __init__(self, nr_kernels, kernel_size) -> None:
+        super().__init__()
+        self.nr_kernels = nr_kernels
+        self.kernel_size = kernel_size
+
+    def integrate(self, id, prev_layer):
+        super().integrate(id, prev_layer)
+        self.process()
+    
+    def process(self):
+        super().process()
+        # ToDo, meanwhile
+        self.output = np.ones((self.input.shape[0] - int((self.kernel_size[0] - 1) / 2) * 2,  self.input.shape[1] - int((self.kernel_size[1] - 1) / 2) * 2))
