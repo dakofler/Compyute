@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from model import optimizers
 
 class Network():
     def __init__(self) -> None:
@@ -20,7 +21,8 @@ class FeedForward(Network):
     def add_layer(self, layer):
         self.layers.append(layer)
     
-    def compile(self):
+    def compile(self, optimizer=optimizers.error_dynamic):
+        self.optimizer = optimizer
         for i, layer in enumerate(self.layers):
             if i == 0:
                 layer.integrate(i, None, self.layers[i + 1])
@@ -36,16 +38,13 @@ class FeedForward(Network):
     def train(self, x: np.ndarray, y: np.ndarray, epochs=100, batch_size=0, learning_rate=0.5, momentum=0.0):
         if x.ndim != 3: return
         loss_hist = []
-        dynamic_range = 10
         batch_size = batch_size if batch_size > 0 else len(x)
 
         for epoch in range(1, epochs + 1):
             start = time.time()
 
             # compute learning rate
-            if epoch > dynamic_range + 1:
-                if self.__get_error_dynamic(loss_hist, dynamic_range) > 0:
-                    learning_rate = learning_rate / 2.0
+            learning_rate = self.optimizer(learning_rate, loss_hist, 10)
 
             shuffler = np.random.permutation(len(x))
             x_shuffled = x[shuffler]
@@ -80,10 +79,10 @@ class FeedForward(Network):
             # shuffler = np.random.permutation(batch_size)
             # x_shuffled = x[shuffler]
             # y_shuffled = y[shuffler]
-            accuracy = 0 #self.__validate(x_shuffled, y_shuffled)
+            accuracy = self.__validate(x_shuffled, y_shuffled)
 
             end = time.time()
-            print (f'epoch {epoch}/{epochs} loss={round(epoch_loss, 4)}\taccuracy={accuracy}\ttime/epoch={round((end - start) * 1000, 2)}μs\teta={learning_rate}')
+            print (f'epoch {epoch}/{epochs} loss={round(epoch_loss, 4)}\taccuracy={accuracy}\ttime/epoch={round((end - start) * 1000, 2)}ms\teta={learning_rate}')
 
     def __validate(self, x: np.ndarray, y: np.ndarray):
         c = 0
@@ -108,6 +107,3 @@ class FeedForward(Network):
         super().predict(input)
         self.__propagate()
         return self.layers[-1].output
-    
-    def __get_error_dynamic(self, loss_hist, dynamic_range=10):
-        return np.sum((np.array(loss_hist[-dynamic_range:]) - np.array(loss_hist[(-dynamic_range - 1):-1])) / np.absolute(np.array(loss_hist[(-dynamic_range - 1):-1]))) / dynamic_range
