@@ -4,6 +4,7 @@
 # Other files and folders
 __pycache__
 test.ipynb
+datasets/catsanddogs
 
 # Executables
 *.swf
