@@ -1,5 +1,5 @@
 import numpy as np
-from model import eta, activations, layers
+from model import learning_rate, activations, layers
 
 
 class optimizer():
@@ -8,9 +8,11 @@ class optimizer():
 
 
 class stochastic_gradient_descent(optimizer):
-    def __init__(self, eta) -> None:
+    def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False) -> None:
         super().__init__()
-        self.eta = eta
+        self.learning_rate = learning_rate
+        self.momentum = momentum
+        self.nesterov = nesterov
 
     def optimize(self, loss_gradient, model_layers):
         layers_reversed = model_layers.copy()
@@ -34,9 +36,14 @@ class stochastic_gradient_descent(optimizer):
                 else:
                     delta = l.activation(l.net, derivative=True) * prev_loss_gradient
 
-                w = l.weights.copy()
-                w = np.delete(w, -1, axis=1) # remove weights corresponding to bias neurons
+                w = np.delete(l.weights.copy(), -1, axis=1) # remove weights corresponding to bias neurons
+                l.learn_output = np.dot(w.transpose(), delta) # compute learning output for next layer, before weights are changed
 
-                l.learn_output = np.dot(w.transpose(), delta) 
-                l.delta_weights = - self.eta * np.append(l.prev_layer.output, [1.0], axis=0) * np.expand_dims(delta, 1)
-                l.weights = l.weights + l.delta_weights
+                g = np.append(l.prev_layer.output, [1.0], axis=0) * np.expand_dims(delta, 1)
+                l.delta_weights = - self.learning_rate * g + self.momentum * l.delta_weights
+
+                # https://keras.io/api/optimizers/sgd/
+                if not self.nesterov:
+                    l.weights = l.weights + l.delta_weights
+                else: 
+                    l.weights = l.weights + self.momentum * l.delta_weights - self.learning_rate * g

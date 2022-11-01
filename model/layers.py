@@ -113,7 +113,7 @@ class MaxPooling(Layer):
                     self.output[y, x, f] = np.max(arr)
     
 
-class Convolutional(Layer):
+class Convolution(Layer):
     def __init__(self, nr_kernels, kernel_size=(3, 3), activation=activations.Identity, padding=paddings.Same) -> None:
         super().__init__()
         self.nr_kernels = nr_kernels
@@ -123,7 +123,7 @@ class Convolutional(Layer):
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
-        
+        self.bias = np.ones((self.nr_kernels,))
         self.kernels = []
         kernel_shape = (*self.kernel_size, self.prev_layer.output.shape[2])
 
@@ -159,8 +159,7 @@ class Convolutional(Layer):
                 image = self.input[:, :, channel]
                 filter = kernel[:, :, channel]
 
-                #padding
-                image_p = self.padding(image)
+                image_p = self.padding(image) # padding
 
                 width = image_p.shape[1]
                 height = image_p.shape [0]
@@ -172,4 +171,6 @@ class Convolutional(Layer):
                         arr = image_p[y : y + filter_size, x : x + filter_size]
                         feature_map[y, x, k, channel] = np.sum(arr * filter)
         
-        self.output = self.activation(np.sum(feature_map, axis=3)) # sum over channels
+        feature_maps = np.sum(feature_map, axis=3) # sum over channels
+        feature_maps = feature_maps + self.bias.reshape((1, 1, len(self.bias))) # add bias to each feature map
+        self.output = self.activation(feature_maps)

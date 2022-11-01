@@ -22,9 +22,10 @@ class FeedForward(Network):
     def add_layer(self, layer):
         self.layers.append(layer)
     
-    def compile(self, optimizer, loss):
+    def compile(self, optimizer, loss, metric=None):
         self.optimizer = optimizer
-        self.loss = loss
+        self.loss_function = loss
+        self.metric = metric
         for i, layer in enumerate(self.layers):
             if i == 0:
                 layer.integrate(i, None, self.layers[i + 1])
@@ -38,7 +39,9 @@ class FeedForward(Network):
             layer.process()
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs=100, batch_size=0, log=True):
-        if x.ndim != 4 or y.ndim != 2: return
+        if x.ndim != 4 or y.ndim != 2:
+            print('Dimension must be 4 for input, 2 for output.')
+            return
         batch_size = batch_size if batch_size > 0 else len(x)
         loss_hist = []
 
@@ -49,10 +52,11 @@ class FeedForward(Network):
 
             # train
             for i, p in enumerate(x_shuffled):
+                print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
                 if i >= batch_size: break
 
                 # compute loss
-                loss, loss_gradient = self.loss(self.predict(p), np.squeeze(y_shuffled[i]))
+                loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))
                 epoch_loss_hist.append(loss)
 
                 # adjust weights
@@ -67,22 +71,11 @@ class FeedForward(Network):
                 print (f'epoch {epoch}/{epochs}\tloss={round(epoch_loss, 4)}\ttime/epoch={step}ms')
 
     def evaluate(self, x: np.ndarray, y: np.ndarray):
-        n = len(x)
-        c = 0
-        for i, p in enumerate(x):
-            prediction = self.predict(p)
-            prediction[prediction == prediction.max()] = 1
-            prediction[prediction != 1] = 0
-            val_input = y[i].reshape(prediction.shape)
-            if not np.array_equal(val_input, prediction):
-                c = c + 1
-            
-            done = round(100 / n * (i + 1), 2)
-            print(f'{done}%', end='\r')
-
-        acc = round(1 - 1 / n * c, 2)
-
-        print (f'{done}%\taccuracy={acc}')
+        if self.metric is not None:
+            loss, name, value, step = self.metric(x, y, self, self.loss_function)
+            print (f'loss={round(loss, 4)}\t{name}={value}\ttime={step}ms')
+        else:
+            print('No metric defined.')
 
     def predict(self, input):
         if input.ndim != 3:
