@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def ReLu(v, derivative = False):
     if not derivative:
         return np.maximum(0.0, v)

@@ -1,6 +1,7 @@
+from model import utils
 import numpy as np
 import time
-from model import losses
+
 
 class Network():
     def __init__(self) -> None:
@@ -37,19 +38,13 @@ class FeedForward(Network):
             layer.process()
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs=100, batch_size=0, log=True):
-        if x.ndim != 3: return
+        if x.ndim != 4 or y.ndim != 2: return
         batch_size = batch_size if batch_size > 0 else len(x)
         loss_hist = []
 
         for epoch in range(1, epochs + 1):
             epoch_loss_hist = []
-
-            # shuffle data
-            shuffle_index = np.arange(len(x))
-            np.random.shuffle(shuffle_index)
-            x_shuffled = x[shuffle_index]
-            y_shuffled = y[shuffle_index]
-
+            x_shuffled, y_shuffled = utils.shuffle(x, y)
             start = time.time()
 
             # train
@@ -68,20 +63,12 @@ class FeedForward(Network):
             epoch_loss = sum(epoch_loss_hist) / len(epoch_loss_hist)
             loss_hist.append(epoch_loss)
 
-            # validate
-            # val_shuffle_index = np.arange(len(x))
-            # np.random.shuffle(val_shuffle_index)
-            # x_val_shuffled = x[val_shuffle_index]
-            # y_val_shuffled = y[val_shuffle_index]
-
-            accuracy = 0 #self.__validate(x_val_shuffled, y_val_shuffled)
-
             if log:
-                print (f'epoch {epoch}/{epochs}\tloss={round(epoch_loss, 4)}\taccuracy={accuracy}%\ttime/epoch={step}ms')
+                print (f'epoch {epoch}/{epochs}\tloss={round(epoch_loss, 4)}\ttime/epoch={step}ms')
 
-    def __validate(self, x: np.ndarray, y: np.ndarray):
+    def evaluate(self, x: np.ndarray, y: np.ndarray):
+        n = len(x)
         c = 0
-
         for i, p in enumerate(x):
             prediction = self.predict(p)
             prediction[prediction == prediction.max()] = 1
@@ -89,15 +76,18 @@ class FeedForward(Network):
             val_input = y[i].reshape(prediction.shape)
             if not np.array_equal(val_input, prediction):
                 c = c + 1
-        
-        return round(100.0 / len(x) * (len(x) - c), 4)
+            
+            done = round(100 / n * (i + 1), 2)
+            print(f'{done}%', end='\r')
 
-    def evaluate(self, x: np.ndarray, y: np.ndarray):
-        accuracy = self.__validate(x, y)
-        print (f'accuracy={accuracy}%')
+        acc = round(1 - 1 / n * c, 2)
+
+        print (f'{done}%\taccuracy={acc}')
 
     def predict(self, input):
-        if input.ndim != 2: return
+        if input.ndim != 3:
+            print('Input shape must be of dim 3')
+            return
         super().predict(input)
         self.__propagate()
         return self.layers[-1].output

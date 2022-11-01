@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def error_dynamic(eta, loss_hist, dynamic_range=10):
     if len(loss_hist) < dynamic_range + 1:
         return eta

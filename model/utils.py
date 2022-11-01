@@ -1,8 +1,8 @@
-from calendar import day_abbr
 import pandas as pd
 import numpy as np
 
-def split_train_val_data(data, ratio=0.3):
+
+def df_split_train_val_data(data, ratio=0.3):
     val_data = data.sample(n=int(len(data.index) * ratio))
     train_data = data.drop(val_data.index)
     return train_data, val_data
@@ -16,3 +16,10 @@ def categorical_to_numeric(data: pd.DataFrame):
 
 def normalize(array: np.ndarray):
     return array / array.max(axis=0)
+
+def shuffle(x: np.ndarray, y: np.ndarray):
+    shuffle_index = np.arange(len(x))
+    np.random.shuffle(shuffle_index)
+    x_shuffled = x[shuffle_index]
+    y_shuffled = y[shuffle_index]
+    return x_shuffled, y_shuffled
