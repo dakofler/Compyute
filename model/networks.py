@@ -52,7 +52,8 @@ class FeedForward(Network):
 
             # train
             for i, p in enumerate(x_shuffled):
-                print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
+                if log:
+                    print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
                 if i >= batch_size: break
 
                 # compute loss

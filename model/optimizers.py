@@ -1,7 +1,3 @@
-import numpy as np
-from model import learning_rate, activations, layers
-
-
 class optimizer():
     def __init__(self) -> None:
         pass
@@ -17,33 +13,15 @@ class stochastic_gradient_descent(optimizer):
     def optimize(self, loss_gradient, model_layers):
         layers_reversed = model_layers.copy()
         layers_reversed.reverse()
+        layers_reversed[0].loss_gradient = loss_gradient
 
-        for j, l in enumerate(layers_reversed):
-            if j == 0:
-                l.learn_output = loss_gradient
-            elif j == len(layers_reversed) - 1:
-                pass
-            else:
-                if type(l) != layers.Dense: continue
-
-                prev_loss_gradient = l.succ_layer.learn_output # learn_output = error function gradient for output layer, sum (delta + w) for other layers
-
-                # https://e2eml.school/softmax.html
-                if l.activation == activations.Softmax:
-                    d_softmax = l.activation(l.net, derivative=True)
-                    prev_loss_gradient = np.reshape(prev_loss_gradient, (1, -1))
-                    delta = np.squeeze(prev_loss_gradient @ d_softmax)
-                else:
-                    delta = l.activation(l.net, derivative=True) * prev_loss_gradient
-
-                w = np.delete(l.weights.copy(), -1, axis=1) # remove weights corresponding to bias neurons
-                l.learn_output = np.dot(w.transpose(), delta) # compute learning output for next layer, before weights are changed
-
-                g = np.append(l.prev_layer.output, [1.0], axis=0) * np.expand_dims(delta, 1)
-                l.delta_weights = - self.learning_rate * g + self.momentum * l.delta_weights
+        for layer in layers_reversed:
+            g = layer.learn()
+            if g is not None:
+                layer.delta_weights = - self.learning_rate * g + self.momentum * layer.delta_weights
 
                 # https://keras.io/api/optimizers/sgd/
                 if not self.nesterov:
-                    l.weights = l.weights + l.delta_weights
+                    layer.weights = layer.weights + layer.delta_weights
                 else: 
-                    l.weights = l.weights + self.momentum * l.delta_weights - self.learning_rate * g
+                    layer.weights = layer.weights + self.momentum * layer.delta_weights - self.learning_rate * g
