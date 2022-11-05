@@ -2,14 +2,24 @@ import pandas as pd
 import numpy as np
 
 
-def df_split_train_val_data(data, ratio=0.3):
-    val_data = data.sample(n=int(len(data.index) * ratio))
-    train_data = data.drop(val_data.index)
-    return train_data, val_data
+def split_train_test_data(array, ratio=0.3):
+    shuffle_index = np.arange(len(array))
+    np.random.shuffle(shuffle_index)
+    array_shuffled = array[shuffle_index]
+    i = int(len(array_shuffled) * (1 - ratio))
+    train_array = array_shuffled[:i]
+    test_array = array_shuffled[i:]
+    return train_array, test_array
+
+def expand_dims(array: np.ndarray, dims):
+    while array.ndim < dims:
+        array = np.expand_dims(array, -1)
+    return array
 
 def split_X_Y(data, num_x_cols):
-    d = np.split(data, (num_x_cols, num_x_cols * 2), axis=1)
-    return d[0], d[1]
+    X = data[:, :num_x_cols]
+    Y = data[:, num_x_cols:]
+    return X, Y
 
 def categorical_to_numeric(data: pd.DataFrame):
     return pd.get_dummies(data)

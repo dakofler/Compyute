@@ -6,7 +6,6 @@ def Accuracy(x, y, model, loss_function):
     name = 'accuracy'
     n = len(x)
     c = 0
-
     total_loss = np.zeros((x.shape[0]))
     start = time.time()
 
@@ -16,8 +15,7 @@ def Accuracy(x, y, model, loss_function):
         loss, loss_gradient = loss_function(prediction, np.squeeze(y[i]))
         total_loss[i] = loss
 
-        prediction[prediction == prediction.max()] = 1
-        prediction[prediction != 1] = 0
+        prediction = np.round(prediction, 0)
         if not np.array_equal(prediction, y[i]):
             c = c + 1
 
