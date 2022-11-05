@@ -19,9 +19,7 @@ class stochastic_gradient_descent(optimizer):
             g = layer.learn()
             if g is not None:
                 layer.delta_weights = - self.learning_rate * g + self.momentum * layer.delta_weights
-
-                # https://keras.io/api/optimizers/sgd/
                 if not self.nesterov:
                     layer.weights = layer.weights + layer.delta_weights
-                else: 
+                else: # https://keras.io/api/optimizers/sgd/
                     layer.weights = layer.weights + self.momentum * layer.delta_weights - self.learning_rate * g

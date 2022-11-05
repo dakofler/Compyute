@@ -163,12 +163,11 @@ class Convolution(Layer):
         kernel_shape = (*self.kernel_size, self.prev_layer.output.shape[2])
 
         if self.nr_kernels == 1:
-            sobel = np.array([
+            kernel = np.array([
                 [[1], [0], [-1]],
                 [[2], [0], [-2]],
-                [[1], [0], [-1]]])
-            ext = np.ones((1, 1, kernel_shape[2]))
-            self.kernels.append(sobel * ext)
+                [[1], [0], [-1]]]) * np.ones((1, 1, kernel_shape[2]))
+            self.kernels.append(kernel)
         else:
             for i in range(self.nr_kernels):
                 self.kernels.append(np.random.uniform(-1.0, 1.0, kernel_shape))
@@ -182,32 +181,22 @@ class Convolution(Layer):
         # self coded convolution
         # https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41      
         kernel_overhang = int((self.kernels[0].shape[0] - 1) / 2)
-        test_image = self.input[:, :, 0]
-        test_image_p = self.padding(test_image)
-        feature_map_height = test_image_p.shape[0] - 2 * kernel_overhang
-        feature_map_width = test_image_p.shape[1] - 2 * kernel_overhang
+        if self.padding == paddings.Same:
+            featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.input.shape[2])
+        else:
+            featuremap_shape = (int(self.input.shape[0] / self.stride), int(self.input.shape[1] / self.stride), self.input.shape[2])
+        feature_map = np.zeros(featuremap_shape)
 
-        feature_map = np.zeros((int(feature_map_height / self.stride), int(feature_map_width / self.stride), self.nr_kernels, self.input.shape[2]))
-        for k, kernel in enumerate(self.kernels): # ToDo: do all channels at once
-            for channel in range(self.input.shape[2]):
-                image = self.input[:, :, channel]
-                filter = kernel[:, :, channel]
+        for k, kernel in enumerate(self.kernels):
+            input = self.padding(self.input, kernel_overhang)
 
-                image_p = self.padding(image) # padding ToDo: Multichannel image padding
+            # convolution
+            for y in range(int((input.shape[0] - 2 * kernel_overhang) / self.stride)):
+                for x in range(int((input.shape[1] - 2 * kernel_overhang) / self.stride)):
+                    arr = input[y * self.stride :  y * self.stride + kernel.shape[0], x * self.stride : x * self.stride + kernel.shape[1], :]
+                    feature_map[y, x, k] = np.sum(arr * kernel) + self.bias[k]
 
-                width = image_p.shape[1]
-                height = image_p.shape [0]
-                filter_size = filter.shape[0]
-
-                # convolution
-                for y in range(int((height - 2 * kernel_overhang) / self.stride)):
-                    for x in range(int((width - 2 * kernel_overhang) / self.stride)):
-                        arr = image_p[y * self.stride :  y * self.stride + filter_size, x * self.stride : x * self.stride + filter_size]
-                        feature_map[y, x, k, channel] = np.sum(arr * filter)
-        
-        feature_maps = np.sum(feature_map, axis=3) # sum over channels
-        feature_maps = feature_maps + self.bias.reshape((1, 1, len(self.bias))) # add bias to each feature map
-        self.output = self.activation(feature_maps)
+        self.output = self.activation(feature_map)
 
     def learn(self):
         super().learn()
