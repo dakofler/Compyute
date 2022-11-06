@@ -128,23 +128,31 @@ class MaxPooling(Layer):
         super().process()
         input_height = self.input.shape[0]
         input_width = self.input.shape[1]
-        input_feature_map = self.input.shape[2]
+        input_depth = self.input.shape[2]
         step = self.pooling_window[0]
         output_width = int(input_width / step)
         output_height = int(input_height / step)
 
-        self.output = np.zeros((output_height, output_width, input_feature_map))
+        self.output = np.zeros((output_height, output_width, input_depth))
+        self.loss_gradient_map = np.zeros((input_height, input_width, input_depth))
 
-        for f in range(input_feature_map):
+        for f in range(input_depth):
             image = self.input[:, :, f]
             for y in range(output_height):
                 for x in range(output_width):
-                    arr = image[y * step : y * step + step, x * step : x * step + step]
-                    self.output[y, x, f] = np.max(arr)
+                    arr = image[y * step : y * step + step, x * step : x * step + step] # get sub matrix
+                    index = np.where(arr == np.max(arr)) # get index of max value in sub matrix
+                    index_y = index[0][0] + y * step # get y index of max value in input matrix
+                    index_x = index[1][0] + x * step # get x index of max value in input matrix
+
+                    self.output[y, x, f] = image[index_y, index_x]
+                    self.loss_gradient_map[index_y, index_x, f] = 1
 
     def learn(self):
         super().learn()
-        pass
+        succ_loss_gradient = np.repeat(self.succ_loss_gradient, self.pooling_window[0], axis=0)
+        succ_loss_gradient = np.repeat(succ_loss_gradient, self.pooling_window[0], axis=1)
+        self.loss_gradient = succ_loss_gradient * self.loss_gradient_map   
 
 
 class Convolution(Layer):
@@ -178,8 +186,7 @@ class Convolution(Layer):
         super().process()
         # https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
 
-        # self coded convolution
-        # https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41      
+        # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41   
         kernel_overhang = int((self.kernels[0].shape[0] - 1) / 2)
         if self.padding == paddings.Same:
             featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.input.shape[2])
