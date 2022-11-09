@@ -152,6 +152,7 @@ class MaxPooling(Layer):
         super().learn()
         succ_loss_gradient = np.repeat(self.succ_loss_gradient, self.pooling_window[0], axis=0)
         succ_loss_gradient = np.repeat(succ_loss_gradient, self.pooling_window[0], axis=1)
+        succ_loss_gradient.resize(self.loss_gradient_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
         self.loss_gradient = succ_loss_gradient * self.loss_gradient_map   
 
 
@@ -184,14 +185,13 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        # https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
-
+        # faster convolution https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
         # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41   
         kernel_overhang = int((self.kernels[0].shape[0] - 1) / 2)
         if self.padding == paddings.Same:
-            featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.input.shape[2])
+            featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.nr_kernels)
         else:
-            featuremap_shape = (int(self.input.shape[0] / self.stride), int(self.input.shape[1] / self.stride), self.input.shape[2])
+            featuremap_shape = (int(self.input.shape[0] / self.stride), int(self.input.shape[1] / self.stride), self.nr_kernels)
         feature_map = np.zeros(featuremap_shape)
 
         for k, kernel in enumerate(self.kernels):
@@ -207,4 +207,4 @@ class Convolution(Layer):
 
     def learn(self):
         super().learn()
-        pass
+        self.loss_gradient = self.succ_loss_gradient
