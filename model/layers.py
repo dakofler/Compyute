@@ -126,9 +126,7 @@ class MaxPooling(Layer):
     
     def process(self):
         super().process()
-        input_height = self.input.shape[0]
-        input_width = self.input.shape[1]
-        input_depth = self.input.shape[2]
+        input_height, input_width, input_depth = self.input.shape
         step = self.pooling_window[0]
         output_width = int(input_width / step)
         output_height = int(input_height / step)
@@ -185,7 +183,6 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        # faster convolution https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
         # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41   
         kernel_overhang = int((self.kernels[0].shape[0] - 1) / 2)
         if self.padding == paddings.Same:
@@ -202,6 +199,9 @@ class Convolution(Layer):
                 for x in range(int((input.shape[1] - 2 * kernel_overhang) / self.stride)):
                     arr = input[y * self.stride :  y * self.stride + kernel.shape[0], x * self.stride : x * self.stride + kernel.shape[1], :]
                     feature_map[y, x, k] = np.sum(arr * kernel) + self.bias[k]
+            
+            # possible extension fft -> product -> ifft = O(n logn)
+            # faster convolution ? https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
 
         self.output = self.activation(feature_map)
 
