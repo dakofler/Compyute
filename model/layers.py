@@ -43,7 +43,7 @@ class Input(Layer):
     
     def learn(self):
         super().learn()
-        pass
+        return None, None
     
 
 class Output(Layer):
@@ -60,7 +60,7 @@ class Output(Layer):
     
     def learn(self):
         super().learn()
-        pass
+        return None, None
 
 
 class Flatten(Layer):
@@ -78,6 +78,7 @@ class Flatten(Layer):
     def learn(self):
         super().learn()
         self.loss_gradient = self.succ_loss_gradient.reshape(self.input.shape)
+        return None, None
 
 
 class Dense(Layer):
@@ -112,7 +113,7 @@ class Dense(Layer):
 
         w = np.delete(self.weights.copy(), -1, axis=1) # remove weights corresponding to bias neurons
         self.loss_gradient = np.dot(w.transpose(), d) # compute loss gradient to be used in the next layer before weights are changed
-        return np.append(self.prev_layer.output, [1.0], axis=0) * np.expand_dims(d, 1)
+        return np.append(self.prev_layer.output, [1.0], axis=0) * np.expand_dims(d, 1), None
 
 
 class MaxPooling(Layer):
@@ -150,8 +151,9 @@ class MaxPooling(Layer):
         super().learn()
         succ_loss_gradient = np.repeat(self.succ_loss_gradient, self.pooling_window[0], axis=0)
         succ_loss_gradient = np.repeat(succ_loss_gradient, self.pooling_window[0], axis=1)
-        succ_loss_gradient.resize(self.loss_gradient_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
-        self.loss_gradient = succ_loss_gradient * self.loss_gradient_map   
+        succ_loss_gradient = np.resize(succ_loss_gradient, self.loss_gradient_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
+        self.loss_gradient = succ_loss_gradient * self.loss_gradient_map
+        return None, None
 
 
 class Convolution(Layer):
@@ -165,46 +167,66 @@ class Convolution(Layer):
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
-        self.bias = np.ones((self.nr_kernels,))
-        self.kernels = []
-        kernel_shape = (*self.kernel_size, self.prev_layer.output.shape[2])
+        kernel_shape = (self.nr_kernels, *self.kernel_size, self.prev_layer.output.shape[2]) # (Nr Kernels, x, y, colorchannels)
 
-        if self.nr_kernels == 1:
-            kernel = np.array([
-                [[1], [0], [-1]],
-                [[2], [0], [-2]],
-                [[1], [0], [-1]]]) * np.ones((1, 1, kernel_shape[2]))
-            self.kernels.append(kernel)
-        else:
-            for i in range(self.nr_kernels):
-                self.kernels.append(np.random.uniform(-1.0, 1.0, kernel_shape))
+        self.kernel = np.random.uniform(-1.0, 1.0, kernel_shape)
+        self.weights = self.kernel
+        self.delta_weights = np.zeros(self.weights.shape)
+        
+        self.biases = np.ones((self.nr_kernels,))
+        self.delta_biases = np.zeros(self.biases.shape)
 
         self.process()
     
     def process(self):
         super().process()
-        # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41   
-        kernel_overhang = int((self.kernels[0].shape[0] - 1) / 2)
+        # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41
+        self.kernel = self.weights
+        kernel_overhang = int((self.kernel.shape[1] - 1) / 2)
         if self.padding == paddings.Same:
             featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.nr_kernels)
         else:
             featuremap_shape = (int(self.input.shape[0] / self.stride), int(self.input.shape[1] / self.stride), self.nr_kernels)
-        feature_map = np.zeros(featuremap_shape)
+        self.net = np.zeros(featuremap_shape)
+        input = self.padding(self.input, kernel_overhang)
 
-        for k, kernel in enumerate(self.kernels):
-            input = self.padding(self.input, kernel_overhang)
-
+        for k, kernel in enumerate(self.kernel):
             # convolution
-            for y in range(int((input.shape[0] - 2 * kernel_overhang) / self.stride)):
-                for x in range(int((input.shape[1] - 2 * kernel_overhang) / self.stride)):
-                    arr = input[y * self.stride :  y * self.stride + kernel.shape[0], x * self.stride : x * self.stride + kernel.shape[1], :]
-                    feature_map[y, x, k] = np.sum(arr * kernel) + self.bias[k]
-            
-            # possible extension fft -> product -> ifft = O(n logn)
-            # faster convolution ? https://medium.com/@thepyprogrammer/2d-image-convolution-with-numpy-with-a-handmade-sliding-window-view-946c4acb98b4
+            y1 = yc = 0
+            for y2 in range(self.kernel_size[0], self.input.shape[0] + 1, self.stride):
+                x1 = xc = 0
+                for x2 in range(self.kernel_size[1], self.input.shape[1] + 1, self.stride):
+                    arr = input[y1 : y2, x1 : x2, :]
+                    self.net[yc, xc, k] = np.sum(arr * kernel) + self.biases[k]
+                    x1 += self.stride
+                    xc += 1
+                y1 += self.stride
+                yc += 1
 
-        self.output = self.activation(feature_map)
+        # possible alternative fft -> product -> ifft = O(n logn)
+
+        self.output = self.activation(self.net)
 
     def learn(self):
         super().learn()
-        self.loss_gradient = self.succ_loss_gradient
+
+        # https://q-viper.github.io/2020/06/05/convolutional-neural-networks-from-scratch-on-python/#312-conv2d-layer
+        g = np.zeros(self.delta_weights.shape)
+        b = np.zeros(self.delta_biases.shape)
+        self.loss_gradient = np.zeros(self.input.shape)
+
+        for k, kernel in enumerate(self.kernel):
+            y1 = y = 0
+            for y2 in range(self.kernel_size[0], self.input.shape[0] + 1, self.stride):
+                x1 = x = 0
+                for x2 in range(self.kernel_size[1], self.input.shape[1] + 1, self.stride):
+                    g[k] += self.succ_loss_gradient[y, x, k] * self.input[y1 : y2, x1 : x2, :]
+                    self.loss_gradient[y1 : y2, x1 : x2, :] += self.succ_loss_gradient[y, x, k] * kernel
+                    x1 += self.stride
+                    x += 1
+                y1 += self.stride
+                y += 1
+
+            b[k] = np.sum(self.succ_loss_gradient[:, :, k])
+
+        return g, b
