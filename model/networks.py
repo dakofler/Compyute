@@ -1,4 +1,4 @@
-from model import utils
+from model import utils, optimizers
 import numpy as np
 import time
 

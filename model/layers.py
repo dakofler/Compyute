@@ -1,6 +1,6 @@
 from model import activations, paddings
 import numpy as np
-
+import math
 
 class Layer:
     def __init__(self):
@@ -12,6 +12,8 @@ class Layer:
         self.pooling_window = None
         self.nr_kernels = None
         self.kernel_size = None
+        self.delta = None
+        self.bias_delta = None
 
     def integrate(self, id, prev_layer, succ_layer):
         self.id = id
@@ -43,7 +45,6 @@ class Input(Layer):
     
     def learn(self):
         super().learn()
-        return None, None
     
 
 class Output(Layer):
@@ -60,7 +61,6 @@ class Output(Layer):
     
     def learn(self):
         super().learn()
-        return None, None
 
 
 class Flatten(Layer):
@@ -78,7 +78,6 @@ class Flatten(Layer):
     def learn(self):
         super().learn()
         self.loss_gradient = self.succ_loss_gradient.reshape(self.input.shape)
-        return None, None
 
 
 class Dense(Layer):
@@ -103,8 +102,8 @@ class Dense(Layer):
     def learn(self):
         super().learn()
 
-        # https://e2eml.school/softmax.html
-        if self.activation == activations.Softmax:
+        # derivatie of activation function
+        if self.activation == activations.Softmax: # https://e2eml.school/softmax.html
             d_softmax = self.activation(self.net, derivative=True)
             self.succ_loss_gradient = np.reshape(self.succ_loss_gradient, (1, -1))
             d = np.squeeze(self.succ_loss_gradient @ d_softmax)
@@ -112,8 +111,8 @@ class Dense(Layer):
             d = self.activation(self.net, derivative=True) * self.succ_loss_gradient
 
         w = np.delete(self.weights.copy(), -1, axis=1) # remove weights corresponding to bias neurons
-        self.loss_gradient = np.dot(w.transpose(), d) # compute loss gradient to be used in the next layer before weights are changed
-        return np.append(self.prev_layer.output, [1.0], axis=0) * np.expand_dims(d, 1), None
+        self.loss_gradient = np.dot(w.transpose(), d) # compute loss gradient to be used in the previous layer before weights are changed
+        self.delta = np.append(self.prev_layer.output, [1.0], axis=0) * np.expand_dims(d, 1)
 
 
 class MaxPooling(Layer):
@@ -153,7 +152,6 @@ class MaxPooling(Layer):
         succ_loss_gradient = np.repeat(succ_loss_gradient, self.pooling_window[0], axis=1)
         succ_loss_gradient = np.resize(succ_loss_gradient, self.loss_gradient_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
         self.loss_gradient = succ_loss_gradient * self.loss_gradient_map
-        return None, None
 
 
 class Convolution(Layer):
@@ -161,6 +159,7 @@ class Convolution(Layer):
         super().__init__()
         self.nr_kernels = nr_kernels
         self.kernel_size = kernel_size
+        self.padding_size = math.floor(self.kernel_size[0] / 2)
         self.activation = activation
         self.padding = padding
         self.stride = stride
@@ -169,39 +168,30 @@ class Convolution(Layer):
         super().integrate(id, prev_layer, succ_layer)
         kernel_shape = (self.nr_kernels, *self.kernel_size, self.prev_layer.output.shape[2]) # (Nr Kernels, x, y, colorchannels)
 
-        self.kernel = np.random.uniform(-1.0, 1.0, kernel_shape)
-        self.weights = self.kernel
+        self.weights = np.random.uniform(-1.0, 1.0, kernel_shape)
         self.delta_weights = np.zeros(self.weights.shape)
         
-        self.biases = np.ones((self.nr_kernels,))
+        self.biases = np.random.uniform(-1.0, 1.0,(self.nr_kernels,))
         self.delta_biases = np.zeros(self.biases.shape)
 
         self.process()
     
     def process(self):
         super().process()
-        # self coded convolution https://dev.to/sandeepbalachandran/machine-learning-convolution-with-color-images-2p41
-        self.kernel = self.weights
-        kernel_overhang = int((self.kernel.shape[1] - 1) / 2)
-        if self.padding == paddings.Same:
-            featuremap_shape = (int((self.input.shape[0] - 2 * kernel_overhang) / self.stride), int((self.input.shape[1] - 2 * kernel_overhang) / self.stride), self.nr_kernels)
-        else:
-            featuremap_shape = (int(self.input.shape[0] / self.stride), int(self.input.shape[1] / self.stride), self.nr_kernels)
-        self.net = np.zeros(featuremap_shape)
-        input = self.padding(self.input, kernel_overhang)
+        output_size = int((self.input.shape[0] - 2 * (self.padding == paddings.Same) * self.padding_size) / self.stride)
+        self.net = np.zeros((output_size, output_size, self.nr_kernels))
+        input = self.padding(self.input, self.padding_size)
 
-        for k, kernel in enumerate(self.kernel):
+        for k, kernel in enumerate(self.weights):
             # convolution
-            y1 = yc = 0
-            for y2 in range(self.kernel_size[0], self.input.shape[0] + 1, self.stride):
-                x1 = xc = 0
-                for x2 in range(self.kernel_size[1], self.input.shape[1] + 1, self.stride):
-                    arr = input[y1 : y2, x1 : x2, :]
-                    self.net[yc, xc, k] = np.sum(arr * kernel) + self.biases[k]
-                    x1 += self.stride
-                    xc += 1
-                y1 += self.stride
-                yc += 1
+            y_count = 0
+            for y in range(0, input.shape[0] - int(self.kernel_size[0] / 2) - 1, self.stride):
+                x_count = 0
+                for x in range(0, input.shape[0] - int(self.kernel_size[1] / 2) - 1, self.stride):
+                    array = input[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :]
+                    self.net[y_count, x_count, k] = np.sum(array * kernel) + self.biases[k]
+                    x_count += 1
+                y_count += 1
 
         # possible alternative fft -> product -> ifft = O(n logn)
 
@@ -210,23 +200,55 @@ class Convolution(Layer):
     def learn(self):
         super().learn()
 
-        # https://q-viper.github.io/2020/06/05/convolutional-neural-networks-from-scratch-on-python/#312-conv2d-layer
-        g = np.zeros(self.delta_weights.shape)
-        b = np.zeros(self.delta_biases.shape)
+        self.delta = np.zeros(self.delta_weights.shape)
+        self.bias_delta = np.zeros(self.delta_biases.shape)
         self.loss_gradient = np.zeros(self.input.shape)
+        input = self.padding(self.input, self.padding_size)
+        succ_loss_gradient = self.activation(self.succ_loss_gradient, derivative=True)
 
-        for k, kernel in enumerate(self.kernel):
-            y1 = y = 0
-            for y2 in range(self.kernel_size[0], self.input.shape[0] + 1, self.stride):
-                x1 = x = 0
-                for x2 in range(self.kernel_size[1], self.input.shape[1] + 1, self.stride):
-                    g[k] += self.succ_loss_gradient[y, x, k] * self.input[y1 : y2, x1 : x2, :]
-                    self.loss_gradient[y1 : y2, x1 : x2, :] += self.succ_loss_gradient[y, x, k] * kernel
-                    x1 += self.stride
-                    x += 1
-                y1 += self.stride
-                y += 1
+        #dw = x * dy
+        for k, kernel in enumerate(self.weights):
+            for c in range(input.shape[2]):
+                y_count = 0
+                for y in range(0, input.shape[0] - int(self.kernel_size[0] / 2) - 1, self.stride):
+                    x_count = 0
+                    for x in range(0, input.shape[0] - int(self.kernel_size[1] / 2) - 1, self.stride):
+                        array = input[y : y + self.kernel_size[0], x : x + self.kernel_size[1], c]
+                        self.delta[k, y_count, x_count, c] = np.sum(array * succ_loss_gradient[:, :, k])
+                        x_count += 1
+                    y_count += 1
+        
+        # ToDo
+        #dx
+        # if (succ_loss_gradient.shape != 
 
-            b[k] = np.sum(self.succ_loss_gradient[:, :, k])
+        for k, kernel in enumerate(self.weights):
+            y_count = 0
+            for y in range(0, input.shape[0] - int(self.kernel_size[0] / 2) - 1, self.stride):
+                x_count = 0
+                for x in range(0, input.shape[0] - int(self.kernel_size[1] / 2) - 1, self.stride):
+                    array = input[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :]
 
-        return g, b
+                    
+                    self.delta[k] += array * self.succ_loss_gradient[y_count, x_count, k]
+                    self.loss_gradient[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :] += self.succ_loss_gradient[y_count, x_count, k] * kernel
+                    x_count += 1
+                y_count += 1
+
+        #db
+        for k, kernel in enumerate(self.weights):
+            self.bias_delta[k] = np.sum(self.succ_loss_gradient[:, :, k])
+        
+
+        # for k, kernel in enumerate(self.weights):
+        #     y_count = 0
+        #     for y in range(0, input.shape[0] - int(self.kernel_size[0] / 2) - 1, self.stride):
+        #         x_count = 0
+        #         for x in range(0, input.shape[0] - int(self.kernel_size[1] / 2) - 1, self.stride):
+        #             array = input[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :]
+
+                    
+        #             self.delta[k] += array * self.succ_loss_gradient[y_count, x_count, k]
+        #             self.loss_gradient[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :] += self.succ_loss_gradient[y_count, x_count, k] * kernel
+        #             x_count += 1
+        #         y_count += 1

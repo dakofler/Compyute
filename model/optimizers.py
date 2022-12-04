@@ -16,17 +16,18 @@ class stochastic_gradient_descent(optimizer):
         layers_reversed[0].loss_gradient = loss_gradient
 
         for layer in layers_reversed:
-            g, b = layer.learn()
-            if g is not None:
-                layer.delta_weights = - self.learning_rate * g + self.momentum * layer.delta_weights
+            layer.learn()
+            
+            if layer.delta is not None:
+                layer.delta_weights = - self.learning_rate * layer.delta + self.momentum * layer.delta_weights
                 if not self.nesterov:
                     layer.weights = layer.weights + layer.delta_weights
                 else: # https://keras.io/api/optimizers/sgd/
-                    layer.weights = layer.weights + self.momentum * layer.delta_weights - self.learning_rate * g
+                    layer.weights = layer.weights + self.momentum * layer.delta_weights - self.learning_rate * layer.delta
             
-            if b is not None:
-                layer.delta_biases = - self.learning_rate * b + self.momentum * layer.delta_biases
+            if layer.bias_delta is not None:
+                layer.delta_biases = - self.learning_rate * layer.bias_delta + self.momentum * layer.delta_biases
                 if not self.nesterov:
                     layer.biases = layer.biases + layer.delta_biases
                 else:
-                    layer.biases = layer.biases + self.momentum * layer.delta_biases - self.learning_rate * b
+                    layer.biases = layer.biases + self.momentum * layer.delta_biases - self.learning_rate * layer.bias_delta
