@@ -8,7 +8,7 @@ class Network():
         pass
 
     def predict (self, input):
-        self.layers[0].input = input
+        self.layers[0].i = input
 
 
 class FeedForward(Network):
@@ -52,8 +52,7 @@ class FeedForward(Network):
 
             # train
             for i, p in enumerate(x_shuffled):
-                if log:
-                    print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
+                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
                 if i >= batch_size: break
 
                 # compute loss
@@ -84,4 +83,4 @@ class FeedForward(Network):
             return
         super().predict(input)
         self.__propagate()
-        return self.layers[-1].output
+        return self.layers[-1].o

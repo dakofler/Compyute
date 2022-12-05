@@ -13,21 +13,17 @@ class stochastic_gradient_descent(optimizer):
     def optimize(self, loss_gradient, model_layers):
         layers_reversed = model_layers.copy()
         layers_reversed.reverse()
-        layers_reversed[0].loss_gradient = loss_gradient
+        layers_reversed[0].dx = loss_gradient
 
         for layer in layers_reversed:
             layer.learn()
             
-            if layer.delta is not None:
-                layer.delta_weights = - self.learning_rate * layer.delta + self.momentum * layer.delta_weights
-                if not self.nesterov:
-                    layer.weights = layer.weights + layer.delta_weights
-                else: # https://keras.io/api/optimizers/sgd/
-                    layer.weights = layer.weights + self.momentum * layer.delta_weights - self.learning_rate * layer.delta
+            if layer.dw is not None:
+                layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
+                if not self.nesterov: layer.w = layer.w + layer.w_change
+                else: layer.w = layer.w + self.momentum * layer.w_change - self.learning_rate * layer.dw # https://keras.io/api/optimizers/sgd/
             
-            if layer.bias_delta is not None:
-                layer.delta_biases = - self.learning_rate * layer.bias_delta + self.momentum * layer.delta_biases
-                if not self.nesterov:
-                    layer.biases = layer.biases + layer.delta_biases
-                else:
-                    layer.biases = layer.biases + self.momentum * layer.delta_biases - self.learning_rate * layer.bias_delta
+            if layer.db is not None:
+                layer.b_change = - self.learning_rate * layer.db + self.momentum * layer.b_change
+                if not self.nesterov: layer.b = layer.b + layer.b_change
+                else: layer.b = layer.b + self.momentum * layer.b_change - self.learning_rate * layer.db
