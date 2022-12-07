@@ -184,18 +184,20 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        # output_size = int((self.i.shape[0] - 2 * (self.padding == paddings.Same) * self.padding_size) / self.stride)
         i_p = self.padding(self.i, self.padding_size)
         output_size = int((i_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
         self.net = np.zeros((output_size, output_size, self.k))
         
         # convolution
+        k_y = self.kernel_size[0]
+        k_x = self.kernel_size[1]
+
         for k, kernel in enumerate(self.w):
             y_count = 0
             for y in range(0, output_size * self.stride, self.stride):
                 x_count = 0
                 for x in range(0, output_size * self.stride, self.stride):
-                    array = i_p[y : y + self.kernel_size[0], x : x + self.kernel_size[1], :]
+                    array = i_p[y : y + k_y, x : x + k_x, :]
                     self.net[y_count, x_count, k] = np.sum(array * kernel) + self.b[k]
                     x_count += 1
                 y_count += 1
@@ -204,37 +206,49 @@ class Convolution(Layer):
 
     def learn(self):
         super().learn()
-        i_p = self.padding(self.i, self.padding_size)
-        dw_size = int((i_p.shape[0] - self.dy.shape[0]) / self.stride) + 1
         self.dw = np.zeros(self.w.shape)
         self.db = np.zeros(self.b.shape)
         self.dx = np.zeros(self.i.shape)
 
+        i_p = self.padding(self.i, self.padding_size)
+        dw_size = int((i_p.shape[0] - self.dy.shape[0]) / self.stride) + 1
+
         dy = self.activation(self.net, derivative=True) * self.dy
         dy_p = self.padding(dy, self.padding_size)
         dx_size = int((dy_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
+        dy_ext_array = np.zeros((dy.shape[0], dy.shape[1], self.dw.shape[2]))
 
         for k, kernel in enumerate(self.w):
-            for c in range(i_p.shape[2]):
-                #dw
-                y_count = 0
-                for y in range(0, dw_size * self.stride, self.stride):
-                    x_count = 0
-                    for x in range(0, dw_size * self.stride, self.stride):
-                        array = i_p[y : y + dy.shape[0], x : x + dy.shape[0], c]
-                        self.dw[k, y_count, x_count, c] += np.sum(array * dy[:, :, k])
-                        x_count += 1
-                    y_count += 1
-                
-                #dx
-                y_count = 0
-                for y in range(0, dx_size * self.stride, self.stride):
-                    x_count = 0
-                    for x in range(0, dx_size * self.stride, self.stride):
-                        array = dy_p[y : y + self.kernel_size[0], x : x + self.kernel_size[1], k]
-                        self.dx[y_count, x_count, c] += np.sum(array * np.flipud(np.fliplr(kernel[:, :, c])))
-                        x_count += 1
-                    y_count += 1
+            kernel_flipped = np.flipud(np.fliplr(kernel))
+
+            #dw
+            dy_ext = np.expand_dims(dy[:, :, k], -1) + dy_ext_array
+            dy_y = dy.shape[0]
+            dy_x = dy.shape[0]
+
+            y_count = 0
+            for y in range(0, dw_size * self.stride, self.stride):
+                x_count = 0
+                for x in range(0, dw_size * self.stride, self.stride):
+                    array = i_p[y : y + dy_y, x : x + dy_x, :]
+                    self.dw[k, y_count, x_count] = np.sum(array * dy_ext)
+                    x_count += 1
+                y_count += 1
+            
+            #dx
+            k_y = self.kernel_size[0]
+            k_x = self.kernel_size[1]
+            array_zeros = np.zeros((k_y, k_x, self.dx.shape[2]))
+
+            y_count = 0
+            for y in range(0, dx_size * self.stride, self.stride):
+                x_count = 0
+                for x in range(0, dx_size * self.stride, self.stride):
+                    array = dy_p[y : y + k_y, x : x + k_x, k]
+                    array_ext = np.expand_dims(array, -1) + array_zeros
+                    self.dx[y_count, x_count] = np.sum(array_ext * kernel_flipped)
+                    x_count += 1
+                y_count += 1
             
             #db
             self.db[k] = np.sum(self.dy[:, :, k])
