@@ -232,7 +232,7 @@ class Convolution(Layer):
                     x_count = 0
                     for x in range(0, dx_size * self.stride, self.stride):
                         array = dy_p[y : y + self.kernel_size[0], x : x + self.kernel_size[1], k]
-                        self.dx[y_count, x_count, c] += np.sum(array * np.flipud(np.fliplr(kernel)))
+                        self.dx[y_count, x_count, c] += np.sum(array * np.flipud(np.fliplr(kernel[:, :, c])))
                         x_count += 1
                     y_count += 1
             
