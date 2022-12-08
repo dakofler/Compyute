@@ -2,6 +2,7 @@ from model import activations, paddings, utils
 import numpy as np
 import math
 
+
 class Layer:
     def __init__(self):
         self.i = None
@@ -45,7 +46,7 @@ class Input(Layer):
 
     def process(self):
         super().process()
-        self.o = self.i
+        self.o = np.reshape(self.i, self.input_shape)
     
     def learn(self):
         super().learn()
@@ -106,7 +107,7 @@ class Dense(Layer):
     def learn(self):
         super().learn()
 
-        # derivatie of activation function
+        # derivative of activation function
         if self.activation == activations.Softmax: # https://e2eml.school/softmax.html
             d_softmax = self.activation(self.net, derivative=True)
             self.dy = np.reshape(self.dy, (1, -1))
@@ -114,8 +115,8 @@ class Dense(Layer):
         else:
             dy = self.activation(self.net, derivative=True) * self.dy
 
-        w = np.delete(self.w.copy(), -1, axis=1) # remove weights corresponding to bias neurons
-        self.dx = np.dot(w.T, dy) # compute loss gradient to be used in the previous layer before weights are changed
+        w = np.delete(self.w.copy(), -1, axis=1) # remove weights corresponding to bias neurons to make shapes match
+        self.dx = np.dot(w.T, dy)
         self.dw = np.append(self.prev_layer.o, [1.0], axis=0) * np.expand_dims(dy, 1)
 
 

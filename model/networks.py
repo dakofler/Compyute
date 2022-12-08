@@ -42,9 +42,6 @@ class FeedForward(Network):
         if x.ndim != 4 or y.ndim != 2:
             print('Dimension must be 4 for input, 2 for output.')
             return
-        if (x.shape[1], x.shape[2]) != (self.layers[0].input_shape[0], self.layers[0].input_shape[1]):
-            print('X does not match input shape.')
-            return
         loss_hist = []
 
         for epoch in range(1, epochs + 1):

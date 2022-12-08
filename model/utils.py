@@ -36,6 +36,7 @@ def shuffle(x: np.ndarray, y: np.ndarray):
     return x_shuffled, y_shuffled
 
 def convolve(image: np.ndarray, f: np.ndarray, s: int = 1):
+    # slow self coded convolution
     # o_y = int((image.shape[0] - f.shape[0]) / s) + 1
     # f_y = f.shape[0]
     # f_x = f.shape[1]
@@ -52,4 +53,5 @@ def convolve(image: np.ndarray, f: np.ndarray, s: int = 1):
     #     y_count += 1
     # return o
 
+    # much faster scipy convolution
     return signal.convolve2d(image, f, mode='valid')
