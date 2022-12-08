@@ -38,11 +38,13 @@ class FeedForward(Network):
         for layer in self.layers:
             layer.process()
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs=100, batch_size=0, log=True):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=100, log=True):
         if x.ndim != 4 or y.ndim != 2:
             print('Dimension must be 4 for input, 2 for output.')
             return
-        batch_size = batch_size if batch_size > 0 else len(x)
+        if (x.shape[1], x.shape[2]) != (self.layers[0].input_shape[0], self.layers[0].input_shape[1]):
+            print('X does not match input shape.')
+            return
         loss_hist = []
 
         for epoch in range(1, epochs + 1):
@@ -52,8 +54,7 @@ class FeedForward(Network):
 
             # train
             for i, p in enumerate(x_shuffled):
-                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
-                if i >= batch_size: break
+                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{len(x)}', end='\r')
 
                 # compute loss
                 loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))

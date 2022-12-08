@@ -1,4 +1,4 @@
-from model import activations, paddings
+from model import activations, paddings, utils
 import numpy as np
 import math
 
@@ -45,7 +45,7 @@ class Input(Layer):
 
     def process(self):
         super().process()
-        self.o = self.i.reshape(self.input_shape)
+        self.o = self.i
     
     def learn(self):
         super().learn()
@@ -81,7 +81,7 @@ class Flatten(Layer):
     
     def learn(self):
         super().learn()
-        self.dx = self.dy.reshape(self.i.shape)
+        self.dx = np.resize(self.dy, self.i.shape)
 
 
 class Dense(Layer):
@@ -130,25 +130,25 @@ class MaxPooling(Layer):
     
     def process(self):
         super().process()
-        input_height, input_width, input_depth = self.i.shape
+        i_y, i_x, i_k  = self.i.shape
         step = self.pooling_window[0]
-        output_width = int(input_width / step)
-        output_height = int(input_height / step)
+        o_x = int(i_x / step)
+        o_y = int(i_y / step)
 
-        self.o = np.zeros((output_height, output_width, input_depth))
-        self.dx_map = np.zeros((input_height, input_width, input_depth))
+        self.o = np.zeros((o_y, o_x, i_k))
+        self.dx_map = np.zeros((i_y, i_x, i_k))
 
-        for f in range(input_depth):
-            image = self.i[:, :, f]
-            for y in range(output_height):
-                for x in range(output_width):
+        for k in range(i_k):
+            image = self.i[:, :, k]
+            for y in range(o_y):
+                for x in range(o_x):
                     a = image[y * step : y * step + step, x * step : x * step + step] # get sub matrix
                     index = np.where(a == np.max(a)) # get index of max value in sub matrix
                     index_y = index[0][0] + y * step # get y index of max value in input matrix
                     index_x = index[1][0] + x * step # get x index of max value in input matrix
 
-                    self.o[y, x, f] = image[index_y, index_x]
-                    self.dx_map[index_y, index_x, f] = 1
+                    self.o[y, x, k] = image[index_y, index_x]
+                    self.dx_map[index_y, index_x, k] = 1
 
     def learn(self):
         super().learn()
@@ -163,14 +163,14 @@ class Convolution(Layer):
         super().__init__()
         self.k = nr_kernels
         self.kernel_size = kernel_size
-        self.padding_size = math.floor(self.kernel_size[0] / 2)
+        self.padding_width = math.floor(self.kernel_size[0] / 2)
         self.activation = activation
         self.padding = padding
         self.stride = stride
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
-        kernel_shape = (self.k, *self.kernel_size, self.prev_layer.o.shape[2]) # (Nr Kernels, x, y, colorchannels)
+        kernel_shape = (self.k, self.prev_layer.o.shape[2], *self.kernel_size) # (Nr Kernels, input depth, x, y)
 
         self.w = np.random.uniform(-1.0, 1.0, kernel_shape)
         self.dw = np.zeros(self.w.shape)
@@ -184,24 +184,15 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        i_p = self.padding(self.i, self.padding_size)
+        i_p = self.padding(self.i, self.padding_width)
         output_size = int((i_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
         self.net = np.zeros((output_size, output_size, self.k))
         
         # convolution
-        k_y = self.kernel_size[0]
-        k_x = self.kernel_size[1]
-
         for k, kernel in enumerate(self.w):
-            y_count = 0
-            for y in range(0, output_size * self.stride, self.stride):
-                x_count = 0
-                for x in range(0, output_size * self.stride, self.stride):
-                    array = i_p[y : y + k_y, x : x + k_x, :]
-                    self.net[y_count, x_count, k] = np.sum(array * kernel) + self.b[k]
-                    x_count += 1
-                y_count += 1
-
+            for c, filter in enumerate(kernel):
+                self.net[:, :, k] += utils.convolve(i_p[:, :, c], filter, self.stride)
+            self.net[: ,:, k] += self.b[k]
         self.o = self.activation(self.net)
 
     def learn(self):
@@ -209,46 +200,16 @@ class Convolution(Layer):
         self.dw = np.zeros(self.w.shape)
         self.db = np.zeros(self.b.shape)
         self.dx = np.zeros(self.i.shape)
-
-        i_p = self.padding(self.i, self.padding_size)
-        dw_size = int((i_p.shape[0] - self.dy.shape[0]) / self.stride) + 1
-
+        i_p = self.padding(self.i, self.padding_width)
         dy = self.activation(self.net, derivative=True) * self.dy
-        dy_p = self.padding(dy, self.padding_size)
-        dx_size = int((dy_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
-        dy_ext_array = np.zeros((dy.shape[0], dy.shape[1], self.dw.shape[2]))
+        p = int((self.i.shape[0] - dy.shape[1]) / 2 + self.padding_width)
+        dy_p = paddings.Zero(dy, p)
 
         for k, kernel in enumerate(self.w):
-            kernel_flipped = np.flipud(np.fliplr(kernel))
-
-            #dw
-            dy_ext = np.expand_dims(dy[:, :, k], -1) + dy_ext_array
-            dy_y = dy.shape[0]
-            dy_x = dy.shape[0]
-
-            y_count = 0
-            for y in range(0, dw_size * self.stride, self.stride):
-                x_count = 0
-                for x in range(0, dw_size * self.stride, self.stride):
-                    array = i_p[y : y + dy_y, x : x + dy_x, :]
-                    self.dw[k, y_count, x_count] = np.sum(array * dy_ext)
-                    x_count += 1
-                y_count += 1
-            
-            #dx
-            k_y = self.kernel_size[0]
-            k_x = self.kernel_size[1]
-            array_zeros = np.zeros((k_y, k_x, self.dx.shape[2]))
-
-            y_count = 0
-            for y in range(0, dx_size * self.stride, self.stride):
-                x_count = 0
-                for x in range(0, dx_size * self.stride, self.stride):
-                    array = dy_p[y : y + k_y, x : x + k_x, k]
-                    array_ext = np.expand_dims(array, -1) + array_zeros
-                    self.dx[y_count, x_count] = np.sum(array_ext * kernel_flipped)
-                    x_count += 1
-                y_count += 1
-            
-            #db
+            kernel = np.flipud(np.fliplr(kernel))
+            dy_k = dy[:, :, k]
+            dy_p_k = dy_p[:, :, k]
+            for c, filter in enumerate(kernel):
+                self.dw[k, c] = utils.convolve(i_p[:, :, c], dy_k)
+                self.dx[:, :, c] = utils.convolve(dy_p_k, filter)
             self.db[k] = np.sum(self.dy[:, :, k])
