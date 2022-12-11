@@ -31,7 +31,6 @@ def Tanh(v, derivative = False):
 def Softmax(v, derivative = False):
     if not derivative:
         # return np.exp(v) / np.sum(np.exp(v))
-
         # sometimes got an overflow, found this solution by Shusei Eshima https://shusei-e.github.io/deep%20learning/softmax_without_overflow/
         e = np.exp(v - np.max(v))
         return e / np.sum(e, axis=0)

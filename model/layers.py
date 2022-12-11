@@ -5,6 +5,7 @@ import math
 
 class Layer:
     def __init__(self):
+        self.name = 'layer'
         self.i = None
         self.o = None
         self.input_shape = None
@@ -37,12 +38,14 @@ class Layer:
 class Input(Layer):
     def __init__(self, input_shape) -> None:
         super().__init__()
+        self.name = 'input'
         self.input_shape = input_shape
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
         self.i = np.ones(self.input_shape)
         self.process()
+        self.summary = ''
 
     def process(self):
         super().process()
@@ -55,10 +58,12 @@ class Input(Layer):
 class Output(Layer):
     def __init__(self) -> None:
         super().__init__()
+        self.name = 'output'
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
         self.process()
+        self.summary = ''
 
     def process(self):
         super().process()
@@ -66,15 +71,18 @@ class Output(Layer):
     
     def learn(self):
         super().learn()
+        self.dx = self.dy
 
 
 class Flatten(Layer):
     def __init__(self) -> None:
         super().__init__()
+        self.name = 'flatten'
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
         self.process()
+        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t{str(self.o.shape)}\t\t0'
 
     def process(self):
         super().process()
@@ -88,6 +96,7 @@ class Flatten(Layer):
 class Dense(Layer):
     def __init__(self, nr_neurons, activation=activations.Identity) -> None:
         super().__init__()
+        self.name = 'dense'
         self.nr_neurons = nr_neurons
         self.activation = activation
 
@@ -97,6 +106,7 @@ class Dense(Layer):
         self.dw = np.zeros(self.w.shape)
         self.w_change = np.zeros(self.w.shape)
         self.process()
+        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t\t{str(self.o.shape)}\t\t{str(np.size(self.w))}'
 
     def process(self):
         super().process()
@@ -116,18 +126,20 @@ class Dense(Layer):
             dy = self.activation(self.net, derivative=True) * self.dy
 
         w = np.delete(self.w.copy(), -1, axis=1) # remove weights corresponding to bias neurons to make shapes match
-        self.dx = np.dot(w.T, dy)
+        self.dx = w.T @ dy
         self.dw = np.append(self.prev_layer.o, [1.0], axis=0) * np.expand_dims(dy, 1)
 
 
 class MaxPooling(Layer):
     def __init__(self, pooling_window) -> None:
         super().__init__()
+        self.name = 'maxpooling'
         self.pooling_window = pooling_window
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
         self.process()
+        self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t0'
     
     def process(self):
         super().process()
@@ -137,7 +149,7 @@ class MaxPooling(Layer):
         o_y = int(i_y / step)
 
         self.o = np.zeros((o_y, o_x, i_k))
-        self.dx_map = np.zeros((i_y, i_x, i_k))
+        self.pooling_map = np.zeros(self.i.shape)
 
         for k in range(i_k):
             image = self.i[:, :, k]
@@ -149,25 +161,26 @@ class MaxPooling(Layer):
                     index_x = index[1][0] + x * step # get x index of max value in input matrix
 
                     self.o[y, x, k] = image[index_y, index_x]
-                    self.dx_map[index_y, index_x, k] = 1
+                    self.pooling_map[index_y, index_x, k] = 1
 
     def learn(self):
         super().learn()
         dy = np.repeat(self.dy, self.pooling_window[0], axis=0)
         dy = np.repeat(dy, self.pooling_window[0], axis=1)
-        dy = np.resize(dy, self.dx_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
-        self.dx = dy * self.dx_map
+        dy = np.resize(dy, self.pooling_map.shape) # if input mod pooling size is not 0, gradient and map shape is not equal. Resize fills missing values with 0.
+        self.dx = dy * self.pooling_map
 
 
 class Convolution(Layer):
     def __init__(self, nr_kernels, kernel_size=(3, 3), activation=activations.Identity, padding=paddings.Same, stride=1) -> None:
         super().__init__()
+        self.name = 'convolution'
         self.k = nr_kernels
         self.kernel_size = kernel_size
         self.padding_width = math.floor(self.kernel_size[0] / 2)
         self.activation = activation
         self.padding = padding
-        self.stride = stride
+        self.stride = 1 #stride does not work with scipy conolve2d
 
     def integrate(self, id, prev_layer, succ_layer):
         super().integrate(id, prev_layer, succ_layer)
@@ -182,6 +195,7 @@ class Convolution(Layer):
         self.b_change = np.zeros(self.b.shape)
 
         self.process()
+        self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t{str(np.size(self.w) + np.size(self.b))}'
     
     def process(self):
         super().process()
@@ -214,3 +228,25 @@ class Convolution(Layer):
                 self.dw[k, c] = utils.convolve(i_p[:, :, c], dy_k)
                 self.dx[:, :, c] = utils.convolve(dy_p_k, filter)
             self.db[k] = np.sum(self.dy[:, :, k])
+
+
+class Dropout(Layer):
+    def __init__(self, drop_rate) -> None:
+        super().__init__()
+        self.name = 'dropout'
+        self.drop_rate = drop_rate
+
+    def integrate(self, id, prev_layer, succ_layer):
+        super().integrate(id, prev_layer, succ_layer)
+        self.process()
+        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t{str(self.o.shape)}\t0'
+    
+    def process(self):
+        super().process()
+        self.drop_map = np.random.choice([0, 1], self.i.shape, p=[self.drop_rate, 1 - self.drop_rate])
+        drop = self.i * self.drop_map # set some values to 0
+        self.o = drop / 1 - self.drop_rate # scale others https://stats.stackexchange.com/questions/219236/dropout-forward-prop-vs-back-prop-in-machine-learning-neural-network
+
+    def learn(self):
+        super().learn()
+        self.dx = self.dy * self.drop_map

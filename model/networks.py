@@ -9,6 +9,15 @@ class Network():
 
     def predict (self, input):
         self.layers[0].i = input
+    
+    def summary(self):
+        print(f'layer_type\tinput_shape\toutput_shape\tparameters')
+        params = 0
+        for l in self.layers:
+            print(l.summary)
+            if l.w is not None: params += np.size(l.w)
+            if l.b is not None: params += np.size(l.b)
+        print(f'total trainable parameters {params}')
 
 
 class FeedForward(Network):
@@ -38,10 +47,11 @@ class FeedForward(Network):
         for layer in self.layers:
             layer.process()
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs=100, log=True):
+    def train(self, x: np.ndarray, y: np.ndarray, epochs=100, batch_size = 0, log=True):
         if x.ndim != 4 or y.ndim != 2:
             print('Dimension must be 4 for input, 2 for output.')
             return
+        batch_size = batch_size if batch_size > 0 else len(x)
         loss_hist = []
 
         for epoch in range(1, epochs + 1):
@@ -51,7 +61,8 @@ class FeedForward(Network):
 
             # train
             for i, p in enumerate(x_shuffled):
-                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{len(x)}', end='\r')
+                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
+                if i >= batch_size: break
 
                 # compute loss
                 loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))

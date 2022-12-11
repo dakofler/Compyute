@@ -13,7 +13,7 @@ class stochastic_gradient_descent(optimizer):
     def optimize(self, loss_gradient, model_layers):
         layers_reversed = model_layers.copy()
         layers_reversed.reverse()
-        layers_reversed[0].dx = loss_gradient
+        layers_reversed[0].dy = loss_gradient
 
         for layer in layers_reversed:
             layer.learn()
