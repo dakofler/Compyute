@@ -1,6 +1,5 @@
 from model import activations, paddings, utils
 import numpy as np
-import math
 
 
 class Layer:
@@ -20,6 +19,7 @@ class Layer:
         self.db = None
         self.w_change = None
         self.b_change = None
+        self.drop_rate = None
 
     def integrate(self, id, prev_layer, succ_layer):
         self.id = id
@@ -177,7 +177,6 @@ class Convolution(Layer):
         self.name = 'convolution'
         self.k = nr_kernels
         self.kernel_size = kernel_size
-        self.padding_width = math.floor(self.kernel_size[0] / 2)
         self.activation = activation
         self.padding = padding
         self.stride = 1 #stride does not work with scipy conolve2d
@@ -199,11 +198,10 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        i_p = self.padding(self.i, self.padding_width)
+        i_p = self.padding(self.i, self.kernel_size)
         output_size = int((i_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
         self.net = np.zeros((output_size, output_size, self.k))
         
-        # convolution
         for k, kernel in enumerate(self.w):
             for c, filter in enumerate(kernel):
                 self.net[:, :, k] += utils.convolve(i_p[:, :, c], filter, self.stride)
@@ -215,10 +213,14 @@ class Convolution(Layer):
         self.dw = np.zeros(self.w.shape)
         self.db = np.zeros(self.b.shape)
         self.dx = np.zeros(self.i.shape)
-        i_p = self.padding(self.i, self.padding_width)
+        i_p = self.padding(self.i, self.kernel_size)
         dy = self.activation(self.net, derivative=True) * self.dy
-        p = int((self.i.shape[0] - dy.shape[1]) / 2 + self.padding_width)
-        dy_p = paddings.Zero(dy, p)
+
+        if self.padding == paddings.Same: 
+            dy_p = paddings.Same(dy, self.kernel_size)
+        else:
+            p = int((self.dx.shape[0] - dy.shape[0]) / 2)
+            dy_p = paddings.Same(np.pad(dy, p)[:, :, p : -p], self.kernel_size)
 
         for k, kernel in enumerate(self.w):
             kernel = np.flipud(np.fliplr(kernel))
@@ -226,7 +228,7 @@ class Convolution(Layer):
             dy_p_k = dy_p[:, :, k]
             for c, filter in enumerate(kernel):
                 self.dw[k, c] = utils.convolve(i_p[:, :, c], dy_k)
-                self.dx[:, :, c] = utils.convolve(dy_p_k, filter)
+                self.dx[:, :, c] += utils.convolve(dy_p_k, filter) / self.k
             self.db[k] = np.sum(self.dy[:, :, k])
 
 
@@ -244,9 +246,10 @@ class Dropout(Layer):
     def process(self):
         super().process()
         self.drop_map = np.random.choice([0, 1], self.i.shape, p=[self.drop_rate, 1 - self.drop_rate])
-        drop = self.i * self.drop_map # set some values to 0
-        self.o = drop / 1 - self.drop_rate # scale others https://stats.stackexchange.com/questions/219236/dropout-forward-prop-vs-back-prop-in-machine-learning-neural-network
+        drop = self.i * self.drop_map # set not relevant values to 0
+        self.o = drop / (1 - self.drop_rate) # scale others https://stats.stackexchange.com/questions/219236/dropout-forward-prop-vs-back-prop-in-machine-learning-neural-network
 
     def learn(self):
         super().learn()
-        self.dx = self.dy * self.drop_map
+        drop = self.dy * self.drop_map
+        self.dx = drop / (1 - self.drop_rate)

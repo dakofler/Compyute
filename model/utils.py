@@ -25,8 +25,8 @@ def split_X_Y(data, num_x_cols):
 def categorical_to_numeric(data: pd.DataFrame):
     return pd.get_dummies(data)
 
-def normalize(array: np.ndarray):
-    return array / array.max(axis=0)
+def normalize(array: np.ndarray, axis = 0):
+    return array / array.max(axis=axis)
 
 def shuffle(x: np.ndarray, y: np.ndarray):
     shuffle_index = np.arange(len(x))
@@ -55,3 +55,16 @@ def convolve(image: np.ndarray, f: np.ndarray, s: int = 1):
 
     # much faster scipy convolution
     return signal.convolve2d(image, f, mode='valid')
+
+    # convolution as Matrix Multiplication? https://stackoverflow.com/questions/16798888/2-d-convolution-as-a-matrix-matrix-multiplication
+
+def heatmap(array):
+    im = np.zeros(array.shape[:2])
+
+    for i in range(array.shape[2]):
+        im += normalize(array[:, :, i], axis=None)
+
+    return normalize(im, axis=None)
+
+
+# plot-util for multiple plots in a grid? https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html

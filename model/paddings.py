@@ -1,8 +1,9 @@
 import numpy as np
+import math
 
-
-def Zero(image: np.ndarray, width: int = 1, axis: tuple = (0, 1)):
-    return np.pad(image, width)[:, :, width : -width]
-
-def Same(image: np.ndarray, width: int = 0, axis=(0, 1)):
+def Valid(image: np.ndarray, kernel_size = None):
     return image.copy()
+
+def Same(image: np.ndarray, kernel_size = None):
+    width = math.floor(kernel_size[0] / 2)
+    return np.pad(image, width)[:, :, width : -width]
