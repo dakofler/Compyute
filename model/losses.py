@@ -6,7 +6,7 @@ def root_mean_square(output, target):
     loss_gradient = output - target
     return loss, loss_gradient
 
-def categorical_crossentropy(output, target): # https://towardsdatascience.com/derivative-of-the-softmax-function-and-the-categorical-cross-entropy-loss-ffceefc081d1
+def crossentropy(output, target): # https://towardsdatascience.com/derivative-of-the-softmax-function-and-the-categorical-cross-entropy-loss-ffceefc081d1
     s = output + 1e-6 # log s is undefined if s=0
     loss = - np.sum(target * np.log(s))
     loss_gradient = output - target

@@ -37,24 +37,24 @@ def shuffle(x: np.ndarray, y: np.ndarray):
 
 def convolve(image: np.ndarray, f: np.ndarray, s: int = 1):
     # slow self coded convolution
-    # o_y = int((image.shape[0] - f.shape[0]) / s) + 1
-    # f_y = f.shape[0]
-    # f_x = f.shape[1]
-    # o = np.zeros((o_y, o_y))
-    # f = np.fliplr(f)
+    o_y = int((image.shape[0] - f.shape[0]) / s) + 1
+    f_y = f.shape[0]
+    f_x = f.shape[1]
+    o = np.zeros((o_y, o_y))
+    f = np.fliplr(f)
 
-    # y_count = 0
-    # for y in range(0, o_y * s, s):
-    #     x_count = 0
-    #     for x in range(0, o_y * s, s):
-    #         array = image[y : y + f_y, x : x + f_x]
-    #         o[y_count, x_count] = np.sum(array * f)
-    #         x_count += 1
-    #     y_count += 1
-    # return o
+    y_count = 0
+    for y in range(0, o_y * s, s):
+        x_count = 0
+        for x in range(0, o_y * s, s):
+            array = image[y : y + f_y, x : x + f_x]
+            o[y_count, x_count] = np.sum(array * f)
+            x_count += 1
+        y_count += 1
+    return o
 
     # much faster scipy convolution
-    return signal.convolve2d(image, f, mode='valid')
+    # return signal.convolve2d(image, f, mode='valid')
 
     # convolution as Matrix Multiplication? https://stackoverflow.com/questions/16798888/2-d-convolution-as-a-matrix-matrix-multiplication
 
@@ -65,6 +65,5 @@ def heatmap(array):
         im += normalize(array[:, :, i], axis=None)
 
     return normalize(im, axis=None)
-
 
 # plot-util for multiple plots in a grid? https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
