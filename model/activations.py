@@ -5,10 +5,7 @@ def ReLu(v, derivative = False):
     if not derivative:
         return np.maximum(0.0, v)
     else:
-        a = v.copy()
-        a[a <= 0.0] = 0.0
-        a[a > 0.0] = 1.0
-        return a
+        return (v > 0).astype(int)
 
 def Identity(v, derivative = False):
     if not derivative:
@@ -16,8 +13,9 @@ def Identity(v, derivative = False):
     else:
         return np.ones(v.shape)
     
-def Sigmoid(v, derivative = False):
+def Sigmoid(v: np.ndarray, derivative = False):
     if not derivative:
+        v = np.clip(v, -100, 100) # set min and max, because sigmoid can overflow
         return 1.0 / (1.0 + np.exp(-v))
     else:
         return Sigmoid(v) * (1.0 - Sigmoid(v))

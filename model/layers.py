@@ -1,6 +1,7 @@
 from model import activations, paddings, utils
 import numpy as np
-
+from numpy.fft  import fft2, ifft2
+import math
 
 class Layer:
     def __init__(self):
@@ -172,7 +173,7 @@ class MaxPooling(Layer):
 
 
 class Convolution(Layer):
-    def __init__(self, nr_kernels, kernel_size=(3, 3), activation=activations.Identity, padding=paddings.Same, stride=1) -> None:
+    def __init__(self, nr_kernels, kernel_size=(3, 3), activation=activations.Identity, padding=paddings.Valid) -> None:
         super().__init__()
         self.name = 'convolution'
         self.k = nr_kernels
@@ -198,38 +199,44 @@ class Convolution(Layer):
     
     def process(self):
         super().process()
-        i_p = self.padding(self.i, self.kernel_size)
-        output_size = int((i_p.shape[0] - self.kernel_size[0]) / self.stride) + 1
-        self.net = np.zeros((output_size, output_size, self.k))
+        self.i_p = self.padding(self.i, self.kernel_size)
         
-        for k, kernel in enumerate(self.w):
-            for c, filter in enumerate(kernel):
-                self.net[:, :, k] += utils.convolve(i_p[:, :, c], filter, self.stride)
-            self.net[: ,:, k] += self.b[k]
+        # fft convolution # based on #https://laurentperrinet.github.io/sciblog/posts/2017-09-20-the-fastest-2d-convolution-in-the-world.html but with further performance improvements by myself.
+        i_p_fft = fft2(self.i_p, axes=(0, 1))
+        w_fft = np.moveaxis(fft2(self.w, s=self.i_p.shape[:2]), 1, -1)
+
+        p = math.ceil(self.w.shape[2] / 2)
+        self.net = np.zeros((self.i_p.shape[0] - p, self.i_p.shape[1] - p, self.w.shape[0]))
+        for k in np.arange(self.w.shape[0]):
+            self.net[:, :, k] = np.sum(np.real(ifft2(i_p_fft * w_fft[k], axes=(0, 1))), axis=2)[p:, p:] + self.b[k] # inverse transform and sum over c
+
         self.o = self.activation(self.net)
 
     def learn(self):
         super().learn()
-        self.dw = np.zeros(self.w.shape)
-        self.db = np.zeros(self.b.shape)
-        self.dx = np.zeros(self.i.shape)
-        i_p = self.padding(self.i, self.kernel_size)
         dy = self.activation(self.net, derivative=True) * self.dy
 
-        if self.padding == paddings.Same: 
-            dy_p = paddings.Same(dy, self.kernel_size)
+        if self.padding != paddings.Same:
+            p = int((self.i.shape[0] - dy.shape[0]) / 2)
+            dy_p = np.pad(dy, p)[:, :, p : -p]
         else:
-            p = int((self.dx.shape[0] - dy.shape[0]) / 2)
-            dy_p = paddings.Same(np.pad(dy, p)[:, :, p : -p], self.kernel_size)
+            dy_p = dy
 
-        for k, kernel in enumerate(self.w):
-            kernel = np.flipud(np.fliplr(kernel))
-            dy_k = dy[:, :, k]
-            dy_p_k = dy_p[:, :, k]
-            for c, filter in enumerate(kernel):
-                self.dw[k, c] = utils.convolve(i_p[:, :, c], dy_k)
-                self.dx[:, :, c] += utils.convolve(dy_p_k, filter) / self.k
-            self.db[k] = np.sum(self.dy[:, :, k])
+        # dw
+        self.dw = np.zeros(self.w.shape)
+        i_p_fft = np.moveaxis(fft2(self.i_p, axes=(0, 1)), -1, 0) # fft input and reshape to (c, h, w)
+        dy_fft = np.resize(fft2(dy, s=self.i_p.shape[:2], axes=(0, 1)), (self.i_p.shape[-1], *self.i_p.shape[:2], dy.shape[-1])) # fft dy and reshape to (c, h, w, k)
+        for k in np.arange(self.w.shape[0]):
+            self.dw[k] = np.real(ifft2(i_p_fft * dy_fft[:, :, :, k]))[:, -self.w.shape[-2]:, -self.w.shape[-1]:] # multiply and inverse transform
+
+        # dx
+        w = np.flip(np.flip(self.w, axis=3), axis=2) # rotate filter
+        w_fft = np.moveaxis(fft2(w, s=dy_p.shape[:2]), 0, -1) # fft filter and reshape to (c, h, w, k)
+        dy_p_fft = np.resize(fft2(dy_p, axes=(0, 1)), (w.shape[1], *dy_p.shape)) # fft dy and reshape to (c, h, w, k)
+        self.dx = np.moveaxis(np.sum(np.real(ifft2(dy_p_fft * w_fft, axes=(1, 2))), axis=-1), 0, -1)[-self.i.shape[0]:, -self.i.shape[1]:] # multiply, inverse transform, sum over kernels and reshape to (h, w, c)
+
+        # db
+        self.db = np.sum(self.dy, axis=(0, 1))
 
 
 class Dropout(Layer):
