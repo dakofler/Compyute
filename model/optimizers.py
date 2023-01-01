@@ -1,29 +1,72 @@
+import numpy as np
+
 class optimizer():
     def __init__(self) -> None:
-        pass
+        self.layers = None
+        self.learning_rate = None
+        self.momentum = None
+        self.nesterov = None
+        self.beta1 = None
+        self.beta2 = None
+        self.epsilon = None
+
+    def optimize(self, loss_gradient, model_layers) -> None:
+        layers_reversed = model_layers.copy()
+        layers_reversed.reverse()
+        layers_reversed[0].dy = loss_gradient
+        self.layers = layers_reversed
 
 
-class stochastic_gradient_descent(optimizer):
+class sgd(optimizer):
     def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False) -> None:
         super().__init__()
         self.learning_rate = learning_rate
         self.momentum = momentum
         self.nesterov = nesterov
 
-    def optimize(self, loss_gradient, model_layers):
-        layers_reversed = model_layers.copy()
-        layers_reversed.reverse()
-        layers_reversed[0].dy = loss_gradient
+    def optimize(self, loss_gradient, model_layers) -> None:
+        super().optimize(loss_gradient, model_layers)
 
-        for layer in layers_reversed:
+        for layer in self.layers:
             layer.learn()
             
+            # https://keras.io/api/optimizers/sgd/
             if layer.dw is not None:
                 layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
                 if not self.nesterov: layer.w = layer.w + layer.w_change
-                else: layer.w = layer.w + self.momentum * layer.w_change - self.learning_rate * layer.dw # https://keras.io/api/optimizers/sgd/
+                else: layer.w = layer.w + self.momentum * layer.w_change - self.learning_rate * layer.dw
             
             if layer.db is not None:
                 layer.b_change = - self.learning_rate * layer.db + self.momentum * layer.b_change
                 if not self.nesterov: layer.b = layer.b + layer.b_change
                 else: layer.b = layer.b + self.momentum * layer.b_change - self.learning_rate * layer.db
+
+
+class adam(optimizer):
+    def __init__(self, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-07) -> None:
+        super().__init__()
+        self.learning_rate = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+
+    def optimize(self, loss_gradient, model_layers) -> None:
+        super().optimize(loss_gradient, model_layers)
+
+        for layer in self.layers:
+            layer.learn()
+
+            # https://www.geeksforgeeks.org/intuition-of-adam-optimizer/
+            if layer.dw is not None:
+                layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
+                m_bc = layer.w_m / (1 - self.beta1)
+                layer.w_v = self.beta2 * layer.w_v + (1 - self.beta2) * np.power(layer.dw, 2)
+                v_bc = layer.w_v / (1 - self.beta2)
+                layer.w = layer.w - m_bc * (self.learning_rate / (np.sqrt(v_bc) + self.epsilon))
+
+            if layer.db is not None:
+                layer.b_m = self.beta1 * layer.b_m + (1 - self.beta1) * layer.db
+                m_bc = layer.b_m / (1 - self.beta1)
+                layer.b_v = self.beta2 * layer.b_v + (1 - self.beta2) * np.power(layer.db, 2)
+                v_bc = layer.b_v / (1 - self.beta2)
+                layer.b = layer.b - m_bc * (self.learning_rate / (np.sqrt(v_bc) + self.epsilon))

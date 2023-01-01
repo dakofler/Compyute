@@ -20,6 +20,8 @@ class Layer:
         self.db = None
         self.w_change = None
         self.b_change = None
+        self.l_w_change = None
+        self.l_b_change = None
         self.drop_rate = None
 
     def integrate(self, id, prev_layer, succ_layer):
@@ -106,6 +108,8 @@ class Dense(Layer):
         self.w = np.random.uniform(-1.0, 1.0, (self.nr_neurons, self.prev_layer.o.shape[0] + 1)) # +1 for the bias neuron weights
         self.dw = np.zeros(self.w.shape)
         self.w_change = np.zeros(self.w.shape)
+        self.w_m = np.zeros(self.w.shape)
+        self.w_v = np.zeros(self.w.shape)
         self.process()
         self.summary = f'{self.name}\t\t{str(self.i.shape)}\t\t{str(self.o.shape)}\t\t{str(np.size(self.w))}'
 
@@ -189,10 +193,14 @@ class Convolution(Layer):
         self.w = np.random.uniform(-1.0, 1.0, kernel_shape)
         self.dw = np.zeros(self.w.shape)
         self.w_change = np.zeros(self.w.shape)
+        self.w_m = np.zeros(self.w.shape)
+        self.w_v = np.zeros(self.w.shape)
         
         self.b = np.random.uniform(-1.0, 1.0,(self.k,))
         self.db = np.zeros(self.b.shape)
         self.b_change = np.zeros(self.b.shape)
+        self.b_m = np.zeros(self.b.shape)
+        self.b_v = np.zeros(self.b.shape)
 
         self.process()
         self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t{str(np.size(self.w) + np.size(self.b))}'

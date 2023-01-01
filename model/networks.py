@@ -73,11 +73,15 @@ class FeedForward(Network):
             
             end = time.time()
             step = round((end - start) * 1000, 2)
+            dim = 'ms'
+            if step > 1000:
+                step = round(step / 1000, 2)
+                dim = 's'
             epoch_loss = sum(epoch_loss_hist) / len(epoch_loss_hist)
             loss_hist.append(epoch_loss)
 
             if log:
-                print (f'epoch {epoch}/{epochs}\tloss={round(epoch_loss, 4)}\ttime/epoch={step}ms')
+                print (f'epoch {epoch}/{epochs}\ttime/epoch={step}{dim}\tloss={round(epoch_loss, 4)}')
 
     def evaluate(self, x: np.ndarray, y: np.ndarray):
         if self.metric is not None:
