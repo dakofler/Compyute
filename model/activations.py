@@ -3,9 +3,19 @@ import numpy as np
 
 def ReLu(v, derivative = False):
     if not derivative:
-        return np.maximum(0.0, v)
+        return np.maximum(0, v)
     else:
         return (v > 0).astype(int)
+
+
+def LeakyReLu(v, derivative = False):
+    if not derivative:
+        return np.maximum(0.01 * v, v)
+    else:
+        d = (v > 0).astype(int)
+        d[d > 0] = 0.01
+        return d
+
 
 def Identity(v, derivative = False):
     if not derivative:
