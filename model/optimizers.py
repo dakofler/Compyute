@@ -1,4 +1,5 @@
 import numpy as np
+from model.layers import Layer
 
 class optimizer():
     def __init__(self) -> None:
@@ -10,7 +11,7 @@ class optimizer():
         self.beta2 = None
         self.epsilon = None
 
-    def optimize(self, loss_gradient, model_layers) -> None:
+    def optimize(self, loss_gradient: np.ndarray, model_layers: list[Layer]) -> None:
         layers_reversed = model_layers.copy()
         layers_reversed.reverse()
         layers_reversed[0].dy = loss_gradient
@@ -18,19 +19,19 @@ class optimizer():
 
 
 class sgd(optimizer):
-    def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False) -> None:
+    def __init__(self, learning_rate: float=0.01, momentum: float=0.0, nesterov: bool=False) -> None:
         super().__init__()
         self.learning_rate = learning_rate
         self.momentum = momentum
         self.nesterov = nesterov
 
-    def optimize(self, loss_gradient, model_layers) -> None:
+    def optimize(self, loss_gradient: np.ndarray, model_layers: list[Layer]) -> None:
+        "Uses a layers gradients to adjust their weights and biases according to the stochastic gradient descent algorithm."
         super().optimize(loss_gradient, model_layers)
 
         for layer in self.layers:
             layer.learn()
             
-            # https://keras.io/api/optimizers/sgd/
             if layer.dw is not None:
                 layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
                 if not self.nesterov: layer.w = layer.w + layer.w_change
@@ -43,20 +44,20 @@ class sgd(optimizer):
 
 
 class adam(optimizer):
-    def __init__(self, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-07) -> None:
+    def __init__(self, learning_rate: float=0.001, beta1: float=0.9, beta2: float=0.999, epsilon: float=1e-07) -> None:
         super().__init__()
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
 
-    def optimize(self, loss_gradient, model_layers) -> None:
+    def optimize(self, loss_gradient: np.ndarray, model_layers: list[Layer]) -> None:
+        "Uses a layers gradients to adjust their weights and biases according to the adam algorithm."
         super().optimize(loss_gradient, model_layers)
 
         for layer in self.layers:
             layer.learn()
 
-            # https://www.geeksforgeeks.org/intuition-of-adam-optimizer/
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
                 m_bc = layer.w_m / (1 - self.beta1)
