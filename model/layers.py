@@ -1,4 +1,4 @@
-from model import activations, paddings
+from model import activations, paddings, initializations
 import numpy as np
 from numpy.fft  import fft2, ifft2
 
@@ -103,12 +103,13 @@ class Flatten(Layer):
 
 
 class Dense(Layer):
-    def __init__(self, nr_neurons: int, activation=activations.Identity) -> None:
+    def __init__(self, nr_neurons: int, activation=activations.Identity, init=initializations.Kaiming) -> None:
         """Fully connected layer used in neural network models.
 
         Args:
             nr_neurons: Number of neurons to be used in this layer.
             activation: Activation function that is applied to the layer's output [optional].
+            init: Weight Initialization method [optional].
 
         Raises:
             Error: If the number of neurons is less than 1.
@@ -118,14 +119,14 @@ class Dense(Layer):
         self.name = 'dense'
         self.nr_neurons = nr_neurons
         self.activation = activation
+        self.init = init
 
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
-        self.w = np.random.uniform(-1.0, 1.0, (self.nr_neurons, self.prev_layer.o.shape[0] + 1))
-        self.dw = np.zeros(self.w.shape)
-        self.w_change = np.zeros(self.w.shape)
-        self.w_m = np.zeros(self.w.shape)
-        self.w_v = np.zeros(self.w.shape)
+        
+        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.nr_neurons)
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
+
         self.process()
         self.summary = f'{self.name}\t\t{str(self.i.shape)}\t\t{str(self.o.shape)}\t\t{str(np.size(self.w))}'
 
@@ -198,7 +199,7 @@ class MaxPooling(Layer):
 
 
 class Convolution(Layer):
-    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), activation=activations.Identity, padding=paddings.Valid) -> None:
+    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), activation=activations.Identity, padding=paddings.Valid, init=initializations.Kaiming) -> None:
         """Convolutional layer used in convolutional neural network models to extract features from images.
 
         Args:
@@ -206,6 +207,7 @@ class Convolution(Layer):
             kernel_size: Size of each kernel [optional].
             activation: Activation function that is applied to the layer's output [optional].
             padding: Padding function that is applied to the layer's input before processing [optional].
+            init: Weight Initialization method [optional].
 
         Raises:
             Error: If the number of kernels is less than 1.
@@ -217,22 +219,16 @@ class Convolution(Layer):
         self.kernel_size = kernel_size
         self.activation = activation
         self.padding = padding
+        self.init = init
 
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.o.shape[2], *self.kernel_size)
 
-        self.w = np.random.uniform(-1.0, 1.0, kernel_shape)
-        self.dw = np.zeros(self.w.shape)
-        self.w_change = np.zeros(self.w.shape)
-        self.w_m = np.zeros(self.w.shape)
-        self.w_v = np.zeros(self.w.shape)
-        
-        self.b = np.random.uniform(-1.0, 1.0,(self.k,))
-        self.db = np.zeros(self.b.shape)
-        self.b_change = np.zeros(self.b.shape)
-        self.b_m = np.zeros(self.b.shape)
-        self.b_v = np.zeros(self.b.shape)
+        self.w = self.init(kernel_shape, self.kernel_size[0])
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
+        self.b = self.init((self.k,), self.k)
+        self.db = self.b_change = self.b_m = self.b_v = np.zeros(self.b.shape)
 
         self.process()
         self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t{str(np.size(self.w) + np.size(self.b))}'
