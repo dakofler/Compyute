@@ -1,13 +1,15 @@
 from model import utils
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 
 class Network():
     def __init__(self, layers) -> None:
         self.compiled = False
+        self.history = []
         self.layers = []
-        if len(layers) > 0:
+        if layers:
             for layer in layers:
                 self.__add_layer(layer)
 
@@ -55,6 +57,17 @@ class Network():
             if l.b is not None: params += np.size(l.b)
         print(f'total trainable parameters {params}')
 
+    def plot_loss(self) -> None:
+        """Plots the loss over epochs if the model has been trained yet.
+        
+        Raises:
+            Error: If the model has not been trained yet.
+        """
+        if not self.history: raise Exception('Model has not been trained yet.')
+        plt.plot(np.arange(len(self.history)), self.history)
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+
 
 class FeedForward(Network):
     def __init__(self, layers=[]) -> None:
@@ -98,21 +111,21 @@ class FeedForward(Network):
         self.__propagate()
         return self.layers[-1].o
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = 0, log: bool=True) -> None:
+    def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
         """Trains the model using given input data.
         
         Args:
             x: Array of input features.
             y: Array of training input.
             epochs: Number of epochs the training should last for [optional].
-            batch_size: Number of input arrays used per epoch [optional].
+            batch_size: Number of input arrays used per epoch. If None, all training samples are used. [optional].
             log: If false, feedback per epoch is surpressed [optional].
 
         Raises:
             ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
         """
         super().train(x, y)
-        batch_size = batch_size if batch_size > 0 else len(x)
+        batch_size = batch_size if batch_size else len(x)
         loss_hist = []
 
         for epoch in range(1, epochs + 1):
@@ -138,3 +151,5 @@ class FeedForward(Network):
 
             if log:
                 print (f'epoch {epoch}/{epochs}\ttime/epoch={step}{dim}\tloss={round(epoch_loss, 4)}')
+        
+        self.history = loss_hist

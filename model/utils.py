@@ -64,7 +64,7 @@ def categorical_to_numeric(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     return pd.get_dummies(dataframe)
 
-def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=0, b: int=1) -> np.ndarray:
+def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
     """Normalizes an array along a certain axis using min-max feature scaling.
 
     Args:
