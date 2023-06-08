@@ -122,7 +122,7 @@ class Dense(Layer):
 
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
-        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.nr_neurons, self.activation)
+        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.prev_layer.o.shape[0] + 1, self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
         self.process()
 

@@ -13,7 +13,7 @@ def Random(shape, fan_mode: int=1, activation=activations.Identity):
     Returns:
         Resulting array
     """
-    return np.random.uniform(-1.0, 1.0, shape)
+    return np.random.randn(*shape)
 
 def Kaiming(shape, fan_mode: int=1, activation=activations.Identity):
     """Returns an array with random entries using Kaiming initialization.
@@ -33,4 +33,4 @@ def Kaiming(shape, fan_mode: int=1, activation=activations.Identity):
         activations.ReLu: 2**0.5,
         activations.Softmax: 1
     }
-    return np.random.uniform(-1.0, 1.0, shape) * gain[activation] / fan_mode**0.5
+    return np.random.randn(*shape) * gain[activation] / fan_mode**0.5

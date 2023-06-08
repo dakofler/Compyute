@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-from numpy.fft  import fft2, ifft2
-from scipy import signal
 from typing import Union
 
 
@@ -96,68 +94,3 @@ def shuffle(x: np.ndarray, y: np.ndarray) -> (np.ndarray|np.ndarray):
     x_shuffled = x[shuffle_index]
     y_shuffled = y[shuffle_index]
     return x_shuffled, y_shuffled
-
-def convolve_loop(array: np.ndarray, filter: np.ndarray, stride: int=1) -> np.ndarray:
-    """Performs a convolution operation of a 2D array and a 2D filter using loops.
-
-    Args:
-        array: Array to be convolved.
-        filter: Filter-array used for the convolution.
-        stride: Stride value used in the operation [optional].    
-
-    Returns:
-        array_convolved: Resulting array of the conolution operation.
-
-    Raises:
-        ShapeError: If array and/or filter are not of dim 2.
-    """
-    if array.ndim != 2 or filter.ndim != 2: raise Exception('ShapeError: Array and filter must be of dim 2.')
-    o_y = int((array.shape[0] - filter.shape[0]) / stride) + 1
-    f_y = filter.shape[0]
-    f_x = filter.shape[1]
-    o = np.zeros((o_y, o_y))
-    filter = np.fliplr(filter)
-
-    y_count = 0
-    for y in range(0, o_y * stride, stride):
-        x_count = 0
-        for x in range(0, o_y * stride, stride):
-            chunk = array[y : y + f_y, x : x + f_x]
-            o[y_count, x_count] = np.sum(chunk * filter)
-            x_count += 1
-        y_count += 1
-    return o
-
-def convolve_scipy(array: np.ndarray, filter: np.ndarray) -> np.ndarray:
-    """Performs a convolution operation of a 2D array and a 2D filter using SciPy's convolve2d method.
-
-    Args:
-        array: Array to be convolved.
-        filter: Filter-array used for the convolution.
-    
-    Returns:
-        array_convolved: Resulting array of the conolution operation.
-
-    Raises:
-        ShapeError: If array and/or filter are not of dim 2.
-    """
-    if array.ndim != 2 or filter.ndim != 2: raise Exception('ShapeError: Array and filter must be of dim 2.')
-    return signal.convolve2d(array, filter, mode='valid')
-
-def convolve_fft(array: np.ndarray, kernel: np.ndarray) -> np.ndarray:
-    """Performs a convolution operation of a 2D array and a 2D filter using FFT.
-
-    Args:
-        array: Array to be convolved.
-        filter: Filter-array used for the convolution.
-    
-    Returns:
-        array_convolved: Resulting array of the conolution operation.
-
-    Raises:
-        ShapeError: If array and/or filter are not of dim 2.
-    """
-    if array.ndim != 2 or filter.ndim != 2: raise Exception('ShapeError: Array and filter must be of dim 2.')
-    kernel_fft = fft2(kernel, s=array.shape)
-    array_fft = fft2(array)
-    return np.real(ifft2(array_fft * kernel_fft))
