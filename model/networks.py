@@ -26,11 +26,14 @@ class Network():
         pass
 
     def predict(self, input: np.ndarray) -> None:
-        if input.ndim != 3: raise Exception('ShapeError: input shape must be of dim 3.')
+        if input.ndim != 3:
+            raise Exception('ShapeError: input shape must be of dim 3.')
+        
         self.layers[0].i = input
 
     def train(self, x: np.ndarray, y: np.ndarray) -> None:
-        if x.ndim != 4 or y.ndim != 2: raise Exception('Dimension must be 4 for input, 2 for output.')
+        if x.ndim != 4 or y.ndim != 2:
+            raise Exception('Dimension must be 4 for input, 2 for output.')
 
     def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
         """Evaluates the model using a defined metric function.
@@ -38,9 +41,10 @@ class Network():
         Raises:
             FunctionError: If no function has been defined.
         """
-        if self.metric is None: raise Exception('No metric defined.')
-        loss, name, value, step = self.metric(x, y, self, self.loss_function)
-        print (f'loss={round(loss, 4)}\t{name}={value}\ttime={step}ms')
+        if self.metric is None:
+            raise Exception('No metric defined.')
+        
+        self.metric(x, y, self, self.loss_function)
 
     def summary(self) -> None:
         """Gives an overview of the model architecture.
@@ -48,14 +52,19 @@ class Network():
         Raises:
             Error: If the model has not been compiled yet.
         """
-        if not self.compiled: raise Exception('Model has not been compiled yet.')
-        print(f'layer_type\tinput_shape\toutput_shape\tparameters')
+        if not self.compiled:
+            raise Exception('Model has not been compiled yet.')
+        
+        print('%15s | %15s | %15s | %10s' % ('layer_type', 'input_shape', 'output_shape', 'parameters'))
         params = 0
+
         for l in self.layers:
-            print(l.summary)
-            if l.w is not None: params += np.size(l.w)
-            if l.b is not None: params += np.size(l.b)
-        print(f'total trainable parameters {params}')
+            ws = np.size(l.w) if l.w is not None else 0
+            bs = np.size(l.b) if l.b is not None else 0
+            params += ws + bs
+            print('%15s | %15s | %15s | %10s' % (l.name, str(l.i.shape), str(l.o.shape), str(ws + bs)))
+
+        print(f'\ntotal trainable parameters {params}')
 
     def plot_loss(self) -> None:
         """Plots the loss over epochs if the model has been trained yet.
@@ -63,7 +72,9 @@ class Network():
         Raises:
             Error: If the model has not been trained yet.
         """
-        if not self.history: raise Exception('Model has not been trained yet.')
+        if not self.history:
+            raise Exception('Model has not been trained yet.')
+        
         plt.plot(np.arange(len(self.history)), self.history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
@@ -82,6 +93,7 @@ class FeedForward(Network):
             metric: Metric functio to be used to evaluate the model [optional].
         """
         super().compile(optimizer, loss, metric)
+
         for i, layer in enumerate(self.layers):
             if i == 0:
                 layer.integrate(i, None, self.layers[i + 1])
@@ -134,8 +146,12 @@ class FeedForward(Network):
             start = time.time()
 
             for i, p in enumerate(x_shuffled):
-                if log: print(f'epoch {epoch}/{epochs}\tTraining ... {i + 1}/{batch_size}', end='\r')
-                if i >= batch_size: break
+                if log:
+                    print('epoch %5s/%5s | Training ... %i/%i' % (epoch, epochs, i + 1, batch_size), end='\r')
+
+                if i >= batch_size:
+                    break
+
                 loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))
                 epoch_loss_hist.append(loss)
                 self.optimizer.optimize(loss_gradient, self.layers)
@@ -143,13 +159,15 @@ class FeedForward(Network):
             end = time.time()
             step = round((end - start) * 1000, 2)
             dim = 'ms'
+
             if step > 1000:
                 step = round(step / 1000, 2)
                 dim = 's'
+
             epoch_loss = sum(epoch_loss_hist) / len(epoch_loss_hist)
             loss_hist.append(epoch_loss)
 
-            if log:
-                print (f'epoch {epoch}/{epochs}\ttime/epoch={step}{dim}\tloss={round(epoch_loss, 4)}')
+            if log:   
+                print('epoch %5s/%5s | time/epoch %.2f %s | loss %.4f' % (epoch, epochs, step, dim, round(epoch_loss, 4)))
         
         self.history = loss_hist

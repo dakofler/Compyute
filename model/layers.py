@@ -52,7 +52,6 @@ class Input(Layer):
         super().integrate(id, prev_layer, succ_layer)
         self.i = np.ones(self.input_shape)
         self.process()
-        self.summary = ''
 
     def process(self) -> None:
         super().process()
@@ -71,7 +70,6 @@ class Output(Layer):
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         self.process()
-        self.summary = ''
 
     def process(self) -> None:
         super().process()
@@ -91,7 +89,6 @@ class Flatten(Layer):
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         self.process()
-        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t{str(self.o.shape)}\t\t0'
 
     def process(self) -> None:
         super().process()
@@ -114,7 +111,9 @@ class Dense(Layer):
         Raises:
             Error: If the number of neurons is less than 1.
         """
-        if nr_neurons < 1: raise Exception("number of neurons must be at least 1")
+        if nr_neurons < 1:
+            raise Exception("number of neurons must be at least 1")
+        
         super().__init__()
         self.name = 'dense'
         self.nr_neurons = nr_neurons
@@ -123,12 +122,9 @@ class Dense(Layer):
 
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
-        
-        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.nr_neurons)
+        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.nr_neurons, self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
-
         self.process()
-        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t\t{str(self.o.shape)}\t\t{str(np.size(self.w))}'
 
     def process(self) -> None:
         super().process()
@@ -165,7 +161,6 @@ class MaxPooling(Layer):
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         self.process()
-        self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t0'
     
     def process(self) -> None:
         super().process()
@@ -212,7 +207,9 @@ class Convolution(Layer):
         Raises:
             Error: If the number of kernels is less than 1.
         """
-        if nr_kernels < 1: raise Exception("number of kernels must be at least 1")
+        if nr_kernels < 1:
+            raise Exception("number of kernels must be at least 1")
+        
         super().__init__()
         self.name = 'convolution'
         self.k = nr_kernels
@@ -224,14 +221,10 @@ class Convolution(Layer):
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.o.shape[2], *self.kernel_size)
-
-        self.w = self.init(kernel_shape, self.kernel_size[0])
+        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
-        self.b = self.init((self.k,), self.k)
-        self.db = self.b_change = self.b_m = self.b_v = np.zeros(self.b.shape)
-
+        self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
         self.process()
-        self.summary = f'{self.name}\t{str(self.i.shape)}\t{str(self.o.shape)}\t{str(np.size(self.w) + np.size(self.b))}'
     
     def process(self) -> None:
         super().process()
@@ -259,6 +252,7 @@ class Convolution(Layer):
         self.dw = np.zeros(self.w.shape)
         i_p_fft = np.moveaxis(fft2(self.i_p, axes=(0, 1)), -1, 0)
         dy_fft = np.resize(fft2(dy, s=self.i_p.shape[:2], axes=(0, 1)), (self.i_p.shape[-1], *self.i_p.shape[:2], dy.shape[-1]))
+
         for k in np.arange(self.w.shape[0]):
             self.dw[k] = np.real(ifft2(i_p_fft * dy_fft[:, :, :, k]))[:, -self.w.shape[-2]:, -self.w.shape[-1]:]
 
@@ -280,7 +274,9 @@ class Dropout(Layer):
         Raises:
             Error: If the droprate is outside the interval [0, 1).
         """
-        if drop_rate < 0 or drop_rate >= 1: raise Exception("drop rate must be in the interval [0, 1)")
+        if drop_rate < 0 or drop_rate >= 1:
+            raise Exception("drop rate must be in the interval [0, 1)")
+        
         super().__init__()
         self.name = 'dropout'
         self.drop_rate = drop_rate
@@ -288,7 +284,6 @@ class Dropout(Layer):
     def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().integrate(id, prev_layer, succ_layer)
         self.process()
-        self.summary = f'{self.name}\t\t{str(self.i.shape)}\t{str(self.o.shape)}\t0'
     
     def process(self) -> None:
         super().process()

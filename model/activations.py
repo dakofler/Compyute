@@ -16,23 +16,6 @@ def ReLu(v: np.ndarray, derivative: bool=False):
     else:
         return (v > 0).astype(int)
 
-def LeakyReLu(v: np.ndarray, derivative: bool=False):
-    """Applies the Leaky Rectified Linear Unit function to an array.
-
-    Args:
-        v: Array the function is to be applied to.
-        derivatie: Whether the derivative of the function shall be applied instead [optional].
-
-    Returns:
-        Resulting array
-    """
-    if not derivative:
-        return np.maximum(0.01 * v, v)
-    else:
-        d = (v > 0).astype(int)
-        d[d > 0] = 0.01
-        return d
-
 def Identity(v: np.ndarray, derivative: bool=False):
     """Applies the Identity function to an array.
 
