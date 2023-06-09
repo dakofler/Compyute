@@ -1,8 +1,7 @@
 import numpy as np
-from model import activations
 
 
-def Random(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarray:
+def Random(shape, fan_mode: int=1, activation=None) -> np.ndarray:
     """Returns an array with random entries between -1 and 1.
 
     Args:
@@ -15,7 +14,7 @@ def Random(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarra
     """
     return np.random.randn(*shape)
 
-def Kaiming(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarray:
+def Kaiming(shape, fan_mode: int=1, activation=None) -> np.ndarray:
     """Returns an array with random entries using Kaiming initialization.
 
     Args:
@@ -26,11 +25,13 @@ def Kaiming(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarr
     Returns:
         Resulting array
     """
-    gain = {
-        activations.Identity: 1,
-        activations.Sigmoid: 1,
-        activations.Tanh: 5/3,
-        activations.ReLu: 2**0.5,
-        activations.Softmax: 1
+    gains = {
+        'NoneType': 1,
+        'Sigmoid': 1,
+        'Tanh': 5/3,
+        'Relu': 2**0.5,
+        'Softmax': 1
     }
-    return np.random.randn(*shape) * gain[activation] / fan_mode**0.5
+
+    gain = gains.get(activation.__class__.__name__, 1)
+    return np.random.randn(*shape) * gain / fan_mode**0.5

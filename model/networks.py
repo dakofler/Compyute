@@ -1,12 +1,12 @@
 from model import utils, layers
 import numpy as np
-import pandas as pd
-import time, math
+import time
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
 
 class Network():
+
     def __init__(self, input_shape, layers) -> None:
         self.compiled = False
         self.history = []
@@ -28,22 +28,47 @@ class Network():
             self.layers.insert(0, layer)
         else:
             self.layers.append(layer)
+
+            if layer.batch_norm is not None:
+                self.layers.append(layer.activation)
+
+            if layer.activation is not None:
+                self.layers.append(layer.activation)
+
         self.compiled = False
 
-    def compile(self, optimizer, loss, metric) -> None:
-        self.add_layer(layers.Input(self.input_shape), input_layer=True)
-        self.add_layer(layers.Output())
+    def compile(self, optimizer, loss, metric=None) -> None:
+        """Compiles the model.
+        
+        Args:
+            optimizer: Optimizer to be used to adjust weights and biases.
+            loss: Loss function to be used to compute the loss value.
+            metric: Metric functio to be used to evaluate the model [optional].
+        """
+        if not isinstance(self.layers[0], layers.Input):
+            self.add_layer(layers.Input(self.input_shape), input_layer=True)
+        if not isinstance(self.layers[-1], layers.Output):
+            self.add_layer(layers.Output())
+
+        for i, layer in enumerate(self.layers):
+            if i == 0:
+                layer.compile(i, None, self.layers[i + 1])
+            elif i == len(self.layers) - 1:
+                layer.compile(i, self.layers[i - 1], None)
+            else:
+                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
 
         self.optimizer = optimizer
         self.loss_function = loss
         self.metric = metric
+
         self.compiled = True
 
     def predict(self, input: np.ndarray) -> None:
         if input.ndim != 3:
             raise Exception('ShapeError: input shape must be of dim 3.')
         
-        self.layers[0].i = input
+        self.layers[0].x = input
 
     def train(self, x: np.ndarray, y: np.ndarray) -> None:
         if x.ndim != 4 or y.ndim != 2:
@@ -73,22 +98,18 @@ class Network():
         params = 0
 
         for l in self.layers [1:-1]:
+            if l.is_activation_layer:
+                continue
+
             ws = np.size(l.w) if l.w is not None else 0
             bs = np.size(l.b) if l.b is not None else 0
             params += ws + bs
-            print('%15s | %15s | %15s | %10s' % (l.name, str(l.i.shape), str(l.o.shape), str(ws + bs)))
+            print('%15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape), str(l.y.shape), str(ws + bs)))
 
         print(f'\ntotal trainable parameters {params}')
 
     def plot_training_loss(self) -> None:
-        """Plots the loss over epochs if the model has been trained yet.
-        
-        Raises:
-            Error: If the model has not been trained yet.
-        """
-        if not self.history:
-            raise Exception('Model has not been trained yet.')
-        
+        """Plots the loss over epochs if the model has been trained yet. """
         plt.figure(figsize=(20,4))
         plt.plot(np.arange(len(self.history)), self.history)
         plt.xlabel('epoch')
@@ -99,15 +120,15 @@ class Network():
         plt.figure(figsize=(20,4))
         legends = []
         for i, layer in enumerate(self.layers[1:-2]):
-            if isinstance(layer, layers.Dense) or isinstance(layer, layers.Convolution):
-                print('layer %i | mean %.4f | std %.4f' % (i, layer.o.mean(), layer.o.std()))
-                X = layer.o.flatten()
+            if layer.is_activation_layer:
+                print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.y.mean(), layer.y.std()))
+                X = layer.y.flatten()
                 X.sort()
                 density = gaussian_kde(X)
                 density.covariance_factor = lambda : .25
                 density._compute_covariance()
                 plt.plot(X, density(X))
-                legends.append('layer %i (%s)' % (i, layer.name))
+                legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
         plt.legend(legends)
         plt.title('activation distribution')
 
@@ -116,15 +137,15 @@ class Network():
         plt.figure(figsize=(20,4))
         legends = []
         for i, layer in enumerate(self.layers[1:-2]):
-            if isinstance(layer, layers.Dense) or isinstance(layer, layers.Convolution):
-                print('layer %i | mean %.4f | std %.4f' % (i, layer.dw.mean(), layer.dw.std()))
+            if layer.has_params:
+                print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.dw.mean(), layer.dw.std()))
                 W = layer.dw.flatten()
                 W.sort()
                 density = gaussian_kde(W)
                 density.covariance_factor = lambda : .25
                 density._compute_covariance()
                 plt.plot(W, density(W))
-                legends.append('layer %i (%s)' % (i, layer.name))
+                legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
         plt.legend(legends)
         plt.title('gradient distribution')
 
@@ -132,24 +153,6 @@ class Network():
 class FeedForward(Network):
     def __init__(self, input_shape, layers=[]) -> None:
         super().__init__(input_shape, layers)
-
-    def compile(self, optimizer, loss, metric=None) -> None:
-        """Compiles the model.
-        
-        Args:
-            optimizer: Optimizer to be used to adjust weights and biases.
-            loss: Loss function to be used to compute the loss value.
-            metric: Metric functio to be used to evaluate the model [optional].
-        """
-        super().compile(optimizer, loss, metric)
-
-        for i, layer in enumerate(self.layers):
-            if i == 0:
-                layer.compile(i, None, self.layers[i + 1])
-            elif i == len(self.layers) - 1:
-                layer.compile(i, self.layers[i - 1], None)
-            else:
-                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
     
     def __forward(self) -> None:
         for layer in self.layers:
@@ -169,7 +172,7 @@ class FeedForward(Network):
         """
         super().predict(input)
         self.__forward()
-        return self.layers[-1].o
+        return self.layers[-1].y
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
         """Trains the model using given input data.
