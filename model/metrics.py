@@ -3,7 +3,7 @@ import time
 from model.networks import Network
 
 
-def Accuracy(x: np.ndarray, y: np.ndarray, model: Network, loss_function) -> (float|str|float|float):
+def Accuracy(x: np.ndarray, y: np.ndarray, model: Network, loss_function) -> None:
     "Computes the accuracy score of a prediction compared to target values."
     name = 'accuracy'
     n = len(x)

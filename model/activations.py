@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def ReLu(v: np.ndarray, derivative: bool=False):
+def ReLu(v: np.ndarray, derivative: bool=False) -> np.ndarray:
     """Applies the Rectified Linear Unit function to an array.
 
     Args:
@@ -16,7 +16,7 @@ def ReLu(v: np.ndarray, derivative: bool=False):
     else:
         return (v > 0).astype(int)
 
-def Identity(v: np.ndarray, derivative: bool=False):
+def Identity(v: np.ndarray, derivative: bool=False) -> np.ndarray:
     """Applies the Identity function to an array.
 
     Args:
@@ -31,7 +31,7 @@ def Identity(v: np.ndarray, derivative: bool=False):
     else:
         return np.ones(v.shape)
     
-def Sigmoid(v: np.ndarray, derivative: bool=False):
+def Sigmoid(v: np.ndarray, derivative: bool=False) -> np.ndarray:
     """Applies the Sigmoid function to an array.
 
     Args:
@@ -47,7 +47,7 @@ def Sigmoid(v: np.ndarray, derivative: bool=False):
     else:
         return Sigmoid(v) * (1.0 - Sigmoid(v))
 
-def Tanh(v: np.ndarray, derivative: bool=False):
+def Tanh(v: np.ndarray, derivative: bool=False) -> np.ndarray:
     """Applies the Tangens Hyperbolicus function to an array.
 
     Args:
@@ -62,7 +62,7 @@ def Tanh(v: np.ndarray, derivative: bool=False):
     else:
         return 1.0 - (Tanh(v) * Tanh(v))
 
-def Softmax(v: np.ndarray, derivative: bool=False):
+def Softmax(v: np.ndarray, derivative: bool=False) -> np.ndarray:
     """Applies the Softmax function to an array.
 
     Args:

@@ -2,7 +2,7 @@ import numpy as np
 from model import activations
 
 
-def Random(shape, fan_mode: int=1, activation=activations.Identity):
+def Random(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarray:
     """Returns an array with random entries between -1 and 1.
 
     Args:
@@ -15,7 +15,7 @@ def Random(shape, fan_mode: int=1, activation=activations.Identity):
     """
     return np.random.randn(*shape)
 
-def Kaiming(shape, fan_mode: int=1, activation=activations.Identity):
+def Kaiming(shape, fan_mode: int=1, activation=activations.Identity) -> np.ndarray:
     """Returns an array with random entries using Kaiming initialization.
 
     Args:

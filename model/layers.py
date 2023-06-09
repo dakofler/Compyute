@@ -23,16 +23,16 @@ class Layer:
         self.l_b_change = None
         self.drop_rate = None
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         self.id = id
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
 
-    def process(self) -> None:
+    def forward(self) -> None:
         if self.prev_layer is not None:
             self.i = self.prev_layer.o
     
-    def learn(self) -> None:
+    def backward(self) -> None:
         if self.succ_layer is not None:
             self.dy = self.succ_layer.dx
 
@@ -48,17 +48,17 @@ class Input(Layer):
         self.name = 'input'
         self.input_shape = input_shape
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
         self.i = np.ones(self.input_shape)
-        self.process()
+        self.forward()
 
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         self.o = np.reshape(self.i, self.input_shape)
     
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
     
 
 class Output(Layer):
@@ -67,16 +67,16 @@ class Output(Layer):
         super().__init__()
         self.name = 'output'
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
-        self.process()
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
 
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         self.o = self.i
     
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
         self.dx = self.dy
 
 
@@ -86,16 +86,16 @@ class Flatten(Layer):
         super().__init__()
         self.name = 'flatten'
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
-        self.process()
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
 
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         self.o = self.i.flatten()
     
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
         self.dx = np.resize(self.dy, self.i.shape)
 
 
@@ -120,20 +120,20 @@ class Dense(Layer):
         self.activation = activation
         self.init = init
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
         self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.prev_layer.o.shape[0] + 1, self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
-        self.process()
+        self.forward()
 
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         input = np.append(self.i, [1.0], axis=0)
         self.net = np.dot(self.w, input)
         self.o = self.activation(self.net)
 
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
 
         if self.activation == activations.Softmax:
             d_softmax = self.activation(self.net, derivative=True)
@@ -158,12 +158,12 @@ class MaxPooling(Layer):
         self.name = 'maxpooling'
         self.pooling_window = pooling_window
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
-        self.process()
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
     
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         i_y, i_x, i_k  = self.i.shape
         step = self.pooling_window[0]
         o_x = int(i_x / step)
@@ -185,8 +185,8 @@ class MaxPooling(Layer):
                     self.o[y, x, k] = image[index_y, index_x]
                     self.pooling_map[index_y, index_x, k] = 1
 
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
         dy = np.repeat(self.dy, self.pooling_window[0], axis=0)
         dy = np.repeat(dy, self.pooling_window[0], axis=1)
         dy = np.resize(dy, self.pooling_map.shape)
@@ -218,16 +218,16 @@ class Convolution(Layer):
         self.padding = padding
         self.init = init
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.o.shape[2], *self.kernel_size)
         self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
-        self.process()
+        self.forward()
     
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         self.i_p = self.padding(self.i, self.kernel_size)
         i_p_fft = fft2(self.i_p, axes=(0, 1))
         w_fft = np.moveaxis(fft2(self.w, s=self.i_p.shape[:2]), 1, -1)
@@ -239,8 +239,8 @@ class Convolution(Layer):
 
         self.o = self.activation(self.net)
 
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
         dy = self.activation(self.net, derivative=True) * self.dy
 
         if self.padding != paddings.Same:
@@ -281,17 +281,17 @@ class Dropout(Layer):
         self.name = 'dropout'
         self.drop_rate = drop_rate
 
-    def integrate(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().integrate(id, prev_layer, succ_layer)
-        self.process()
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
     
-    def process(self) -> None:
-        super().process()
+    def forward(self) -> None:
+        super().forward()
         self.drop_map = np.random.choice([0, 1], self.i.shape, p=[self.drop_rate, 1 - self.drop_rate])
         drop = self.i * self.drop_map
         self.o = drop / (1 - self.drop_rate)
 
-    def learn(self) -> None:
-        super().learn()
+    def backward(self) -> None:
+        super().backward()
         drop = self.dy * self.drop_map
         self.dx = drop / (1 - self.drop_rate)
