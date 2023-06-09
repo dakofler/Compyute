@@ -122,14 +122,14 @@ class Dense(Layer):
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
-        self.w = self.init((self.nr_neurons, self.prev_layer.o.shape[0] + 1), self.prev_layer.o.shape[0] + 1, self.activation)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
+        self.w = self.init(shape=(self.nr_neurons, self.prev_layer.o.shape[0]), fan_mode=self.prev_layer.o.shape[0], activation=self.activation)
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
+        self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,))
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-        input = np.append(self.i, [1.0], axis=0)
-        self.net = np.dot(self.w, input)
+        self.net = np.sum(self.i * self.w, axis=1) + self.b
         self.o = self.activation(self.net)
 
     def backward(self) -> None:
@@ -142,9 +142,9 @@ class Dense(Layer):
         else:
             dy = self.activation(self.net, derivative=True) * self.dy
 
-        w = np.delete(self.w.copy(), -1, axis=1)
-        self.dx = w.T @ dy
-        self.dw = np.append(self.prev_layer.o, [1.0], axis=0) * np.expand_dims(dy, 1)
+        self.dx = np.sum(dy * self.w.T, 1)
+        self.dw = self.i * np.expand_dims(dy, 1)
+        self.db = dy
 
 
 class MaxPooling(Layer):
@@ -222,7 +222,7 @@ class Convolution(Layer):
         super().compile(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.o.shape[2], *self.kernel_size)
         self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros(self.w.shape)
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
         self.forward()
     
@@ -249,7 +249,7 @@ class Convolution(Layer):
         else:
             dy_p = dy
 
-        self.dw = np.zeros(self.w.shape)
+        self.dw = np.zeros_like(self.w)
         i_p_fft = np.moveaxis(fft2(self.i_p, axes=(0, 1)), -1, 0)
         dy_fft = np.resize(fft2(dy, s=self.i_p.shape[:2], axes=(0, 1)), (self.i_p.shape[-1], *self.i_p.shape[:2], dy.shape[-1]))
 

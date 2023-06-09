@@ -1,29 +1,43 @@
-from model import utils
+from model import utils, layers
 import numpy as np
-import time
+import pandas as pd
+import time, math
 import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
 
 
 class Network():
-    def __init__(self, layers) -> None:
+    def __init__(self, input_shape, layers) -> None:
         self.compiled = False
         self.history = []
         self.layers = []
+        self.input_shape = input_shape
+
         if layers:
             for layer in layers:
-                self.__add_layer(layer)
+                self.add_layer(layer)
 
-    def __add_layer(self, layer) -> None:
-        self.layers.append(layer)
+    def add_layer(self, layer, input_layer = False) -> None:
+        """Adds a layer object to the network model.
+        
+        Args:
+            layer: layer object to be added.
+            input_layer: Defines whether the layer is used as input to the neural network [optional].
+        """
+        if input_layer:
+            self.layers.insert(0, layer)
+        else:
+            self.layers.append(layer)
+        self.compiled = False
 
     def compile(self, optimizer, loss, metric) -> None:
-        self.compiled = True
+        self.add_layer(layers.Input(self.input_shape), input_layer=True)
+        self.add_layer(layers.Output())
+
         self.optimizer = optimizer
         self.loss_function = loss
         self.metric = metric
-
-    def forward(self) -> None:
-        pass
+        self.compiled = True
 
     def predict(self, input: np.ndarray) -> None:
         if input.ndim != 3:
@@ -58,7 +72,7 @@ class Network():
         print('%15s | %15s | %15s | %10s' % ('layer_type', 'input_shape', 'output_shape', 'parameters'))
         params = 0
 
-        for l in self.layers:
+        for l in self.layers [1:-1]:
             ws = np.size(l.w) if l.w is not None else 0
             bs = np.size(l.b) if l.b is not None else 0
             params += ws + bs
@@ -66,7 +80,7 @@ class Network():
 
         print(f'\ntotal trainable parameters {params}')
 
-    def plot_loss(self) -> None:
+    def plot_training_loss(self) -> None:
         """Plots the loss over epochs if the model has been trained yet.
         
         Raises:
@@ -75,14 +89,49 @@ class Network():
         if not self.history:
             raise Exception('Model has not been trained yet.')
         
+        plt.figure(figsize=(20,4))
         plt.plot(np.arange(len(self.history)), self.history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
+    def plot_neuron_activations(self) -> None:
+        """Plots neuron activation distribution."""
+        plt.figure(figsize=(20,4))
+        legends = []
+        for i, layer in enumerate(self.layers[1:-2]):
+            if isinstance(layer, layers.Dense) or isinstance(layer, layers.Convolution):
+                print('layer %i | mean %.4f | std %.4f' % (i, layer.o.mean(), layer.o.std()))
+                X = layer.o.flatten()
+                X.sort()
+                density = gaussian_kde(X)
+                density.covariance_factor = lambda : .25
+                density._compute_covariance()
+                plt.plot(X, density(X))
+                legends.append('layer %i (%s)' % (i, layer.name))
+        plt.legend(legends)
+        plt.title('activation distribution')
+
+    def plot_neuron_gradients(self) -> None:
+        """Plots neuron gradient distribution."""
+        plt.figure(figsize=(20,4))
+        legends = []
+        for i, layer in enumerate(self.layers[1:-2]):
+            if isinstance(layer, layers.Dense) or isinstance(layer, layers.Convolution):
+                print('layer %i | mean %.4f | std %.4f' % (i, layer.dw.mean(), layer.dw.std()))
+                W = layer.dw.flatten()
+                W.sort()
+                density = gaussian_kde(W)
+                density.covariance_factor = lambda : .25
+                density._compute_covariance()
+                plt.plot(W, density(W))
+                legends.append('layer %i (%s)' % (i, layer.name))
+        plt.legend(legends)
+        plt.title('gradient distribution')
+
 
 class FeedForward(Network):
-    def __init__(self, layers=[]) -> None:
-        super().__init__(layers)
+    def __init__(self, input_shape, layers=[]) -> None:
+        super().__init__(input_shape, layers)
 
     def compile(self, optimizer, loss, metric=None) -> None:
         """Compiles the model.
@@ -103,12 +152,11 @@ class FeedForward(Network):
                 layer.compile(i, self.layers[i - 1], self.layers[i + 1])
     
     def __forward(self) -> None:
-        super().forward()
         for layer in self.layers:
             layer.forward()
 
     def predict(self, input: np.ndarray) -> np.ndarray:
-        """Computes an output based on a given input.
+        """Computes an output based on a single given input.
         
         Args:
             input: Array of input values.
@@ -120,7 +168,7 @@ class FeedForward(Network):
             ShapeError: If input shape is not of dim 3.
         """
         super().predict(input)
-        self.__propagate()
+        self.__forward()
         return self.layers[-1].o
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
@@ -145,12 +193,9 @@ class FeedForward(Network):
             x_shuffled, y_shuffled = utils.shuffle(x, y)
             start = time.time()
 
-            for i, p in enumerate(x_shuffled):
+            for i, p in enumerate(x_shuffled[:batch_size]):
                 if log:
                     print('epoch %5s/%5s | Training ... %i/%i' % (epoch, epochs, i + 1, batch_size), end='\r')
-
-                if i >= batch_size:
-                    break
 
                 loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))
                 epoch_loss_hist.append(loss)
