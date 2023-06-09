@@ -30,7 +30,7 @@ class sgd(optimizer):
         super().optimize(loss_gradient, model_layers)
 
         for layer in self.layers:
-            layer.learn()
+            layer.backward()
             
             if layer.dw is not None:
                 layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
@@ -56,7 +56,7 @@ class adam(optimizer):
         super().optimize(loss_gradient, model_layers)
 
         for layer in self.layers:
-            layer.learn()
+            layer.backward()
 
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw

@@ -22,7 +22,7 @@ class Network():
         self.loss_function = loss
         self.metric = metric
 
-    def propagate(self) -> None:
+    def forward(self) -> None:
         pass
 
     def predict(self, input: np.ndarray) -> None:
@@ -96,16 +96,16 @@ class FeedForward(Network):
 
         for i, layer in enumerate(self.layers):
             if i == 0:
-                layer.integrate(i, None, self.layers[i + 1])
+                layer.compile(i, None, self.layers[i + 1])
             elif i == len(self.layers) - 1:
-                layer.integrate(i, self.layers[i - 1], None)
+                layer.compile(i, self.layers[i - 1], None)
             else:
-                layer.integrate(i, self.layers[i - 1], self.layers[i + 1])
+                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
     
-    def __propagate(self) -> None:
-        super().propagate()
+    def __forward(self) -> None:
+        super().forward()
         for layer in self.layers:
-            layer.process()
+            layer.forward()
 
     def predict(self, input: np.ndarray) -> np.ndarray:
         """Computes an output based on a given input.
