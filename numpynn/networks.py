@@ -98,9 +98,12 @@ class Network():
                 continue
 
             ws = np.size(l.w) if l.w is not None else 0
+            w_shape = l.w.shape if l.w is not None else ()
             bs = np.size(l.b) if l.b is not None else 0
+            b_shape = l.b.shape if l.b is not None else ()
+
             params += ws + bs
-            print('%15s | %15s | %15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape), str(l.w.shape), str(l.b.shape), str(l.y.shape), str(ws + bs)))
+            print('%15s | %15s | %15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape[1:]), str(w_shape), str(b_shape), str(l.y.shape[1:]), str(ws + bs)))
 
         print(f'\ntotal trainable parameters {params}')
 
