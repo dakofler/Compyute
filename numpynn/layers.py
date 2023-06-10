@@ -1,4 +1,4 @@
-from model import inits, paddings
+from numpynn import inits, paddings
 import numpy as np
 from numpy.fft  import fft2, ifft2
 
@@ -48,12 +48,13 @@ class Input(Layer):
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
-        self.x = np.ones(self.input_shape)
+        self.x = np.expand_dims(np.ones(self.input_shape), axis=0)
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-        self.y = np.reshape(self.x, self.input_shape)
+        # self.y = np.reshape(self.x, self.input_shape)
+        self.y = self.x
     
     def backward(self) -> None:
         super().backward()
@@ -77,24 +78,6 @@ class Output(Layer):
         self.dx = self.dy
 
 
-class Flatten(Layer):
-    def __init__(self) -> None:
-        "Flatten layer used to reshape multidimensional arrays into one-dimensional arrays."
-        super().__init__()
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y = self.x.flatten()
-    
-    def backward(self) -> None:
-        super().backward()
-        self.dx = np.resize(self.dy, self.x.shape)
-
-
 class Linear(Layer):
     def __init__(self, nr_neurons: int, batch_norm=None, activation=None, init=inits.Kaiming) -> None:
         """Fully connected layer used in neural network models.
@@ -106,10 +89,11 @@ class Linear(Layer):
         Raises:
             Error: If the number of neurons is less than 1.
         """
+        super().__init__()
+        
         if nr_neurons < 1:
             raise Exception("number of neurons must be at least 1")
         
-        super().__init__()
         self.nr_neurons = nr_neurons
         self.batch_norm = batch_norm
         self.activation = activation
@@ -118,65 +102,25 @@ class Linear(Layer):
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
-        self.w = self.init(shape=(self.nr_neurons, self.prev_layer.y.shape[0]), fan_mode=self.prev_layer.y.shape[0], activation=self.activation)
+
+        w_shape = (self.prev_layer.y.shape[1], self.nr_neurons)
+        fan_mode = self.prev_layer.y.shape[1]
+        self.w = self.init(shape=w_shape, fan_mode=fan_mode, activation=self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,))
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-        self.y = np.sum(self.x * self.w, axis=1) + self.b
+
+        self.y = self.x @ self.w + self.b
 
     def backward(self) -> None:
         super().backward()
-        self.dx = np.sum(self.dy * self.w.T, axis=1)
-        self.dw = self.x * np.expand_dims(self.dy, axis=1)
-        self.db = self.dy
 
-
-class MaxPooling(Layer):
-    def __init__(self, pooling_window: tuple[int, int]) -> None:
-        """MaxPoling layer used in convolutional neural network models to reduce information and avoid overfitting.
-
-        Args:
-            pooling_window: Size of the pooling window used for the pooling operation.
-        """
-        super().__init__()
-        self.pooling_window = pooling_window
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-    
-    def forward(self) -> None:
-        super().forward()
-        i_y, i_x, i_k  = self.x.shape
-        step = self.pooling_window[0]
-        o_x = int(i_x / step)
-        o_y = int(i_y / step)
-
-        self.y = np.zeros((o_y, o_x, i_k))
-        self.pooling_map = np.zeros(self.x.shape)
-
-        #ToDo: rework to improve efficiency
-        for k in range(i_k):
-            image = self.x[:, :, k]
-            for y in range(o_y):
-                for x in range(o_x):
-                    a = image[y * step : y * step + step, x * step : x * step + step] # get sub matrix
-                    index = np.where(a == np.max(a)) # get index of max value in sub matrix
-                    index_y = index[0][0] + y * step # get y index of max value in input matrix
-                    index_x = index[1][0] + x * step # get x index of max value in input matrix
-
-                    self.y[y, x, k] = image[index_y, index_x]
-                    self.pooling_map[index_y, index_x, k] = 1
-
-    def backward(self) -> None:
-        super().backward()
-        dy = np.repeat(self.dy, self.pooling_window[0], axis=0)
-        dy = np.repeat(dy, self.pooling_window[0], axis=1)
-        dy = np.resize(dy, self.pooling_map.shape)
-        self.dx = dy * self.pooling_map
+        self.dx = self.dy @ self.w.T
+        self.dw = self.x.T @ self.dy
+        self.db = np.sum(self.dy, axis=0)
 
 
 class Convolution(Layer):
@@ -246,6 +190,69 @@ class Convolution(Layer):
         self.db = np.sum(self.dy, axis=(0, 1))
 
 
+class MaxPooling(Layer):
+    def __init__(self, pooling_window: tuple[int, int]) -> None:
+        """MaxPoling layer used in convolutional neural network models to reduce information and avoid overfitting.
+
+        Args:
+            pooling_window: Size of the pooling window used for the pooling operation.
+        """
+        super().__init__()
+        self.pooling_window = pooling_window
+
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
+    
+    def forward(self) -> None:
+        super().forward()
+        i_y, i_x, i_k  = self.x.shape
+        step = self.pooling_window[0]
+        o_x = int(i_x / step)
+        o_y = int(i_y / step)
+
+        self.y = np.zeros((o_y, o_x, i_k))
+        self.pooling_map = np.zeros(self.x.shape)
+
+        #ToDo: rework to improve efficiency
+        for k in range(i_k):
+            image = self.x[:, :, k]
+            for y in range(o_y):
+                for x in range(o_x):
+                    a = image[y * step : y * step + step, x * step : x * step + step] # get sub matrix
+                    index = np.where(a == np.max(a)) # get index of max value in sub matrix
+                    index_y = index[0][0] + y * step # get y index of max value in input matrix
+                    index_x = index[1][0] + x * step # get x index of max value in input matrix
+
+                    self.y[y, x, k] = image[index_y, index_x]
+                    self.pooling_map[index_y, index_x, k] = 1
+
+    def backward(self) -> None:
+        super().backward()
+        dy = np.repeat(self.dy, self.pooling_window[0], axis=0)
+        dy = np.repeat(dy, self.pooling_window[0], axis=1)
+        dy = np.resize(dy, self.pooling_map.shape)
+        self.dx = dy * self.pooling_map
+
+
+class Flatten(Layer):
+    def __init__(self) -> None:
+        "Flatten layer used to reshape multidimensional arrays into one-dimensional arrays."
+        super().__init__()
+
+    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+        super().compile(id, prev_layer, succ_layer)
+        self.forward()
+
+    def forward(self) -> None:
+        super().forward()
+        self.y = self.x.flatten()
+    
+    def backward(self) -> None:
+        super().backward()
+        self.dx = np.resize(self.dy, self.x.shape)
+
+
 class Dropout(Layer):
     def __init__(self, drop_rate: float) -> None:
         """Dropout layer used in neural network models to reduce information and avoid overfitting.
@@ -274,86 +281,3 @@ class Dropout(Layer):
     def backward(self) -> None:
         super().backward()
         self.dx = self.dy * self.drop_map / (1 - self.drop_rate)
-
-
-class Relu(Layer):
-    def __init__(self) -> None:
-        super().__init__()
-        self.is_activation_layer = True
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y = np.maximum(0, self.x)
-    
-    def backward(self) -> None:
-        super().backward()
-        self.dx = (self.y > 0).astype(int) * self.dy
-
-
-class Sigmoid(Layer):
-    def __init__(self) -> None:
-        super().__init__()
-        self.is_activation_layer = True
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y = self.__sigmoid(self.x)
-    
-    def backward(self) -> None:
-        super().backward()
-        self.dx = self.__sigmoid(self.y) * (1.0 - self.__sigmoid(self.y)) * self.dy      
-
-    def __sigmoid(self, v) -> np.ndarray:
-        v = np.clip(v, -100, 100) # clipping because normalization is not implemented yet
-        return 1.0 / (1.0 + np.exp(-v))
-
-
-class Tanh(Layer):
-    def __init__(self) -> None:
-        super().__init__()
-        self.is_activation_layer = True
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y = np.tanh(self.x)
-    
-    def backward(self) -> None:
-        super().backward()
-        self.dx = (1.0 - np.tanh(self.y)**2) * self.dy
-
-
-class Softmax(Layer):
-    def __init__(self) -> None:
-        super().__init__()
-        self.is_activation_layer = True
-
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
-        super().compile(id, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y = self.__softmax(self.x)
-    
-    def backward(self) -> None:
-        super().backward()
-        s = np.reshape(self.__softmax(self.y), (1, -1))
-        d_softmax = (s * np.identity(s.size) - s.transpose() @ s)
-        dy = np.reshape(self.dy, (1, -1))
-        self.dx = np.squeeze(dy @ d_softmax)
-
-    def __softmax(self, v):
-        e = np.exp(v - np.max(v))
-        return e / np.sum(e, axis=0)

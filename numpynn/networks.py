@@ -1,4 +1,4 @@
-from model import utils, layers
+from numpynn import utils, layers
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ class Network():
 
     def __init__(self, input_shape, layers) -> None:
         self.compiled = False
-        self.history = []
+        self.loss_history = []
         self.layers = []
         self.input_shape = input_shape
 
@@ -37,7 +37,7 @@ class Network():
 
         self.compiled = False
 
-    def compile(self, optimizer, loss, metric=None) -> None:
+    def compile(self, optimizer, loss_function, metric=None) -> None:
         """Compiles the model.
         
         Args:
@@ -59,20 +59,17 @@ class Network():
                 layer.compile(i, self.layers[i - 1], self.layers[i + 1])
 
         self.optimizer = optimizer
-        self.loss_function = loss
+        self.loss_function = loss_function
         self.metric = metric
 
         self.compiled = True
 
-    def predict(self, input: np.ndarray) -> None:
-        if input.ndim != 3:
-            raise Exception('ShapeError: input shape must be of dim 3.')
-        
-        self.layers[0].x = input
+    def predict(self, x: np.ndarray) -> None:
+        self.__check_dims(x)
+        self.layers[0].x = x
 
     def train(self, x: np.ndarray, y: np.ndarray) -> None:
-        if x.ndim != 4 or y.ndim != 2:
-            raise Exception('Dimension must be 4 for input, 2 for output.')
+        self.__check_dims(x, y)
 
     def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
         """Evaluates the model using a defined metric function.
@@ -83,7 +80,7 @@ class Network():
         if self.metric is None:
             raise Exception('No metric defined.')
         
-        self.metric(x, y, self, self.loss_function)
+        self.metric(x, y, self)
 
     def summary(self) -> None:
         """Gives an overview of the model architecture.
@@ -94,7 +91,7 @@ class Network():
         if not self.compiled:
             raise Exception('Model has not been compiled yet.')
         
-        print('%15s | %15s | %15s | %10s' % ('layer_type', 'input_shape', 'output_shape', 'parameters'))
+        print('%15s | %15s | %15s | %15s | %15s | %10s' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
         params = 0
 
         for l in self.layers [1:-1]:
@@ -104,14 +101,14 @@ class Network():
             ws = np.size(l.w) if l.w is not None else 0
             bs = np.size(l.b) if l.b is not None else 0
             params += ws + bs
-            print('%15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape), str(l.y.shape), str(ws + bs)))
+            print('%15s | %15s | %15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape), str(l.w.shape), str(l.b.shape), str(l.y.shape), str(ws + bs)))
 
         print(f'\ntotal trainable parameters {params}')
 
     def plot_training_loss(self) -> None:
         """Plots the loss over epochs if the model has been trained yet. """
         plt.figure(figsize=(20,4))
-        plt.plot(np.arange(len(self.history)), self.history)
+        plt.plot(np.arange(len(self.loss_history)), self.loss_history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
@@ -149,6 +146,17 @@ class Network():
         plt.legend(legends)
         plt.title('gradient distribution')
 
+    def __check_dims(self, x, y=None):
+        req_input_dim = self.layers[0].x.ndim
+
+        if x.ndim != req_input_dim:
+            raise Exception(f'Isput dimension must be {req_input_dim}.')
+
+        if y is not None:
+            req_output_dim = self.layers[-1].y.ndim
+
+            if y.ndim != req_output_dim:
+                raise Exception(f'Output dimension must be {req_output_dim}.')
 
 class FeedForward(Network):
     def __init__(self, input_shape, layers=[]) -> None:
@@ -158,7 +166,15 @@ class FeedForward(Network):
         for layer in self.layers:
             layer.forward()
 
-    def predict(self, input: np.ndarray) -> np.ndarray:
+    def __backward(self, loss_gradient: np.ndarray) -> None:
+        self.layers[-1].dy = loss_gradient     
+        layers_reversed = self.layers.copy()
+        layers_reversed.reverse()
+
+        for layer in layers_reversed:
+            layer.backward()
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
         """Computes an output based on a single given input.
         
         Args:
@@ -170,9 +186,12 @@ class FeedForward(Network):
         Raises:
             ShapeError: If input shape is not of dim 3.
         """
-        super().predict(input)
+        super().predict(x)
         self.__forward()
         return self.layers[-1].y
+
+    def update_params(self, loss_gradient: np.ndarray):       
+        self.__backward(loss_gradient)
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
         """Trains the model using given input data.
@@ -189,21 +208,21 @@ class FeedForward(Network):
         """
         super().train(x, y)
         batch_size = batch_size if batch_size else len(x)
-        loss_hist = []
+        self.loss_history = []
 
         for epoch in range(1, epochs + 1):
-            epoch_loss_hist = []
-            x_shuffled, y_shuffled = utils.shuffle(x, y)
             start = time.time()
 
-            for i, p in enumerate(x_shuffled[:batch_size]):
-                if log:
-                    print('epoch %5s/%5s | Training ... %i/%i' % (epoch, epochs, i + 1, batch_size), end='\r')
+            if log:
+                print('epoch %5s/%5s | Training ... ' % (epoch, epochs), end='\r')
 
-                loss, loss_gradient = self.loss_function(self.predict(p), np.squeeze(y_shuffled[i]))
-                epoch_loss_hist.append(loss)
-                self.optimizer.optimize(loss_gradient, self.layers)
-            
+            x_shuffled, y_shuffled = utils.shuffle(x, y)
+
+            output = self.predict(x_shuffled[:batch_size]) # foward pass
+            loss = self.loss_function(output, y_shuffled[:batch_size]) # compute loss
+            self.__backward(self.loss_function.backward()) # backward pass
+            self.optimizer(self) # update weights and biases
+
             end = time.time()
             step = round((end - start) * 1000, 2)
             dim = 'ms'
@@ -212,10 +231,7 @@ class FeedForward(Network):
                 step = round(step / 1000, 2)
                 dim = 's'
 
-            epoch_loss = sum(epoch_loss_hist) / len(epoch_loss_hist)
-            loss_hist.append(epoch_loss)
-
             if log:   
-                print('epoch %5s/%5s | time/epoch %.2f %s | loss %.4f' % (epoch, epochs, step, dim, round(epoch_loss, 4)))
-        
-        self.history = loss_hist
+                print('epoch %5s/%5s | time/epoch %.2f %s | loss %.4f' % (epoch, epochs, step, dim, loss))
+
+            self.loss_history.append(loss)
