@@ -1,8 +1,7 @@
-from numpynn import utils, layers
+from numpynn import utils, layers, activations
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from scipy.stats import gaussian_kde
 
 
 class Network():
@@ -116,16 +115,16 @@ class Network():
         """Plots neuron activation distribution."""
         plt.figure(figsize=(20,4))
         legends = []
-        for i, layer in enumerate(self.layers[1:-2]):
-            if layer.is_activation_layer:
+
+        for i, layer in enumerate(self.layers[1:-1]):
+            if layer.is_activation_layer and not isinstance(layer, activations.Softmax):
                 print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.y.mean(), layer.y.std()))
-                X = layer.y.flatten()
-                X.sort()
-                density = gaussian_kde(X)
-                density.covariance_factor = lambda : .25
-                density._compute_covariance()
-                plt.plot(X, density(X))
+                
+                Y, X = np.histogram(layer.y, bins=50)
+                X = np.delete(X, -1)
+                plt.plot(X, Y)
                 legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
+
         plt.legend(legends)
         plt.title('activation distribution')
 
@@ -133,16 +132,16 @@ class Network():
         """Plots neuron gradient distribution."""
         plt.figure(figsize=(20,4))
         legends = []
+
         for i, layer in enumerate(self.layers[1:-2]):
             if layer.has_params:
                 print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.dw.mean(), layer.dw.std()))
-                W = layer.dw.flatten()
-                W.sort()
-                density = gaussian_kde(W)
-                density.covariance_factor = lambda : .25
-                density._compute_covariance()
-                plt.plot(W, density(W))
+
+                Y, X = np.histogram(layer.dw, bins=50)
+                X = np.delete(X, -1)
+                plt.plot(X, Y)
                 legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
+
         plt.legend(legends)
         plt.title('gradient distribution')
 

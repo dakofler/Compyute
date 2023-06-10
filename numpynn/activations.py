@@ -71,6 +71,7 @@ class Softmax(Layer):
 
     def forward(self) -> None:
         super().forward()
+        # will be improved later
         self.logits = self.x
         logit_maxes = np.amax(self.logits, axis=1, keepdims=True)
         self.norm_logits = self.logits - logit_maxes
@@ -79,11 +80,10 @@ class Softmax(Layer):
         self.counts_sum_inv = self.counts_sum**-1
         probs = self.counts * self.counts_sum_inv
         self.y = probs
-
-        # self.y = self.__softmax(self.x)
     
     def backward(self) -> None:
         super().backward()
+        # will be improved later
         dcounts_sum_inv = np.sum(self.counts * self.dy, axis=1, keepdims=True)
         dcounts = self.counts_sum_inv * self.dy
         dcounts_sum = -self.counts_sum**-2 * dcounts_sum_inv
@@ -94,11 +94,6 @@ class Softmax(Layer):
         dlogits += np.argmax(self.logits, axis=1, keepdims=True) * dlogit_maxes
         self.dx = dlogits
 
-        # s = np.reshape(self.__softmax(self.y), (1, -1))
-        # ds = (s * np.identity(s.size) - s.transpose() @ s)
-        # dy = np.reshape(self.dy, (1, -1))
-        # self.dx = np.squeeze(dy @ ds)
-
-    def __softmax(self, v):
+    def softmax(self, v):
         e = np.exp(v - np.amax(v, axis=1, keepdims=True))
         return e / np.sum(e, axis=1, keepdims=True)
