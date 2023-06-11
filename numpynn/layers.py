@@ -3,6 +3,7 @@
 from numpynn import inits, paddings, utils
 import numpy as np
 from numpy.fft  import fft2, ifft2
+from numpy.lib.stride_tricks import as_strided
 
 
 class Layer:
@@ -161,7 +162,6 @@ class Convolution(Layer):
         if self.y.shape[1] < self.w.shape[2] or self.y.shape[2] < self.w.shape[3]:
             raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape. Use padding or adjust MaxPooling layer to increase output shape.')
     
-    @utils.stopwatch
     def forward(self) -> None:
         super().forward()
         self.x_p = self.padding(self.x, self.kernel_size) # ok
@@ -173,7 +173,6 @@ class Convolution(Layer):
         for k in np.arange(self.w.shape[0]):
             self.y[:, :, :, k] = np.sum(np.real(ifft2(x_p_fft * w_fft[k], axes=(1, 2))), axis=3)[:, p:, p:] + self.b[k]
 
-    @utils.stopwatch
     def backward(self) -> None:
         super().backward()
         if self.padding != paddings.Same:
@@ -211,9 +210,41 @@ class MaxPooling(Layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
     
-    @utils.stopwatch
+    # @utils.stopwatch
     def forward(self) -> None:
         super().forward()
+
+        # faster, but kernel crashes
+        # padding
+        # wy, wx = self.pooling_window
+        # y, x = self.x.shape[1:3]
+        # dy = (wy - y % wy) % wy
+        # dx = (wx - x % wx) % wx
+        # x_pad = np.pad(self.x, ((0, 0), (0, dy), (0, dx), (0, 0)))
+
+        # stride_bytes = 8 # for float64
+
+        # # output
+        # batch_size, y, x, nr_kernels = x_pad.shape
+        # shape = (batch_size, y // 2, x // 2, wy, wx, nr_kernels)
+
+        # b = stride_bytes
+        # bk = b * nr_kernels
+        # bkx = bk * x
+        # bkxb = bkx * batch_size
+
+        # stride = (2 * bkxb, 2 * bkx, 2 * bk , bkx, bk, b) # quite complicated, the docs helped :)
+
+        # s = as_strided(x_pad, shape=shape, strides=stride) # <-- kernel crashes here
+        # self.y = np.max(s, axis=(3, 4)) # <-- kernel crashes here
+
+        # pooling map for backprop
+        # y_r = np.repeat(self.y, wx, axis=1)
+        # y_r = np.repeat(y_r, wy, axis=2)
+        # self.pooling_map = (x_pad == y_r) * 1.0
+
+
+        # very slow, but at least stable
         i_s, i_y, i_x, i_k  = self.x.shape
         step = self.pooling_window[0]
         o_x = int(i_x / step)
@@ -222,7 +253,6 @@ class MaxPooling(Layer):
         self.y = np.zeros((i_s, o_y, o_x, i_k))
         self.pooling_map = np.zeros_like(self.x)
 
-        #ToDo: rework to improve efficiency, currently 20x slower than conv!!
         for s in range(i_s):
             for k in range(i_k):
                 image = self.x[s, :, :, k]
@@ -236,13 +266,14 @@ class MaxPooling(Layer):
                         self.y[s, y, x, k] = image[index_y, index_x]
                         self.pooling_map[s, index_y, index_x, k] = 1
 
-    @utils.stopwatch
     def backward(self) -> None:
         super().backward()
-        dy = np.repeat(self.dy, self.pooling_window[0], axis=1)
-        dy = np.repeat(dy, self.pooling_window[0], axis=2)
-        dy = np.resize(dy, self.pooling_map.shape)
-        self.dx = dy * self.pooling_map
+
+        wy, wx = self.pooling_window
+        dy_r = np.repeat(self.dy, wx, axis=1)
+        dy_r = np.repeat(dy_r, wy, axis=2)
+        dy_r = np.resize(dy_r, self.pooling_map.shape)
+        self.dx = dy_r * self.pooling_map
 
 
 class Flatten(Layer):
