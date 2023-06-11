@@ -116,7 +116,7 @@ class Network():
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
-    def plot_neuron_activations(self) -> None:
+    def plot_neuron_activations(self, bins: int=100) -> None:
         """Plots neuron activation distribution."""
         plt.figure(figsize=(20,4))
         legends = []
@@ -125,7 +125,7 @@ class Network():
             if layer.is_activation_layer and not isinstance(layer, activations.Softmax):
                 print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.y.mean(), layer.y.std()))
                 
-                Y, X = np.histogram(layer.y, bins=50)
+                Y, X = np.histogram(layer.y, bins=bins)
                 X = np.delete(X, -1)
                 plt.plot(X, Y)
                 legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
@@ -133,7 +133,7 @@ class Network():
         plt.legend(legends)
         plt.title('activation distribution')
 
-    def plot_neuron_gradients(self) -> None:
+    def plot_neuron_gradients(self, bins: int=100) -> None:
         """Plots neuron gradient distribution."""
         plt.figure(figsize=(20,4))
         legends = []
@@ -142,7 +142,7 @@ class Network():
             if layer.has_params:
                 print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.dw.mean(), layer.dw.std()))
 
-                Y, X = np.histogram(layer.dw, bins=50)
+                Y, X = np.histogram(layer.dw, bins=bins)
                 X = np.delete(X, -1)
                 plt.plot(X, Y)
                 legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
