@@ -1,4 +1,6 @@
-from numpynn import utils, layers, activations
+# neural networks module
+
+from numpynn import layers, activations, preprocessing, utils
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -148,6 +150,24 @@ class Network():
         plt.legend(legends)
         plt.title('gradient distribution')
 
+    def plot_conv_kernels(self) -> None:
+        conv_layers = [l for l in self.layers if isinstance(l, layers.Convolution)]
+
+        if not conv_layers:
+            print('No convolutional layers found.')
+
+        for i,l in enumerate(conv_layers):
+            print(l.__class__.__name__, i + 1)
+            plt.figure(figsize=(40, 40))
+
+            for j in range(l.k):
+                a = l.y[0, :, :, j]
+                plt.subplot(10, 8, j + 1)
+                plt.imshow(a, cmap='gray')
+                plt.xlabel(f'kernel {str(i)}')
+
+            plt.show()
+
     def __check_dims(self, x, y=None):
         req_input_dim = self.layers[0].x.ndim
 
@@ -214,10 +234,6 @@ class FeedForward(Network):
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-
-            if log:
-                print('epoch %5s/%5s | Training ... ' % (epoch, epochs), end='\r')
-
             x_shuffled, y_shuffled = utils.shuffle(x, y)
 
             output = self.predict(x_shuffled[:batch_size]) # foward pass
@@ -227,13 +243,8 @@ class FeedForward(Network):
 
             end = time.time()
             step = round((end - start) * 1000, 2)
-            dim = 'ms'
-
-            if step > 1000:
-                step = round(step / 1000, 2)
-                dim = 's'
 
             if log:   
-                print('epoch %5s/%5s | time/epoch %.2f %s | loss %.4f' % (epoch, epochs, step, dim, loss))
+                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f' % (epoch, epochs, step, loss))
 
             self.loss_history.append(loss)

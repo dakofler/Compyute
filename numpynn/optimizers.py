@@ -1,5 +1,7 @@
+# neural network optimizers module
+
 import numpy as np
-from numpynn.networks import Network
+from numpynn import networks
 
 class optimizer():
     def __init__(self, learning_rate) -> None:
@@ -12,7 +14,7 @@ class sgd(optimizer):
         self.momentum = momentum
         self.nesterov = nesterov
 
-    def __call__(self, model: Network) -> None:
+    def __call__(self, model: networks.Network) -> None:
         for layer in model.layers:
             if layer.dw is not None:
                 layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
@@ -32,7 +34,7 @@ class adam(optimizer):
         self.beta2 = beta2
         self.epsilon = epsilon
 
-    def __call__(self, model: Network) -> None:
+    def __call__(self, model: networks.Network) -> None:
         for layer in model.layers:
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw

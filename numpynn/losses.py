@@ -1,3 +1,5 @@
+# loss functions module
+
 import numpy as np
 
 
@@ -8,8 +10,8 @@ class Loss():
         self._t = None
     
     def set_vals(self, y, t):
-        self._y = y
-        self._t = t
+        self._y = y + 1e-7 # to avoid dividing by 0
+        self._t = t + 1e-7 # to avoid dividing by 0
 
 class MSE(Loss):
     def __init__(self) -> None:

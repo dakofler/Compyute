@@ -1,22 +1,22 @@
+# evaluation metrics module
+
+from numpynn import networks
 import numpy as np
 import time
-from numpynn.networks import Network
 
 
-def Accuracy(x: np.ndarray, y: np.ndarray, model: Network) -> None:
+def Accuracy(x: np.ndarray, y: np.ndarray, model: networks.Network) -> None:
     "Computes the accuracy score of a prediction compared to target values."
     start = time.time()
-    c = 0
 
     print(f'Evaluating ...', end='\r')
     output = model.predict(x)
-    loss = model.loss_function(output, y) # compute loss
-    output = np.round(output, 0)
-    if not np.array_equal(output, y):
-        c += 1
+    loss = model.loss_function(output, y)
+    preds = np.zeros_like(output)
+    preds[np.arange(0, preds.shape[0]), np.argmax(output, axis=1)] = 1
+    accuracy = np.sum(np.sum(preds==y, axis=1) == preds.shape[1]) / x.shape[0]
 
     end = time.time()
     step = round((end - start) * 1000, 2)
-    accuracy = 1 - 1 / x.shape[0] * c
 
     print('loss %.4f | %10s %.4f | time %.2f ms' % (loss, Accuracy.__name__, accuracy, step))

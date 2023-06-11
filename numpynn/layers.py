@@ -1,4 +1,6 @@
-from numpynn import inits, paddings
+# neural network layers module
+
+from numpynn import inits, paddings, utils
 import numpy as np
 from numpy.fft  import fft2, ifft2
 
@@ -151,11 +153,15 @@ class Convolution(Layer):
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.y.shape[3], *self.kernel_size)
-        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
+        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation) # maybe change shape from (k, c, y, x) to (k, y, x, c)?
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
         self.forward()
+
+        if self.y.shape[1] < self.w.shape[2] or self.y.shape[2] < self.w.shape[3]:
+            raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape. Use padding or adjust MaxPooling layer to increase output shape.')
     
+    @utils.stopwatch
     def forward(self) -> None:
         super().forward()
         self.x_p = self.padding(self.x, self.kernel_size) # ok
@@ -167,6 +173,7 @@ class Convolution(Layer):
         for k in np.arange(self.w.shape[0]):
             self.y[:, :, :, k] = np.sum(np.real(ifft2(x_p_fft * w_fft[k], axes=(1, 2))), axis=3)[:, p:, p:] + self.b[k]
 
+    @utils.stopwatch
     def backward(self) -> None:
         super().backward()
         if self.padding != paddings.Same:
@@ -204,6 +211,7 @@ class MaxPooling(Layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
     
+    @utils.stopwatch
     def forward(self) -> None:
         super().forward()
         i_s, i_y, i_x, i_k  = self.x.shape
@@ -214,7 +222,7 @@ class MaxPooling(Layer):
         self.y = np.zeros((i_s, o_y, o_x, i_k))
         self.pooling_map = np.zeros_like(self.x)
 
-        #ToDo: rework to improve efficiency
+        #ToDo: rework to improve efficiency, currently 20x slower than conv!!
         for s in range(i_s):
             for k in range(i_k):
                 image = self.x[s, :, :, k]
@@ -228,6 +236,7 @@ class MaxPooling(Layer):
                         self.y[s, y, x, k] = image[index_y, index_x]
                         self.pooling_map[s, index_y, index_x, k] = 1
 
+    @utils.stopwatch
     def backward(self) -> None:
         super().backward()
         dy = np.repeat(self.dy, self.pooling_window[0], axis=1)

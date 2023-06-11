@@ -1,8 +1,10 @@
-from numpynn.layers import Layer
+# activation layers module
+
+from numpynn import layers
 import numpy as np
 
 
-class Relu(Layer):
+class Relu(layers.Layer):
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -20,7 +22,7 @@ class Relu(Layer):
         self.dx = (self.y > 0).astype(int) * self.dy
 
 
-class Sigmoid(Layer):
+class Sigmoid(layers.Layer):
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -42,7 +44,7 @@ class Sigmoid(Layer):
         return 1.0 / (1.0 + np.exp(-v))
 
 
-class Tanh(Layer):
+class Tanh(layers.Layer):
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -60,7 +62,7 @@ class Tanh(Layer):
         self.dx = (1.0 - self.y**2) * self.dy
 
 
-class Softmax(Layer):
+class Softmax(layers.Layer):
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -93,7 +95,3 @@ class Softmax(Layer):
         dlogit_maxes = np.sum(-dnorm_logits, axis=1, keepdims=True)
         dlogits += np.argmax(self.logits, axis=1, keepdims=True) * dlogit_maxes
         self.dx = dlogits
-
-    def softmax(self, v):
-        e = np.exp(v - np.amax(v, axis=1, keepdims=True))
-        return e / np.sum(e, axis=1, keepdims=True)

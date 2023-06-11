@@ -1,3 +1,5 @@
+# weight initializations module
+
 import numpy as np
 
 
