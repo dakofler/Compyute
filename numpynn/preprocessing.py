@@ -1,3 +1,5 @@
+# utility functions module
+
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -51,16 +53,17 @@ def split_X_Y(array: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
     Y = array[:, num_x_cols:]
     return X, Y
 
-def categorical_to_numeric(dataframe: pd.DataFrame) -> pd.DataFrame:
+def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> pd.DataFrame:
     """Transforms categorical columns of a dataframe into numerical columns.
 
     Args:
         dataframe: Dataframe containing categorical columns.
+        columns: Columns to be encoded.
     
     Returns:
         numerical_dataframe: Dataframe with transformed categorical columns.
     """
-    return pd.get_dummies(dataframe)
+    return pd.get_dummies(dataframe, columns=columns)
 
 def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
     """Normalizes an array along a certain axis using min-max feature scaling.
@@ -77,20 +80,3 @@ def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: 
     x_min = x.min(axis=axis)
     x_max = x.max(axis=axis)
     return a + (x - x_min) * (b - a) / (x_max - x_min)
-
-def shuffle(x: np.ndarray, y: np.ndarray) -> (np.ndarray|np.ndarray):
-    """Shuffles two arrays along a axis 0 equally.
-
-    Args:
-        x: First array to be shuffled.
-        x: First array to be shuffled.
-    
-    Returns:
-        x_shuffled: First shuffled array.
-        y_shuffled: Second shuffled array.
-    """
-    shuffle_index = np.arange(len(x))
-    np.random.shuffle(shuffle_index)
-    x_shuffled = x[shuffle_index]
-    y_shuffled = y[shuffle_index]
-    return x_shuffled, y_shuffled

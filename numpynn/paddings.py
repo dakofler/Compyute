@@ -1,3 +1,5 @@
+# padding functions module
+
 import numpy as np
 import math
 
@@ -24,4 +26,4 @@ def Same(array: np.ndarray, kernel_size: tuple[int, int]=None) -> np.ndarray:
         Padded array.
     """
     width = math.floor(kernel_size[0] / 2)
-    return np.pad(array, width)[:, :, width : -width]
+    return np.pad(array, ((0, 0), (width, width), (width, width), (0, 0))) # pad along axis 1 & 2
