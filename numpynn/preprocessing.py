@@ -53,16 +53,17 @@ def split_X_Y(array: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
     Y = array[:, num_x_cols:]
     return X, Y
 
-def categorical_to_numeric(dataframe: pd.DataFrame) -> pd.DataFrame:
+def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> pd.DataFrame:
     """Transforms categorical columns of a dataframe into numerical columns.
 
     Args:
         dataframe: Dataframe containing categorical columns.
+        columns: Columns to be encoded.
     
     Returns:
         numerical_dataframe: Dataframe with transformed categorical columns.
     """
-    return pd.get_dummies(dataframe)
+    return pd.get_dummies(dataframe, columns=columns)
 
 def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
     """Normalizes an array along a certain axis using min-max feature scaling.

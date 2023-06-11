@@ -92,7 +92,7 @@ class Network():
         if not self.compiled:
             raise Exception('Model has not been compiled yet.')
         
-        print('%15s | %15s | %15s | %15s | %15s | %10s' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
+        print('%15s | %15s | %15s | %15s | %15s | %10s\n' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
         params = 0
 
         for l in self.layers [1:-1]:
@@ -164,7 +164,7 @@ class Network():
                 a = l.y[0, :, :, j]
                 plt.subplot(10, 8, j + 1)
                 plt.imshow(a, cmap='gray')
-                plt.xlabel(f'kernel {str(i)}')
+                plt.xlabel(f'kernel {str(j)}')
 
             plt.show()
 

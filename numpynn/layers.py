@@ -154,7 +154,7 @@ class Convolution(Layer):
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
         kernel_shape = (self.k, self.prev_layer.y.shape[3], *self.kernel_size)
-        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation) # maybe change shape from (k, c, y, x) to (k, y, x, c)?
+        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
         self.forward()
@@ -188,9 +188,9 @@ class Convolution(Layer):
         for k in np.arange(self.w.shape[0]):
             self.dw[k] = np.sum(np.real(ifft2(i_p_fft * dy_fft[:, :, :, k])), axis=0)[:, -self.w.shape[-2]:, -self.w.shape[-1]:]
 
-        w = np.flip(np.flip(self.w, axis=3), axis=2) # (4, 1, 3, 3)
-        w_fft = np.moveaxis(fft2(w, s=dy_p.shape[1:3]), 0, -1) # (1, 28, 28, 4)
-        dy_p_fft = np.resize(fft2(dy_p, axes=(1, 2)), (dy_p.shape[0], w.shape[1], *dy_p.shape[1:])) # shape (1, 64, 28, 28, 4)
+        w = np.flip(np.flip(self.w, axis=3), axis=2)
+        w_fft = np.moveaxis(fft2(w, s=dy_p.shape[1:3]), 0, -1)
+        dy_p_fft = np.resize(fft2(dy_p, axes=(1, 2)), (dy_p.shape[0], w.shape[1], *dy_p.shape[1:]))
         self.dx = np.moveaxis(np.sum(np.real(ifft2(w_fft * dy_p_fft, axes=(2, 3))), axis=-1), 1, -1)[:, -self.x.shape[1]:, -self.x.shape[2]:]
 
         self.db = np.sum(self.dy, axis=(0, 1, 2))
@@ -210,71 +210,65 @@ class MaxPooling(Layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
     
-    # @utils.stopwatch
     def forward(self) -> None:
         super().forward()
 
-        # faster, but kernel crashes
-        # padding
-        # wy, wx = self.pooling_window
-        # y, x = self.x.shape[1:3]
-        # dy = (wy - y % wy) % wy
-        # dx = (wx - x % wx) % wx
-        # x_pad = np.pad(self.x, ((0, 0), (0, dy), (0, dx), (0, 0)))
+        wy, wx = self.pooling_window
+        b, y, x, k = self.x.shape
+        x_pad = self.__pad()
 
-        # stride_bytes = 8 # for float64
+        # faster, but kernel crashes. Have not found the problem yet.
+            # stride_bytes = 8 # for float64
 
-        # # output
-        # batch_size, y, x, nr_kernels = x_pad.shape
-        # shape = (batch_size, y // 2, x // 2, wy, wx, nr_kernels)
+            # batch_size, y, x, nr_kernels = x_pad.shape
+            # shape = (batch_size, y // 2, x // 2, wy, wx, nr_kernels)
 
-        # b = stride_bytes
-        # bk = b * nr_kernels
-        # bkx = bk * x
-        # bkxb = bkx * batch_size
+            # b = stride_bytes
+            # bk = b * nr_kernels
+            # bkx = bk * x
+            # bkxb = bkx * batch_size
 
-        # stride = (2 * bkxb, 2 * bkx, 2 * bk , bkx, bk, b) # quite complicated, the docs helped :)
+            # stride = (2 * bkxb, 2 * bkx, 2 * bk , bkx, bk, b) # quite complicated, the docs helped :)
 
-        # s = as_strided(x_pad, shape=shape, strides=stride) # <-- kernel crashes here
-        # self.y = np.max(s, axis=(3, 4)) # <-- kernel crashes here
+            # s = as_strided(x_pad, shape=shape, strides=stride)
+            # self.y = np.max(s, axis=(3, 4)) # <-- kernel crashes here
 
-        # pooling map for backprop
-        # y_r = np.repeat(self.y, wx, axis=1)
-        # y_r = np.repeat(y_r, wy, axis=2)
-        # self.pooling_map = (x_pad == y_r) * 1.0
+            # y_r = np.repeat(self.y, wx, axis=1)
+            # y_r = np.repeat(y_r, wy, axis=2)
+            # self.pooling_map = (x_pad == y_r) * 1.0
 
+        # slower, but stable
+        self.y = np.zeros((b, x_pad.shape[1] // wy, x_pad.shape[2] // wx, k))
+        self.pooling_map = np.zeros_like(x_pad)
 
-        # very slow, but at least stable
-        i_s, i_y, i_x, i_k  = self.x.shape
-        step = self.pooling_window[0]
-        o_x = int(i_x / step)
-        o_y = int(i_y / step)
+        for y in range(self.y.shape[1]):
+            for x in range(self.y.shape[2]):
+                array = self.x[:, y * wy : (y + 1) * wy, x * wx : (x + 1) * wx]
+                self.y[:, y, x, :] = np.max(array, axis=(1, 2))
 
-        self.y = np.zeros((i_s, o_y, o_x, i_k))
-        self.pooling_map = np.zeros_like(self.x)
-
-        for s in range(i_s):
-            for k in range(i_k):
-                image = self.x[s, :, :, k]
-                for y in range(o_y):
-                    for x in range(o_x):
-                        a = image[ y * step : y * step + step, x * step : x * step + step] # get sub matrix
-                        index = np.where(a == np.max(a)) # get index of max value in sub matrix
-                        index_y = index[0][0] + y * step # get y index of max value in input matrix
-                        index_x = index[1][0] + x * step # get x index of max value in input matrix
-
-                        self.y[s, y, x, k] = image[index_y, index_x]
-                        self.pooling_map[s, index_y, index_x, k] = 1
+        y_r = np.repeat(self.y, wx, axis=1)
+        y_r = np.repeat(y_r, wy, axis=2)
+        y_r = np.resize(y_r, x_pad.shape)
+        self.pooling_map = (x_pad == y_r) * 1.0
 
     def backward(self) -> None:
         super().backward()
 
         wy, wx = self.pooling_window
+        _, y, x, _ = self.x.shape
+
         dy_r = np.repeat(self.dy, wx, axis=1)
         dy_r = np.repeat(dy_r, wy, axis=2)
         dy_r = np.resize(dy_r, self.pooling_map.shape)
-        self.dx = dy_r * self.pooling_map
-
+        dx = dy_r * self.pooling_map
+        self.dx = dx[:, :y, :x, :]
+    
+    def __pad(self) -> np.ndarray:
+        wy, wx = self.pooling_window
+        _, y, x, _ = self.x.shape
+        dy = (wy - y % wy) % wy
+        dx = (wx - x % wx) % wx
+        return np.pad(self.x, ((0, 0), (0, dy), (0, dx), (0, 0)))
 
 class Flatten(Layer):
     def __init__(self) -> None:
