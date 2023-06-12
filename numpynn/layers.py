@@ -11,7 +11,11 @@ class Layer:
         self.activation =  self.batch_norm = self.init = None
         self.is_activation_layer = False
         self.has_params = False
+        self.compiled = False
 
+        self.prev_layer = None
+        self.succ_layer = None
+        
         self.x = None
         self.dx = None
         self.y = None
@@ -29,6 +33,7 @@ class Layer:
         self.id = id
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
+        self.compiled = True
 
     def forward(self) -> None:
         if self.prev_layer is not None:

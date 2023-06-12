@@ -10,8 +10,10 @@ def Accuracy(x: np.ndarray, y: np.ndarray, model: networks.Network) -> None:
     start = time.time()
 
     print(f'Evaluating ...', end='\r')
-    output = model.predict(x)
-    loss = model.loss_function(output, y)
+
+    output = model(x)
+    loss = model.loss(output, y)
+
     preds = np.zeros_like(output)
     preds[np.arange(0, preds.shape[0]), np.argmax(output, axis=1)] = 1
     accuracy = np.sum(np.sum(preds==y, axis=1) == preds.shape[1]) / x.shape[0]
