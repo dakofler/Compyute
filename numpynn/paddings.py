@@ -3,6 +3,7 @@
 import numpy as np
 import math
 
+
 def Valid(array: np.ndarray, kernel_size: tuple[int, int]=None) -> np.ndarray:
     """Applies Valid padding using zero-values to an input array.
 

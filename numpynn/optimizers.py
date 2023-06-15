@@ -1,14 +1,16 @@
 # neural network optimizers module
 
-import numpy as np
 from numpynn import networks
+import numpy as np
 
 class optimizer():
+
     def __init__(self, learning_rate) -> None:
         self.learning_rate = learning_rate
 
 
 class sgd(optimizer):
+
     def __init__(self, learning_rate: float=0.01, momentum: float=0.0, nesterov: bool=False) -> None:
         super().__init__(learning_rate)
         self.momentum = momentum
@@ -28,6 +30,7 @@ class sgd(optimizer):
 
 
 class adam(optimizer):
+
     def __init__(self, learning_rate: float=0.001, beta1: float=0.9, beta2: float=0.999, epsilon: float=1e-07) -> None:
         super().__init__(learning_rate)
         self.beta1 = beta1

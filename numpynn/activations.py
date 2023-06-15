@@ -5,6 +5,7 @@ import numpy as np
 
 
 class Relu(layers.Layer):
+
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -23,6 +24,7 @@ class Relu(layers.Layer):
 
 
 class Sigmoid(layers.Layer):
+
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -45,6 +47,7 @@ class Sigmoid(layers.Layer):
 
 
 class Tanh(layers.Layer):
+
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -63,6 +66,7 @@ class Tanh(layers.Layer):
 
 
 class Softmax(layers.Layer):
+    
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
@@ -73,25 +77,17 @@ class Softmax(layers.Layer):
 
     def forward(self) -> None:
         super().forward()
-        # will be improved later
-        self.logits = self.x
-        logit_maxes = np.amax(self.logits, axis=1, keepdims=True)
-        self.norm_logits = self.logits - logit_maxes
-        self.counts = np.exp(self.norm_logits)
-        self.counts_sum = np.sum(self.counts, axis=1, keepdims=True)
-        self.counts_sum_inv = self.counts_sum**-1
-        probs = self.counts * self.counts_sum_inv
-        self.y = probs
-    
+        self.y = self.__softmax(self.x)
+
     def backward(self) -> None:
         super().backward()
-        # will be improved later
-        dcounts_sum_inv = np.sum(self.counts * self.dy, axis=1, keepdims=True)
-        dcounts = self.counts_sum_inv * self.dy
-        dcounts_sum = -self.counts_sum**-2 * dcounts_sum_inv
-        dcounts += np.ones_like(self.counts) * dcounts_sum
-        dnorm_logits = np.exp(self.norm_logits) * dcounts
-        dlogits = dnorm_logits.copy()
-        dlogit_maxes = np.sum(-dnorm_logits, axis=1, keepdims=True)
-        dlogits += np.argmax(self.logits, axis=1, keepdims=True) * dlogit_maxes
-        self.dx = dlogits
+        # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
+        _, x1 = self.x.shape
+        tensor1 = np.einsum('ij,ik->ijk', self.y, self.y)
+        tensor2 = np.einsum('ij,jk->ijk', self.y, np.eye(x1, x1))
+        dSoftmax = tensor2 - tensor1
+        self.dx = np.einsum('ijk,ik->ij', dSoftmax, self.dy)
+
+    def __softmax(self, array: np.ndarray, axis: int=1):
+        e = np.exp(array - np.amax(array, axis=axis, keepdims=True))
+        return e / np.sum(e, axis=axis, keepdims=True)

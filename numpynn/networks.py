@@ -1,15 +1,17 @@
 # neural networks module
 
-from numpynn import layers, activations, preprocessing, utils
+from numpynn import layers, activations, utils
 import numpy as np
 import time
 import matplotlib.pyplot as plt
 
 
 class Network():
+    """ Neural network base class """
 
     def __init__(self, input_shape, layers) -> None:
         self.compiled = False
+        self.loss = None
         self.loss_history = []
         self.layers = []
         self.input_shape = input_shape
@@ -18,28 +20,12 @@ class Network():
             for layer in layers:
                 self.add_layer(layer)
 
-    def add_layer(self, layer, input_layer = False) -> None:
-        """Adds a layer object to the network model.
-        
-        Args:
-            layer: layer object to be added.
-            input_layer: Defines whether the layer is used as input to the neural network [optional].
-        """
-        if input_layer:
-            self.layers.insert(0, layer)
-        else:
-            self.layers.append(layer)
-
-            if layer.batch_norm is not None:
-                self.layers.append(layer.activation)
-
-            if layer.activation is not None:
-                self.layers.append(layer.activation)
-
-        self.compiled = False
+    def __call__(self, x: np.ndarray, y: np.ndarray=None) -> None:
+        self.__check_dims(x, y)
+        self.layers[0].x = x
 
     def compile(self, optimizer, loss_function, metric=None) -> None:
-        """Compiles the model.
+        """ Compiles the model.
         
         Args:
             optimizer: Optimizer to be used to adjust weights and biases.
@@ -48,6 +34,7 @@ class Network():
         """
         if not isinstance(self.layers[0], layers.Input):
             self.add_layer(layers.Input(self.input_shape), input_layer=True)
+
         if not isinstance(self.layers[-1], layers.Output):
             self.add_layer(layers.Output())
 
@@ -65,26 +52,28 @@ class Network():
 
         self.compiled = True
 
-    def predict(self, x: np.ndarray) -> None:
-        self.__check_dims(x)
-        self.layers[0].x = x
-
-    def train(self, x: np.ndarray, y: np.ndarray) -> None:
-        self.__check_dims(x, y)
-
-    def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
-        """Evaluates the model using a defined metric function.
-
-        Raises:
-            FunctionError: If no function has been defined.
-        """
-        if self.metric is None:
-            raise Exception('No metric defined.')
+    def add_layer(self, layer, input_layer = False) -> None:
+        """ Adds a layer object to the network model.
         
-        self.metric(x, y, self)
+        Args:
+            layer: layer object to be added.
+            input_layer: Defines whether the layer is used as input to the neural network [optional].
+        """
+        if input_layer:
+            self.layers.insert(0, layer)
+        else:
+            self.layers.append(layer)
+
+            if layer.batch_norm is not None:
+                self.layers.append(layer.batch_norm)
+
+            if layer.activation is not None:
+                self.layers.append(layer.activation)
+
+        self.compiled = False
 
     def summary(self) -> None:
-        """Gives an overview of the model architecture.
+        """ Gives an overview of the model architecture.
         
         Raises:
             Error: If the model has not been compiled yet.
@@ -109,15 +98,31 @@ class Network():
 
         print(f'\ntotal trainable parameters {params}')
 
+    def train(self, x: np.ndarray, y: np.ndarray) -> None:
+        self.__check_dims(x, y)
+
+    def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
+        """ Evaluates the model using a defined metric function.
+
+        Raises:
+            FunctionError: If no function has been defined.
+        """
+        if self.metric is None:
+            raise Exception('No metric defined.')
+        
+        self.metric(x, y, self)
+
     def plot_training_loss(self) -> None:
-        """Plots the loss over epochs if the model has been trained yet. """
+        """ Plots the loss over epochs if the model has been trained yet """
+
         plt.figure(figsize=(20,4))
         plt.plot(np.arange(len(self.loss_history)), self.loss_history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
     def plot_neuron_activations(self, bins: int=100) -> None:
-        """Plots neuron activation distribution."""
+        """ Plots neuron activation distribution """
+
         plt.figure(figsize=(20,4))
         legends = []
 
@@ -134,7 +139,8 @@ class Network():
         plt.title('activation distribution')
 
     def plot_neuron_gradients(self, bins: int=100) -> None:
-        """Plots neuron gradient distribution."""
+        """ Plots neuron gradient distribution """
+
         plt.figure(figsize=(20,4))
         legends = []
 
@@ -150,7 +156,9 @@ class Network():
         plt.legend(legends)
         plt.title('gradient distribution')
 
-    def plot_conv_kernels(self) -> None:
+    def plot_conv_activations(self) -> None:
+        """ Plots neuron activations for convolutional layers """
+
         conv_layers = [l for l in self.layers if isinstance(l, layers.Convolution)]
 
         if not conv_layers:
@@ -161,9 +169,8 @@ class Network():
             plt.figure(figsize=(40, 40))
 
             for j in range(l.k):
-                a = l.y[0, :, :, j]
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(a, cmap='gray')
+                plt.imshow(l.y[0, :, :, j], cmap='gray')
                 plt.xlabel(f'kernel {str(j)}')
 
             plt.show()
@@ -181,64 +188,66 @@ class Network():
                 raise Exception(f'Output dimension must be {req_output_dim}.')
 
 class FeedForward(Network):
+    """Feed forward neural network model"""
+
     def __init__(self, input_shape, layers=[]) -> None:
         super().__init__(input_shape, layers)
     
+    def __call__(self, x: np.ndarray, y: np.ndarray=None) -> np.ndarray:
+        """Computes an output and the loss based on imput samples.
+        
+        Args:
+            x: Array of input values.
+            y: Array of target values [optional].
+
+        Returns:
+            output: Array of output values.
+            loss: loss value, if target values are provided, else None.
+
+        Raises:
+            ShapeError: If input shape is not of dim 3.
+        """
+        super().__call__(x, y=None)
+        self.__forward() # forward pass
+
+        if y is not None:
+            self.loss = self.loss_function(self.layers[-1].y, y) # compute loss
+        return self.layers[-1].y, self.loss
+
     def __forward(self) -> None:
         for layer in self.layers:
             layer.forward()
 
-    def __backward(self, loss_gradient: np.ndarray) -> None:
-        self.layers[-1].dy = loss_gradient     
+    def __backward(self) -> None:
+        self.layers[-1].dy = self.loss_function.backward() # set last layers gradient to be the loss gradient
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
 
         for layer in layers_reversed:
             layer.backward()
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        """Computes an output based on a single given input.
-        
-        Args:
-            input: Array of input values.
-
-        Returns:
-            output: Array of output values.
-
-        Raises:
-            ShapeError: If input shape is not of dim 3.
-        """
-        super().predict(x)
-        self.__forward()
-        return self.layers[-1].y
-
-    def update_params(self, loss_gradient: np.ndarray):       
-        self.__backward(loss_gradient)
-
     def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
-        """Trains the model using given input data.
+        """Trains the model using samples and targets.
         
         Args:
             x: Array of input features.
             y: Array of training input.
             epochs: Number of epochs the training should last for [optional].
             batch_size: Number of input arrays used per epoch. If None, all training samples are used. [optional].
-            log: If false, feedback per epoch is surpressed [optional].
+            log: If false, feedback per epoch is supressed [optional].
 
         Raises:
             ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
         """
         super().train(x, y)
-        batch_size = batch_size if batch_size else len(x)
         self.loss_history = []
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_shuffled, y_shuffled = utils.shuffle(x, y)
+            x_train, y_train = utils.shuffle(x, y, batch_size) # shuffle tensors and return batch
 
-            output = self.predict(x_shuffled[:batch_size]) # foward pass
-            loss = self.loss_function(output, y_shuffled[:batch_size]) # compute loss
-            self.__backward(self.loss_function.backward()) # backward pass
+            _, loss = self(x_train, y_train) # forward pass & compute loss
+            self.__backward() # backward pass
             self.optimizer(self) # update weights and biases
 
             end = time.time()
