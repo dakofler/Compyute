@@ -1,12 +1,14 @@
 # neural network layers module
 
-from numpynn import inits, paddings, utils
+from numpynn import inits, paddings
 import numpy as np
 from numpy.fft  import fft2, ifft2
-from numpy.lib.stride_tricks import as_strided
+# from numpy.lib.stride_tricks import as_strided
 
 
 class Layer:
+    """Layer base class"""
+    
     def __init__(self) -> None:
         self.activation =  self.batch_norm = self.init = None
         self.is_activation_layer = False
@@ -45,12 +47,13 @@ class Layer:
 
 
 class Input(Layer):
-    def __init__(self, input_shape: tuple[int, int]) -> None:
-        """Input layer used in neural network models.
+    """Input layer used in neural network models.
 
-        Args:
-            input_shape: Shape of input arrays the model is trained and/or applied to.
-        """
+    Args:
+        input_shape: Shape of input arrays the model is trained and/or applied to.
+    """
+    
+    def __init__(self, input_shape: tuple[int, int]) -> None:
         super().__init__()
         self.input_shape = input_shape
 
@@ -61,7 +64,6 @@ class Input(Layer):
 
     def forward(self) -> None:
         super().forward()
-        # self.y = np.reshape(self.x, self.input_shape)
         self.y = self.x
     
     def backward(self) -> None:
@@ -69,8 +71,9 @@ class Input(Layer):
     
 
 class Output(Layer):
+    "Output layer used in neural network models."
+
     def __init__(self) -> None:
-        "Output layer used in neural network models."
         super().__init__()
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
@@ -87,16 +90,17 @@ class Output(Layer):
 
 
 class Linear(Layer):
+    """Fully connected layer used in neural network models.
+
+    Args:
+        nr_neurons: Number of neurons to be used in this layer.
+        init: Weight Initialization method [optional].
+
+    Raises:
+        Error: If the number of neurons is less than 1.
+    """
+
     def __init__(self, nr_neurons: int, batch_norm=None, activation=None, init=inits.Kaiming) -> None:
-        """Fully connected layer used in neural network models.
-
-        Args:
-            nr_neurons: Number of neurons to be used in this layer.
-            init: Weight Initialization method [optional].
-
-        Raises:
-            Error: If the number of neurons is less than 1.
-        """
         super().__init__()
         
         if nr_neurons < 1:
@@ -132,22 +136,24 @@ class Linear(Layer):
 
 
 class Convolution(Layer):
-    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), padding=paddings.Valid, batch_norm=None, activation=None, init=inits.Kaiming) -> None:
-        """Convolutional layer used in convolutional neural network models to extract features from images.
+    """Convolutional layer used in convolutional neural network models to extract features from images.
 
-        Args:
-            nr_kernels: Number of kernels to be used in this layer.
-            kernel_size: Size of each kernel [optional].
-            padding: Padding function that is applied to the layer's input before processing [optional].
-            init: Weight Initialization method [optional].
+    Args:
+        nr_kernels: Number of kernels to be used in this layer.
+        kernel_size: Size of each kernel [optional].
+        padding: Padding function that is applied to the layer's input before processing [optional].
+        init: Weight Initialization method [optional].
 
-        Raises:
-            Error: If the number of kernels is less than 1.
-        """
+    Raises:
+        Error: If the number of kernels is less than 1.
+    """
+
+    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), padding=paddings.Valid, batch_norm=None, activation=None, init=inits.Kaiming) -> None:       
+        super().__init__()
+
         if nr_kernels < 1:
             raise Exception("number of kernels must be at least 1")
-        
-        super().__init__()
+
         self.k = nr_kernels
         self.kernel_size = kernel_size
         self.padding = padding
@@ -180,6 +186,7 @@ class Convolution(Layer):
 
     def backward(self) -> None:
         super().backward()
+        
         if self.padding != paddings.Same:
             p = int((self.x.shape[1] - self.dy.shape[1]) / 2)
             dy_p = np.pad(self.dy, p)[p : -p, :, :, p : -p]
@@ -202,12 +209,13 @@ class Convolution(Layer):
 
 
 class MaxPooling(Layer):
-    def __init__(self, pooling_window: tuple[int, int]) -> None:
-        """MaxPoling layer used in convolutional neural network models to reduce information and avoid overfitting.
+    """MaxPoling layer used in convolutional neural network models to reduce information and avoid overfitting.
 
-        Args:
-            pooling_window: Size of the pooling window used for the pooling operation.
-        """
+    Args:
+        pooling_window: Size of the pooling window used for the pooling operation.
+    """
+
+    def __init__(self, pooling_window: tuple[int, int]) -> None:
         super().__init__()
         self.pooling_window = pooling_window
 
@@ -276,8 +284,9 @@ class MaxPooling(Layer):
         return np.pad(self.x, ((0, 0), (0, dy), (0, dx), (0, 0)))
 
 class Flatten(Layer):
+    "Flatten layer used to reshape tensors with shape (b, x1, x2, ...) into tensors with shape (b, x1 + x2 + ...)."
+    
     def __init__(self) -> None:
-        "Flatten layer used to reshape multidimensional arrays into one-dimensional arrays."
         super().__init__()
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
@@ -294,19 +303,21 @@ class Flatten(Layer):
 
 
 class Dropout(Layer):
-    def __init__(self, drop_rate: float) -> None:
-        """Dropout layer used in neural network models to reduce information and avoid overfitting.
+    """Dropout layer used in neural network models to reduce information and avoid overfitting.
 
-        Args:
-            drop_rate: Probability of values of the input being set to 0.
+    Args:
+        drop_rate: Probability of values of the input being set to 0.
 
-        Raises:
-            Error: If the droprate is outside the interval [0, 1).
-        """
+    Raises:
+        Error: If the droprate is outside the interval [0, 1).
+    """
+
+    def __init__(self, drop_rate: float) -> None:       
+        super().__init__()
+
         if drop_rate < 0 or drop_rate >= 1:
             raise Exception("drop rate must be in the interval [0, 1)")
         
-        super().__init__()
         self.drop_rate = drop_rate
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
