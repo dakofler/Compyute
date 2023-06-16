@@ -5,10 +5,9 @@ import numpy as np
 import time
 
 
-def Accuracy(x: np.ndarray, y: np.ndarray, model: networks.Network) -> None:
+def Accuracy(x: np.ndarray, y: np.ndarray, model: networks.Sequential) -> float:
     "Computes the accuracy score of a prediction compared to target values."
     start = time.time()
-    print(f'Evaluating ...', end='\r')
 
     output, loss = model(x, y)
     preds = np.zeros_like(output)
@@ -17,4 +16,7 @@ def Accuracy(x: np.ndarray, y: np.ndarray, model: networks.Network) -> None:
 
     end = time.time()
     step = round((end - start) * 1000, 2)
+
     print('loss %.4f | %10s %.4f | time %.2f ms' % (loss, Accuracy.__name__, accuracy, step))
+
+    return accuracy

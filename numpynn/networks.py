@@ -1,4 +1,4 @@
-# neural networks module
+# neural network module
 
 from numpynn import layers, activations, utils
 import numpy as np
@@ -6,8 +6,8 @@ import time
 import matplotlib.pyplot as plt
 
 
-class Network():
-    """ Neural network base class """
+class Sequential():
+    """Feed forward neural network model"""
 
     def __init__(self, input_shape, layers) -> None:
         self.compiled = False
@@ -16,13 +16,31 @@ class Network():
         self.layers = []
         self.input_shape = input_shape
 
-        if layers:
-            for layer in layers:
-                self.add_layer(layer)
+        for layer in layers:
+            self.__add_layer(layer)
 
     def __call__(self, x: np.ndarray, y: np.ndarray=None) -> None:
+        """Computes an output and the loss based on imput samples.
+        
+        Args:
+            x: Array of input values.
+            y: Array of target values [optional].
+
+        Returns:
+            output: Array of output values.
+            loss: loss value, if target values are provided, else None.
+
+        Raises:
+            ShapeError: If input shape is not of dim 3.
+        """
         self.__check_dims(x, y)
         self.layers[0].x = x
+
+        self.__forward() # forward pass
+
+        if y is not None:
+            self.loss = self.loss_function(self.layers[-1].y, y) # compute loss
+        return self.layers[-1].y, self.loss
 
     def compile(self, optimizer, loss_function, metric=None) -> None:
         """ Compiles the model.
@@ -33,10 +51,10 @@ class Network():
             metric: Metric functio to be used to evaluate the model [optional].
         """
         if not isinstance(self.layers[0], layers.Input):
-            self.add_layer(layers.Input(self.input_shape), input_layer=True)
+            self.__add_layer(layers.Input(self.input_shape), input_layer=True)
 
         if not isinstance(self.layers[-1], layers.Output):
-            self.add_layer(layers.Output())
+            self.__add_layer(layers.Output())
 
         for i, layer in enumerate(self.layers):
             if i == 0:
@@ -52,25 +70,59 @@ class Network():
 
         self.compiled = True
 
-    def add_layer(self, layer, input_layer = False) -> None:
-        """ Adds a layer object to the network model.
+    def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, verbose: bool=True, val_data: tuple[np.ndarray]=(None, None)) -> None:
+        """Trains the model using samples and targets.
         
         Args:
-            layer: layer object to be added.
-            input_layer: Defines whether the layer is used as input to the neural network [optional].
+            x: Array of input features.
+            y: Array of training input.
+            epochs: Number of epochs the training should last for. [optional]
+            batch_size: Number of input arrays used per epoch. If None, all training samples are used. [optional]
+            verbose: If false, feedback per epoch is supressed. [optional]
+            val_data: Data used for validation during training. [optional]
+
+        Raises:
+            ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
         """
-        if input_layer:
-            self.layers.insert(0, layer)
-        else:
-            self.layers.append(layer)
+        self.__check_dims(x, y)
+        self.loss_history = []
+        val_loss = None
 
-            if layer.batch_norm is not None:
-                self.layers.append(layer.batch_norm)
+        for epoch in range(1, epochs + 1):
+            start = time.time()
+            x_train, y_train = utils.shuffle(x, y, batch_size) # shuffle tensors and return batch
 
-            if layer.activation is not None:
-                self.layers.append(layer.activation)
+            self.__train()
+            _, loss = self(x_train, y_train)    # forward pass & compute loss
+            self.__backward()                   # backward pass
+            self.optimizer(self)                # update weights and biases
 
-        self.compiled = False
+            self.__eval()
+            if val_data[0] is not None: 
+                x_val, y_val = val_data
+                _, val_loss = self(x_val, y_val) # compute validation loss
+
+            end = time.time()
+            step = round((end - start) * 1000, 2)
+            self.__log(epoch, epochs, step, loss, verbose, val_loss)
+            self.loss_history.append(loss)
+
+    def predict(self, x: np.ndarray):
+        self.__eval()
+        pred, _ = self(x)
+        return pred
+
+    def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
+        """ Evaluates the model using a defined metric function.
+
+        Raises:
+            FunctionError: If no function has been defined.
+        """
+        if self.metric is None:
+            raise Exception('No metric defined.')
+        
+        self.__eval()
+        self.metric(x, y, self)
 
     def summary(self) -> None:
         """ Gives an overview of the model architecture.
@@ -81,7 +133,7 @@ class Network():
         if not self.compiled:
             raise Exception('Model has not been compiled yet.')
         
-        print('%15s | %15s | %15s | %15s | %15s | %10s\n' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
+        print('%15s | %20s | %20s | %20s | %20s | %10s\n' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
         params = 0
 
         for l in self.layers [1:-1]:
@@ -94,23 +146,9 @@ class Network():
             b_shape = l.b.shape if l.b is not None else ()
 
             params += ws + bs
-            print('%15s | %15s | %15s | %15s | %15s | %10s' % (l.__class__.__name__, str(l.x.shape[1:]), str(w_shape), str(b_shape), str(l.y.shape[1:]), str(ws + bs)))
+            print('%15s | %20s | %20s | %20s | %20s | %10s' % (l.__class__.__name__, str(l.x.shape[1:]), str(w_shape), str(b_shape), str(l.y.shape[1:]), str(ws + bs)))
 
         print(f'\ntotal trainable parameters {params}')
-
-    def train(self, x: np.ndarray, y: np.ndarray) -> None:
-        self.__check_dims(x, y)
-
-    def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
-        """ Evaluates the model using a defined metric function.
-
-        Raises:
-            FunctionError: If no function has been defined.
-        """
-        if self.metric is None:
-            raise Exception('No metric defined.')
-        
-        self.metric(x, y, self)
 
     def plot_training_loss(self) -> None:
         """ Plots the loss over epochs if the model has been trained yet """
@@ -175,44 +213,19 @@ class Network():
 
             plt.show()
 
-    def __check_dims(self, x, y=None):
-        req_input_dim = self.layers[0].x.ndim
+    def __add_layer(self, layer, input_layer = False) -> None:
+        if input_layer:
+            self.layers.insert(0, layer)
+        else:
+            self.layers.append(layer)
 
-        if x.ndim != req_input_dim:
-            raise Exception(f'Isput dimension must be {req_input_dim}.')
+            if layer.batch_norm is not None:
+                self.layers.append(layer.batch_norm)
 
-        if y is not None:
-            req_output_dim = self.layers[-1].y.ndim
+            if layer.activation is not None:
+                self.layers.append(layer.activation)
 
-            if y.ndim != req_output_dim:
-                raise Exception(f'Output dimension must be {req_output_dim}.')
-
-class FeedForward(Network):
-    """Feed forward neural network model"""
-
-    def __init__(self, input_shape, layers=[]) -> None:
-        super().__init__(input_shape, layers)
-    
-    def __call__(self, x: np.ndarray, y: np.ndarray=None) -> np.ndarray:
-        """Computes an output and the loss based on imput samples.
-        
-        Args:
-            x: Array of input values.
-            y: Array of target values [optional].
-
-        Returns:
-            output: Array of output values.
-            loss: loss value, if target values are provided, else None.
-
-        Raises:
-            ShapeError: If input shape is not of dim 3.
-        """
-        super().__call__(x, y=None)
-        self.__forward() # forward pass
-
-        if y is not None:
-            self.loss = self.loss_function(self.layers[-1].y, y) # compute loss
-        return self.layers[-1].y, self.loss
+        self.compiled = False
 
     def __forward(self) -> None:
         for layer in self.layers:
@@ -226,34 +239,36 @@ class FeedForward(Network):
         for layer in layers_reversed:
             layer.backward()
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None, log: bool=True) -> None:
-        """Trains the model using samples and targets.
-        
-        Args:
-            x: Array of input features.
-            y: Array of training input.
-            epochs: Number of epochs the training should last for [optional].
-            batch_size: Number of input arrays used per epoch. If None, all training samples are used. [optional].
-            log: If false, feedback per epoch is supressed [optional].
-
-        Raises:
-            ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
-        """
-        super().train(x, y)
-        self.loss_history = []
-
-        for epoch in range(1, epochs + 1):
-            start = time.time()
-            x_train, y_train = utils.shuffle(x, y, batch_size) # shuffle tensors and return batch
-
-            _, loss = self(x_train, y_train) # forward pass & compute loss
-            self.__backward() # backward pass
-            self.optimizer(self) # update weights and biases
-
-            end = time.time()
-            step = round((end - start) * 1000, 2)
-
-            if log:   
+    def __log(self, epoch, epochs, step, loss, verbose=False, val_loss=None):
+        if verbose:
+            if val_loss is not None:
+                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f | val_loss %.4f' % (epoch, epochs, step, loss, val_loss))
+            else:
+                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f' % (epoch, epochs, step, loss))
+        elif  epoch % (epochs // 10) == 0:
+            if val_loss is not None:
+                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f | val_loss %.4f' % (epoch, epochs, step, loss, val_loss))
+            else:
                 print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f' % (epoch, epochs, step, loss))
 
-            self.loss_history.append(loss)
+    def __train(self):
+        for l in self.layers:
+            if l.mode is not None:
+                l.mode = 'train'
+
+    def __eval(self):
+        for l in self.layers:
+            if l.mode is not None:
+                l.mode = 'eval'    
+
+    def __check_dims(self, x, y=None):
+        req_input_dim = self.layers[0].x.ndim
+
+        if x.ndim != req_input_dim:
+            raise Exception(f'Isput dimension must be {req_input_dim}.')
+
+        if y is not None:
+            req_output_dim = self.layers[-1].y.ndim
+
+            if y.ndim != req_output_dim:
+                raise Exception(f'Output dimension must be {req_output_dim}.')

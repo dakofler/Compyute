@@ -3,20 +3,20 @@
 from numpynn import networks
 import numpy as np
 
-class optimizer():
+class Optimizer():
 
     def __init__(self, learning_rate) -> None:
         self.learning_rate = learning_rate
 
 
-class sgd(optimizer):
+class SGD(Optimizer):
 
     def __init__(self, learning_rate: float=0.01, momentum: float=0.0, nesterov: bool=False) -> None:
         super().__init__(learning_rate)
         self.momentum = momentum
         self.nesterov = nesterov
 
-    def __call__(self, model: networks.Network) -> None:
+    def __call__(self, model: networks.Sequential) -> None:
         for layer in model.layers:
             if layer.dw is not None:
                 layer.w_change = - self.learning_rate * layer.dw + self.momentum * layer.w_change
@@ -29,7 +29,7 @@ class sgd(optimizer):
                 else: layer.b = layer.b + self.momentum * layer.b_change - self.learning_rate * layer.db
 
 
-class adam(optimizer):
+class Adam(Optimizer):
 
     def __init__(self, learning_rate: float=0.001, beta1: float=0.9, beta2: float=0.999, epsilon: float=1e-07) -> None:
         super().__init__(learning_rate)
@@ -37,7 +37,7 @@ class adam(optimizer):
         self.beta2 = beta2
         self.epsilon = epsilon
 
-    def __call__(self, model: networks.Network) -> None:
+    def __call__(self, model: networks.Sequential) -> None:
         for layer in model.layers:
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw

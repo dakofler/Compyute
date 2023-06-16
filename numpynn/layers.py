@@ -14,6 +14,7 @@ class Layer:
         self.is_activation_layer = False
         self.has_params = False
         self.compiled = False
+        self.mode = 'train'
 
         self.prev_layer = None
         self.succ_layer = None
@@ -100,16 +101,17 @@ class Linear(Layer):
         Error: If the number of neurons is less than 1.
     """
 
-    def __init__(self, nr_neurons: int, batch_norm=None, activation=None, init=inits.Kaiming) -> None:
+    def __init__(self, nr_neurons: int,  norm=None, activation=None, init=inits.Kaiming, biases=True) -> None:
         super().__init__()
         
         if nr_neurons < 1:
             raise Exception("number of neurons must be at least 1")
         
         self.nr_neurons = nr_neurons
-        self.batch_norm = batch_norm
+        self.norm = norm
         self.activation = activation
         self.init = init
+        self.biases = biases
         self.has_params = True
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
@@ -119,20 +121,25 @@ class Linear(Layer):
         fan_mode = self.prev_layer.y.shape[1]
         self.w = self.init(shape=w_shape, fan_mode=fan_mode, activation=self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
-        self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,))
+
+        if self.biases:
+            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,))
+
         self.forward()
 
     def forward(self) -> None:
         super().forward()
 
-        self.y = self.x @ self.w + self.b
+        self.y = self.x @ self.w + (self.b if self.biases else 0)
 
     def backward(self) -> None:
         super().backward()
 
         self.dx = self.dy @ self.w.T
         self.dw = self.x.T @ self.dy
-        self.db = np.sum(self.dy, axis=0)
+
+        if self.biases:
+            self.db = np.sum(self.dy, axis=0)
 
 
 class Convolution(Layer):
@@ -148,7 +155,7 @@ class Convolution(Layer):
         Error: If the number of kernels is less than 1.
     """
 
-    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), padding=paddings.Valid, batch_norm=None, activation=None, init=inits.Kaiming) -> None:       
+    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), padding=paddings.Valid, norm=None, activation=None, init=inits.Kaiming, biases=True) -> None:       
         super().__init__()
 
         if nr_kernels < 1:
@@ -157,15 +164,16 @@ class Convolution(Layer):
         self.k = nr_kernels
         self.kernel_size = kernel_size
         self.padding = padding
-        self.batch_norm = batch_norm
+        self.norm = norm
         self.activation = activation
         self.init = init
+        self.biases = biases
         self.has_params = True
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
-        kernel_shape = (self.k, self.prev_layer.y.shape[3], *self.kernel_size)
-        self.w = self.init(kernel_shape, self.kernel_size[0], self.activation)
+        kernel_shape = (self.k, self.prev_layer.y.shape[3], *self.kernel_size) # (k, c, y, x)
+        self.w = self.init(kernel_shape, fan_mode=self.kernel_size[0], activation=self.activation)
         self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
         self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
         self.forward()
@@ -175,14 +183,14 @@ class Convolution(Layer):
     
     def forward(self) -> None:
         super().forward()
-        self.x_p = self.padding(self.x, self.kernel_size) # ok
+        self.x_p = self.padding(self.x, kernel_size=self.kernel_size)
         x_p_fft = fft2(self.x_p, axes=(1, 2))
         w_fft = np.moveaxis(fft2(self.w, s=self.x_p.shape[1:3]), 1, -1)
         p = self.w.shape[2] - 1
         self.y = np.zeros((self.x_p.shape[0], self.x_p.shape[1] - p, self.x_p.shape[2] - p, self.w.shape[0]))
 
         for k in np.arange(self.w.shape[0]):
-            self.y[:, :, :, k] = np.sum(np.real(ifft2(x_p_fft * w_fft[k], axes=(1, 2))), axis=3)[:, p:, p:] + self.b[k]
+            self.y[:, :, :, k] = np.sum(np.real(ifft2(x_p_fft * w_fft[k], axes=(1, 2))), axis=3)[:, p:, p:] + (self.b[k] if self.biases else 0)
 
     def backward(self) -> None:
         super().backward()
@@ -205,7 +213,8 @@ class Convolution(Layer):
         dy_p_fft = np.resize(fft2(dy_p, axes=(1, 2)), (dy_p.shape[0], w.shape[1], *dy_p.shape[1:]))
         self.dx = np.moveaxis(np.sum(np.real(ifft2(w_fft * dy_p_fft, axes=(2, 3))), axis=-1), 1, -1)[:, -self.x.shape[1]:, -self.x.shape[2]:]
 
-        self.db = np.sum(self.dy, axis=(0, 1, 2))
+        if self.biases:
+            self.db = np.sum(self.dy, axis=(0, 1, 2))
 
 
 class MaxPooling(Layer):
@@ -319,6 +328,7 @@ class Dropout(Layer):
             raise Exception("drop rate must be in the interval [0, 1)")
         
         self.drop_rate = drop_rate
+        self.mode = 'eval'
 
     def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
         super().compile(id, prev_layer, succ_layer)
@@ -326,8 +336,11 @@ class Dropout(Layer):
     
     def forward(self) -> None:
         super().forward()
-        self.drop_map = np.random.choice([0, 1], self.x.shape, p=[self.drop_rate, 1 - self.drop_rate])
-        self.y = self.x * self.drop_map / (1 - self.drop_rate)
+        if self.mode == 'eval':
+            self.y = self.x
+        else:
+            self.drop_map = np.random.choice([0, 1], self.x.shape, p=[self.drop_rate, 1 - self.drop_rate])
+            self.y = self.x * self.drop_map / (1 - self.drop_rate)
 
     def backward(self) -> None:
         super().backward()
