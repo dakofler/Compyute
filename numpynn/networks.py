@@ -208,7 +208,7 @@ class Sequential():
 
             for j in range(l.k):
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(l.y[0, :, :, j], cmap='gray')
+                plt.imshow(l.y[0, j, :, :], cmap='gray')
                 plt.xlabel(f'kernel {str(j)}')
 
             plt.show()

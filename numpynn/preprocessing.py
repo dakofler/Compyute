@@ -22,7 +22,7 @@ def split_train_test_val_data(array: np.ndarray, ratio_val: float=0.1, ratio_tes
     array_shuffled = array[shuffle_index]
 
     n1 = int(len(array_shuffled) * (1 - ratio_val - ratio_test))
-    n2 = int(len(array_shuffled) * (1 - ratio_val))
+    n2 = int(len(array_shuffled) * (1 - ratio_test))
 
     train_array = array_shuffled[:n1]
     val_array = array_shuffled[n1:n2]

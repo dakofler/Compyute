@@ -29,4 +29,4 @@ def Same(array: np.ndarray, **kwargs) -> np.ndarray:
     """
     kernel_size = kwargs['kernel_size']
     width = math.floor(kernel_size[0] / 2)
-    return np.pad(array, ((0, 0), (width, width), (width, width), (0, 0))) # pad along axis 1 & 2
+    return np.pad(array, ((0, 0), (0, 0), (width, width), (width, width))) # pad along axis 2 & 3
