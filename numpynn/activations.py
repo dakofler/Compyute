@@ -40,10 +40,10 @@ class Sigmoid(Activation):
         sigm = self.__sigmoid(self.y)
         self.dx = sigm * (1.0 - sigm) * self.dy
 
-    def __sigmoid(self, v):
+    def __sigmoid(self, tensor):
         # clip to avoid high values when exponentiating
-        v = np.clip(v, -100, 100)
-        return 1.0 / (1.0 + np.exp(-v))
+        tensor = np.clip(tensor, -100, 100)
+        return 1.0 / (1.0 + np.exp(-tensor))
 
 
 class Tanh(Activation):
@@ -75,14 +75,14 @@ class Softmax(Activation):
 
     def backward(self) -> None:
         super().backward()
-        _, x = self.x.shape
+        _, channels = self.x.shape
         # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
         tensor1 = np.einsum('ij,ik->ijk', self.y, self.y)
-        tensor2 = np.einsum('ij,jk->ijk', self.y, np.eye(x, x))
+        tensor2 = np.einsum('ij,jk->ijk', self.y, np.eye(channels, channels))
         delta = tensor2 - tensor1
         self.dx = np.einsum('ijk,ik->ij', delta, self.dy)
 
     def __softmax(self, tensor, axis=1):
         # subtract max value to avoid high values when exponentiating.
-        e = np.exp(tensor - np.amax(tensor, axis=axis, keepdims=True))
-        return e / np.sum(e, axis=axis, keepdims=True)
+        expo = np.exp(tensor - np.amax(tensor, axis=axis, keepdims=True))
+        return expo / np.sum(expo, axis=axis, keepdims=True)

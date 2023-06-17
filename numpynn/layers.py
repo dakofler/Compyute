@@ -157,7 +157,7 @@ class Convolution(ParamLayer):
                  padding=paddings.valid, norm: Layer=None, activation: Layer=None,
                  init=inits.kaiming, bias: bool=True) -> None:
         super().__init__(init, bias, norm, activation)
-        
+
         if out_channels < 1:
             raise Exception("nr_kernels must be >= 1")
 
@@ -275,26 +275,19 @@ class MaxPooling(Layer):
                 # get max value within chunk
                 self.y[:, :, y, x] = np.max(chunk, axis=(2, 3))
 
-        # "stretch" output gradients
-        y_r = np.repeat(self.y, p_x, axis=2)
-        y_r = np.repeat(y_r, p_y, axis=3)
-        # resize to fit input
-        y_r = np.resize(y_r, x_pad.shape)
+        # "stretch" outputs
+        y_s = self.__stretch(self.y, self.pooling_window, (2, 3), x_pad.shape)
         # create pooling map
         # not perfect since technically all values can be equal within a chunk
-        self.pooling_map = (x_pad == y_r) * 1.0
+        self.pooling_map = (x_pad == y_s) * 1.0
 
     def backward(self) -> None:
         super().backward()
-        # stretch gradients
-        w_y, w_x = self.pooling_window
-        dy_r = np.repeat(self.dy, w_x, axis=2)
-        dy_r = np.repeat(dy_r, w_y, axis=3)
-        # resize to fit input
-        dy_r = np.resize(dy_r, self.pooling_map.shape)
+        # "stretch" output gradient
+        dy_s = self.__stretch(self.dy, self.pooling_window, (2, 3), self.pooling_map.shape)
         # use pooling map as mask for gradients
         _, _, x_y, x_x = self.x.shape
-        self.dx = (dy_r * self.pooling_map)[:, :, :x_y, :x_x]
+        self.dx = (dy_s * self.pooling_map)[:, :, :x_y, :x_x]
 
     def __pad(self):
         w_y, w_x = self.pooling_window
@@ -303,6 +296,12 @@ class MaxPooling(Layer):
         x_delta = (w_x - x_x % w_x) % w_x
         return np.pad(self.x, ((0, 0), (0, 0), (0, y_delta), (0, x_delta)))
 
+    def __stretch(self, tensor, streching, axis, target_shape):
+        fa1, fa2 = streching
+        ax1, ax2 = axis
+        tensor_s = np.repeat(tensor, fa1, axis=ax1)
+        tensor_s = np.repeat(tensor_s, fa2, axis=ax2)
+        return np.resize(tensor_s, target_shape)
 
 class Flatten(Layer):
     "Flatten layer used to reshape tensors to shape (b, c_out)"
