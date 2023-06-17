@@ -5,12 +5,13 @@ import numpy as np
 from typing import Union
 
 
-def split_train_test_data(array: np.ndarray, ratio: float=0.3) -> (np.ndarray|np.ndarray):
-    """Splits an array along axis 0 into two seperate arrays using a given ratio, which defines the latter arrays' length.
+def split_train_test_val_data(array: np.ndarray, ratio_val: float=0.1, ratio_test: float=0.1) -> (np.ndarray|np.ndarray|np.ndarray):
+    """Splits an array along axis 0 into three seperate arrays using a given ratio.
 
     Args:
         array: Array to be split.
-        ratio: Ratio between input array size and the second arrays' size [optional].
+        ratio_val: Size ratio of the validation split [optional].
+        ratio_test: Size ratio of the test split [optional].
     
     Returns:
         train_array: first array
@@ -19,10 +20,12 @@ def split_train_test_data(array: np.ndarray, ratio: float=0.3) -> (np.ndarray|np
     shuffle_index = np.arange(len(array))
     np.random.shuffle(shuffle_index)
     array_shuffled = array[shuffle_index]
-    i = int(len(array_shuffled) * (1 - ratio))
-    train_array = array_shuffled[:i]
-    test_array = array_shuffled[i:]
-    return train_array, test_array
+    n1 = int(len(array_shuffled) * (1 - ratio_val - ratio_test))
+    n2 = int(len(array_shuffled) * (1 - ratio_test))
+    train_array = array_shuffled[:n1]
+    val_array = array_shuffled[n1:n2]
+    test_array = array_shuffled[n2:]
+    return train_array, val_array, test_array
 
 def expand_dims(array: np.ndarray, dims: int) -> np.ndarray:
     """Extends the dimension of an array.
@@ -36,6 +39,7 @@ def expand_dims(array: np.ndarray, dims: int) -> np.ndarray:
     """
     while array.ndim < dims:
         array = np.expand_dims(array, -1)
+        
     return array
 
 def split_X_Y(array: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
@@ -64,6 +68,18 @@ def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> 
         numerical_dataframe: Dataframe with transformed categorical columns.
     """
     return pd.get_dummies(dataframe, columns=columns)
+
+def one_hot_encode(array: np.ndarray, num_classes: int) -> np.ndarray:
+    """One-hot-encodes an array of shape (n,) into an array of shape (n, num_classes).
+
+    Args:
+        array: Array containing categorical columns.
+        num_classes: number of classes to be considered when encoding. Defines axis 1 of the output array.
+    
+    Returns:
+        array: One-hot-encoded array.
+    """
+    return (np.eye(num_classes)[array]).astype('float64')
 
 def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
     """Normalizes an array along a certain axis using min-max feature scaling.

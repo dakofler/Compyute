@@ -28,7 +28,7 @@ class MSE(Loss):
         return self._y - self._t
 
 
-class crossentropy(Loss):
+class Crossentropy(Loss):
 
     def __init__(self) -> None:
         super().__init__()
