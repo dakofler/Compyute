@@ -79,7 +79,7 @@ def one_hot_encode(array: np.ndarray, num_classes: int) -> np.ndarray:
     Returns:
         array: One-hot-encoded array.
     """
-    return np.eye(num_classes)[array]
+    return (np.eye(num_classes)[array]).astype('float64')
 
 def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
     """Normalizes an array along a certain axis using min-max feature scaling.

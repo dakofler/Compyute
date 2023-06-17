@@ -17,8 +17,6 @@ class Sequential():
             self.__add_layer(layer)
 
         self.compiled = False
-        self.loss = None
-        self.loss_history = []
 
     def __call__(self, x: np.ndarray, y: np.ndarray=None) -> None:
         """Computes an output and the loss based on imput samples.
@@ -35,13 +33,14 @@ class Sequential():
             ShapeError: If input shape is not of dim 3.
         """
         self.__check_dims(x, y)
-        self.layers[0].x = x
+        self.layers[0].x = x.astype('float32')
         self.__forward()
         output = self.layers[-1].y
+        loss = None
 
         if y is not None:
-            self.loss = self.loss_function(output, y)
-        return output, self.loss
+            loss = self.loss_function(output, y)
+        return output, loss
 
     def compile(self, optimizer: optimizers.Optimizer, loss_function: losses.Loss, metric) -> None:
         """ Compiles the model.
@@ -71,7 +70,7 @@ class Sequential():
         self.compiled = True
 
     def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None,
-              verbose: bool=True, val_data: tuple[np.ndarray]=(None, None)) -> None:
+              verbose: bool=True, val_data: tuple[np.ndarray]=(None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
         Args:
@@ -82,11 +81,14 @@ class Sequential():
             verbose: If false, feedback per epoch is supressed. [optional]
             val_data: Data used for validation during training. [optional]
 
+        Returns:
+            losses: Loss values per epoch.
+
         Raises:
             ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
         """
         self.__check_dims(x, y)
-        self.loss_history = []
+        history = []
         val_loss = None
 
         for epoch in range(1, epochs + 1):
@@ -108,7 +110,9 @@ class Sequential():
             end = time.time()
             step = round((end - start) * 1000.0, 2)
             self.__log(epoch, epochs, step, loss, verbose, val_loss)
-            self.loss_history.append(loss)
+            history.append(loss)
+        
+        return history
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """Applies the input to the model and returns it's predictions.
@@ -160,10 +164,10 @@ class Sequential():
 
         print(f'\ntotal trainable parameters {params}')
 
-    def plot_training_loss(self) -> None:
+    def plot_training_loss(self, history) -> None:
         """ Plots the loss over epochs if the model has been trained yet """
         plt.figure(figsize=(20,4))
-        plt.plot(np.arange(len(self.loss_history)), self.loss_history)
+        plt.plot(np.arange(len(history)), history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 

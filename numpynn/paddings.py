@@ -4,7 +4,7 @@ import numpy as np
 import math
 
 
-def Valid(array: np.ndarray, **kwargs) -> np.ndarray:
+def valid(array: np.ndarray, **kwargs) -> np.ndarray:
     """Applies Valid padding using zero-values to an input array.
 
     Args:
@@ -15,7 +15,7 @@ def Valid(array: np.ndarray, **kwargs) -> np.ndarray:
     """
     return array.copy()
 
-def Same(array: np.ndarray, **kwargs) -> np.ndarray:
+def same(array: np.ndarray, **kwargs) -> np.ndarray:
     """Applies Same padding using zero-values to an input array.
 
     Args:

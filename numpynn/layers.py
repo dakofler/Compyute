@@ -1,6 +1,6 @@
 # neural network layers module
 
-from numpynn import inits, paddings
+from numpynn import inits, paddings, utils
 import numpy as np
 from numpy.fft  import fft2, ifft2
 # from numpy.lib.stride_tricks import as_strided
@@ -35,10 +35,12 @@ class Layer:
         self.compiled = True
 
     def forward(self):
-        if self.prev_layer is not None: self.x = self.prev_layer.y
+        if self.prev_layer is not None:
+            self.x = self.prev_layer.y
     
     def backward(self):
-        if self.succ_layer is not None: self.dy = self.succ_layer.dx
+        if self.succ_layer is not None:
+            self.dy = self.succ_layer.dx
 
 
 class Input(Layer):
@@ -55,7 +57,7 @@ class Input(Layer):
     def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         # init with ones and expand by adding batch dim
-        self.x = np.expand_dims(np.ones(self.input_shape), axis=0)
+        self.x = np.expand_dims(inits.ones(self.input_shape), axis=0)
         self.forward()
 
     def forward(self) -> None:
@@ -97,7 +99,7 @@ class Linear(Layer):
     """
 
     def __init__(self, nr_neurons: int, norm: Layer = None, activation: Layer = None,
-                 init = inits.Kaiming, bias = True) -> None:
+                 init = inits.kaiming, bias = True) -> None:
         super().__init__()
 
         if nr_neurons < 1:
@@ -114,11 +116,11 @@ class Linear(Layer):
         _, X = self.prev_layer.y.shape
         w_shape = (X, self.nr_neurons)
         self.w = self.init(shape=w_shape, fan_mode=X, activation=self.activation) # (X, N)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w) # (X, N)
+        self.dw = self.w_change = self.w_m = self.w_v = inits.zeros_like(self.w) # (X, N)
         
         if self.bias:
             # init bias and bias gradients
-            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,)) # (N,)
+            self.b = self.db = self.b_change = self.b_m = self.b_v = inits.zeros((self.nr_neurons,), dtype='float32') # (N,)
 
         self.forward()
 
@@ -152,8 +154,8 @@ class Convolution(Layer):
     """
 
     def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3),
-                 padding=paddings.Valid, norm: Layer=None, activation: Layer=None,
-                 init=inits.Kaiming, bias: bool=True) -> None:       
+                 padding=paddings.valid, norm: Layer=None, activation: Layer=None,
+                 init=inits.kaiming, bias: bool=True) -> None:       
         super().__init__()
         
         if nr_kernels < 1:
@@ -173,46 +175,47 @@ class Convolution(Layer):
         _, C, Wy, Wx = w_shape
 
         self.w = self.init(w_shape, fan_mode=C*Wy*Wx, activation=self.activation) # (K, C, Y, X)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w) # (K, C, Y, X)
+        self.dw = self.w_change = self.w_m = self.w_v = inits.zeros_like(self.w) # (K, C, Y, X)
 
         if self.bias:
-            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,)) # (K, )
+            self.b = self.db = self.b_change = self.b_m = self.b_v = inits.zeros((self.k,)) # (K, )
 
         self.forward()
         _, _, Yy, Yx = self.y.shape
 
         if Yy < Wy or Yx < Wx:
             raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape.')
-    
+
     def forward(self) -> None:
         super().forward()
-        self.x_p = self.padding(self.x, kernel_size=self.kernel_size)
-        Xb, _, Xy, Xx = self.x_p.shape
+        x_p = self.padding(self.x, kernel_size=self.kernel_size)
+        Xb, _, Xy, Xx = x_p.shape
         Wk, _, Wy, _ = self.w.shape
 
-        self.x_p_fft = fft2(self.x_p)
+        x_p_fft = fft2(x_p)
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w, axis=(2, 3))
         w_fft = fft2(w_rotated, s=(Xy, Xx))
         # convolve x * w
-        x_conv_w = np.real(ifft2(np.expand_dims(self.x_p_fft, 1) * np.expand_dims(w_fft, 0))) # (B, _, C, Y, X) * (_, K, C, Y, X)
+        x_conv_w = np.real(ifft2(np.expand_dims(x_p_fft, 1) * np.expand_dims(w_fft, 0))).astype('float32') # (B, _, C, Y, X) * (_, K, C, Y, X)
         # sum over input channels
         self.y = np.sum(x_conv_w, axis=2)[:, :, Wy - 1:, Wy - 1:] # (B, K, Y, X)
 
         if self.bias:
             # reshape bias to fit output
-            b = (self.b * np.ones((Xb, 1))).reshape(Xb, Wk, 1, 1) # (B, K, 1, 1)
+            b = (self.b * inits.ones((Xb, 1))).reshape(Xb, Wk, 1, 1) # (B, K, 1, 1)
             self.y += b
 
     def backward(self) -> None:
         super().backward()
+        x_p = self.padding(self.x, kernel_size=self.kernel_size)
         _, _, Xy, _ = self.x.shape
         _, _, dYy, _ = self.dy.shape
-        _, _, Xpy, Xpx = self.x_p.shape
+        _, _, Xpy, Xpx = x_p.shape
         _, _, Wy, Wx = self.w.shape
 
         # pad gradients if necessary
-        if self.padding != paddings.Same:
+        if self.padding != paddings.same:
             p = int((Xy - dYy) / 2)
             dy_p = np.pad(self.dy, ((0, 0), (0, 0), (p, p), (p, p)))
         else:
@@ -222,8 +225,9 @@ class Convolution(Layer):
 
         # weight gradients
         dy_fft = fft2(self.dy, s=(Xpy, Xpx))
+        x_p_fft = fft2(x_p)
         # convolve dy * x and ifft
-        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(self.x_p_fft, 1))) # (B, K, _, Y, X) * (B, _, C, Y, X)
+        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(x_p_fft, 1))).astype('float32') # (B, K, _, Y, X) * (B, _, C, Y, X)
         # sum over batches
         self.dw = np.sum(dy_conv_x, axis=0)[:, :, -Wy:, -Wx:] # (K, C, Y, X)
 
@@ -231,7 +235,7 @@ class Convolution(Layer):
         w_fft = fft2(self.w, s=(dYpy, dYpx))
         dy_p_fft = fft2(dy_p)
         # convolve dy * w and ifft
-        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))) # (B, K, _, Y, X) * (_, K, C, Y, X)
+        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))).astype('float32') # (B, K, _, Y, X) * (_, K, C, Y, X)
         # sum over kernels
         self.dx = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3)) # (B, C, Y, X)
 
@@ -255,36 +259,14 @@ class MaxPooling(Layer):
     def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
-    
+
     def forward(self) -> None:
         super().forward()
         Py, Px = self.pooling_window
         Xb, Xk, _, _ = self.x.shape
         x_pad = self.__pad()
-
-        # faster, but kernel crashes. Have not found the problem yet.
-            # stride_bytes = 8 # for float64
-
-            # batch_size, y, x, nr_kernels = x_pad.shape
-            # shape = (batch_size, y // 2, x // 2, wy, wx, nr_kernels)
-
-            # b = stride_bytes
-            # bk = b * nr_kernels
-            # bkx = bk * x
-            # bkxb = bkx * batch_size
-
-            # stride = (2 * bkxb, 2 * bkx, 2 * bk , bkx, bk, b) # quite complicated, the docs helped :)
-
-            # s = as_strided(x_pad, shape=shape, strides=stride)
-            # self.y = np.max(s, axis=(3, 4)) # <-- kernel crashes here
-
-            # y_r = np.repeat(self.y, wx, axis=1)
-            # y_r = np.repeat(y_r, wy, axis=2)
-            # self.pooling_map = (x_pad == y_r) * 1.0
-
-        # slower, but stable
-        self.y = np.zeros((Xb, Xk, x_pad.shape[2] // Py, x_pad.shape[3] // Px)) # (B, K, Y, X)
-        self.pooling_map = np.zeros_like(x_pad)
+        self.y = inits.zeros((Xb, Xk, x_pad.shape[2] // Py, x_pad.shape[3] // Px)) # (B, K, Y, X)
+        self.pooling_map = inits.zeros_like(x_pad)
         _, _, Yy, Yx = self.y.shape
 
         for y in range(Yy):
@@ -324,7 +306,7 @@ class MaxPooling(Layer):
 
 
 class Flatten(Layer):
-    "Flatten layer used to reshape tensors with shape (b, x1, x2, ...) into tensors with shape (b, x1 + x2 + ...)."
+    "Flatten layer used to reshape tensors to shape (B, N)."
     
     def __init__(self) -> None:
         super().__init__()
@@ -370,7 +352,7 @@ class Dropout(Layer):
         if self.mode == 'eval':
             self.y = self.x
         else:
-            self.drop_map = np.random.choice([0, 1], self.x.shape, p=[self.drop_rate, 1 - self.drop_rate])
+            self.drop_map = np.random.choice([0, 1], self.x.shape, p=[self.drop_rate, 1 - self.drop_rate]).astype('float32')
             self.y = self.x * self.drop_map / (1 - self.drop_rate)
 
     def backward(self) -> None:

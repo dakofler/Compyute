@@ -1,6 +1,7 @@
 # evaluation metrics module
 
 from numpynn.networks import Sequential
+from numpynn import inits
 import numpy as np
 import time
 
@@ -11,8 +12,8 @@ def Accuracy(x: np.ndarray, y: np.ndarray, model: Sequential) -> float:
     output, loss = model(x, y)
 
     # create array with ones where highest probabilities occur
-    preds = np.zeros_like(output)
-    pb, px = preds.shape
+    preds = inits.zeros_like(output)
+    pb, _ = preds.shape
     max_prob_indices = np.argmax(output, axis=1)
     preds[np.arange(0, pb), max_prob_indices] = 1
 

@@ -2,6 +2,7 @@
 
 import numpy as np
 import time
+import psutil
 
 
 def shuffle(x: np.ndarray, y: np.ndarray, batch_size: int = None) -> (np.ndarray|np.ndarray):
@@ -24,7 +25,7 @@ def shuffle(x: np.ndarray, y: np.ndarray, batch_size: int = None) -> (np.ndarray
     return x_shuffled[:batch_size], y_shuffled[:batch_size]
 
 def stopwatch(func):
-    '''Decorator that reports the execution time.'''
+    """Decorator that reports the execution time."""
     def wrap(*args, **kwargs):
         start = time.time()
         result = func(*args, **kwargs)
@@ -33,3 +34,16 @@ def stopwatch(func):
         print(func.__qualname__, end-start)
         return result
     return wrap
+
+def memlog(func):
+    """Decorator that reports the current RAM usage."""
+    def wrap(*args, **kwargs):
+        result = func(*args, **kwargs)
+        print(func.__qualname__, psutil.virtual_memory()[2], '%')
+        return result
+    return wrap
+
+def set_numpy_format():
+    """Sets numpy's float output to show 4 decimal places."""
+    float_formatter = "{:.4f}".format
+    np.set_printoptions(formatter={'float_kind': float_formatter})

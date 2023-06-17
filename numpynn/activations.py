@@ -35,7 +35,7 @@ class Relu(Activation):
     
     def backward(self) -> None:
         super().backward()
-        self.dx = (self.y > 0).astype(int) * self.dy
+        self.dx = (self.y > 0) * self.dy
 
 
 class Sigmoid(Activation):
