@@ -4,27 +4,18 @@ from numpynn.layers import Layer
 
 
 class Normalization(Layer):
+    """Normalization layer base class"""
 
     def __init__(self) -> None:
         super().__init__()
         self.is_activation_layer = True
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
-
-    def forward(self) -> None:
-        super().forward()
-    
-    def backward(self) -> None:
-        super().backward()
-
 
 class Layernorm(Normalization):
-    def __init__(self) -> None:
-        super.__init__()
+    """Implements layer normalization."""
 
-    def compile(self, id, prev_layer, succ_layer) -> None:
-        super().compile(id, prev_layer, succ_layer)
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:

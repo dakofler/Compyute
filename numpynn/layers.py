@@ -1,61 +1,69 @@
-# neural network layers module
+"""neural network layers module"""
 
-from numpynn import inits, paddings, utils
 import numpy as np
 from numpy.fft  import fft2, ifft2
-# from numpy.lib.stride_tricks import as_strided
+from numpynn import inits, paddings
 
 
 class Layer:
     """Layer base class"""
-    
+
     def __init__(self):
-        self.norm = self.activation = self.init = None
-        self.is_activation_layer = False
         self.compiled = False
         self.mode = 'eval'
+        self.i = None
+        self.prev_layer = self.succ_layer = None
+        self.x = self.y = None
+        self.dx = self.dy = None
 
-        self.prev_layer = None
-        self.succ_layer = None
-        self.x = None
-        self.dx = None
-        self.y = None
-        self.dy = None
-        self.w = None
-        self.w_change = None
-        self.dw = None
-        self.b = None
-        self.b_change = None
-        self.db = None
-
-    def compile(self, id, prev_layer, succ_layer):
-        self.id = id
+    def compile(self, i, prev_layer, succ_layer):
+        """Connects the layer with adjacent ones."""
+        self.i = i
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
         self.compiled = True
 
     def forward(self):
+        """Performs a forward pass through all layers."""
         if self.prev_layer is not None:
             self.x = self.prev_layer.y
-    
+
     def backward(self):
+        """Performs a backward pass through all layers."""
         if self.succ_layer is not None:
             self.dy = self.succ_layer.dx
 
 
+class ParamLayer(Layer):
+    """Layer using trainable parameters"""
+
+    def __init__(self, init, bias, norm, activation):
+        super().__init__()
+        self.norm = norm
+        self.activation = activation
+        self.init = init
+        self.bias = bias
+        self.dx = None
+        self.dy = None
+        self.w = self.dw = self.w_delta = self.w_m = self.w_v = None
+
+        if self.bias:
+            self.b = self.db = self.b_delta = self.b_m = self.b_v = None
+
+
 class Input(Layer):
-    """Input layer used in neural network models.
+    """Input layer used in neural network models
 
     Args:
-        input_shape: Shape of input arrays the model is trained and/or applied to.
+        input_shape: Shape of input tensor ignoring axis 0.
     """
-    
+
     def __init__(self, input_shape: tuple[int, int]) -> None:
         super().__init__()
         self.input_shape = input_shape
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         # init with ones and expand by adding batch dim
         self.x = np.expand_dims(inits.ones(self.input_shape), axis=0)
         self.forward()
@@ -63,190 +71,179 @@ class Input(Layer):
     def forward(self) -> None:
         super().forward()
         self.y = self.x
-    
-    def backward(self) -> None:
-        super().backward()
-    
+
 
 class Output(Layer):
-    "Output layer used in neural network models."
+    "Output layer used in neural network models"
 
-    def __init__(self) -> None:
-        super().__init__()
-
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
         super().forward()
         self.y = self.x
-    
+
     def backward(self) -> None:
         super().backward()
         self.dx = self.dy
 
 
-class Linear(Layer):
-    """Fully connected layer used in neural network models.
+class Linear(ParamLayer):
+    """Fully connected layer
 
     Args:
-        nr_neurons: Number of neurons to be used in this layer.
+        out_channels: Number of output channels of the layer.
         init: Weight Initialization method [optional].
 
     Raises:
-        Error: If the number of neurons is less than 1.
+        Error: If out_channels is less than 1.
     """
 
-    def __init__(self, nr_neurons: int, norm: Layer = None, activation: Layer = None,
+    def __init__(self, out_channels: int, norm: Layer = None, activation: Layer = None,
                  init = inits.kaiming, bias = True) -> None:
-        super().__init__()
+        super().__init__(init, bias, norm, activation)
 
-        if nr_neurons < 1:
-            raise Exception("number of neurons must be at least 1")
+        if out_channels < 1:
+            raise Exception("out_channels must be >= 1")
 
-        self.nr_neurons = nr_neurons
-        self.norm = norm
-        self.activation = activation
-        self.init = init
-        self.bias = bias
+        self.out_channels = out_channels
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
-        _, X = self.prev_layer.y.shape
-        w_shape = (X, self.nr_neurons)
-        self.w = self.init(shape=w_shape, fan_mode=X, activation=self.activation) # (X, N)
-        self.dw = self.w_change = self.w_m = self.w_v = inits.zeros_like(self.w) # (X, N)
-        
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
+        # init weights (c_in, c_out)
+        _, prev_out_channels = self.prev_layer.y.shape
+        w_shape = (prev_out_channels, self.out_channels)
+        self.w = self.init(shape=w_shape, fan_mode=prev_out_channels, activation=self.activation)
+        self.dw = self.w_delta = self.w_m = self.w_v = inits.zeros_like(self.w)
+
         if self.bias:
-            # init bias and bias gradients
-            self.b = self.db = self.b_change = self.b_m = self.b_v = inits.zeros((self.nr_neurons,), dtype='float32') # (N,)
+            # init bias (c_out,)
+            self.b = self.db = self.b_delta = self.b_m = self.b_v = inits.zeros((self.out_channels,))
 
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-        self.y = self.x @ self.w + (self.b if self.bias else 0) # (B, N)
+        # (b, c_out)
+        self.y = self.x @ self.w + (self.b if self.bias else 0)
 
     def backward(self) -> None:
         super().backward()
-        # input gradients
-        self.dx = self.dy @ self.w.T # (B, X)
-        # weight gradients
-        self.dw = self.x.T @ self.dy # (X, N)
+        # input gradients (b, c_in)
+        self.dx = self.dy @ self.w.T
+        # weight gradients (c_in, c_out)
+        self.dw = self.x.T @ self.dy
 
-        # bias gradients
         if self.bias:
-            self.db = np.sum(self.dy, axis=0) # (N,)
+            # bias gradients (c_out,)
+            self.db = np.sum(self.dy, axis=0)
 
 
-class Convolution(Layer):
-    """Convolutional layer used in convolutional neural network models to extract features from images.
+class Convolution(ParamLayer):
+    """Convolutional layer used for spacialinformation
 
     Args:
-        nr_kernels: Number of kernels to be used in this layer.
-        kernel_size: Size of each kernel [optional].
-        padding: Padding function that is applied to the layer's input before processing [optional].
+        out_channels: Number of output channles of the layer.
+        kernel_shape: Dimension of each kernel [optional].
         init: Weight Initialization method [optional].
+        padding: Padding applied to the layer's input before processing [optional].
 
     Raises:
-        Error: If the number of kernels is less than 1.
+        Error: If the out_channels is less than 1.
     """
 
-    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3),
+    def __init__(self, out_channels: int, kernel_shape: tuple[int, int]=(3, 3),
                  padding=paddings.valid, norm: Layer=None, activation: Layer=None,
-                 init=inits.kaiming, bias: bool=True) -> None:       
-        super().__init__()
+                 init=inits.kaiming, bias: bool=True) -> None:
+        super().__init__(init, bias, norm, activation)
         
-        if nr_kernels < 1:
-            raise Exception("Number of kernels must be at least 1")
+        if out_channels < 1:
+            raise Exception("nr_kernels must be >= 1")
 
-        self.k = nr_kernels
-        self.kernel_size = kernel_size
+        self.out_channels = out_channels
+        self.kernel_shape = kernel_shape
         self.padding = padding
-        self.norm = norm
-        self.activation = activation
-        self.init = init
-        self.bias = bias
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
-        w_shape = (self.k, self.prev_layer.y.shape[1], *self.kernel_size)
-        _, C, Wy, Wx = w_shape
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
 
-        self.w = self.init(w_shape, fan_mode=C*Wy*Wx, activation=self.activation) # (K, C, Y, X)
-        self.dw = self.w_change = self.w_m = self.w_v = inits.zeros_like(self.w) # (K, C, Y, X)
+        # init weights (c_out, c_in, y, x)
+        _, prev_out_channels, _, _ = self.prev_layer.y.shape
+        w_shape = (self.out_channels, prev_out_channels, *self.kernel_shape)
+        _, c_out, w_y, w_x = w_shape
+        self.w = self.init(w_shape, fan_mode=c_out*w_y*w_x, activation=self.activation)
+        self.dw = self.w_delta = self.w_m = self.w_v = inits.zeros_like(self.w)
 
         if self.bias:
-            self.b = self.db = self.b_change = self.b_m = self.b_v = inits.zeros((self.k,)) # (K, )
+            # init bias (c_out,)
+            self.b = self.db = self.b_delta = self.b_m = self.b_v = inits.zeros((self.out_channels,))
 
         self.forward()
-        _, _, Yy, Yx = self.y.shape
+        _, _, y_y, y_x = self.y.shape
 
-        if Yy < Wy or Yx < Wx:
+        if y_y < w_y or y_x < w_x:
             raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape.')
 
     def forward(self) -> None:
         super().forward()
-        x_p = self.padding(self.x, kernel_size=self.kernel_size)
-        Xb, _, Xy, Xx = x_p.shape
-        Wk, _, Wy, _ = self.w.shape
-
-        x_p_fft = fft2(x_p)
+        # pad input to fit pooling window
+        x_pad = self.padding(self.x, kernel_shape=self.kernel_shape)
+        x_pad_fft = fft2(x_pad)
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w, axis=(2, 3))
-        w_fft = fft2(w_rotated, s=(Xy, Xx))
-        # convolve x * w
-        x_conv_w = np.real(ifft2(np.expand_dims(x_p_fft, 1) * np.expand_dims(w_fft, 0))).astype('float32') # (B, _, C, Y, X) * (_, K, C, Y, X)
+        xp_b, _, xp_y, xp_x = x_pad.shape
+        w_fft = fft2(w_rotated, s=(xp_y, xp_x))
+        # convolve x (b, _, c_in, y, x) * w (_, c_out, c_in, y, x)
+        x_conv_w = np.real(ifft2(np.expand_dims(x_pad_fft, 1) * np.expand_dims(w_fft, 0))).astype('float32')
         # sum over input channels
-        self.y = np.sum(x_conv_w, axis=2)[:, :, Wy - 1:, Wy - 1:] # (B, K, Y, X)
+        w_cout, _, w_y, w_x = self.w.shape
+        self.y = np.sum(x_conv_w, axis=2)[:, :, w_y - 1:, w_x - 1:]
 
         if self.bias:
-            # reshape bias to fit output
-            b = (self.b * inits.ones((Xb, 1))).reshape(Xb, Wk, 1, 1) # (B, K, 1, 1)
-            self.y += b
+            # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
+            self.y += (self.b * inits.ones((xp_b, 1))).reshape(xp_b, w_cout, 1, 1)
 
     def backward(self) -> None:
         super().backward()
-        x_p = self.padding(self.x, kernel_size=self.kernel_size)
-        _, _, Xy, _ = self.x.shape
-        _, _, dYy, _ = self.dy.shape
-        _, _, Xpy, Xpx = x_p.shape
-        _, _, Wy, Wx = self.w.shape
+        x_p = self.padding(self.x, kernel_shape=self.kernel_shape)
+        _, _, x_y, _ = self.x.shape
+        _, _, dy_y, _ = self.dy.shape
 
-        # pad gradients if necessary
+        # pad gradients to fit input after convolution
         if self.padding != paddings.same:
-            p = int((Xy - dYy) / 2)
-            dy_p = np.pad(self.dy, ((0, 0), (0, 0), (p, p), (p, p)))
+            pad = int((x_y - dy_y) / 2)
+            dy_p = np.pad(self.dy, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
             dy_p = self.dy
 
-        _, _, dYpy, dYpx = dy_p.shape
+        # input gradients
+        _, _, dyp_y, dyp_x = dy_p.shape
+        w_fft = fft2(self.w, s=(dyp_y, dyp_x))
+        dy_p_fft = fft2(dy_p)
+        # convolve dy (b, c_out, _, y, x) * w (_, c_out, c_in, y, x) and ifft
+        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))).astype('float32')
+        # sum over output channels
+        self.dx = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
 
         # weight gradients
-        dy_fft = fft2(self.dy, s=(Xpy, Xpx))
+        _, _, xp_y, xp_x = x_p.shape
+        dy_fft = fft2(self.dy, s=(xp_y, xp_x))
         x_p_fft = fft2(x_p)
-        # convolve dy * x and ifft
-        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(x_p_fft, 1))).astype('float32') # (B, K, _, Y, X) * (B, _, C, Y, X)
+        # convolve dy (b, c_out, _, y, x) * x (b, _, c_in, y, x) and ifft
+        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(x_p_fft, 1))).astype('float32')
         # sum over batches
-        self.dw = np.sum(dy_conv_x, axis=0)[:, :, -Wy:, -Wx:] # (K, C, Y, X)
+        _, _, w_y, w_x = self.w.shape
+        self.dw = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]
 
-        # input gradients
-        w_fft = fft2(self.w, s=(dYpy, dYpx))
-        dy_p_fft = fft2(dy_p)
-        # convolve dy * w and ifft
-        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))).astype('float32') # (B, K, _, Y, X) * (_, K, C, Y, X)
-        # sum over kernels
-        self.dx = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3)) # (B, C, Y, X)
-
-        # bias gradients
-        # sum over batches, y and x
         if self.bias:
-            self.db = np.sum(self.dy, axis=(0, 2, 3)) # (K,)
+            # bias gradients
+            # sum over batches, y and x
+            self.db = np.sum(self.dy, axis=(0, 2, 3))
 
 
 class MaxPooling(Layer):
-    """MaxPoling layer used in convolutional neural network models to reduce information and avoid overfitting.
+    """MaxPoling layer used to reduce information and avoid overfitting
 
     Args:
         pooling_window: Size of the pooling window used for the pooling operation.
@@ -255,97 +252,97 @@ class MaxPooling(Layer):
     def __init__(self, pooling_window: tuple[int, int]) -> None:
         super().__init__()
         self.pooling_window = pooling_window
+        self.pooling_map = None
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-        Py, Px = self.pooling_window
-        Xb, Xk, _, _ = self.x.shape
+        # init output as zeros (b, c, y, k)
         x_pad = self.__pad()
-        self.y = inits.zeros((Xb, Xk, x_pad.shape[2] // Py, x_pad.shape[3] // Px)) # (B, K, Y, X)
+        p_y, p_x = self.pooling_window
+        x_b, x_c, _, _ = self.x.shape
+        self.y = inits.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x))
         self.pooling_map = inits.zeros_like(x_pad)
-        _, _, Yy, Yx = self.y.shape
+        _, _, y_y, y_x = self.y.shape
 
-        for y in range(Yy):
-            for x in range(Yx):
+        for y in range(y_y):
+            for x in range(y_x):
                 # get current chunk
-                array = self.x[:, :,  y * Py : (y + 1) * Py, x * Px : (x + 1) * Px]
+                chunk = self.x[:, :,  y * p_y : (y + 1) * p_y, x * p_x : (x + 1) * p_x]
                 # get max value within chunk
-                self.y[:, :, y, x] = np.max(array, axis=(2, 3))
+                self.y[:, :, y, x] = np.max(chunk, axis=(2, 3))
 
-        # stretch gradients
-        y_r = np.repeat(self.y, Px, axis=2)
-        y_r = np.repeat(y_r, Py, axis=3)
+        # "stretch" output gradients
+        y_r = np.repeat(self.y, p_x, axis=2)
+        y_r = np.repeat(y_r, p_y, axis=3)
         # resize to fit input
         y_r = np.resize(y_r, x_pad.shape)
+        # create pooling map
         # not perfect since technically all values can be equal within a chunk
         self.pooling_map = (x_pad == y_r) * 1.0
 
     def backward(self) -> None:
         super().backward()
-        wy, wx = self.pooling_window
-        _, _, y, x = self.x.shape
-
         # stretch gradients
-        dy_r = np.repeat(self.dy, wx, axis=2)
-        dy_r = np.repeat(dy_r, wy, axis=3)
+        w_y, w_x = self.pooling_window
+        dy_r = np.repeat(self.dy, w_x, axis=2)
+        dy_r = np.repeat(dy_r, w_y, axis=3)
         # resize to fit input
         dy_r = np.resize(dy_r, self.pooling_map.shape)
-        dx = dy_r * self.pooling_map
-        self.dx = dx[:, :, :y, :x]
-    
-    def __pad(self) -> np.ndarray:
-        wy, wx = self.pooling_window
-        _, _, y, x = self.x.shape
-        dy = (wy - y % wy) % wy
-        dx = (wx - x % wx) % wx
-        return np.pad(self.x, ((0, 0), (0, 0), (0, dy), (0, dx)))
+        # use pooling map as mask for gradients
+        _, _, x_y, x_x = self.x.shape
+        self.dx = (dy_r * self.pooling_map)[:, :, :x_y, :x_x]
+
+    def __pad(self):
+        w_y, w_x = self.pooling_window
+        _, _, x_y, x_x = self.x.shape
+        y_delta = (w_y - x_y % w_y) % w_y
+        x_delta = (w_x - x_x % w_x) % w_x
+        return np.pad(self.x, ((0, 0), (0, 0), (0, y_delta), (0, x_delta)))
 
 
 class Flatten(Layer):
-    "Flatten layer used to reshape tensors to shape (B, N)."
-    
-    def __init__(self) -> None:
-        super().__init__()
+    "Flatten layer used to reshape tensors to shape (b, c_out)"
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
         super().forward()
         self.y = self.x.reshape(self.x.shape[0], -1)
-    
+
     def backward(self) -> None:
         super().backward()
         self.dx = np.resize(self.dy, self.x.shape)
 
 
 class Dropout(Layer):
-    """Dropout layer used in neural network models to reduce information and avoid overfitting.
+    """Dropout layer used to randomly reduce information and avoid overfitting
 
     Args:
-        drop_rate: Probability of values of the input being set to 0.
+        drop_rate: Probability of values being set to 0.
 
     Raises:
         Error: If the droprate is outside the interval [0, 1).
     """
 
-    def __init__(self, drop_rate: float) -> None:       
+    def __init__(self, drop_rate: float) -> None:
         super().__init__()
 
         if drop_rate < 0 or drop_rate >= 1:
             raise Exception("drop rate must be in the interval [0, 1)")
-        
-        self.drop_rate = drop_rate
 
-    def compile(self, id, prev_layer, succ_layer):
-        super().compile(id, prev_layer, succ_layer)
+        self.drop_rate = drop_rate
+        self.drop_map = None
+
+    def compile(self, i, prev_layer, succ_layer) -> None:
+        super().compile(i, prev_layer, succ_layer)
         self.forward()
-    
+
     def forward(self) -> None:
         super().forward()
 

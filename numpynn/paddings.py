@@ -1,33 +1,33 @@
-# padding functions module
+"""padding functions module"""
 
-import numpy as np
 import math
+import numpy as np
 
 
-def valid(array: np.ndarray, **kwargs) -> np.ndarray:
-    """Applies Valid padding using zero-values to an input array.
+def valid(tensor: np.ndarray, **kwargs) -> np.ndarray:
+    """Applies valid padding using zero-values to a tensor.
 
     Args:
-        array: Array padding is to be applied to.
+        tensor: Tensor padding is to be applied to.
 
     Returns:
-        Padded array.
+        Padded tensor.
     """
-    return array.copy()
+    return tensor.copy()
 
-def same(array: np.ndarray, **kwargs) -> np.ndarray:
-    """Applies Same padding using zero-values to an input array.
+def same(tensor: np.ndarray, **kwargs) -> np.ndarray:
+    """Applies same padding using zero-values to a tensor.
 
     Args:
-        array: Array padding is to be applied to.
+        tensor: Tensor padding is to be applied to.
 
     Kwargs:
         kernel_size: Kernel size the padding width is adapted to.
 
     Returns:
-        Padded array.
+        Padded tensor.
     """
-    kernel_size = kwargs['kernel_size']
-    width = math.floor(kernel_size[0] / 2)
+    kernel_dim = kwargs['kernel_dim']
+    width = math.floor(kernel_dim[0] / 2)
     # pad along axis 2 & 3
-    return np.pad(array, ((0, 0), (0, 0), (width, width), (width, width)))
+    return np.pad(tensor, ((0, 0), (0, 0), (width, width), (width, width)))

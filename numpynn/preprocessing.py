@@ -1,60 +1,62 @@
-# utility functions module
+"""utility functions module"""
 
+from typing import Union
 import pandas as pd
 import numpy as np
-from typing import Union
 
 
-def split_train_test_val_data(array: np.ndarray, ratio_val: float=0.1, ratio_test: float=0.1) -> (np.ndarray|np.ndarray|np.ndarray):
-    """Splits an array along axis 0 into three seperate arrays using a given ratio.
+def split_train_val_test(tensor: np.ndarray, ratio_val: float=0.1,
+                        ratio_test: float=0.1) -> (np.ndarray|np.ndarray|np.ndarray):
+    """Splits a tensor along axis 0 into three seperate tensor using a given ratio.
 
     Args:
-        array: Array to be split.
+        tensor: Tensor to be split.
         ratio_val: Size ratio of the validation split [optional].
         ratio_test: Size ratio of the test split [optional].
     
     Returns:
-        train_array: first array
-        test_array: second array
+        train: first tensor
+        val: second tensor
+        test: third tensor
     """
-    shuffle_index = np.arange(len(array))
+    shuffle_index = np.arange(len(tensor))
     np.random.shuffle(shuffle_index)
-    array_shuffled = array[shuffle_index]
-    n1 = int(len(array_shuffled) * (1 - ratio_val - ratio_test))
-    n2 = int(len(array_shuffled) * (1 - ratio_test))
-    train_array = array_shuffled[:n1]
-    val_array = array_shuffled[n1:n2]
-    test_array = array_shuffled[n2:]
-    return train_array, val_array, test_array
+    t_shuffled = tensor[shuffle_index]
+    n1 = int(len(t_shuffled) * (1 - ratio_val - ratio_test))
+    n2 = int(len(t_shuffled) * (1 - ratio_test))
+    train = t_shuffled[:n1]
+    val = t_shuffled[n1:n2]
+    test = t_shuffled[n2:]
+    return train, val, test
 
-def expand_dims(array: np.ndarray, dims: int) -> np.ndarray:
-    """Extends the dimension of an array.
-
-    Args:
-        array: Array to be extended.
-        dims: Number of dimensions of the desired output array.
-    
-    Returns:
-        Array with extended dimensions.
-    """
-    while array.ndim < dims:
-        array = np.expand_dims(array, -1)
-        
-    return array
-
-def split_X_Y(array: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
-    """Splits an array along axis 1 into two seperate arrays.
+def expand_dims(tensor: np.ndarray, dims: int) -> np.ndarray:
+    """Extends the dimension of a tensor.
 
     Args:
-        array: Array to be split.
-        num_x_cols: Number of feature-colums of the input array.
+        tensor: Tensor to be extended.
+        dims: Number of dimensions of the desired output tensor.
     
     Returns:
-        X: feature-array
-        Y: class-array
+        Tensor with extended dimensions.
     """
-    X = array[:, :num_x_cols]
-    Y = array[:, num_x_cols:]
+    while tensor.ndim < dims:
+        tensor = np.expand_dims(tensor, -1)
+
+    return tensor
+
+def split_features_labels(tensor: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
+    """Splits a tensor along axis 1 into two seperate tensors.
+
+    Args:
+        tensor: Tensor to be split.
+        num_x_cols: Number of feature-colums of the input tensor.
+    
+    Returns:
+        X: feature-tensor
+        Y: label-tensor
+    """
+    X = tensor[:, :num_x_cols]
+    Y = tensor[:, num_x_cols:]
     return X, Y
 
 def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> pd.DataFrame:
@@ -69,30 +71,32 @@ def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> 
     """
     return pd.get_dummies(dataframe, columns=columns)
 
-def one_hot_encode(array: np.ndarray, num_classes: int) -> np.ndarray:
-    """One-hot-encodes an array of shape (n,) into an array of shape (n, num_classes).
+def one_hot_encode(tensor: np.ndarray, num_classes: int) -> np.ndarray:
+    """One-hot-encodes a tensor of shape (n,) into a tensor of shape (n, num_classes).
 
     Args:
-        array: Array containing categorical columns.
-        num_classes: number of classes to be considered when encoding. Defines axis 1 of the output array.
+        tensor: Tensor containing categorical columns.
+        num_classes: number of classes to be considered when encoding.
+            Defines axis 1 of the output tensor.
     
     Returns:
-        array: One-hot-encoded array.
+        One-hot-encoded tensor.
     """
-    return (np.eye(num_classes)[array]).astype('float64')
+    return (np.eye(num_classes)[tensor]).astype('float32')
 
-def normalize(x: np.ndarray, axis: Union[int, tuple[int, int]]=0, a: int=-1, b: int=1) -> np.ndarray:
-    """Normalizes an array along a certain axis using min-max feature scaling.
+def normalize(tensor: np.ndarray, axis: Union[int, tuple[int, int]]=0,
+              l_bound: int=-1, u_bound: int=1) -> np.ndarray:
+    """Normalizes a tensor along a certain axis using min-max feature scaling.
 
     Args:
-        x: Array to be normalized.
+        tensor: Tensor to be normalized.
         axis: One or multiple axes along which values are to be normalized [optional].
-        a: Lower bound of output values [optional].
-        b: Upper bound of output values [optional].
+        l_bound: Lower bound of output values [optional].
+        u_bound: Upper bound of output values [optional].
     
     Returns:
-        x_normalized: Normalized array.
+        x_normalized: Normalized tensor.
     """
-    x_min = x.min(axis=axis)
-    x_max = x.max(axis=axis)
-    return a + (x - x_min) * (b - a) / (x_max - x_min)
+    t_min = tensor.min(axis=axis)
+    t_max = tensor.max(axis=axis)
+    return l_bound + (tensor - t_min) * (u_bound - l_bound) / (t_max - t_min)
