@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def Random(shape, **kwargs) -> np.ndarray:
+def Random(shape, **kwargs):
     """Returns an array with random entries between -1 and 1.
 
     Args:
@@ -14,7 +14,8 @@ def Random(shape, **kwargs) -> np.ndarray:
     """
     return np.random.randn(*shape)
 
-def Kaiming(shape, **kwargs) -> np.ndarray:
+
+def Kaiming(shape, **kwargs):
     """Returns an array with random entries using Kaiming He initialization.
 
     Args:
@@ -29,7 +30,6 @@ def Kaiming(shape, **kwargs) -> np.ndarray:
     """
     activation = kwargs['activation']
     fan_mode = kwargs['fan_mode']
-    
     gains = {
         'NoneType': 1,
         'Sigmoid': 1,
@@ -37,6 +37,5 @@ def Kaiming(shape, **kwargs) -> np.ndarray:
         'Relu': 2**0.5,
         'Softmax': 1
     }
-
     gain = gains.get(activation.__class__.__name__, 1)
     return np.random.randn(*shape) * gain / fan_mode**0.5

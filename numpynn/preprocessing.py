@@ -20,14 +20,11 @@ def split_train_test_val_data(array: np.ndarray, ratio_val: float=0.1, ratio_tes
     shuffle_index = np.arange(len(array))
     np.random.shuffle(shuffle_index)
     array_shuffled = array[shuffle_index]
-
     n1 = int(len(array_shuffled) * (1 - ratio_val - ratio_test))
     n2 = int(len(array_shuffled) * (1 - ratio_test))
-
     train_array = array_shuffled[:n1]
     val_array = array_shuffled[n1:n2]
     test_array = array_shuffled[n2:]
-    
     return train_array, val_array, test_array
 
 def expand_dims(array: np.ndarray, dims: int) -> np.ndarray:
@@ -42,6 +39,7 @@ def expand_dims(array: np.ndarray, dims: int) -> np.ndarray:
     """
     while array.ndim < dims:
         array = np.expand_dims(array, -1)
+        
     return array
 
 def split_X_Y(array: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):

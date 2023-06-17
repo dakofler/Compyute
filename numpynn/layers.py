@@ -9,42 +9,36 @@ from numpy.fft  import fft2, ifft2
 class Layer:
     """Layer base class"""
     
-    def __init__(self) -> None:
-        self.activation =  self.batch_norm = self.init = None
+    def __init__(self):
+        self.norm = self.activation = self.init = None
         self.is_activation_layer = False
-        self.has_params = False
         self.compiled = False
-        self.mode = 'train'
+        self.mode = 'eval'
 
         self.prev_layer = None
         self.succ_layer = None
-        
         self.x = None
         self.dx = None
         self.y = None
         self.dy = None
-
         self.w = None
         self.w_change = None
         self.dw = None
-
         self.b = None
         self.b_change = None
         self.db = None
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         self.id = id
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
         self.compiled = True
 
-    def forward(self) -> None:
-        if self.prev_layer is not None:
-            self.x = self.prev_layer.y
+    def forward(self):
+        if self.prev_layer is not None: self.x = self.prev_layer.y
     
-    def backward(self) -> None:
-        if self.succ_layer is not None:
-            self.dy = self.succ_layer.dx
+    def backward(self):
+        if self.succ_layer is not None: self.dy = self.succ_layer.dx
 
 
 class Input(Layer):
@@ -58,8 +52,9 @@ class Input(Layer):
         super().__init__()
         self.input_shape = input_shape
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
+        # init with ones and expand by adding batch dim
         self.x = np.expand_dims(np.ones(self.input_shape), axis=0)
         self.forward()
 
@@ -77,7 +72,7 @@ class Output(Layer):
     def __init__(self) -> None:
         super().__init__()
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
 
@@ -101,45 +96,46 @@ class Linear(Layer):
         Error: If the number of neurons is less than 1.
     """
 
-    def __init__(self, nr_neurons: int,  norm=None, activation=None, init=inits.Kaiming, biases=True) -> None:
+    def __init__(self, nr_neurons: int, norm: Layer = None, activation: Layer = None,
+                 init = inits.Kaiming, bias = True) -> None:
         super().__init__()
-        
+
         if nr_neurons < 1:
             raise Exception("number of neurons must be at least 1")
-        
+
         self.nr_neurons = nr_neurons
         self.norm = norm
         self.activation = activation
         self.init = init
-        self.biases = biases
-        self.has_params = True
+        self.bias = bias
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
-
-        w_shape = (self.prev_layer.y.shape[1], self.nr_neurons)
-        fan_mode = self.prev_layer.y.shape[1]
-        self.w = self.init(shape=w_shape, fan_mode=fan_mode, activation=self.activation)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
-
-        if self.biases:
-            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,))
+        _, X = self.prev_layer.y.shape
+        w_shape = (X, self.nr_neurons)
+        self.w = self.init(shape=w_shape, fan_mode=X, activation=self.activation) # (X, N)
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w) # (X, N)
+        
+        if self.bias:
+            # init bias and bias gradients
+            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.nr_neurons,)) # (N,)
 
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-
-        self.y = self.x @ self.w + (self.b if self.biases else 0)
+        self.y = self.x @ self.w + (self.b if self.bias else 0) # (B, N)
 
     def backward(self) -> None:
         super().backward()
+        # input gradients
+        self.dx = self.dy @ self.w.T # (B, X)
+        # weight gradients
+        self.dw = self.x.T @ self.dy # (X, N)
 
-        self.dx = self.dy @ self.w.T
-        self.dw = self.x.T @ self.dy
-
-        if self.biases:
-            self.db = np.sum(self.dy, axis=0)
+        # bias gradients
+        if self.bias:
+            self.db = np.sum(self.dy, axis=0) # (N,)
 
 
 class Convolution(Layer):
@@ -155,11 +151,13 @@ class Convolution(Layer):
         Error: If the number of kernels is less than 1.
     """
 
-    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3), padding=paddings.Valid, norm=None, activation=None, init=inits.Kaiming, biases=True) -> None:       
+    def __init__(self, nr_kernels: int, kernel_size: tuple[int, int]=(3, 3),
+                 padding=paddings.Valid, norm: Layer=None, activation: Layer=None,
+                 init=inits.Kaiming, bias: bool=True) -> None:       
         super().__init__()
-
+        
         if nr_kernels < 1:
-            raise Exception("number of kernels must be at least 1")
+            raise Exception("Number of kernels must be at least 1")
 
         self.k = nr_kernels
         self.kernel_size = kernel_size
@@ -167,60 +165,80 @@ class Convolution(Layer):
         self.norm = norm
         self.activation = activation
         self.init = init
-        self.biases = biases
-        self.has_params = True
+        self.bias = bias
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
-        kernel_shape = (self.k, self.prev_layer.y.shape[1], *self.kernel_size) # (k, c, y, x)
-        self.w = self.init(kernel_shape, fan_mode=self.kernel_size[0], activation=self.activation)
-        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w)
-        self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,))
-        self.forward()
+        w_shape = (self.k, self.prev_layer.y.shape[1], *self.kernel_size)
+        _, C, Wy, Wx = w_shape
 
-        if self.y.shape[2] < self.w.shape[2] or self.y.shape[3] < self.w.shape[3]:
-            raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape. Use padding or adjust MaxPooling layer to increase output shape.')
+        self.w = self.init(w_shape, fan_mode=C*Wy*Wx, activation=self.activation) # (K, C, Y, X)
+        self.dw = self.w_change = self.w_m = self.w_v = np.zeros_like(self.w) # (K, C, Y, X)
+
+        if self.bias:
+            self.b = self.db = self.b_change = self.b_m = self.b_v = np.zeros((self.k,)) # (K, )
+
+        self.forward()
+        _, _, Yy, Yx = self.y.shape
+
+        if Yy < Wy or Yx < Wx:
+            raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape.')
     
     def forward(self) -> None:
         super().forward()
         self.x_p = self.padding(self.x, kernel_size=self.kernel_size)
         Xb, _, Xy, Xx = self.x_p.shape
         Wk, _, Wy, _ = self.w.shape
+
         self.x_p_fft = fft2(self.x_p)
-        w_fft = fft2(np.flip(self.w, axis=(2, 3)), s=(Xy, Xx)) # flip kernel for cross correlation
-        p = Wy - 1
-        self.y = np.sum(np.real(ifft2(np.expand_dims(self.x_p_fft, 1) * (np.expand_dims(w_fft, 0)))), axis=2)[:, :, p:, p:] # (b, _, c, y, x) + (_, k, c, y, x)
-        
-        if self.biases:
-            self.y += (self.b * np.ones((Xb, 1))).reshape((Xb, Wk, 1, 1))
+        # rotate weights for cross correlation
+        w_rotated = np.flip(self.w, axis=(2, 3))
+        w_fft = fft2(w_rotated, s=(Xy, Xx))
+        # convolve x * w
+        x_conv_w = np.real(ifft2(np.expand_dims(self.x_p_fft, 1) * np.expand_dims(w_fft, 0))) # (B, _, C, Y, X) * (_, K, C, Y, X)
+        # sum over input channels
+        self.y = np.sum(x_conv_w, axis=2)[:, :, Wy - 1:, Wy - 1:] # (B, K, Y, X)
+
+        if self.bias:
+            # reshape bias to fit output
+            b = (self.b * np.ones((Xb, 1))).reshape(Xb, Wk, 1, 1) # (B, K, 1, 1)
+            self.y += b
 
     def backward(self) -> None:
         super().backward()
-        
+        _, _, Xy, _ = self.x.shape
+        _, _, dYy, _ = self.dy.shape
+        _, _, Xpy, Xpx = self.x_p.shape
+        _, _, Wy, Wx = self.w.shape
+
+        # pad gradients if necessary
         if self.padding != paddings.Same:
-            p = int((self.x.shape[2] - self.dy.shape[2]) / 2)
+            p = int((Xy - dYy) / 2)
             dy_p = np.pad(self.dy, ((0, 0), (0, 0), (p, p), (p, p)))
         else:
             dy_p = self.dy
 
-        _, _, Xy, Xx = self.x_p.shape
-        _, _, Wy, Wx = self.w.shape
         _, _, dYpy, dYpx = dy_p.shape
 
-        # dw
-        self.dw = np.zeros_like(self.w)
-        dy_fft = fft2(self.dy, s=(Xy, Xx))
-        self.dw = np.sum(np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(self.x_p_fft, 1))), axis=0)[:, :, -Wy:, -Wx:] # (b, k, _, y, x) * (b, _, c, y, x)
+        # weight gradients
+        dy_fft = fft2(self.dy, s=(Xpy, Xpx))
+        # convolve dy * x and ifft
+        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(self.x_p_fft, 1))) # (B, K, _, Y, X) * (B, _, C, Y, X)
+        # sum over batches
+        self.dw = np.sum(dy_conv_x, axis=0)[:, :, -Wy:, -Wx:] # (K, C, Y, X)
 
-        # dx
-        self.dx = np.zeros_like(self.x)
+        # input gradients
         w_fft = fft2(self.w, s=(dYpy, dYpx))
-        dy_p_fft = fft2(dy_p)       
-        self.dx = np.roll(np.sum(np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))), axis=1), shift=(-1, -1), axis=(2, 3)) # (b, k, _, y, x) * (_, k, c, y, x)
+        dy_p_fft = fft2(dy_p)
+        # convolve dy * w and ifft
+        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))) # (B, K, _, Y, X) * (_, K, C, Y, X)
+        # sum over kernels
+        self.dx = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3)) # (B, C, Y, X)
 
-        # db
-        if self.biases:
-            self.db = np.sum(self.dy, axis=(0, 2, 3))
+        # bias gradients
+        # sum over batches, y and x
+        if self.bias:
+            self.db = np.sum(self.dy, axis=(0, 2, 3)) # (K,)
 
 
 class MaxPooling(Layer):
@@ -234,15 +252,14 @@ class MaxPooling(Layer):
         super().__init__()
         self.pooling_window = pooling_window
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
     
     def forward(self) -> None:
         super().forward()
-
-        wy, wx = self.pooling_window
-        b, k, y, x = self.x.shape
+        Py, Px = self.pooling_window
+        Xb, Xk, _, _ = self.x.shape
         x_pad = self.__pad()
 
         # faster, but kernel crashes. Have not found the problem yet.
@@ -266,27 +283,34 @@ class MaxPooling(Layer):
             # self.pooling_map = (x_pad == y_r) * 1.0
 
         # slower, but stable
-        self.y = np.zeros((b, k, x_pad.shape[2] // wy, x_pad.shape[3] // wx))
+        self.y = np.zeros((Xb, Xk, x_pad.shape[2] // Py, x_pad.shape[3] // Px)) # (B, K, Y, X)
         self.pooling_map = np.zeros_like(x_pad)
+        _, _, Yy, Yx = self.y.shape
 
-        for y in range(self.y.shape[2]):
-            for x in range(self.y.shape[3]):
-                array = self.x[:, :,  y * wy : (y + 1) * wy, x * wx : (x + 1) * wx]
+        for y in range(Yy):
+            for x in range(Yx):
+                # get current chunk
+                array = self.x[:, :,  y * Py : (y + 1) * Py, x * Px : (x + 1) * Px]
+                # get max value within chunk
                 self.y[:, :, y, x] = np.max(array, axis=(2, 3))
 
-        y_r = np.repeat(self.y, wx, axis=2)
-        y_r = np.repeat(y_r, wy, axis=3)
+        # stretch gradients
+        y_r = np.repeat(self.y, Px, axis=2)
+        y_r = np.repeat(y_r, Py, axis=3)
+        # resize to fit input
         y_r = np.resize(y_r, x_pad.shape)
+        # not perfect since technically all values can be equal within a chunk
         self.pooling_map = (x_pad == y_r) * 1.0
 
     def backward(self) -> None:
         super().backward()
-
         wy, wx = self.pooling_window
         _, _, y, x = self.x.shape
 
+        # stretch gradients
         dy_r = np.repeat(self.dy, wx, axis=2)
         dy_r = np.repeat(dy_r, wy, axis=3)
+        # resize to fit input
         dy_r = np.resize(dy_r, self.pooling_map.shape)
         dx = dy_r * self.pooling_map
         self.dx = dx[:, :, :y, :x]
@@ -305,7 +329,7 @@ class Flatten(Layer):
     def __init__(self) -> None:
         super().__init__()
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
 
@@ -335,14 +359,14 @@ class Dropout(Layer):
             raise Exception("drop rate must be in the interval [0, 1)")
         
         self.drop_rate = drop_rate
-        self.mode = 'eval'
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer):
         super().compile(id, prev_layer, succ_layer)
         self.forward()
     
     def forward(self) -> None:
         super().forward()
+
         if self.mode == 'eval':
             self.y = self.x
         else:

@@ -1,13 +1,29 @@
 """Normalization functions"""
 
-from numpynn import layers
-import numpy as np
+from numpynn.layers import Layer
 
-class Batchnorm(layers):
+
+class Normalization(Layer):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.is_activation_layer = True
+
+    def compile(self, id, prev_layer, succ_layer):
+        super().compile(id, prev_layer, succ_layer)
+
+    def forward(self) -> None:
+        super().forward()
+    
+    def backward(self) -> None:
+        super().backward()
+
+
+class Layernorm(Normalization):
     def __init__(self) -> None:
         super.__init__()
 
-    def compile(self, id: int, prev_layer: object, succ_layer: object) -> None:
+    def compile(self, id, prev_layer, succ_layer) -> None:
         super().compile(id, prev_layer, succ_layer)
         self.forward()
 
