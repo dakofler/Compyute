@@ -53,3 +53,18 @@ def memlog(func):
 def set_numpy_format():
     """Sets numpy's float output to show 4 decimal places."""
     np.set_printoptions(precision=4, )
+
+def expand_dims(tensor: np.ndarray, dims: int) -> np.ndarray:
+    """Extends the dimension of a tensor.
+
+    Args:
+        tensor: Tensor to be extended.
+        dims: Number of dimensions of the desired output tensor.
+    
+    Returns:
+        Tensor with extended dimensions.
+    """
+    while tensor.ndim < dims:
+        tensor = np.expand_dims(tensor, -1)
+
+    return tensor

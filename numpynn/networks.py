@@ -3,7 +3,7 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from numpynn import layers, activations, utils, optimizers, losses
+from numpynn import layers, activations, utils, optimizers, losses, norms
 
 
 class Sequential():
@@ -155,10 +155,17 @@ class Sequential():
             if isinstance(layer, (layers.Input, layers.Output)):
                 continue
 
-            w_size = np.size(layer.w) if isinstance(layer, layers.ParamLayer) else 0
-            w_shape = str(layer.w.shape) if isinstance(layer, layers.ParamLayer) else '(,)'
-            b_size = np.size(layer.b) if isinstance(layer, layers.ParamLayer) and layer.b is not None else 0
-            b_shape = str(layer.b.shape) if isinstance(layer, layers.ParamLayer) and layer.b is not None else '(,)'
+            w_size = b_size = 0
+            w_shape = b_shape = '-'
+
+            if isinstance(layer, layers.ParamLayer) and layer.w is not None:
+                w_size = np.size(layer.w)
+                w_shape = str(layer.w.shape)
+
+            if isinstance(layer, layers.ParamLayer) and layer.b is not None:
+                b_size = np.size(layer.b)
+                b_shape = str(layer.b.shape)
+
             params = w_size + b_size
             sum_params += params
 
@@ -185,7 +192,7 @@ class Sequential():
         plt.figure(figsize=(20,4))
         legends = []
 
-        for i, layer in enumerate(self.layers[1:-1]):
+        for i, layer in enumerate(self.layers):
             if isinstance(layer, activations.Activation) and not isinstance(layer, activations.Softmax):
                 name = layer.__class__.__name__
                 mean = layer.y.mean()
@@ -208,7 +215,7 @@ class Sequential():
         legends = []
 
         for i, layer in enumerate(self.layers):
-            if isinstance(layer, layers.ParamLayer):
+            if isinstance(layer, layers.ParamLayer) and not isinstance(layer, norms.Layernorm):
                 name = layer.__class__.__name__
                 mean = layer.w.mean()
                 std = layer.w.std()

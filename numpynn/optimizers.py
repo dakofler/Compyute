@@ -44,6 +44,13 @@ class SGD(Optimizer):
                 else:
                     layer.b = layer.b + self.momentum * layer.b_delta - self.l_r * layer.db
 
+            if layer.dg is not None:
+                layer.g_delta = - self.l_r * layer.dg + self.momentum * layer.g_delta
+                if not self.nesterov:
+                    layer.g = layer.g + layer.g_delta
+                else:
+                    layer.g = layer.g + self.momentum * layer.g_delta - self.l_r * layer.dg
+
 
 class Adam(Optimizer):
     """Implements the adam algorithm according to Kingma et al., 2014.
@@ -70,13 +77,20 @@ class Adam(Optimizer):
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
                 m_bc = layer.w_m / (1 - self.beta1)
-                layer.w_v = self.beta2 * layer.w_v + (1 - self.beta2) * np.power(layer.dw, 2)
+                layer.w_v = self.beta2 * layer.w_v + (1 - self.beta2) * layer.dw**2
                 v_bc = layer.w_v / (1 - self.beta2)
                 layer.w = layer.w - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
 
             if layer.db is not None:
                 layer.b_m = self.beta1 * layer.b_m + (1 - self.beta1) * layer.db
                 m_bc = layer.b_m / (1 - self.beta1)
-                layer.b_v = self.beta2 * layer.b_v + (1 - self.beta2) * np.power(layer.db, 2)
+                layer.b_v = self.beta2 * layer.b_v + (1 - self.beta2) * layer.db**2
                 v_bc = layer.b_v / (1 - self.beta2)
                 layer.b = layer.b - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
+
+            if layer.dg is not None:
+                layer.g_m = self.beta1 * layer.g_m + (1 - self.beta1) * layer.dg
+                m_bc = layer.g_m / (1 - self.beta1)
+                layer.g_v = self.beta2 * layer.g_v + (1 - self.beta2) * layer.dg**2
+                v_bc = layer.g_v / (1 - self.beta2)
+                layer.g = layer.g - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))

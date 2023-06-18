@@ -29,21 +29,6 @@ def split_train_val_test(tensor: np.ndarray, ratio_val: float=0.1,
     test = t_shuffled[n2:]
     return train, val, test
 
-def expand_dims(tensor: np.ndarray, dims: int) -> np.ndarray:
-    """Extends the dimension of a tensor.
-
-    Args:
-        tensor: Tensor to be extended.
-        dims: Number of dimensions of the desired output tensor.
-    
-    Returns:
-        Tensor with extended dimensions.
-    """
-    while tensor.ndim < dims:
-        tensor = np.expand_dims(tensor, -1)
-
-    return tensor
-
 def split_features_labels(tensor: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
     """Splits a tensor along axis 1 into two seperate tensors.
 
