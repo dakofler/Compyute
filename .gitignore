@@ -1,5 +1,4 @@
 __pycache__/
-test/
+experiments
 data/*
-test.ipynb
 .vscode

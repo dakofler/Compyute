@@ -189,20 +189,18 @@ class Convolution(ParamLayer):
         super().forward()
         # pad input to fit pooling window
         x_pad = self.padding(self.x, kernel_shape=self.kernel_shape)
-        x_pad_fft = fft2(x_pad)
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w, axis=(2, 3))
-        xp_b, _, xp_y, xp_x = x_pad.shape
-        w_fft = fft2(w_rotated, s=(xp_y, xp_x))
         # convolve x (b, _, c_in, y, x) * w (_, c_out, c_in, y, x)
-        x_conv_w = np.real(ifft2(np.expand_dims(x_pad_fft, 1) * np.expand_dims(w_fft, 0))).astype('float32')
+        x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0))
         # sum over input channels
         w_cout, _, w_y, w_x = self.w.shape
         self.y = np.sum(x_conv_w, axis=2)[:, :, w_y - 1:, w_x - 1:]
 
         if self.bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
-            self.y += (self.b * inits.ones((xp_b, 1))).reshape(xp_b, w_cout, 1, 1)
+            batches = self.x.shape[0]
+            self.y += (self.b * inits.ones((batches, 1))).reshape(batches, w_cout, 1, 1)
 
     def backward(self) -> None:
         super().backward()
@@ -218,28 +216,37 @@ class Convolution(ParamLayer):
             dy_p = self.dy
 
         # input gradients
-        _, _, dyp_y, dyp_x = dy_p.shape
-        w_fft = fft2(self.w, s=(dyp_y, dyp_x))
-        dy_p_fft = fft2(dy_p)
-        # convolve dy (b, c_out, _, y, x) * w (_, c_out, c_in, y, x) and ifft
-        dy_conv_w = np.real(ifft2(np.expand_dims(dy_p_fft, 2) * np.expand_dims(w_fft, 0))).astype('float32')
+        # convolve dy (b, c_out, _, y, x) * w (_, c_out, c_in, y, x)
+        dy_conv_w = self.__convolve(dy_p, self.w, exp_axis=(2, 0))
         # sum over output channels
         self.dx = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
 
         # weight gradients
-        _, _, xp_y, xp_x = x_p.shape
-        dy_fft = fft2(self.dy, s=(xp_y, xp_x))
-        x_p_fft = fft2(x_p)
-        # convolve dy (b, c_out, _, y, x) * x (b, _, c_in, y, x) and ifft
-        dy_conv_x =  np.real(ifft2(np.expand_dims(dy_fft, 2) * np.expand_dims(x_p_fft, 1))).astype('float32')
+        # convolve x (b, _, c_in, y, x) * dy (b, c_out, _, y, x)
+        dy_conv_x = self.__convolve(x_p, self.dy, exp_axis=(1, 2))
         # sum over batches
         _, _, w_y, w_x = self.w.shape
         self.dw = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]
 
+        # bias gradients
         if self.bias:
-            # bias gradients
             # sum over batches, y and x
             self.db = np.sum(self.dy, axis=(0, 2, 3))
+
+    def __convolve(self, tensor1, tensor2, exp_axis=None):
+        # fft both tensors
+        target_shape = tensor1.shape[-2:]
+        t1_fft = fft2(tensor1, s=target_shape)
+        t2_fft = fft2(tensor2, s=target_shape)
+
+        # expand dims if needed
+        if exp_axis:
+            ax1, ax2 = exp_axis
+            t1_fft_exp = np.expand_dims(t1_fft, ax1)
+            t2_fft_exp = np.expand_dims(t2_fft, ax2)
+
+        # multiply, ifft and get real value to complete convolution
+        return np.real(ifft2(t1_fft_exp * t2_fft_exp)).astype('float32')
 
 
 class MaxPooling(Layer):

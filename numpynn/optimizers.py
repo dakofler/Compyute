@@ -29,7 +29,7 @@ class SGD(Optimizer):
         for layer in model.layers:
             if not isinstance(layer, layers.ParamLayer):
                 continue
-            
+
             if layer.dw is not None:
                 layer.w_delta = - self.l_r * layer.dw + self.momentum * layer.w_delta
                 if not self.nesterov:
@@ -55,7 +55,8 @@ class Adam(Optimizer):
         epsilon: Constant for numerical stability [optional].
     """
 
-    def __init__(self, l_r: float=1e-3, beta1: float=0.9, beta2: float=0.999, epsilon: float=1e-07) -> None:
+    def __init__(self, l_r: float=1e-3, beta1: float=0.9, beta2: float=0.999,
+                 epsilon: float=1e-07) -> None:
         super().__init__(l_r)
         self.beta1 = beta1
         self.beta2 = beta2
@@ -65,7 +66,7 @@ class Adam(Optimizer):
         for layer in model.layers:
             if not isinstance(layer, layers.ParamLayer):
                 continue
-            
+
             if layer.dw is not None:
                 layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
                 m_bc = layer.w_m / (1 - self.beta1)

@@ -38,4 +38,4 @@ class Crossentropy(Loss):
 
     def backward(self) -> np.ndarray:
         """Performs a backward pass."""
-        return -1.0 * self._t / (2.0 * self._y * self._t.shape[0])
+        return -1.0 * self._t / (self._y * self._t.size)

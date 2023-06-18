@@ -13,11 +13,23 @@ model = networks.FeedForward(input_shape=(4,), layers=[
 ])
 ```
 
+```python
+model = networks.Sequential(input_shape=(1, 28, 28), layers=[
+    layers.Convolution(out_channels=8, kernel_shape=(3, 3), activation=activations.Relu()),
+    layers.MaxPooling(pooling_window=(2, 2)),
+    layers.Convolution(out_channels=16, kernel_shape=(3, 3), activation=activations.Relu()),
+    layers.MaxPooling(pooling_window=(2, 2)),
+    layers.Flatten(),
+    layers.Linear(out_channels=64, activation=activations.Relu()),
+    layers.Linear(out_channels=10, activation=activations.Softmax())
+])
+```
+
 The model can be trained using common algorithms, such as SGD or adam.
 
 ```python
 model.compile(
-    optimizer=optimizers.sgd(learning_rate=0.01, momentum=0.9, nesterov=True),
+    optimizer=optimizers.sgd(learning_rate=1e-2, momentum=0.9, nesterov=True),
     loss_function=losses.crossentropy(),
     metric=metrics.Accuracy
 )
