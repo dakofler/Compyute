@@ -1,9 +1,9 @@
-# neural network module
+"""neural network module"""
 
-from numpynn import layers, activations, utils, optimizers, losses
+import time
 import numpy as np
 import matplotlib.pyplot as plt
-import time
+from numpynn import layers, activations, utils, optimizers, losses
 
 
 class Sequential():
@@ -16,39 +16,42 @@ class Sequential():
         for layer in layers:
             self.__add_layer(layer)
 
+        self.optimizer = None
+        self.loss_fn = None
+        self.metric = None
         self.compiled = False
 
-    def __call__(self, x: np.ndarray, y: np.ndarray=None) -> None:
+    def __call__(self, X: np.ndarray, Y: np.ndarray=None) -> None:
         """Computes an output and the loss based on imput samples.
         
         Args:
-            x: Array of input values.
-            y: Array of target values [optional].
+            x: Tensor of input values.
+            y: Tensor of target values [optional].
 
         Returns:
-            output: Array of output values.
-            loss: loss value, if target values are provided, else None.
+            output: Tensor of output values.
+            loss: Loss value, if target values are provided, else None.
 
         Raises:
             ShapeError: If input shape is not of dim 3.
         """
-        self.__check_dims(x, y)
-        self.layers[0].x = x.astype('float32')
+        self.__check_dims(X, Y)
+        self.layers[0].x = X.astype('float32')
         self.__forward()
         output = self.layers[-1].y
         loss = None
 
-        if y is not None:
-            loss = self.loss_function(output, y)
+        if Y is not None:
+            loss = self.loss_fn(output, Y)
         return output, loss
 
-    def compile(self, optimizer: optimizers.Optimizer, loss_function: losses.Loss, metric) -> None:
+    def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric) -> None:
         """ Compiles the model.
         
         Args:
             optimizer: Optimizer to be used to update weights and biases.
-            loss: Loss function to be used to compute the loss value and gradients.
-            metric: Metric function to be used to evaluate the model.
+            loss_fn: Loss function to be used to compute the loss value and gradients.
+            metric: Metric to be used to evaluate the model.
         """
         if not isinstance(self.layers[0], layers.Input):
             self.__add_layer(layers.Input(self.input_shape), input_layer=True)
@@ -56,44 +59,45 @@ class Sequential():
         if not isinstance(self.layers[-1], layers.Output):
             self.__add_layer(layers.Output())
 
-        for i, l in enumerate(self.layers):
-            if isinstance(l, layers.Input):
-                l.compile(i, None, self.layers[i + 1])
-            elif isinstance(l, layers.Output):
-                l.compile(i, self.layers[i - 1], None)
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, layers.Input):
+                layer.compile(i, None, self.layers[i + 1])
+            elif isinstance(layer, layers.Output):
+                layer.compile(i, self.layers[i - 1], None)
             else:
-                l.compile(i, self.layers[i - 1], self.layers[i + 1])
+                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
 
         self.optimizer = optimizer
-        self.loss_function = loss_function
+        self.loss_fn = loss_fn
         self.metric = metric
         self.compiled = True
 
-    def train(self, x: np.ndarray, y: np.ndarray, epochs: int=100, batch_size: int = None,
+    def train(self, X: np.ndarray, Y: np.ndarray, epochs: int=100, batch_size: int = None,
               verbose: bool=True, val_data: tuple[np.ndarray]=(None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
         Args:
-            x: Array of input features.
-            y: Array of training input.
-            epochs: Number of epochs the training should last for. [optional]
-            batch_size: Number of input arrays used per epoch. If None, all training samples are used. [optional]
-            verbose: If false, feedback per epoch is supressed. [optional]
-            val_data: Data used for validation during training. [optional]
+            X: Tensor of input feature values.
+            Y: Tensor of target values.
+            epochs: Number of training iterations [optional]
+            batch_size: Number of samples used per epoch.
+                If None, all training samples are used [optional].
+            verbose: If false, printed output is decreased [optional].
+            val_data: Data used for validation during training [optional].
 
         Returns:
-            losses: Loss values per epoch.
+            losses: List of loss values per epoch.
 
         Raises:
-            ShapeError: If feature array is not of dim 4 or training input array is not of dim 2. 
+            ShapeError: If feature tensor is not of dim 4 or target tensor is not of dim 2. 
         """
-        self.__check_dims(x, y)
+        self.__check_dims(X, Y)
         history = []
         val_loss = None
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_train, y_train = utils.shuffle(x, y, batch_size)
+            x_train, y_train = utils.shuffle(X, Y, batch_size)
 
             # training
             self.__train()
@@ -111,33 +115,29 @@ class Sequential():
             step = round((end - start) * 1000.0, 2)
             self.__log(epoch, epochs, step, loss, verbose, val_loss)
             history.append(loss)
-        
+
         return history
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """Applies the input to the model and returns it's predictions.
         
         Args:
-            x: Array of input features.
+            X: Tensor of input features.
 
         Returns:
-            output: Array of output values.
+            output: Tensor of predicted values.
         """
         self.__eval()
-        pred, _ = self(x)
+        pred, _ = self(X)
         return pred
 
-    def evaluate(self, x: np.ndarray, y: np.ndarray) -> None:
-        """ Evaluates the model using a defined metric function.
-
-        Raises:
-            FunctionError: If no function has been defined.
-        """
-        if self.metric is None:
-            raise Exception('No metric defined.')
-        
+    def evaluate(self, X: np.ndarray, Y: np.ndarray) -> None:
+        """ Evaluates the model using a defined metric."""
         self.__eval()
-        self.metric(x, y, self)
+        outputs, loss = self(X, Y)
+        score = self.metric(outputs, Y)
+        metric = self.metric.__name__
+        print(f'loss {loss:.4f} | {metric:s}: {score:.4f}')
 
     def summary(self) -> None:
         """ Gives an overview of the model architecture.
@@ -147,76 +147,95 @@ class Sequential():
         """
         if not self.compiled:
             raise Exception('Model has not been compiled yet.')
-        
-        print('%15s | %20s | %20s | %20s | %20s | %10s\n' % ('layer_type', 'input_shape', 'weight_shape', 'bias_shape', 'output_shape', 'parameters'))
-        params = 0
 
-        for l in self.layers [1:-1]:
-            if isinstance(l, layers.Input) or isinstance(l, layers.Output):
+        print(f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | {"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
+        sum_params = 0
+
+        for layer in self.layers [1:-1]:
+            if isinstance(layer, (layers.Input, layers.Output)):
                 continue
 
-            ws = np.size(l.w) if l.w is not None else 0
-            w_shape = l.w.shape if l.w is not None else ()
-            bs = np.size(l.b) if l.b is not None else 0
-            b_shape = l.b.shape if l.b is not None else ()
-            params += (ws + bs)
-            print('%15s | %20s | %20s | %20s | %20s | %10s' % (l.__class__.__name__, str(l.x.shape[1:]), str(w_shape), str(b_shape), str(l.y.shape[1:]), str(ws + bs)))
+            w_size = np.size(layer.w) if isinstance(layer, layers.ParamLayer) else 0
+            w_shape = str(layer.w.shape) if isinstance(layer, layers.ParamLayer) else '(,)'
+            b_size = np.size(layer.b) if isinstance(layer, layers.ParamLayer) and layer.b is not None else 0
+            b_shape = str(layer.b.shape) if isinstance(layer, layers.ParamLayer) and layer.b is not None else '(,)'
+            params = w_size + b_size
+            sum_params += params
 
-        print(f'\ntotal trainable parameters {params}')
+            name = layer.__class__.__name__
+            x_shape = str(layer.x.shape[1:])
+            y_shape = str(layer.y.shape[1:])
+            print(f'{name:15s} | {x_shape:15s} | {w_shape:15s} | {b_shape:15s} | {y_shape:15s} | {str(params):15s}')
+
+        print(f'\ntotal trainable parameters {sum_params}')
 
     def plot_training_loss(self, history) -> None:
-        """ Plots the loss over epochs if the model has been trained yet """
+        """ Plots the loss over epochs."""
         plt.figure(figsize=(20,4))
         plt.plot(np.arange(len(history)), history)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
-    def plot_neuron_activations(self, bins: int=100) -> None:
-        """ Plots neuron activation distribution """
+    def plot_activations(self, bins: int=100) -> None:
+        """ Plots neuron activation distribution.
+        
+        Args:
+            bins: Number of bins used in the histogram [optional].
+        """
         plt.figure(figsize=(20,4))
         legends = []
 
         for i, layer in enumerate(self.layers[1:-1]):
-            if layer.is_activation_layer and not isinstance(layer, activations.Softmax):
-                print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.y.mean(), layer.y.std()))
-                Y, X = np.histogram(layer.y, bins=bins)
-                plt.plot(np.delete(X, -1), Y)
-                legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
+            if isinstance(layer, activations.Activation) and not isinstance(layer, activations.Softmax):
+                name = layer.__class__.__name__
+                mean = layer.y.mean()
+                std = layer.y.std()
+                print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
+                y, x = np.histogram(layer.y, bins=bins)
+                plt.plot(np.delete(x, -1), y)
+                legends.append(f'layer {i:d} ({name:s})')
 
         plt.legend(legends)
         plt.title('activation distribution')
 
     def plot_gradients(self, bins: int=100) -> None:
-        """ Plots neuron gradient distribution """
+        """ Plots neuron gradient distribution.
+        
+        Args:
+            bins: Number of bins used in the histogram [optional].
+        """
         plt.figure(figsize=(20,4))
         legends = []
 
         for i, layer in enumerate(self.layers):
-            if layer.w is not None:
-                print('layer %i (%s) | mean %.4f | std %.4f' % (i, layer.__class__.__name__, layer.dw.mean(), layer.dw.std()))
-                Y, X = np.histogram(layer.dw, bins=bins)
-                X = np.delete(X, -1)
-                plt.plot(X, Y)
-                legends.append('layer %i (%s)' % (i, layer.__class__.__name__))
+            if isinstance(layer, layers.ParamLayer):
+                name = layer.__class__.__name__
+                mean = layer.w.mean()
+                std = layer.w.std()
+                print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
+                y, x = np.histogram(layer.dw, bins=bins)
+                x = np.delete(x, -1)
+                plt.plot(x, y)
+                legends.append(f'layer {i:d} ({name:s})')
 
         plt.legend(legends)
         plt.title('gradient distribution')
 
-    def plot_conv_activations(self) -> None:
-        """ Plots neuron activations for convolutional layers """
+    def plot_conv_channels(self) -> None:
+        """ Plots output channel activations convolutional layers."""
         conv_layers = [l for l in self.layers if isinstance(l, layers.Convolution)]
-        
+
         if not conv_layers:
             print('No convolutional layers found.')
 
-        for i,l in enumerate(conv_layers):
-            print(l.__class__.__name__, i + 1)
+        for i,layer in enumerate(conv_layers):
+            print(layer.__class__.__name__, i + 1)
             plt.figure(figsize=(40, 40))
 
-            for j in range(l.k):
+            for j in range(layer.out_channels):
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(l.y[0, j, :, :], cmap='gray')
-                plt.xlabel(f'kernel {str(j)}')
+                plt.imshow(layer.y[0, j, :, :], cmap='gray')
+                plt.xlabel(f'out_channel {str(j)}')
 
             plt.show()
 
@@ -225,10 +244,12 @@ class Sequential():
             self.layers.insert(0, layer)
         else:
             self.layers.append(layer)
-            if layer.norm is not None:
-                self.layers.append(layer.norm)
-            if layer.activation is not None:
-                self.layers.append(layer.activation)
+
+            if isinstance(layer, layers.ParamLayer):
+                if layer.norm_fn is not None:
+                    self.layers.append(layer.norm_fn)
+                if layer.act_fn is not None:
+                    self.layers.append(layer.act_fn)
 
         self.compiled = False
 
@@ -238,7 +259,7 @@ class Sequential():
 
     def __backward(self):
         # set last layers gradient to be the loss gradient
-        self.layers[-1].dy = self.loss_function.backward()
+        self.layers[-1].dy = self.loss_fn.backward()
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
 
@@ -246,33 +267,37 @@ class Sequential():
             layer.backward()
 
     def __log(self, epoch, epochs, step, loss, verbose=False, val_loss=None):
+        def __log_line():
+            line = f'epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss:.4f}'
+
+            if val_loss is not None:
+                line += f' | val_loss {val_loss:.4f}'
+
+            print(line)
+
         if verbose:
-            if val_loss is not None:
-                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f | val_loss %.4f' % (epoch, epochs, step, loss, val_loss))
-            else:
-                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f' % (epoch, epochs, step, loss))
-        elif  epoch % (epochs // 10) == 0:
-            if val_loss is not None:
-                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f | val_loss %.4f' % (epoch, epochs, step, loss, val_loss))
-            else:
-                print('epoch %5s/%5s | time/epoch %.2f ms | loss %.4f' % (epoch, epochs, step, loss))
+            __log_line()
+        elif epoch % (epochs // 10) == 0:
+            __log_line()
 
     def __train(self):
-        for l in self.layers:
-            if l.mode is not None: l.mode = 'train'
+        for layer in self.layers:
+            if layer.mode is not None:
+                layer.mode = 'train'
 
     def __eval(self):
-        for l in self.layers:
-            if l.mode is not None: l.mode = 'eval'    
+        for layer in self.layers:
+            if layer.mode is not None:
+                layer.mode = 'eval'
 
-    def __check_dims(self, x, y=None):
+    def __check_dims(self, X, Y=None):
         req_input_dim = self.layers[0].x.ndim
 
-        if x.ndim != req_input_dim:
-            raise Exception(f'Isput dimension must be {req_input_dim}.')
-        
-        if y is not None:
+        if X.ndim != req_input_dim:
+            raise Exception(f'Input dimension must be {req_input_dim}.')
+
+        if Y is not None:
             req_output_dim = self.layers[-1].y.ndim
 
-            if y.ndim != req_output_dim:
+            if Y.ndim != req_output_dim:
                 raise Exception(f'Output dimension must be {req_output_dim}.')

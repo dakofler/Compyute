@@ -1,34 +1,33 @@
-# weight initializations module
+"""tensor initializations module"""
 
 import numpy as np
 
 
-def random(shape, **kwargs):
-    """Returns an array with random entries between -1 and 1.
+def random(shape):
+    """Creates a tensor of a given shape following a normal distribution.
 
     Args:
-        shape: Shape of the array.
+        shape: Shape of the tensor.
 
     Returns:
-        Resulting array
+        Tensor with random values.
     """
     return np.random.randn(*shape).astype('float32')
 
-
 def kaiming(shape, **kwargs):
-    """Returns an array with random entries using Kaiming He initialization.
+    """Creates a tensor of a given shape with values according to the Kaiming He initialization.
 
     Args:
-        shape: Shape of the array.
+        shape: Shape of the tensor.
 
     Kwargs:
-        fan_mode: fan_mode used for Kaiming He Initialization [optional].
+        fan_mode: Integer value used for Kaiming initialization [optional].
         activation: Activation function used [optional].
 
     Returns:
-        Resulting array
+        Tensor with random values.
     """
-    activation = kwargs['activation']
+    act_fn = kwargs['act_fn']
     fan_mode = kwargs['fan_mode']
     gains = {
         'NoneType': 1,
@@ -37,49 +36,49 @@ def kaiming(shape, **kwargs):
         'Relu': 2**0.5,
         'Softmax': 1
     }
-    gain = gains.get(activation.__class__.__name__, 1)
+    gain = gains.get(act_fn.__class__.__name__, 1)
     return (np.random.randn(*shape) * gain / fan_mode**0.5).astype('float32')
 
-def zeros(shape, **kwargs):
-    """Returns an array with zero entries.
+def zeros(shape):
+    """Creates a tensor of a given shape with all values being zero.
 
     Args:
-        shape: Shape of the array.
+        shape: Shape of the tensor.
 
     Returns:
-        Resulting array
+        Tensor with all values being zero.
     """
     return np.zeros(shape, dtype='float32')
 
-def ones(shape, **kwargs):
-    """Returns an array with zero entries.
+def ones(shape):
+    """Creates a tensor of a given shape with all values being one.
 
     Args:
-        shape: Shape of the array.
+        shape: Shape of the tensor.
 
     Returns:
-        Resulting array
+        Tensor with all values being one.
     """
     return np.ones(shape, dtype='float32')
 
-def zeros_like(array, **kwargs):
-    """Returns an array with zero entries based on the shape of a given array.
+def zeros_like(tensor):
+    """Creates a tensor of shape of a given other tensor with all values being zero.
 
     Args:
-        array: Template array.
+        tensor: Tensor whose shape is to be used.
 
     Returns:
-        Resulting array
+        Tensor with all values being zero.
     """
-    return np.zeros_like(array, dtype='float32')
+    return np.zeros_like(tensor, dtype='float32')
 
-def ones_like(array, **kwargs):
-    """Returns an array with zero entries based on the shape of a given array.
+def ones_like(tensor):
+    """Creates a tensor of shape of a given other tensor with all values being one.
 
     Args:
-        shape: Template array.
+        tensor: Tensor whose shape is to be used.
 
     Returns:
-        Resulting array
+        Tensor with all values being one.
     """
-    return np.ones_like(array, dtype='float32')
+    return np.ones_like(tensor, dtype='float32')

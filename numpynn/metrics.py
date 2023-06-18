@@ -1,27 +1,18 @@
-# evaluation metrics module
+"""evaluation metrics module"""
 
-from numpynn.networks import Sequential
-from numpynn import inits
 import numpy as np
-import time
+from numpynn import inits
 
 
-def Accuracy(x: np.ndarray, y: np.ndarray, model: Sequential) -> float:
-    "Computes the accuracy score of a prediction compared to target values."
-    start = time.time()
-    output, loss = model(x, y)
+def accuracy(output: np.ndarray, targets: np.ndarray) -> float:
+    """Computes the accuracy score of a prediction compared to target values."""
 
-    # create array with ones where highest probabilities occur
+    # create tensor with ones where highest probabilities occur
     preds = inits.zeros_like(output)
-    pb, _ = preds.shape
+    p_b, _ = preds.shape
     max_prob_indices = np.argmax(output, axis=1)
-    preds[np.arange(0, pb), max_prob_indices] = 1
+    preds[np.arange(0, p_b), max_prob_indices] = 1
 
     # count number of correct samples
-    num_correct_preds = np.sum(preds * y)
-    accuracy = num_correct_preds / pb
-
-    end = time.time()
-    step = round((end - start) * 1000.0, 2)
-    print('loss %.4f | %10s %.4f | time %.2f ms' % (loss, Accuracy.__name__, accuracy, step))
-    return accuracy
+    num_correct_preds = np.sum(preds * targets)
+    return num_correct_preds / p_b
