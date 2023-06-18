@@ -2,7 +2,7 @@
 
 import numpy as np
 from numpy.fft  import fft2, ifft2
-from numpynn import inits, paddings
+from numpynn import inits, paddings, utils
 
 
 class Layer:
@@ -43,12 +43,9 @@ class ParamLayer(Layer):
         self.norm_fn = norm_fn
         self.init_fn = init_fn
         self.use_bias = use_bias
-        self.dx = None
-        self.dy = None
         self.w = self.dw = self.w_delta = self.w_m = self.w_v = None
-
-        if self.use_bias:
-            self.b = self.db = self.b_delta = self.b_m = self.b_v = None
+        self.b = self.db = self.b_delta = self.b_m = self.b_v = None
+        self.g = self.dg = self.g_delta = self.g_m = self.g_v = None # gain for norm layer
 
 
 class Input(Layer):
@@ -200,13 +197,14 @@ class Convolution(ParamLayer):
         # convolve x (b, _, c_in, y, x) * w (_, c_out, c_in, y, x)
         x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0))
         # sum over input channels
-        w_cout, _, w_y, w_x = self.w.shape
+        _, _, w_y, w_x = self.w.shape
         self.y = np.sum(x_conv_w, axis=2)[:, :, w_y - 1:, w_x - 1:]
 
         if self.use_bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
             batches = self.x.shape[0]
-            self.y += (self.b * inits.ones((batches, 1))).reshape(batches, w_cout, 1, 1)
+            bias = self.b * inits.ones((batches, 1))
+            self.y += utils.expand_dims(bias, 4)
 
     def backward(self) -> None:
         super().backward()
