@@ -5,23 +5,23 @@ This is a framework for building neural networks, train them and analyzing the r
 Models can be buit using a variety of layers, such as a linear or convolutional layer. Most of the common activation functions can be used.
 
 ```python
-model = networks.FeedForward(input_shape=(4,), layers=[
-    layers.Linear(nr_neurons=16, activation=activations.Tanh(), init=inits.Kaiming),
-    layers.Linear(nr_neurons=16, activation=activations.Tanh(), init=inits.Kaiming),
-    layers.Linear(nr_neurons=16, activation=activations.Tanh(), init=inits.Kaiming),
-    layers.Linear(nr_neurons=3, activation=activations.Softmax(), init=inits.Kaiming)
+model = networks.Sequential(input_shape=(4,), layers=[
+    layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
+    layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
+    layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
+    layers.Linear(out_channels=3, act_fn=activations.Softmax(), init_fn=inits.Kaiming)
 ])
 ```
 
 ```python
 model = networks.Sequential(input_shape=(1, 28, 28), layers=[
-    layers.Convolution(out_channels=8, kernel_shape=(3, 3), activation=activations.Relu()),
-    layers.MaxPooling(pooling_window=(2, 2)),
-    layers.Convolution(out_channels=16, kernel_shape=(3, 3), activation=activations.Relu()),
-    layers.MaxPooling(pooling_window=(2, 2)),
+    layers.Convolution(out_channels=8, kernel_shape=(3, 3), act_fn=activations.Relu()),
+    layers.MaxPooling(p_window=(2, 2)),
+    layers.Convolution(out_channels=16, kernel_shape=(3, 3), act_fn=activations.Relu()),
+    layers.MaxPooling(p_window=(2, 2)),
     layers.Flatten(),
-    layers.Linear(out_channels=64, activation=activations.Relu()),
-    layers.Linear(out_channels=10, activation=activations.Softmax())
+    layers.Linear(out_channels=64, act_fn=activations.Relu()),
+    layers.Linear(out_channels=10, act_fn=activations.Softmax())
 ])
 ```
 
@@ -29,9 +29,9 @@ The model can be trained using common algorithms, such as SGD or adam.
 
 ```python
 model.compile(
-    optimizer=optimizers.sgd(learning_rate=1e-2, momentum=0.9, nesterov=True),
-    loss_function=losses.crossentropy(),
-    metric=metrics.Accuracy
+    optimizer=optimizers.SGD(learning_rate=1e-2, momentum=0.9, nesterov=True),
+    loss_fn=losses.Crossentropy(),
+    metric=metrics.accuracy
 )
 ```
 
@@ -44,7 +44,7 @@ The framework also provides some functions for analyszing a models' parameters a
 Individual layers can also be used without a network.
 
 ```python
-cnv = layers.Convolution(nr_kernels=1, kernel_size=(3, 3))
+cnv = layers.Convolution(out_channels=1, kernel_shape=(3, 3))
 cnv.x = a
 cnv.w = w
 cnv.b = b

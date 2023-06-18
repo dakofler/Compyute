@@ -17,7 +17,7 @@ class Sequential():
             self.__add_layer(layer)
 
         self.optimizer = None
-        self.loss_function = None
+        self.loss_fn = None
         self.metric = None
         self.compiled = False
 
@@ -42,16 +42,16 @@ class Sequential():
         loss = None
 
         if Y is not None:
-            loss = self.loss_function(output, Y)
+            loss = self.loss_fn(output, Y)
         return output, loss
 
-    def compile(self, optimizer: optimizers.Optimizer, loss_function: losses.Loss, metric) -> None:
+    def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric) -> None:
         """ Compiles the model.
         
         Args:
             optimizer: Optimizer to be used to update weights and biases.
-            loss: Loss function to be used to compute the loss value and gradients.
-            metric: Metric function to be used to evaluate the model.
+            loss_fn: Loss function to be used to compute the loss value and gradients.
+            metric: Metric to be used to evaluate the model.
         """
         if not isinstance(self.layers[0], layers.Input):
             self.__add_layer(layers.Input(self.input_shape), input_layer=True)
@@ -59,16 +59,16 @@ class Sequential():
         if not isinstance(self.layers[-1], layers.Output):
             self.__add_layer(layers.Output())
 
-        for i, l in enumerate(self.layers):
-            if isinstance(l, layers.Input):
-                l.compile(i, None, self.layers[i + 1])
-            elif isinstance(l, layers.Output):
-                l.compile(i, self.layers[i - 1], None)
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, layers.Input):
+                layer.compile(i, None, self.layers[i + 1])
+            elif isinstance(layer, layers.Output):
+                layer.compile(i, self.layers[i - 1], None)
             else:
-                l.compile(i, self.layers[i - 1], self.layers[i + 1])
+                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
 
         self.optimizer = optimizer
-        self.loss_function = loss_function
+        self.loss_fn = loss_fn
         self.metric = metric
         self.compiled = True
 
@@ -132,7 +132,7 @@ class Sequential():
         return pred
 
     def evaluate(self, X: np.ndarray, Y: np.ndarray) -> None:
-        """ Evaluates the model using a defined metric function."""
+        """ Evaluates the model using a defined metric."""
         self.__eval()
         outputs, loss = self(X, Y)
         score = self.metric(outputs, Y)
@@ -246,10 +246,10 @@ class Sequential():
             self.layers.append(layer)
 
             if isinstance(layer, layers.ParamLayer):
-                if layer.norm is not None:
-                    self.layers.append(layer.norm)
-                if layer.activation is not None:
-                    self.layers.append(layer.activation)
+                if layer.norm_fn is not None:
+                    self.layers.append(layer.norm_fn)
+                if layer.act_fn is not None:
+                    self.layers.append(layer.act_fn)
 
         self.compiled = False
 
@@ -259,7 +259,7 @@ class Sequential():
 
     def __backward(self):
         # set last layers gradient to be the loss gradient
-        self.layers[-1].dy = self.loss_function.backward()
+        self.layers[-1].dy = self.loss_fn.backward()
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
 

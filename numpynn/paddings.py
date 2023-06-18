@@ -22,12 +22,12 @@ def same(tensor: np.ndarray, **kwargs) -> np.ndarray:
         tensor: Tensor padding is to be applied to.
 
     Kwargs:
-        kernel_size: Kernel size the padding width is adapted to.
+        kernel_shape: Kernel shape the padding width is adapted to.
 
     Returns:
         Padded tensor.
     """
-    kernel_dim = kwargs['kernel_dim']
-    width = math.floor(kernel_dim[0] / 2)
+    kernel_shape = kwargs['kernel_shape']
+    width = math.floor(kernel_shape[0] / 2)
     # pad along axis 2 & 3
     return np.pad(tensor, ((0, 0), (0, 0), (width, width), (width, width)))

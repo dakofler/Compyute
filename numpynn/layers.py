@@ -37,17 +37,17 @@ class Layer:
 class ParamLayer(Layer):
     """Layer using trainable parameters"""
 
-    def __init__(self, init, bias, norm, activation):
+    def __init__(self, act_fn, norm_fn, init_fn, use_bias):
         super().__init__()
-        self.norm = norm
-        self.activation = activation
-        self.init = init
-        self.bias = bias
+        self.act_fn = act_fn
+        self.norm_fn = norm_fn
+        self.init_fn = init_fn
+        self.use_bias = use_bias
         self.dx = None
         self.dy = None
         self.w = self.dw = self.w_delta = self.w_m = self.w_v = None
 
-        if self.bias:
+        if self.use_bias:
             self.b = self.db = self.b_delta = self.b_m = self.b_v = None
 
 
@@ -94,15 +94,18 @@ class Linear(ParamLayer):
 
     Args:
         out_channels: Number of output channels of the layer.
-        init: Weight Initialization method [optional].
+        act_fn: Activation function applied to the layers' output [optional].
+        norm_fn: Normalization applied before activation [optional].
+        init_fn: Weight initialization method [optional].
+        use_bias: Whether to use bias values [optional].
 
     Raises:
         Error: If out_channels is less than 1.
     """
 
-    def __init__(self, out_channels: int, norm: Layer = None, activation: Layer = None,
-                 init = inits.kaiming, bias = True) -> None:
-        super().__init__(init, bias, norm, activation)
+    def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
+                 init_fn = inits.kaiming, use_bias: bool = True) -> None:
+        super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
             raise Exception("out_channels must be >= 1")
@@ -114,10 +117,10 @@ class Linear(ParamLayer):
         # init weights (c_in, c_out)
         _, prev_out_channels = self.prev_layer.y.shape
         w_shape = (prev_out_channels, self.out_channels)
-        self.w = self.init(shape=w_shape, fan_mode=prev_out_channels, activation=self.activation)
+        self.w = self.init_fn(shape=w_shape, fan_mode=prev_out_channels, act_fn=self.act_fn)
         self.dw = self.w_delta = self.w_m = self.w_v = inits.zeros_like(self.w)
 
-        if self.bias:
+        if self.use_bias:
             # init bias (c_out,)
             self.b = self.db = self.b_delta = self.b_m = self.b_v = inits.zeros((self.out_channels,))
 
@@ -126,7 +129,7 @@ class Linear(ParamLayer):
     def forward(self) -> None:
         super().forward()
         # (b, c_out)
-        self.y = self.x @ self.w + (self.b if self.bias else 0)
+        self.y = self.x @ self.w + (self.b if self.use_bias else 0)
 
     def backward(self) -> None:
         super().backward()
@@ -135,7 +138,7 @@ class Linear(ParamLayer):
         # weight gradients (c_in, c_out)
         self.dw = self.x.T @ self.dy
 
-        if self.bias:
+        if self.use_bias:
             # bias gradients (c_out,)
             self.db = np.sum(self.dy, axis=0)
 
@@ -145,25 +148,28 @@ class Convolution(ParamLayer):
 
     Args:
         out_channels: Number of output channles of the layer.
-        kernel_shape: Dimension of each kernel [optional].
-        init: Weight Initialization method [optional].
-        padding: Padding applied to the layer's input before processing [optional].
+        kernel_shape: Shape of each kernel [optional].
+        act_fn: Activation function applied to the output [optional].
+        norm_fn: Normalization applied before activation [optional].
+        init_fn: Weight initialization method [optional].
+        pad_fn: Padding applied to the input before processing [optional].
+        use_bias: Whether to use bias values [optional].
 
     Raises:
         Error: If the out_channels is less than 1.
     """
 
-    def __init__(self, out_channels: int, kernel_shape: tuple[int, int]=(3, 3),
-                 padding=paddings.valid, norm: Layer=None, activation: Layer=None,
-                 init=inits.kaiming, bias: bool=True) -> None:
-        super().__init__(init, bias, norm, activation)
+    def __init__(self, out_channels: int, kernel_shape: tuple[int, int] = (3, 3),
+                 act_fn: Layer = None, norm_fn: Layer = None, init_fn=inits.kaiming,
+                 pad_fn=paddings.valid, use_bias: bool = True) -> None:
+        super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
             raise Exception("nr_kernels must be >= 1")
 
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
-        self.padding = padding
+        self.pad_fn = pad_fn
 
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -172,10 +178,10 @@ class Convolution(ParamLayer):
         _, prev_out_channels, _, _ = self.prev_layer.y.shape
         w_shape = (self.out_channels, prev_out_channels, *self.kernel_shape)
         _, c_out, w_y, w_x = w_shape
-        self.w = self.init(w_shape, fan_mode=c_out*w_y*w_x, activation=self.activation)
+        self.w = self.init_fn(w_shape, fan_mode=c_out*w_y*w_x, act_fn=self.act_fn)
         self.dw = self.w_delta = self.w_m = self.w_v = inits.zeros_like(self.w)
 
-        if self.bias:
+        if self.use_bias:
             # init bias (c_out,)
             self.b = self.db = self.b_delta = self.b_m = self.b_v = inits.zeros((self.out_channels,))
 
@@ -188,7 +194,7 @@ class Convolution(ParamLayer):
     def forward(self) -> None:
         super().forward()
         # pad input to fit pooling window
-        x_pad = self.padding(self.x, kernel_shape=self.kernel_shape)
+        x_pad = self.pad_fn(self.x, kernel_shape=self.kernel_shape)
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w, axis=(2, 3))
         # convolve x (b, _, c_in, y, x) * w (_, c_out, c_in, y, x)
@@ -197,19 +203,19 @@ class Convolution(ParamLayer):
         w_cout, _, w_y, w_x = self.w.shape
         self.y = np.sum(x_conv_w, axis=2)[:, :, w_y - 1:, w_x - 1:]
 
-        if self.bias:
+        if self.use_bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
             batches = self.x.shape[0]
             self.y += (self.b * inits.ones((batches, 1))).reshape(batches, w_cout, 1, 1)
 
     def backward(self) -> None:
         super().backward()
-        x_p = self.padding(self.x, kernel_shape=self.kernel_shape)
+        x_p = self.pad_fn(self.x, kernel_shape=self.kernel_shape)
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.dy.shape
 
         # pad gradients to fit input after convolution
-        if self.padding != paddings.same:
+        if self.pad_fn != paddings.same:
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.dy, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
@@ -229,7 +235,7 @@ class Convolution(ParamLayer):
         self.dw = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]
 
         # bias gradients
-        if self.bias:
+        if self.use_bias:
             # sum over batches, y and x
             self.db = np.sum(self.dy, axis=(0, 2, 3))
 
@@ -253,13 +259,13 @@ class MaxPooling(Layer):
     """MaxPoling layer used to reduce information and avoid overfitting
 
     Args:
-        pooling_window: Size of the pooling window used for the pooling operation.
+        p_window: Shape of the pooling window used for the pooling operation.
     """
 
-    def __init__(self, pooling_window: tuple[int, int]) -> None:
+    def __init__(self, p_window: tuple[int, int]) -> None:
         super().__init__()
-        self.pooling_window = pooling_window
-        self.pooling_map = None
+        self.p_window = p_window
+        self.p_map = None
 
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -269,10 +275,10 @@ class MaxPooling(Layer):
         super().forward()
         # init output as zeros (b, c, y, k)
         x_pad = self.__pad()
-        p_y, p_x = self.pooling_window
+        p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
         self.y = inits.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x))
-        self.pooling_map = inits.zeros_like(x_pad)
+        self.p_map = inits.zeros_like(x_pad)
         _, _, y_y, y_x = self.y.shape
 
         for y in range(y_y):
@@ -283,21 +289,21 @@ class MaxPooling(Layer):
                 self.y[:, :, y, x] = np.max(chunk, axis=(2, 3))
 
         # "stretch" outputs
-        y_s = self.__stretch(self.y, self.pooling_window, (2, 3), x_pad.shape)
+        y_s = self.__stretch(self.y, self.p_window, (2, 3), x_pad.shape)
         # create pooling map
         # not perfect since technically all values can be equal within a chunk
-        self.pooling_map = (x_pad == y_s) * 1.0
+        self.p_map = (x_pad == y_s) * 1.0
 
     def backward(self) -> None:
         super().backward()
         # "stretch" output gradient
-        dy_s = self.__stretch(self.dy, self.pooling_window, (2, 3), self.pooling_map.shape)
+        dy_s = self.__stretch(self.dy, self.p_window, (2, 3), self.p_map.shape)
         # use pooling map as mask for gradients
         _, _, x_y, x_x = self.x.shape
-        self.dx = (dy_s * self.pooling_map)[:, :, :x_y, :x_x]
+        self.dx = (dy_s * self.p_map)[:, :, :x_y, :x_x]
 
     def __pad(self):
-        w_y, w_x = self.pooling_window
+        w_y, w_x = self.p_window
         _, _, x_y, x_x = self.x.shape
         y_delta = (w_y - x_y % w_y) % w_y
         x_delta = (w_x - x_x % w_x) % w_x
@@ -336,14 +342,14 @@ class Dropout(Layer):
         Error: If the droprate is outside the interval [0, 1).
     """
 
-    def __init__(self, drop_rate: float) -> None:
+    def __init__(self, d_rate: float) -> None:
         super().__init__()
 
-        if drop_rate < 0 or drop_rate >= 1:
+        if d_rate < 0 or d_rate >= 1:
             raise Exception("drop rate must be in the interval [0, 1)")
 
-        self.drop_rate = drop_rate
-        self.drop_map = None
+        self.d_rate = d_rate
+        self.d_map = None
 
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -355,9 +361,10 @@ class Dropout(Layer):
         if self.mode == 'eval':
             self.y = self.x
         else:
-            self.drop_map = np.random.choice([0, 1], self.x.shape, p=[self.drop_rate, 1 - self.drop_rate]).astype('float32')
-            self.y = self.x * self.drop_map / (1 - self.drop_rate)
+            d_map = np.random.choice([0, 1], self.x.shape, p=[self.d_rate, 1 - self.d_rate])
+            self.d_map = d_map.astype('float32')
+            self.y = self.x * self.d_map / (1 - self.d_rate)
 
     def backward(self) -> None:
         super().backward()
-        self.dx = self.dy * self.drop_map / (1 - self.drop_rate)
+        self.dx = self.dy * self.d_map / (1 - self.d_rate)

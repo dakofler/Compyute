@@ -27,7 +27,7 @@ def kaiming(shape, **kwargs):
     Returns:
         Tensor with random values.
     """
-    activation = kwargs['activation']
+    act_fn = kwargs['act_fn']
     fan_mode = kwargs['fan_mode']
     gains = {
         'NoneType': 1,
@@ -36,7 +36,7 @@ def kaiming(shape, **kwargs):
         'Relu': 2**0.5,
         'Softmax': 1
     }
-    gain = gains.get(activation.__class__.__name__, 1)
+    gain = gains.get(act_fn.__class__.__name__, 1)
     return (np.random.randn(*shape) * gain / fan_mode**0.5).astype('float32')
 
 def zeros(shape):
