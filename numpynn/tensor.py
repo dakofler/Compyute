@@ -7,7 +7,6 @@ class Tensor():
     """Tensor base class.
     
     array_like: Data to initialize the tensor [optional].
-    shape: if no array is provided, a zero tensor can be initialized [optional].
     """
 
     def __init__(self, array_like=None):
