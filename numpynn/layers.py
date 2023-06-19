@@ -25,14 +25,14 @@ class Layer:
         self.compiled = True
 
     def forward(self):
-        """Performs a forward pass through all layers."""
+        """Performs a forward pass."""
         if self.prev_layer is not None:
-            self.x.data = self.prev_layer.y.data.copy()
+            self.x.data = self.prev_layer.y.data
 
     def backward(self):
-        """Performs a backward pass through all layers."""
+        """Performs a backward pass."""
         if self.succ_layer is not None:
-            self.y.grad = self.succ_layer.x.grad.copy()
+            self.y.grad = self.succ_layer.x.grad
 
 
 class ParamLayer(Layer):
@@ -46,6 +46,7 @@ class ParamLayer(Layer):
         self.use_bias = use_bias
         self.w = Tensor()
         self.b = Tensor()
+        self.params = [self.w, self.b]
 
 
 class Input(Layer):
@@ -58,6 +59,7 @@ class Input(Layer):
     def __init__(self, input_shape: tuple[int, int]) -> None:
         super().__init__()
         self.input_shape = input_shape
+        self.input = None
 
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -130,9 +132,9 @@ class Linear(ParamLayer):
     def backward(self) -> None:
         super().backward()
         # input gradients (b, c_in)
-        self.x.grad = self.y.grad @ self.w.data.T
+        self.x.grad = self.y.grad @ self.w.data.transpose()
         # weight gradients (c_in, c_out)
-        self.w.grad = self.x.data.T @ self.y.grad
+        self.w.grad = np.asarray(self.x.data).transpose() @ self.y.grad
 
         if self.use_bias:
             # bias gradients (c_out,)

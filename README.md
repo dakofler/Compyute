@@ -41,16 +41,6 @@ The framework also provides some functions for analyszing a models' parameters a
 
 ![image](https://github.com/DKoflerGIT/NumpyNN/assets/74835806/8119d55a-fb83-4300-8f9f-5ea1bd8e85d1)
 
-Individual layers can also be used without a network.
-
-```python
-cnv = layers.Convolution(out_channels=1, kernel_shape=(3, 3))
-cnv.x = a
-cnv.w = w
-cnv.b = b
-cnv.forward()
-```
-
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.
 The code is not perfect, as I am still learning with every new feature that is implement.
 If you have any suggestions or find any bugs, please don't hesitate to contact me.

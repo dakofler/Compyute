@@ -36,9 +36,9 @@ class Sequential():
             ShapeError: If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
-        self.layers[0].x = X.astype('float32')
+        self.layers[0].x.data = X.astype('float32')
         self.__forward()
-        output = self.layers[-1].y
+        output = self.layers[-1].y.data
         loss = None
 
         if Y is not None:
@@ -198,7 +198,7 @@ class Sequential():
                 mean = layer.y.data.mean()
                 std = layer.y.data.std()
                 print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
-                y, x = np.histogram(layer.y, bins=bins)
+                y, x = np.histogram(layer.y.data, bins=bins)
                 plt.plot(np.delete(x, -1), y)
                 legends.append(f'layer {i:d} ({name:s})')
 
@@ -241,7 +241,7 @@ class Sequential():
 
             for j in range(layer.out_channels):
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(layer.y[0, j, :, :], cmap='gray')
+                plt.imshow(layer.y.data[0, j, :, :], cmap='gray')
                 plt.xlabel(f'out_channel {str(j)}')
 
             plt.show()

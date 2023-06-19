@@ -18,11 +18,12 @@ class Layernorm(Normalization):
         self.__var_inv = None
         self.__xhat = None
         self.g = Tensor()
+        self.params = [self.b, self.g]
 
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
-        gamma = inits.ones((1, prev_layer.y.shape[1]))
-        self.g.data = utils.expand_dims(gamma, prev_layer.y.ndim)
+        gamma = inits.ones((1, self.prev_layer.y.shape[1]))
+        self.g.data = utils.expand_dims(gamma, self.prev_layer.y.ndim)
         self.b.data = inits.zeros_like(self.g.data)
         self.forward()
 
