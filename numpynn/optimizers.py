@@ -30,26 +30,26 @@ class SGD(Optimizer):
             if not isinstance(layer, layers.ParamLayer):
                 continue
 
-            if layer.dw is not None:
-                layer.w_delta = - self.l_r * layer.dw + self.momentum * layer.w_delta
+            if layer.w is not None:
+                layer.w.delta = - self.l_r * layer.w.grad + self.momentum * layer.w.delta
                 if not self.nesterov:
-                    layer.w = layer.w + layer.w_delta
+                    layer.w.data = layer.w.data + layer.w.delta
                 else:
-                    layer.w = layer.w + self.momentum * layer.w_delta - self.l_r * layer.dw
+                    layer.w.data = layer.w.data + self.momentum * layer.w.delta - self.l_r * layer.w.grad
 
-            if layer.db is not None:
-                layer.b_delta = - self.l_r * layer.db + self.momentum * layer.b_delta
+            if layer.b is not None:
+                layer.b.delta = - self.l_r * layer.b.grad + self.momentum * layer.b.delta
                 if not self.nesterov:
-                    layer.b = layer.b + layer.b_delta
+                    layer.b.data = layer.b.data + layer.b.delta
                 else:
-                    layer.b = layer.b + self.momentum * layer.b_delta - self.l_r * layer.db
+                    layer.b.data = layer.b.data + self.momentum * layer.b.delta - self.l_r * layer.b.grad
 
-            if layer.dg is not None:
-                layer.g_delta = - self.l_r * layer.dg + self.momentum * layer.g_delta
+            if layer.g is not None:
+                layer.g.delta = - self.l_r * layer.g.grad + self.momentum * layer.g.delta
                 if not self.nesterov:
-                    layer.g = layer.g + layer.g_delta
+                    layer.g.data = layer.g.data + layer.g.delta
                 else:
-                    layer.g = layer.g + self.momentum * layer.g_delta - self.l_r * layer.dg
+                    layer.g.data = layer.g.data + self.momentum * layer.g.delta - self.l_r * layer.g.grad
 
 
 class Adam(Optimizer):
@@ -74,23 +74,23 @@ class Adam(Optimizer):
             if not isinstance(layer, layers.ParamLayer):
                 continue
 
-            if layer.dw is not None:
-                layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
-                m_bc = layer.w_m / (1 - self.beta1)
-                layer.w_v = self.beta2 * layer.w_v + (1 - self.beta2) * layer.dw**2
-                v_bc = layer.w_v / (1 - self.beta2)
+            if layer.w is not None:
+                layer.w.mmtm = self.beta1 * layer.w.mmtm + (1 - self.beta1) * layer.w.grad
+                m_bc = layer.w.mmtm / (1 - self.beta1)
+                layer.w.velo = self.beta2 * layer.w.velo + (1 - self.beta2) * layer.w.grad**2
+                v_bc = layer.w.velo / (1 - self.beta2)
                 layer.w = layer.w - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
 
-            if layer.db is not None:
-                layer.b_m = self.beta1 * layer.b_m + (1 - self.beta1) * layer.db
-                m_bc = layer.b_m / (1 - self.beta1)
-                layer.b_v = self.beta2 * layer.b_v + (1 - self.beta2) * layer.db**2
-                v_bc = layer.b_v / (1 - self.beta2)
+            if layer.b is not None:
+                layer.b.mmtm = self.beta1 * layer.b.mmtm + (1 - self.beta1) * layer.b.grad
+                m_bc = layer.v.mmtm / (1 - self.beta1)
+                layer.b.velo = self.beta2 * layer.b.velo + (1 - self.beta2) * layer.b.grad**2
+                v_bc = layer.b.velo / (1 - self.beta2)
                 layer.b = layer.b - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
 
-            if layer.dg is not None:
-                layer.g_m = self.beta1 * layer.g_m + (1 - self.beta1) * layer.dg
-                m_bc = layer.g_m / (1 - self.beta1)
-                layer.g_v = self.beta2 * layer.g_v + (1 - self.beta2) * layer.dg**2
-                v_bc = layer.g_v / (1 - self.beta2)
+            if layer.g is not None:
+                layer.g.mmtm = self.beta1 * layer.g.mmtm + (1 - self.beta1) * layer.g.grad
+                m_bc = layer.g.mmtm / (1 - self.beta1)
+                layer.g.velo = self.beta2 * layer.g.velo + (1 - self.beta2) * layer.g.grad**2
+                v_bc = layer.g.velo / (1 - self.beta2)
                 layer.g = layer.g - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
