@@ -31,17 +31,15 @@ class SGD(Optimizer):
                 continue
 
             for param in layer.params:
-                if param.delta is None:
-                    self.__init_additional_param(param)
+                delta = param.params.get('delta', inits.zeros(param.data.shape))
+                delta_new = - self.l_r * param.grad + self.momentum * delta
 
-                param.delta = - self.l_r * param.grad + self.momentum * param.delta
                 if not self.nesterov:
-                    param.data = param.data + param.delta
+                    param.data = param.data + delta_new
                 else:
-                    param.data = param.data + self.momentum * param.delta - self.l_r * param.grad
+                    param.data = param.data + self.momentum * delta_new - self.l_r * param.grad
 
-    def __init_additional_param(self, param):
-        param.delta = inits.zeros(param.data.shape)
+                param.params['delta'] = delta_new
 
 
 class Adam(Optimizer):
@@ -67,15 +65,14 @@ class Adam(Optimizer):
                 continue
 
             for param in layer.params:
-                if param.mmtm is None:
-                    self.__init_additional_param(param)
+                momentum = param.params.get('momentum', inits.zeros(param.data.shape))
+                momentum_new = self.beta1 * momentum + (1 - self.beta1) * param.grad
+                m_bc = momentum_new / (1 - self.beta1)
+                param.params['momentum'] = momentum_new
 
-                param.mmtm = self.beta1 * param.mmtm + (1 - self.beta1) * param.grad
-                m_bc = param.mmtm / (1 - self.beta1)
-                param.velo = self.beta2 * param.velo + (1 - self.beta2) * param.grad**2
-                v_bc = param.velo / (1 - self.beta2)
+                velocity = param.params.get('velocity', inits.zeros(param.data.shape))
+                velocity_new = self.beta2 * velocity + (1 - self.beta2) * param.grad**2
+                v_bc = velocity_new / (1 - self.beta2)
+                param.params['velocity'] = velocity_new
+
                 param.data = param.data - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
-
-    def __init_additional_param(self, param):
-        param.mmtm = inits.zeros(param.data.shape)
-        param.velo = inits.zeros(param.data.shape)

@@ -22,9 +22,14 @@ class Tensor():
             self._data = None
 
         self.grad = None
-        self.delta = None
-        self.mmtm = None
-        self.velo = None
+        self.params = {}
+
+
+    def __repr__(self):
+        return self._data.__repr__().replace('array', 'tnsor')
+
+    def __call__(self):
+        return self.data
 
     @property
     def data(self):
@@ -38,11 +43,8 @@ class Tensor():
         self.shape = self._data.shape
         self.ndim = self._data.ndim
 
+
     # operator overloading
-
-    def __repr__(self):
-        return self._data.__repr__().replace('array', 'tnsor')
-
     def __add__(self, other):
         other = self.__tensorify(other)
         return self._data + other.data
@@ -69,9 +71,9 @@ class Tensor():
     def __mod__(self, other: int):
         return self._data % other
 
-    def __matmul__(self, other: int):
+    def __matmul__(self, other):
         other = self.__tensorify(other)
-        return self._data @ other
+        return self._data @ other.data
 
     def __tensorify(self, other):
         if not isinstance(other, Tensor):
