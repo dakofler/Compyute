@@ -73,7 +73,7 @@ conv = layers.Convolution(out_channels=2)
 
 conv.x.data = X
 conv.w.data = W
-conv.b.data = b
+conv.b.data = B
 
 conv.forward()
 conv.backward()
