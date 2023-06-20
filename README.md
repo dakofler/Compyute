@@ -41,14 +41,17 @@ model.compile(
     loss_fn=losses.Crossentropy(),
     metric=metrics.accuracy
 )
+```
 
+```python
 model.compile(
     optimizer=optimizers.Adam(l_r=1e-3),
     loss_fn=losses.Crossentropy(),
     metric=metrics.accuracy
 )
+```
 
-
+```python
 hist = model.train(x_train, y_train, epochs=10, batch_size=512, verbose=True, val_data=(x_val, y_val))
 model.plot_training_loss(hist)
 ```
