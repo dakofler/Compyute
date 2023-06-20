@@ -1,7 +1,7 @@
 """parameter optimizers module"""
 
 import numpy as np
-from numpynn import layers
+from numpynn import layers, inits
 
 
 class Optimizer():
@@ -30,26 +30,16 @@ class SGD(Optimizer):
             if not isinstance(layer, layers.ParamLayer):
                 continue
 
-            if layer.dw is not None:
-                layer.w_delta = - self.l_r * layer.dw + self.momentum * layer.w_delta
-                if not self.nesterov:
-                    layer.w = layer.w + layer.w_delta
-                else:
-                    layer.w = layer.w + self.momentum * layer.w_delta - self.l_r * layer.dw
+            for param in layer.params:
+                delta = param.params.get('delta', inits.zeros(param.data.shape))
+                delta_new = - self.l_r * param.grad + self.momentum * delta
 
-            if layer.db is not None:
-                layer.b_delta = - self.l_r * layer.db + self.momentum * layer.b_delta
                 if not self.nesterov:
-                    layer.b = layer.b + layer.b_delta
+                    param.data = param.data + delta_new
                 else:
-                    layer.b = layer.b + self.momentum * layer.b_delta - self.l_r * layer.db
+                    param.data = param.data + self.momentum * delta_new - self.l_r * param.grad
 
-            if layer.dg is not None:
-                layer.g_delta = - self.l_r * layer.dg + self.momentum * layer.g_delta
-                if not self.nesterov:
-                    layer.g = layer.g + layer.g_delta
-                else:
-                    layer.g = layer.g + self.momentum * layer.g_delta - self.l_r * layer.dg
+                param.params['delta'] = delta_new
 
 
 class Adam(Optimizer):
@@ -74,23 +64,15 @@ class Adam(Optimizer):
             if not isinstance(layer, layers.ParamLayer):
                 continue
 
-            if layer.dw is not None:
-                layer.w_m = self.beta1 * layer.w_m + (1 - self.beta1) * layer.dw
-                m_bc = layer.w_m / (1 - self.beta1)
-                layer.w_v = self.beta2 * layer.w_v + (1 - self.beta2) * layer.dw**2
-                v_bc = layer.w_v / (1 - self.beta2)
-                layer.w = layer.w - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
+            for param in layer.params:
+                momentum = param.params.get('momentum', inits.zeros(param.data.shape))
+                momentum_new = self.beta1 * momentum + (1 - self.beta1) * param.grad
+                m_bc = momentum_new / (1 - self.beta1)
+                param.params['momentum'] = momentum_new
 
-            if layer.db is not None:
-                layer.b_m = self.beta1 * layer.b_m + (1 - self.beta1) * layer.db
-                m_bc = layer.b_m / (1 - self.beta1)
-                layer.b_v = self.beta2 * layer.b_v + (1 - self.beta2) * layer.db**2
-                v_bc = layer.b_v / (1 - self.beta2)
-                layer.b = layer.b - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
+                velocity = param.params.get('velocity', inits.zeros(param.data.shape))
+                velocity_new = self.beta2 * velocity + (1 - self.beta2) * param.grad**2
+                v_bc = velocity_new / (1 - self.beta2)
+                param.params['velocity'] = velocity_new
 
-            if layer.dg is not None:
-                layer.g_m = self.beta1 * layer.g_m + (1 - self.beta1) * layer.dg
-                m_bc = layer.g_m / (1 - self.beta1)
-                layer.g_v = self.beta2 * layer.g_v + (1 - self.beta2) * layer.dg**2
-                v_bc = layer.g_v / (1 - self.beta2)
-                layer.g = layer.g - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))
+                param.data = param.data - m_bc * (self.l_r / (np.sqrt(v_bc) + self.epsilon))

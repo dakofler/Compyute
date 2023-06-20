@@ -17,11 +17,11 @@ class Relu(Activation):
 
     def forward(self) -> None:
         super().forward()
-        self.y = np.maximum(0, self.x)
+        self.y.data = np.maximum(0, self.x.data)
 
     def backward(self) -> None:
         super().backward()
-        self.dx = (self.y > 0) * self.dy
+        self.x.grad = (self.y.data > 0) * self.y.grad
 
 
 class Sigmoid(Activation):
@@ -33,12 +33,12 @@ class Sigmoid(Activation):
 
     def forward(self) -> None:
         super().forward()
-        self.y = self.__sigmoid(self.x)
+        self.y.data = self.__sigmoid(self.x.data)
 
     def backward(self) -> None:
         super().backward()
-        sigm = self.__sigmoid(self.y)
-        self.dx = sigm * (1.0 - sigm) * self.dy
+        sigm = self.__sigmoid(self.y.data)
+        self.x.grad = sigm * (1.0 - sigm) * self.y.grad
 
     def __sigmoid(self, tensor):
         # clip to avoid high values when exponentiating
@@ -55,11 +55,11 @@ class Tanh(Activation):
 
     def forward(self) -> None:
         super().forward()
-        self.y = np.tanh(self.x)
+        self.y.data = np.tanh(self.x.data)
 
     def backward(self) -> None:
         super().backward()
-        self.dx = (1.0 - self.y**2) * self.dy
+        self.x.grad = (1.0 - self.y.data**2) * self.y.grad
 
 
 class Softmax(Activation):
@@ -71,16 +71,16 @@ class Softmax(Activation):
 
     def forward(self) -> None:
         super().forward()
-        self.y = self.__softmax(self.x)
+        self.y.data = self.__softmax(self.x.data)
 
     def backward(self) -> None:
         super().backward()
         _, channels = self.x.shape
         # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
-        tensor1 = np.einsum('ij,ik->ijk', self.y, self.y)
-        tensor2 = np.einsum('ij,jk->ijk', self.y, np.eye(channels, channels))
+        tensor1 = np.einsum('ij,ik->ijk', self.y.data, self.y.data)
+        tensor2 = np.einsum('ij,jk->ijk', self.y.data, np.eye(channels, channels))
         delta = tensor2 - tensor1
-        self.dx = np.einsum('ijk,ik->ij', delta, self.dy)
+        self.x.grad = np.einsum('ijk,ik->ij', delta, self.y.grad)
 
     def __softmax(self, tensor, axis=1):
         # subtract max value to avoid high values when exponentiating.

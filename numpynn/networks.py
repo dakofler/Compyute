@@ -36,9 +36,9 @@ class Sequential():
             ShapeError: If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
-        self.layers[0].x = X.astype('float32')
+        self.layers[0].x.data = X.astype('float32')
         self.__forward()
-        output = self.layers[-1].y
+        output = self.layers[-1].y.data
         loss = None
 
         if Y is not None:
@@ -158,12 +158,12 @@ class Sequential():
             w_size = b_size = 0
             w_shape = b_shape = '-'
 
-            if isinstance(layer, layers.ParamLayer) and layer.w is not None:
-                w_size = np.size(layer.w)
+            if isinstance(layer, layers.ParamLayer) and layer.w.data is not None:
+                w_size = np.size(layer.w.data)
                 w_shape = str(layer.w.shape)
 
-            if isinstance(layer, layers.ParamLayer) and layer.b is not None:
-                b_size = np.size(layer.b)
+            if isinstance(layer, layers.ParamLayer) and layer.b.data is not None:
+                b_size = np.size(layer.b.data)
                 b_shape = str(layer.b.shape)
 
             params = w_size + b_size
@@ -195,10 +195,10 @@ class Sequential():
         for i, layer in enumerate(self.layers):
             if isinstance(layer, activations.Activation) and not isinstance(layer, activations.Softmax):
                 name = layer.__class__.__name__
-                mean = layer.y.mean()
-                std = layer.y.std()
+                mean = layer.y.data.mean()
+                std = layer.y.data.std()
                 print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
-                y, x = np.histogram(layer.y, bins=bins)
+                y, x = np.histogram(layer.y.data, bins=bins)
                 plt.plot(np.delete(x, -1), y)
                 legends.append(f'layer {i:d} ({name:s})')
 
@@ -217,10 +217,10 @@ class Sequential():
         for i, layer in enumerate(self.layers):
             if isinstance(layer, layers.ParamLayer) and not isinstance(layer, norms.Layernorm):
                 name = layer.__class__.__name__
-                mean = layer.w.mean()
-                std = layer.w.std()
+                mean = layer.w.grad.mean()
+                std = layer.w.grad.std()
                 print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
-                y, x = np.histogram(layer.dw, bins=bins)
+                y, x = np.histogram(layer.w.grad, bins=bins)
                 x = np.delete(x, -1)
                 plt.plot(x, y)
                 legends.append(f'layer {i:d} ({name:s})')
@@ -241,7 +241,7 @@ class Sequential():
 
             for j in range(layer.out_channels):
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(layer.y[0, j, :, :], cmap='gray')
+                plt.imshow(layer.y.data[0, j, :, :], cmap='gray')
                 plt.xlabel(f'out_channel {str(j)}')
 
             plt.show()
@@ -266,7 +266,7 @@ class Sequential():
 
     def __backward(self):
         # set last layers gradient to be the loss gradient
-        self.layers[-1].dy = self.loss_fn.backward()
+        self.layers[-1].y.grad = self.loss_fn.backward()
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
 
