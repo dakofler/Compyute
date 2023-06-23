@@ -1,6 +1,15 @@
 # Numpy Neural Network
 
-This is a framework for building, training and analyzing neural networks created using NumPy only.
+This is a framework for building, training and analyzing neural networks created using NumPy only. Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd. Gradients are computed within a network's layer.
+
+```Python
+a = Tensor([1, 2, 3])
+b = nn.tensor.randn((3,))
+
+c = a + b
+
+d = nn.tensor.zeros((5, 5))
+```
 
 ### Data preprocessing
 

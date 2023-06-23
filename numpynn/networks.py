@@ -114,7 +114,10 @@ class Sequential():
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-            self.__log(epoch, epochs, step, loss.item(), verbose, val_loss.item())
+
+            if verbose:
+                self.__log(epoch, epochs, step, loss, val_loss)
+
             history.append(loss.item())
 
         return history
@@ -274,16 +277,16 @@ class Sequential():
         for layer in layers_reversed:
             layer.backward()
 
-    def __log(self, epoch, epochs, step, loss, verbose=False, val_loss=None):
+    def __log(self, epoch, epochs, step, loss, val_loss=None):
         def __log_line():
-            line = f'epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss:.4f}'
+            line = f'epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss.item():.4f}'
 
             if val_loss is not None:
-                line += f' | val_loss {val_loss:.4f}'
+                line += f' | val_loss {val_loss.item():.4f}'
 
             print(line)
 
-        if verbose:
+        if epochs < 10:
             __log_line()
         elif epoch % (epochs // 10) == 0:
             __log_line()
