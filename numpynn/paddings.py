@@ -2,9 +2,10 @@
 
 import math
 import numpy as np
+from numpynn.tensor import Tensor
 
 
-def valid(tensor: np.ndarray, **kwargs) -> np.ndarray:
+def valid(tensor: Tensor, **kwargs) -> Tensor:
     """Applies valid padding using zero-values to a tensor.
 
     Args:
@@ -13,9 +14,9 @@ def valid(tensor: np.ndarray, **kwargs) -> np.ndarray:
     Returns:
         Padded tensor.
     """
-    return tensor.copy()
+    return tensor
 
-def same(tensor: np.ndarray, **kwargs) -> np.ndarray:
+def same(tensor: Tensor, **kwargs) -> Tensor:
     """Applies same padding using zero-values to a tensor.
 
     Args:
@@ -30,4 +31,4 @@ def same(tensor: np.ndarray, **kwargs) -> np.ndarray:
     kernel_shape = kwargs['kernel_shape']
     width = math.floor(kernel_shape[0] / 2)
     # pad along axis 2 & 3
-    return np.pad(tensor, ((0, 0), (0, 0), (width, width), (width, width)))
+    return Tensor(np.pad(tensor.data, ((0, 0), (0, 0), (width, width), (width, width))))

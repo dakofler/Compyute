@@ -3,7 +3,8 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from numpynn import layers, activations, utils, optimizers, losses, norms
+from numpynn import activations, layers, losses, norms, optimizers, tensor
+from numpynn.tensor import Tensor
 
 
 class Sequential():
@@ -21,7 +22,7 @@ class Sequential():
         self.metric = None
         self.compiled = False
 
-    def __call__(self, X: np.ndarray, Y: np.ndarray=None) -> None:
+    def __call__(self, X: Tensor, Y: Tensor = None) -> None:
         """Computes an output and the loss based on imput samples.
         
         Args:
@@ -36,9 +37,9 @@ class Sequential():
             ShapeError: If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
-        self.layers[0].x.data = X.astype('float32')
+        self.layers[0].x.data = X.data
         self.__forward()
-        output = self.layers[-1].y.data
+        output = self.layers[-1].y
         loss = None
 
         if Y is not None:
@@ -72,8 +73,8 @@ class Sequential():
         self.metric = metric
         self.compiled = True
 
-    def train(self, X: np.ndarray, Y: np.ndarray, epochs: int=100, batch_size: int = None,
-              verbose: bool=True, val_data: tuple[np.ndarray]=(None, None)) -> list[float]:
+    def train(self, X: Tensor, Y: Tensor, epochs: int=100, batch_size: int = None,
+              verbose: bool=True, val_data: tuple[Tensor]=(None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
         Args:
@@ -97,7 +98,7 @@ class Sequential():
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_train, y_train = utils.shuffle(X, Y, batch_size)
+            x_train, y_train = tensor.shuffle(X, Y, batch_size)
 
             # training
             self.__train()
@@ -113,12 +114,12 @@ class Sequential():
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-            self.__log(epoch, epochs, step, loss, verbose, val_loss)
-            history.append(loss)
+            self.__log(epoch, epochs, step, loss.item(), verbose, val_loss.item())
+            history.append(loss.item())
 
         return history
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: Tensor) -> Tensor:
         """Applies the input to the model and returns it's predictions.
         
         Args:
@@ -131,13 +132,13 @@ class Sequential():
         pred, _ = self(X)
         return pred
 
-    def evaluate(self, X: np.ndarray, Y: np.ndarray) -> None:
+    def evaluate(self, X: Tensor, Y: Tensor) -> None:
         """ Evaluates the model using a defined metric."""
         self.__eval()
         outputs, loss = self(X, Y)
         score = self.metric(outputs, Y)
         metric = self.metric.__name__
-        print(f'loss {loss:.4f} | {metric:s}: {score:.4f}')
+        print(f'loss {loss.item():.4f} | {metric:s}: {score:.4f}')
 
     def summary(self) -> None:
         """ Gives an overview of the model architecture.
@@ -158,11 +159,11 @@ class Sequential():
             w_size = b_size = 0
             w_shape = b_shape = '-'
 
-            if isinstance(layer, layers.ParamLayer) and layer.w.data is not None:
+            if isinstance(layer, layers.ParamLayer) and layer.w is not None:
                 w_size = np.size(layer.w.data)
                 w_shape = str(layer.w.shape)
 
-            if isinstance(layer, layers.ParamLayer) and layer.b.data is not None:
+            if isinstance(layer, layers.ParamLayer) and layer.b is not None:
                 b_size = np.size(layer.b.data)
                 b_shape = str(layer.b.shape)
 
@@ -266,7 +267,7 @@ class Sequential():
 
     def __backward(self):
         # set last layers gradient to be the loss gradient
-        self.layers[-1].y.grad = self.loss_fn.backward()
+        self.layers[-1].y.grad = self.loss_fn.backward().data
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
 
@@ -301,10 +302,10 @@ class Sequential():
         req_input_dim = self.layers[0].x.ndim
 
         if X.ndim != req_input_dim:
-            raise Exception(f'Input dimension must be {req_input_dim}.')
+            raise ValueError(f'Input dimension must be {req_input_dim}.')
 
         if Y is not None:
             req_output_dim = self.layers[-1].y.ndim
 
             if Y.ndim != req_output_dim:
-                raise Exception(f'Output dimension must be {req_output_dim}.')
+                raise ValueError(f'Output dimension must be {req_output_dim}.')

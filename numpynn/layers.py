@@ -2,8 +2,8 @@
 
 import numpy as np
 from numpy.fft  import fft2, ifft2
-from numpynn import inits, paddings, utils
 from numpynn.tensor import Tensor
+from numpynn import paddings, inits, tensor
 
 
 class Layer:
@@ -44,9 +44,9 @@ class ParamLayer(Layer):
         self.norm_fn = norm_fn
         self.init_fn = init_fn
         self.use_bias = use_bias
-        self.w = Tensor()
-        self.b = Tensor()
-        self.params = [self.w, self.b]
+        self.w = None
+        self.b = None
+        self.params = []
 
 
 class Input(Layer):
@@ -64,7 +64,7 @@ class Input(Layer):
     def compile(self, i, prev_layer, succ_layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init with ones and expand by adding batch dim
-        self.x.data = np.expand_dims(inits.ones(self.input_shape), axis=0)
+        self.x = tensor.expand_dims(tensor.ones(self.input_shape), axis=0)
         self.forward()
 
     def forward(self) -> None:
@@ -99,7 +99,7 @@ class Linear(ParamLayer):
         use_bias: Whether to use bias values [optional].
 
     Raises:
-        Error: If out_channels is less than 1.
+        ValueError: If out_channels is less than 1.
     """
 
     def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
@@ -107,7 +107,7 @@ class Linear(ParamLayer):
         super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
-            raise Exception("out_channels must be >= 1")
+            raise ValueError("out_channels must be >= 1")
 
         self.out_channels = out_channels
 
@@ -116,12 +116,13 @@ class Linear(ParamLayer):
         # init weights (c_in, c_out)
         _, in_channels = self.prev_layer.y.shape
         w_shape = (in_channels, self.out_channels)
-        self.w.data = self.init_fn(shape=w_shape, fan_mode=in_channels, act_fn=self.act_fn)
+        self.w = self.init_fn(shape=w_shape, fan_mode=in_channels, act_fn=self.act_fn)
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b.data = inits.zeros((self.out_channels, ))
+            self.b = tensor.zeros((self.out_channels, ))
 
+        self.params = [self.w, self.b]
         self.forward()
 
     def forward(self) -> None:
@@ -132,9 +133,9 @@ class Linear(ParamLayer):
     def backward(self) -> None:
         super().backward()
         # input gradients (b, c_in)
-        self.x.grad = self.y.grad @ self.w.data.transpose()
+        self.x.grad = self.y.grad @ self.w.T
         # weight gradients (c_in, c_out)
-        self.w.grad = np.asarray(self.x.data).transpose() @ self.y.grad
+        self.w.grad = self.x.T @ self.y.grad
 
         if self.use_bias:
             # bias gradients (c_out,)
@@ -153,7 +154,7 @@ class Convolution(ParamLayer):
         pad_fn: Padding applied to the input before processing [optional].
         use_bias: Whether to use bias values [optional].
 
-    Raises:
+    ValueError:
         Error: If the out_channels is less than 1.
     """
 
@@ -163,7 +164,7 @@ class Convolution(ParamLayer):
         super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
-            raise Exception("nr_kernels must be >= 1")
+            raise ValueError("nr_kernels must be >= 1")
 
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
@@ -176,22 +177,23 @@ class Convolution(ParamLayer):
         _, in_channels, _, _ = self.prev_layer.y.shape
         w_shape = (self.out_channels, in_channels, *self.kernel_shape)
         _, c_out, w_y, w_x = w_shape
-        self.w.data = self.init_fn(w_shape, fan_mode=c_out*w_y*w_x, act_fn=self.act_fn)
+        self.w = self.init_fn(w_shape, fan_mode=c_out*w_y*w_x, act_fn=self.act_fn)
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b.data = inits.zeros((self.out_channels,))
+            self.b = tensor.zeros((self.out_channels,))
 
+        self.params = [self.w, self.b]
         self.forward()
         _, _, y_y, y_x = self.y.shape
 
         if y_y < w_y or y_x < w_x:
-            raise Exception(self.__class__.__name__, ': Output shape smaller than kernel shape.')
+            raise ValueError(self.__class__.__name__, ': Output shape smaller than kernel shape.')
 
     def forward(self) -> None:
         super().forward()
         # pad input to fit pooling window
-        x_pad = self.pad_fn(self.x.data, kernel_shape=self.kernel_shape)
+        x_pad = self.pad_fn(self.x, kernel_shape=self.kernel_shape).data
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w.data, axis=(2, 3))
         # convolve x (b, _, c_in, y, x) * w (_, c_out, c_in, y, x)
@@ -203,12 +205,12 @@ class Convolution(ParamLayer):
         if self.use_bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
             batches = self.x.shape[0]
-            bias = self.b.data * inits.ones((batches, 1))
-            self.y.data += utils.expand_dims(bias, 4)
+            bias = self.b * tensor.ones((batches, 1))
+            self.y.data += tensor.match_dims(bias, 4).data
 
     def backward(self) -> None:
         super().backward()
-        x_p = self.pad_fn(self.x.data, kernel_shape=self.kernel_shape)
+        x_p = self.pad_fn(self.x, kernel_shape=self.kernel_shape).data
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.y.shape
 
@@ -272,11 +274,11 @@ class MaxPooling(Layer):
     def forward(self) -> None:
         super().forward()
         # init output as zeros (b, c, y, k)
-        x_pad = self.__pad()
+        x_pad = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
-        self.y.data = inits.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x))
-        self.p_map = inits.zeros_like(x_pad)
+        self.y.data = tensor.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
+        self.p_map = tensor.zeros_like(x_pad).data
         _, _, y_y, y_x = self.y.shape
 
         for y in range(y_y):
@@ -300,19 +302,20 @@ class MaxPooling(Layer):
         _, _, x_y, x_x = self.x.shape
         self.x.grad = (dy_s * self.p_map)[:, :, :x_y, :x_x]
 
-    def __pad(self):
+    def __crop(self):
         w_y, w_x = self.p_window
         _, _, x_y, x_x = self.x.shape
-        y_delta = (w_y - x_y % w_y) % w_y
-        x_delta = (w_x - x_x % w_x) % w_x
-        return np.pad(self.x.data, ((0, 0), (0, 0), (0, y_delta), (0, x_delta)))
+        y_fit = x_y // w_y * w_y
+        x_fit = x_x // w_x * w_x
+        return self.x.data[:, :, :y_fit, :x_fit]
 
-    def __stretch(self, tensor, streching, axis, target_shape):
+    def __stretch(self, t, streching, axis, target_shape):
         fa1, fa2 = streching
         ax1, ax2 = axis
-        tensor_s = np.repeat(tensor, fa1, axis=ax1)
-        tensor_s = np.repeat(tensor_s, fa2, axis=ax2)
-        return np.resize(tensor_s, target_shape)
+        t_stretched = np.repeat(t, fa1, axis=ax1)
+        t_stretched = np.repeat(t_stretched, fa2, axis=ax2)
+        return np.resize(t_stretched, target_shape)
+
 
 class Flatten(Layer):
     "Flatten layer used to reshape tensors to shape (b, c_out)"
@@ -337,14 +340,14 @@ class Dropout(Layer):
         drop_rate: Probability of values being set to 0.
 
     Raises:
-        Error: If the droprate is outside the interval [0, 1).
+        ValueError: If the droprate is outside the interval [0, 1).
     """
 
     def __init__(self, d_rate: float) -> None:
         super().__init__()
 
         if d_rate < 0 or d_rate >= 1:
-            raise Exception("drop rate must be in the interval [0, 1)")
+            raise ValueError("drop rate must be in the interval [0, 1)")
 
         self.d_rate = d_rate
         self.d_map = None

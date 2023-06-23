@@ -1,7 +1,7 @@
 """loss functions module"""
 
 import numpy as np
-
+from numpynn.tensor import Tensor
 
 class Loss():
     """Loss base class."""
@@ -13,29 +13,29 @@ class Loss():
 
     def set_vals(self, outputs, targets) -> None:
         """Offsets values to avoid dividing by zero."""
-        self._y = outputs + 1e-7 # to avoid dividing by 0
-        self._t = targets + 1e-7 # to avoid dividing by 0
+        self._y = outputs.data + 1e-7 # to avoid dividing by 0
+        self._t = targets.data + 1e-7 # to avoid dividing by 0
 
 
 class MSE(Loss):
     """Mean squard error loss function"""
 
-    def __call__(self, outputs, targets) -> np.ndarray:
+    def __call__(self, outputs, targets) -> Tensor:
         super().set_vals(outputs, targets)
-        return 0.5 * np.sum((self._t - self._y)**2)
+        return Tensor(0.5 * np.sum((self._t - self._y)**2))
 
-    def backward(self) -> np.ndarray:
+    def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return self._y - self._t
+        return Tensor(self._y - self._t)
 
 
 class Crossentropy(Loss):
     """Crossentropy loss function"""
 
-    def __call__(self, outputs, targets) -> np.ndarray:
+    def __call__(self, outputs, targets) -> Tensor:
         super().set_vals(outputs, targets)
-        return -np.mean(np.log(self._y) * self._t)
+        return Tensor(-np.mean(np.log(self._y) * self._t).item())
 
-    def backward(self) -> np.ndarray:
+    def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return -1.0 * self._t / (self._y * self._t.size)
+        return Tensor(-1.0 * self._t / (self._y * self._t.size))

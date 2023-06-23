@@ -1,18 +1,19 @@
 """evaluation metrics module"""
 
 import numpy as np
-from numpynn import inits
+from numpynn import tensor
+from numpynn.tensor import Tensor
 
 
-def accuracy(output: np.ndarray, targets: np.ndarray) -> float:
+def accuracy(output: Tensor, targets: Tensor) -> float:
     """Computes the accuracy score of a prediction compared to target values."""
 
     # create tensor with ones where highest probabilities occur
-    preds = inits.zeros_like(output)
+    preds = tensor.zeros_like(output).data
     p_b, _ = preds.shape
-    max_prob_indices = np.argmax(output, axis=1)
+    max_prob_indices = np.argmax(output.data, axis=1)
     preds[np.arange(0, p_b), max_prob_indices] = 1
 
     # count number of correct samples
-    num_correct_preds = np.sum(preds * targets)
+    num_correct_preds = np.sum(preds * targets.data)
     return num_correct_preds / p_b

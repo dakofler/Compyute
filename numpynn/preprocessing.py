@@ -3,10 +3,11 @@
 from typing import Union
 import pandas as pd
 import numpy as np
+from numpynn.tensor import Tensor
 
 
-def split_train_val_test(tensor: np.ndarray, ratio_val: float=0.1,
-                        ratio_test: float=0.1) -> (np.ndarray|np.ndarray|np.ndarray):
+def split_train_val_test(tensor: Tensor, ratio_val: float=0.1,
+                        ratio_test: float=0.1) -> (Tensor|Tensor|Tensor):
     """Splits a tensor along axis 0 into three seperate tensor using a given ratio.
 
     Args:
@@ -19,17 +20,17 @@ def split_train_val_test(tensor: np.ndarray, ratio_val: float=0.1,
         val: second tensor
         test: third tensor
     """
-    shuffle_index = np.arange(len(tensor))
+    shuffle_index = np.arange(len(tensor.data))
     np.random.shuffle(shuffle_index)
-    t_shuffled = tensor[shuffle_index]
+    t_shuffled = tensor.data[shuffle_index]
     n1 = int(len(t_shuffled) * (1 - ratio_val - ratio_test))
     n2 = int(len(t_shuffled) * (1 - ratio_test))
     train = t_shuffled[:n1]
     val = t_shuffled[n1:n2]
     test = t_shuffled[n2:]
-    return train, val, test
+    return Tensor(train), Tensor(val), Tensor(test)
 
-def split_features_labels(tensor: np.ndarray, num_x_cols: int) -> (np.ndarray|np.ndarray):
+def split_features_labels(tensor: Tensor, num_x_cols: int) -> (Tensor|Tensor):
     """Splits a tensor along axis 1 into two seperate tensors.
 
     Args:
@@ -40,8 +41,8 @@ def split_features_labels(tensor: np.ndarray, num_x_cols: int) -> (np.ndarray|np
         X: feature-tensor
         Y: label-tensor
     """
-    X = tensor[:, :num_x_cols]
-    Y = tensor[:, num_x_cols:]
+    X = Tensor(tensor.data[:, :num_x_cols])
+    Y = Tensor(tensor.data[:, num_x_cols:])
     return X, Y
 
 def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> pd.DataFrame:
@@ -56,7 +57,7 @@ def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> 
     """
     return pd.get_dummies(dataframe, columns=columns)
 
-def one_hot_encode(tensor: np.ndarray, num_classes: int) -> np.ndarray:
+def one_hot_encode(tensor: Tensor, num_classes: int) -> Tensor:
     """One-hot-encodes a tensor of shape (n,) into a tensor of shape (n, num_classes).
 
     Args:
@@ -67,10 +68,10 @@ def one_hot_encode(tensor: np.ndarray, num_classes: int) -> np.ndarray:
     Returns:
         One-hot-encoded tensor.
     """
-    return (np.eye(num_classes)[tensor]).astype('float32')
+    return Tensor(np.eye(num_classes)[tensor.data])
 
-def normalize(tensor: np.ndarray, axis: Union[int, tuple[int, int]]=0,
-              l_bound: int=-1, u_bound: int=1) -> np.ndarray:
+def normalize(tensor: Tensor, axis: Union[int, tuple[int, int]]=0,
+              l_bound: int=-1, u_bound: int=1) -> Tensor:
     """Normalizes a tensor along a certain axis using min-max feature scaling.
 
     Args:
@@ -84,4 +85,4 @@ def normalize(tensor: np.ndarray, axis: Union[int, tuple[int, int]]=0,
     """
     t_min = tensor.min(axis=axis)
     t_max = tensor.max(axis=axis)
-    return l_bound + (tensor - t_min) * (u_bound - l_bound) / (t_max - t_min)
+    return (tensor - t_min) * (u_bound - l_bound) / (t_max - t_min) + l_bound
