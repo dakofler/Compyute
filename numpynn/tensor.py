@@ -7,10 +7,12 @@ import numpy as np
 class Tensor():
     """Tensor base class.
     
-    array_like: Data to initialize the tensor [optional].
+    ### Parameters
+        array_like: `ndarray`, `list`, `float` or `int`, optional
+            Data to initialize the tensor.
     """
 
-    def __init__(self, array_like=None):
+    def __init__(self, array_like: np.ndarray | list | float | int = None):
         if array_like is not None:
             if isinstance(array_like, np.ndarray):
                 self.data = array_like.astype('float32')
@@ -25,79 +27,211 @@ class Tensor():
         self.params = {}
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._data.__repr__().replace('array', 'tnsor')
 
-    def __call__(self):
+    def __call__(self) -> np.ndarray:
         return self.data
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> np.ndarray:
         return Tensor(self.data[item])
 
     @property
-    def data(self):
-        """Gets data value."""
+    def data(self) -> np.ndarray:
+        """Tensor data"""
         return self._data
 
     @data.setter
     def data(self, other):
-        """Sets data value"""
         self._data = other
         self.shape = self._data.shape
         self.ndim = self._data.ndim
         self.len = len(self._data) if self.ndim > 0 else 0
         self.T = self._data.T
 
+    def sum(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Sum of tensor elements over a given axis.
 
-    def sum(self, axis=None, keepdims=False):
-        """Computes the sum along a given axis."""
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the sum is computed.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the sum of elements.
+        """
         return Tensor(np.sum(self._data, axis=axis, keepdims=keepdims))
 
-    def mean(self, axis=None, keepdims=False):
-        """Computes the mean along a given axis."""
+    def mean(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Mean of tensor elements over a given axis.
+
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the mean is computed.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the mean of elements.
+        """
         return Tensor(np.mean(self._data, axis=axis, keepdims=keepdims))
 
-    def var(self, axis=None, keepdims=False):
-        """Computes the variance along a given axis."""
+    def var(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Variance of tensor elements over a given axis.
+
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the variance is computed.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the variance of elements.
+        """
         return Tensor(np.var(self._data, axis=axis, ddof=1, keepdims=keepdims))
 
-    def std(self, axis=None, keepdims=False):
-        """Computes the standard deviation along a given axis."""
+    def std(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Standard deviation of tensor elements over a given axis.
+
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the standard deviation is computed.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the standard deviation of elements.
+        """
         return Tensor(np.std(self._data, axis=axis, keepdims=keepdims))
 
+    def min(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Minimum of tensor elements over a given axis.
+
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the minimum is taken.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the minimum of elements.
+        """
+        return Tensor(self._data.min(axis=axis, keepdims=keepdims))
+
+    def max(self, axis: int | tuple[int] = None, keepdims: bool = False):
+        """Maximum of tensor elements over a given axis.
+
+        ### Parameters
+            axis: `int` or `tuple[int]`, optional
+                Axis over which the maximum is taken.
+                By default, it is computed over the flattened tensor.
+            keepdims: `bool`, optional
+                Whether to keep the tensors dimensions.
+                By default the tensor is collapsed along the given axis.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the maximum of elements.
+        """
+        return Tensor(self._data.max(axis=axis, keepdims=keepdims))
+
+    def round(self, decimals: int):
+        """Rounds the value of tensor elements.
+
+        ### Parameters
+            decimals: `int`
+                Decimal places of rounded values.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the rounded values.
+        """
+        return Tensor(self._data.round(decimals))
+
     def exp(self):
-        """Computes the expoential for each value."""
+        """Exponential of tensor elements.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the value of e**x for each element.
+        """
         return Tensor(np.exp(self._data))
 
     def log(self):
-        """Computes the logarithm for each value."""
+        """Logarithm of tensor elements.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the value of log(x) for each element.
+        """
         return Tensor(np.log(self._data))
 
     def tanh(self):
-        """Computes the hyperbolic tangent for each value."""
+        """Hyperbolical tangent of tensor elements.
+
+        ### Returns
+            y: `Tensor`
+                Tensor containing the value of tanh(x) for each element.
+        """
         return Tensor(np.tanh(self._data))
 
-    def min(self, axis=None, keepdims=False):
-        """Computes the hyperbolic tangent for each value."""
-        return Tensor(self._data.min(axis=axis, keepdims=keepdims))
+    def item(self, *args):
+        """Returns the scalar value of the tensor data.
 
-    def max(self, axis=None, keepdims=False):
-        """Computes the hyperbolic tangent for each value."""
-        return Tensor(self._data.max(axis=axis, keepdims=keepdims))
+        ### Parameters
+            *args:
+                `None`: Only works for tensors with one element.\n
+                `int`: Index of the value in the flattened tensor.\n
+                `tuple[int]`: Index of the value
 
-    def item(self):
-        """Gets the values of a tensor."""
-        return self._data.item()
+        ### Returns
+            item: `float`
+                Scalar of the tensor data"""
+        return self._data.item(args)
 
     def reshape(self, shape):
-        """Returns a reshaped tensor."""
+        """Returns a reshaped tensor of data to fit a given shape.
+
+        ### Parameters
+            shape: `tuple[int]`
+                Shape of the new tensor.
+
+        ### Returns
+            y: `Tensor`
+                Reshapded tensor.
+        """
         return Tensor(self._data.reshape(*shape))
 
-    def round(self, decimals):
-        """Returns a tensor with rounded values."""
-        return Tensor(self._data.round(decimals))
+    def pad(self, widths: tuple[int]):
+        """Returns a padded tensor using zero padding.
 
-    # operator overloading
+        ### Parameters
+            widths : `tuple[int]`
+                Padding width for each dimension of the tensor.
+
+        ### Returns
+            y: `Tensor`
+                Padded tensor.
+        """
+        paddings = tuple((w, w) for w in widths)
+        return Tensor(np.pad(self._data, paddings))
+
     def __add__(self, other):
         other = self.__tensorify(other)
         return Tensor(self._data + other.data)
@@ -191,142 +325,168 @@ class Tensor():
         self._data = -1.0 * self._data
         return Tensor(self._data)
 
-    # helpers
-
     def __tensorify(self, other):
         if not isinstance(other, Tensor):
             return Tensor(other)
         return other
 
 
-def pd_to_tensor(dataframe: pd.DataFrame) -> Tensor:
-    """Converts a Pandas DataFrame to a tensor.
+def pd_to_tensor(df: pd.DataFrame) -> Tensor:
+    """Converts a Pandas DataFrame into a Tensor.
 
-    Args:
-        dataframe: Pandas DataFrame object.
+    ### Parameters
+        df: `DataFrame`
+            Pandas DataFrame object to convert.
     
-    Returns:
-        Tensor."""
-    return Tensor(dataframe.to_numpy())
+    ### Returns
+        y: `Tensor`
+            Tensor object."""
+    return Tensor(df.to_numpy())
 
-def expand_dims(tensor: Tensor, axis=0) -> Tensor:
-    """Extends the dimension of a tensor.
+def expand_dims(x: Tensor, axis: int | tuple[int]) -> Tensor:
+    """Extends the dimensions of a tensor.
 
-    Args:
-        tensor: Tensor to be extended.
-        axis: Axis where a dimension is added.
+    ### Parameters
+        x: `Tensor`
+            Tensor whose dimensions are to be extended.
+        axis: `int` or `tuple[int]`
+            Where to insert the new dimension.
     
-    Returns:
-        Tensor with extended dimensions.
+    ### Returns
+        y: `Tensor`
+            Tensor with extended dimensions.
     """
-    return Tensor(np.expand_dims(tensor.data, axis=axis))
+    return Tensor(np.expand_dims(x.data, axis=axis))
 
-def match_dims(tensor: Tensor, dims: int) -> Tensor:
-    """Extends the dimension of a tensor.
+def match_dims(x: Tensor, dims: int) -> Tensor:
+    """Extends the dimensions of a tensor to fit a given number of dims.
 
-    Args:
-        tensor: Tensor to be extended.
-        axis: Axis where a dimension is added.
+    ### Parameters
+        x: `Tensor`
+            Tensor to be extended.
+        dims: `int`
+            Number of dimensions needed.
     
-    Returns:
-        Tensor with extended dimensions.
+    ### Returns
+        y: `Tensor`
+            Tensor with extended dimensions.
     """
-    while tensor.ndim < dims:
-        tensor = expand_dims(tensor, axis=-1)
+    while x.ndim < dims:
+        x = expand_dims(x, axis=-1)
 
-    return tensor
+    return x
 
-def zeros(shape) -> Tensor:
+def zeros(shape: tuple[int]) -> Tensor:
     """Creates a tensor of a given shape with all values being zero.
 
-    Args:
-        shape: Shape of the tensor.
+    ### Parameters
+        shape: `tuple[int]`
+            Shape of the new tensor.
 
-    Returns:
-        Tensor with all values being zero.
+    ### Returns
+        y: `Tensor`
+            Tensor with all values being zero.
     """
     return Tensor(np.zeros(shape))
 
-def ones(shape) -> Tensor:
+def ones(shape: tuple[int]) -> Tensor:
     """Creates a tensor of a given shape with all values being one.
 
-    Args:
-        shape: Shape of the tensor.
+    ### Parameters
+        shape: `tuple[int]`
+            Shape of the new tensor.
 
-    Returns:
-        Tensor with all values being one.
+    ### Returns
+        y: `Tensor`
+            Tensor with all values being one.
     """
     return Tensor(np.ones(shape))
 
-def zeros_like(tensor: Tensor) -> Tensor:
-    """Creates a tensor of shape of a given other tensor with all values being zero.
+def zeros_like(x: Tensor) -> Tensor:
+    """Creates a tensor based on the shape of a given other tensor with all values being zero.
 
-    Args:
-        tensor: Tensor whose shape is to be used.
+    ### Parameters
+        x: `Tensor`
+            Tensor whose shape is used.
 
-    Returns:
-        Tensor with all values being zero.
+    ### Returns
+        y: `Tensor`
+            Tensor with all values being zero.
     """
-    return Tensor(np.zeros_like(tensor.data))
+    return Tensor(np.zeros_like(x.data))
 
-def ones_like(tensor: Tensor) -> Tensor:
-    """Creates a tensor of shape of a given other tensor with all values being one.
+def ones_like(x: Tensor) -> Tensor:
+    """Creates a tensor based on the shape of a given other tensor with all values being one.
 
-    Args:
-        tensor: Tensor whose shape is to be used.
+    ### Parameters
+        x: `Tensor`
+            Tensor whose shape is used.
 
-    Returns:
-        Tensor with all values being one.
+    ### Returns
+        y: `Tensor`
+            Tensor with all values being one.
     """
-    return Tensor(np.ones_like(tensor.data))
+    return Tensor(np.ones_like(x.data))
 
-def randn(shape) -> Tensor:
-    """Creates a tensor of a given shape with random values according to a normal distribution.
+def randn(shape: tuple[int]) -> Tensor:
+    """Creates a tensor of a given shape with random values following a normal distribution.
 
-    Args:
-        shape: Shape of the tensor.
+    ### Parameters
+        shape: `tuple[int]`
+            Shape of the new tensor.
 
-    Returns:
-        Tensor with random values.
+    ### Returns
+        y: `Tensor`
+            Tensor with random values.
     """
     return Tensor(np.random.randn(*shape))
 
-def randint(lower_bound, upper_bound, shape) -> Tensor:
+def randint(lower_bound: int, upper_bound: int, shape: tuple[int]) -> Tensor:
     """Creates a tensor of a given shape with random integer values.
 
-    Args:
-        lower_bound: Lower bound of int values.
-        upper_bound: Upper bound of int values.
-        shape: Shape of the tensor.
+    ### Parameters
+        lower_bound: `int`
+            Lower bound for random values.
+        upper_bound: `int`
+            Upper bound for random values.
+        shape: `tuple[int]`
+            Shape of the new tensor.
 
-    Returns:
-        Tensor with random values.
+    ### Returns
+        y: `Tensor`
+            Tensor with random values.
     """
     return Tensor(np.random.randint(lower_bound, upper_bound, shape))
 
-def shuffle(tensor1: Tensor, tensor2: Tensor,
+def shuffle(x1: Tensor, x2: Tensor,
             batch_size: int = None) -> (Tensor|Tensor):
-    """Shuffles two tensors of equal size along a axis 0 equally.
+    """Shuffles two tensors equally along axis 0.
 
-    Args:
-        x: First tensors to be shuffled.
-        y: Second tensors to be shuffled.
-        batch_size: Number of samples to be returned [optional].
+    ### Parameters
+        x1: `Tensor`
+            First tensor to be shuffled.
+        x2: `Tensor`
+            Second tensor to be shuffled.
+        batch_size: `int`, optional
+            Number of samples to be returned.By default all samples are returned.
     
-    Returns:
-        t1_shuffled: First shuffled tensor.
-        t2_shuffled: Second shuffled tensor.
+    ### Returns
+        y1: `Tensor`
+            First shuffled tensor.
+        y2: `Tensor`
+            Second shuffled tensor.
 
-    Raises:
-        Error: If tensors are not of equal size along a axis 0.
+    ### Raises
+        Error:
+            If tensors are not of equal size along a axis 0.
     """
-    if tensor1.len != tensor2.len:
+    if x1.len != x2.len:
         raise Exception(f'Tensors must have equal lengths along axis 0')
 
-    length = tensor1.len
+    length = x1.len
     shuffle_index = np.arange(length)
     batch_size = batch_size if batch_size else length
     np.random.shuffle(shuffle_index)
-    t1_shuffled = tensor1[shuffle_index]
-    t2_shuffled = tensor2[shuffle_index]
-    return t1_shuffled[:batch_size], t2_shuffled[:batch_size]
+    y1 = x1[shuffle_index]
+    y2 = x2[shuffle_index]
+    return y1[:batch_size], y2[:batch_size]

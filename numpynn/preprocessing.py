@@ -1,28 +1,33 @@
 """utility functions module"""
 
-from typing import Union
 import pandas as pd
 import numpy as np
 from numpynn.tensor import Tensor
 
 
-def split_train_val_test(tensor: Tensor, ratio_val: float=0.1,
-                        ratio_test: float=0.1) -> (Tensor|Tensor|Tensor):
+def split_train_val_test(x: Tensor, ratio_val: float = 0.1, 
+                         ratio_test: float = 0.1) -> (Tensor | Tensor | Tensor):
     """Splits a tensor along axis 0 into three seperate tensor using a given ratio.
 
-    Args:
-        tensor: Tensor to be split.
-        ratio_val: Size ratio of the validation split [optional].
-        ratio_test: Size ratio of the test split [optional].
+    ### Parameters
+        x: `Tensor`
+            Tensor to be split.
+        ratio_val: `float`, optional
+            Size ratio of the validation split.
+        ratio_test: `float`, optional
+            Size ratio of the test split.
     
-    Returns:
-        train: first tensor
-        val: second tensor
-        test: third tensor
+    ### Returns
+        train: `Tensor`
+            Tensor containing training data.
+        val: `Tensor`
+            Tensor containing validation data.
+        test: `Tensor`
+            Tensor containing testing data.
     """
-    shuffle_index = np.arange(len(tensor.data))
+    shuffle_index = np.arange(len(x.data))
     np.random.shuffle(shuffle_index)
-    t_shuffled = tensor.data[shuffle_index]
+    t_shuffled = x.data[shuffle_index]
     n1 = int(len(t_shuffled) * (1 - ratio_val - ratio_test))
     n2 = int(len(t_shuffled) * (1 - ratio_test))
     train = t_shuffled[:n1]
@@ -30,59 +35,75 @@ def split_train_val_test(tensor: Tensor, ratio_val: float=0.1,
     test = t_shuffled[n2:]
     return Tensor(train), Tensor(val), Tensor(test)
 
-def split_features_labels(tensor: Tensor, num_x_cols: int) -> (Tensor|Tensor):
+def split_features_labels(x: Tensor, num_x_cols: int) -> (Tensor|Tensor):
     """Splits a tensor along axis 1 into two seperate tensors.
 
-    Args:
-        tensor: Tensor to be split.
-        num_x_cols: Number of feature-colums of the input tensor.
+    ### Parameters
+        x: `Tensor`
+            Tensor to be split.
+        num_x_cols: `int`
+            Number of feature-colums of the input tensor.
     
-    Returns:
-        X: feature-tensor
-        Y: label-tensor
+    ### Returns
+        features: `Tensor`
+            Tensor containing features.
+        labels: `Tensor`
+            Tensor containing labels.
     """
-    X = Tensor(tensor.data[:, :num_x_cols])
-    Y = Tensor(tensor.data[:, num_x_cols:])
-    return X, Y
+    features = Tensor(x.data[:, :num_x_cols])
+    labels = Tensor(x.data[:, num_x_cols:])
+    return features, labels
 
-def categorical_to_numeric(dataframe: pd.DataFrame, columns: list[str]=None) -> pd.DataFrame:
-    """Transforms categorical columns of a dataframe into numerical columns.
+def pd_one_hot_encode(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """One-hot-encodes categorical columns of a dataframe into numerical columns.
 
-    Args:
-        dataframe: Dataframe containing categorical columns.
-        columns: Columns to be encoded.
-    
-    Returns:
-        numerical_dataframe: Dataframe with transformed categorical columns.
+    ### Parameters
+        df: `DataFrame`
+            Dataframe containing categorical columns.
+        columns: `list[str]`
+            Names of columns to be encoded.
+
+    ### Returns
+        df: `DataFrame`
+            Dataframe containing transformed categorical columns.
     """
-    return pd.get_dummies(dataframe, columns=columns)
+    return pd.get_dummies(df, columns=columns)
 
-def one_hot_encode(tensor: Tensor, num_classes: int) -> Tensor:
-    """One-hot-encodes a tensor of shape (n,) into a tensor of shape (n, num_classes).
+def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
+    """One-hot-encodes a tensor.
 
-    Args:
-        tensor: Tensor containing categorical columns.
-        num_classes: number of classes to be considered when encoding.
+    ### Parameters
+        x: `Tensor`
+            Tensor containing categorical columns of type `int`.
+        num_classes: `int`
+            Number of classes to be considered when encoding.
             Defines axis 1 of the output tensor.
     
-    Returns:
-        One-hot-encoded tensor.
+    ### Returns
+        y: `Tensor`
+            One-hot-encoded tensor of shape (n, num_classes).
     """
-    return Tensor(np.eye(num_classes)[tensor.data])
+    return Tensor(np.eye(num_classes)[x.data])
 
-def normalize(tensor: Tensor, axis: Union[int, tuple[int, int]]=0,
-              l_bound: int=-1, u_bound: int=1) -> Tensor:
-    """Normalizes a tensor along a certain axis using min-max feature scaling.
+def normalize(x: Tensor, axis: int | tuple[int] = None,
+              l_bound: int = -1, u_bound: int = 1) -> Tensor:
+    """Normalizes a tensor using min-max feature scaling.
 
-    Args:
-        tensor: Tensor to be normalized.
-        axis: One or multiple axes along which values are to be normalized [optional].
-        l_bound: Lower bound of output values [optional].
-        u_bound: Upper bound of output values [optional].
+    ### Parameters
+        x: `Tensor`
+            Tensor to be normalized.
+        axis: `int` or `tuple[int]`, optional
+            Axes over which normalization is applied.
+            By default, it is computed over the flattened tensor.
+        l_bound: `int`, optional
+            Lower bound of output values.
+        u_bound: `int`, optional
+            Upper bound of output values.
     
-    Returns:
-        x_normalized: Normalized tensor.
+    ### Returns
+        y: `Tensor`
+            Normalized tensor.
     """
-    t_min = tensor.min(axis=axis)
-    t_max = tensor.max(axis=axis)
-    return (tensor - t_min) * (u_bound - l_bound) / (t_max - t_min) + l_bound
+    x_min = x.min(axis=axis)
+    x_max = x.max(axis=axis)
+    return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound

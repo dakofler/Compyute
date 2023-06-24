@@ -3,18 +3,25 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from numpynn import activations, layers, losses, norms, optimizers, tensor
-from numpynn.tensor import Tensor
+from numpynn import activations, layers, losses, norms, optimizers
+from numpynn.tensor import Tensor, shuffle
 
 
 class Sequential():
-    """Feed forward neural network model"""
+    """Feed forward neural network model.
+    
+    ### Parameters
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0 (batches).
+        mdl_layers: `list[Layer]`
+            Layers of the neural network model.
+    """
 
-    def __init__(self, input_shape: tuple[int], layers: list[layers.Layer]) -> None:
+    def __init__(self, input_shape: tuple[int], mdl_layers: list[layers.Layer]) -> None:
         self.input_shape = input_shape
         self.layers = []
 
-        for layer in layers:
+        for layer in mdl_layers:
             self.__add_layer(layer)
 
         self.optimizer = None
@@ -25,16 +32,21 @@ class Sequential():
     def __call__(self, X: Tensor, Y: Tensor = None) -> None:
         """Computes an output and the loss based on imput samples.
         
-        Args:
-            x: Tensor of input values.
-            y: Tensor of target values [optional].
+        ### Parameters
+            x: `Tensor`
+                Tensor of input values.
+            y: `Tensor`, optional
+                Tensor of target values. If provided, a loss is also computed and returned.
 
-        Returns:
-            output: Tensor of output values.
-            loss: Loss value, if target values are provided, else None.
+        ### Returns
+            output: `Tensor`
+                Tensor of predicted values.
+            loss: 'Tensor' or None
+                Loss value, if target values are provided.
 
-        Raises:
-            ShapeError: If input shape is not of dim 3.
+        ### Raises
+            ValueError:
+                If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
         self.layers[0].x.data = X.data
@@ -49,10 +61,13 @@ class Sequential():
     def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric) -> None:
         """ Compiles the model.
         
-        Args:
-            optimizer: Optimizer to be used to update weights and biases.
-            loss_fn: Loss function to be used to compute the loss value and gradients.
-            metric: Metric to be used to evaluate the model.
+        ### Parameters
+            optimizer: `Optimizer`
+                Optimizer algorithm to be used to update parameters.
+            loss_fn: `Loss`
+                Loss function to be used to compute losses and gradients.
+            metric:
+                Metric to be used to evaluate the model.
         """
         if not isinstance(self.layers[0], layers.Input):
             self.__add_layer(layers.Input(self.input_shape), input_layer=True)
@@ -77,20 +92,30 @@ class Sequential():
               verbose: bool=True, val_data: tuple[Tensor]=(None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
-        Args:
-            X: Tensor of input feature values.
-            Y: Tensor of target values.
-            epochs: Number of training iterations [optional]
-            batch_size: Number of samples used per epoch.
-                If None, all training samples are used [optional].
-            verbose: If false, printed output is decreased [optional].
-            val_data: Data used for validation during training [optional].
+        ### Parameters
+            X: `Tensor`
+                Tensor of input values (features).
+            Y: `Tensor`
+                Tensor of target values.
+            epochs: `int`, optional
+                Number of training iterations. By default, training lasts for 100 iterations.
+            batch_size: `int`
+                Number of training samples used per epoch.
+                By default, all training samples are used.
+            verbose: `bool`
+                Whether to print out intermediate results while training.
+                By default results are printed.
+            val_data: `tuple[Tensor]`, optional
+                Data used for validation during training.
+                By default, validation is inactive during training.
 
-        Returns:
-            losses: List of loss values per epoch.
+        ### Returns
+            losses: `list[float]`
+                List of loss values per epoch.
 
-        Raises:
-            ShapeError: If feature tensor is not of dim 4 or target tensor is not of dim 2. 
+        ### Raises
+            ValueError:
+                If input or target tensor dims do not match model dims. 
         """
         self.__check_dims(X, Y)
         history = []
@@ -98,13 +123,13 @@ class Sequential():
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_train, y_train = tensor.shuffle(X, Y, batch_size)
+            x_train, y_train = shuffle(X, Y, batch_size)
 
             # training
             self.__train()
             _, loss = self(x_train, y_train)
             self.__backward()
-            self.optimizer(self)
+            self.optimizer(self.layers)
 
             # validation
             self.__eval()
@@ -125,18 +150,27 @@ class Sequential():
     def predict(self, X: Tensor) -> Tensor:
         """Applies the input to the model and returns it's predictions.
         
-        Args:
-            X: Tensor of input features.
+        ### Parameters
+            X: `Tensor`
+                Tensor of input features.
 
-        Returns:
-            output: Tensor of predicted values.
+        ### Returns
+            predictions: `Tensor`
+                Tensor of predicted values.
         """
         self.__eval()
         pred, _ = self(X)
         return pred
 
     def evaluate(self, X: Tensor, Y: Tensor) -> None:
-        """ Evaluates the model using a defined metric."""
+        """ Evaluates the model using a defined metric.
+        
+        ### Parameters
+            X: `Tensor`
+                Tensor of input values (features).
+            Y: `Tensor`
+                Tensor of target values.
+        """
         self.__eval()
         outputs, loss = self(X, Y)
         score = self.metric(outputs, Y)
@@ -146,13 +180,15 @@ class Sequential():
     def summary(self) -> None:
         """ Gives an overview of the model architecture.
         
-        Raises:
-            Error: If the model has not been compiled yet.
+        ### Raises
+            Exception:
+                If the model has not been compiled yet.
         """
         if not self.compiled:
             raise Exception('Model has not been compiled yet.')
 
-        print(f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | {"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
+        print(f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
+              + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
         sum_params = 0
 
         for layer in self.layers [1:-1]:
@@ -176,44 +212,53 @@ class Sequential():
             name = layer.__class__.__name__
             x_shape = str(layer.x.shape[1:])
             y_shape = str(layer.y.shape[1:])
-            print(f'{name:15s} | {x_shape:15s} | {w_shape:15s} | {b_shape:15s} | {y_shape:15s} | {str(params):15s}')
+            print(f'{name:15s} | {x_shape:15s} | {w_shape:15s} | '
+                  + f'{b_shape:15s} | {y_shape:15s} | {str(params):15s}')
 
         print(f'\ntotal trainable parameters {sum_params}')
 
-    def plot_training_loss(self, history) -> None:
-        """ Plots the loss over epochs."""
+    def plot_training_loss(self, loss_hist: list[float]) -> None:
+        """ Plots the loss over epochs.
+        
+        ### Parameters
+            loss_hist: `list[float]`
+                List of loss values per epoch.
+        """
         plt.figure(figsize=(20,4))
-        plt.plot(np.arange(len(history)), history)
+        plt.plot(np.arange(len(loss_hist)), loss_hist)
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
-    def plot_activations(self, bins: int=100) -> None:
+    def plot_activations(self, bins: int = 100) -> None:
         """ Plots neuron activation distribution.
         
-        Args:
-            bins: Number of bins used in the histogram [optional].
+        ### Parameters
+            bins: `int`, optional
+                Number of bins used in the histogram. By default, 100 bins are used.
         """
         plt.figure(figsize=(20,4))
         legends = []
 
         for i, layer in enumerate(self.layers):
-            if isinstance(layer, activations.Activation) and not isinstance(layer, activations.Softmax):
+            if (isinstance(layer, activations.Activation)
+                    and not isinstance(layer, activations.Softmax)):
                 name = layer.__class__.__name__
                 mean = layer.y.data.mean()
                 std = layer.y.data.std()
                 print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
-                y, x = np.histogram(layer.y.data, bins=bins)
-                plt.plot(np.delete(x, -1), y)
+                y_vals, x_vals = np.histogram(layer.y.data, bins=bins)
+                plt.plot(np.delete(x_vals, -1), y_vals)
                 legends.append(f'layer {i:d} ({name:s})')
 
         plt.legend(legends)
         plt.title('activation distribution')
 
-    def plot_gradients(self, bins: int=100) -> None:
+    def plot_gradients(self, bins: int = 100) -> None:
         """ Plots neuron gradient distribution.
         
-        Args:
-            bins: Number of bins used in the histogram [optional].
+        ### Parameters
+            bins: `int`, optional
+                Number of bins used in the histogram. By default, 100 bins are used.
         """
         plt.figure(figsize=(20,4))
         legends = []
@@ -224,20 +269,25 @@ class Sequential():
                 mean = layer.w.grad.mean()
                 std = layer.w.grad.std()
                 print(f'layer {i:d} ({name:s}) | mean {mean:.4f} | std {std:.4f}')
-                y, x = np.histogram(layer.w.grad, bins=bins)
-                x = np.delete(x, -1)
-                plt.plot(x, y)
+                y_vals, x_vals = np.histogram(layer.w.grad, bins=bins)
+                x_vals = np.delete(x_vals, -1)
+                plt.plot(x_vals, y_vals)
                 legends.append(f'layer {i:d} ({name:s})')
 
         plt.legend(legends)
         plt.title('gradient distribution')
 
     def plot_conv_channels(self) -> None:
-        """ Plots output channel activations convolutional layers."""
+        """ Plots output channel activations convolutional layers.
+        
+        ### Raises
+            Exception:
+                If the model does not contain conv layers.
+        """
         conv_layers = [l for l in self.layers if isinstance(l, layers.Convolution)]
 
         if not conv_layers:
-            print('No convolutional layers found.')
+            raise Exception('no convolutional layers found')
 
         for i,layer in enumerate(conv_layers):
             print(layer.__class__.__name__, i + 1)
@@ -301,14 +351,14 @@ class Sequential():
             if layer.mode is not None:
                 layer.mode = 'eval'
 
-    def __check_dims(self, X, Y=None):
+    def __check_dims(self, x: Tensor, y: Tensor = None):
         req_input_dim = self.layers[0].x.ndim
 
-        if X.ndim != req_input_dim:
+        if x.ndim != req_input_dim:
             raise ValueError(f'Input dimension must be {req_input_dim}.')
 
-        if Y is not None:
+        if y is not None:
             req_output_dim = self.layers[-1].y.ndim
 
-            if Y.ndim != req_output_dim:
+            if y.ndim != req_output_dim:
                 raise ValueError(f'Output dimension must be {req_output_dim}.')

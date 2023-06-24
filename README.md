@@ -4,7 +4,7 @@ This is a framework for building, training and analyzing neural networks created
 
 ```Python
 a = Tensor([1, 2, 3])
-b = nn.tensor.randn((3,))
+b = nn.randn((3,))
 
 c = a + b
 
@@ -20,7 +20,7 @@ The framework offers some utility functions, such as `split_train_val_test()` to
 Models can be built using a variety of layers, including trainable layers such as linear or convolutional layers. Most of the common activation functions as well as normalization can be applied.
 
 ```python
-model = networks.Sequential(input_shape=(4,), layers=[
+model = networks.Sequential(input_shape=(4,), mdl_layers=[
     layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
     layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
     layers.Linear(out_channels=16, act_fn=activations.Tanh(), init_fn=inits.Kaiming),
@@ -29,7 +29,7 @@ model = networks.Sequential(input_shape=(4,), layers=[
 ```
 
 ```python
-model = networks.Sequential(input_shape=(1, 28, 28), layers=[
+model = networks.Sequential(input_shape=(1, 28, 28), mdl_layers=[
     layers.Convolution(out_channels=8, kernel_shape=(3, 3), act_fn=activations.Relu(), norm_fn=norms.Layernorm()),
     layers.MaxPooling(p_window=(2, 2)),
     layers.Convolution(out_channels=16, kernel_shape=(3, 3), act_fn=activations.Relu(), norm_fn=norms.Layernorm()),
@@ -61,7 +61,7 @@ model.compile(
 ```
 
 ```python
-hist = model.train(x_train, y_train, epochs=10, batch_size=512, verbose=True, val_data=(x_val, y_val))
+hist = model.train(x_train, y_train, epochs=10, batch_size=512, val_data=(x_val, y_val))
 model.plot_training_loss(hist)
 ```
 
@@ -80,9 +80,9 @@ All layers can also be used individually without a model and their parameters ca
 ```python
 conv = layers.Convolution(out_channels=2)
 
-conv.x.data = X
-conv.w.data = W
-conv.b.data = B
+conv.x = X
+conv.w = W
+conv.b = B
 
 conv.forward()
 conv.backward()

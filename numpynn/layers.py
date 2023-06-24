@@ -2,14 +2,14 @@
 
 import numpy as np
 from numpy.fft  import fft2, ifft2
-from numpynn.tensor import Tensor
-from numpynn import paddings, inits, tensor
+from numpynn.tensor import Tensor, ones, zeros, zeros_like, expand_dims, match_dims
+from numpynn import paddings, inits
 
 
 class Layer:
-    """Layer base class"""
+    """Layer base class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.compiled = False
         self.mode = 'eval'
         self.i = None
@@ -17,28 +17,28 @@ class Layer:
         self.x = Tensor()
         self.y = Tensor()
 
-    def compile(self, i, prev_layer, succ_layer):
-        """Connects the layer with adjacent ones."""
+    def compile(self, i: int, prev_layer, succ_layer) -> None:
+        """Connects the layer with adjacent ones and initializes values."""
         self.i = i
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
         self.compiled = True
 
-    def forward(self):
+    def forward(self) -> None:
         """Performs a forward pass."""
         if self.prev_layer is not None:
             self.x.data = self.prev_layer.y.data
 
-    def backward(self):
+    def backward(self) -> None:
         """Performs a backward pass."""
         if self.succ_layer is not None:
             self.y.grad = self.succ_layer.x.grad
 
 
 class ParamLayer(Layer):
-    """Layer using trainable parameters"""
+    """Layer using trainable parameters."""
 
-    def __init__(self, act_fn, norm_fn, init_fn, use_bias):
+    def __init__(self, act_fn: Layer, norm_fn: Layer, init_fn, use_bias: bool) -> None:
         super().__init__()
         self.act_fn = act_fn
         self.norm_fn = norm_fn
@@ -50,21 +50,22 @@ class ParamLayer(Layer):
 
 
 class Input(Layer):
-    """Input layer used in neural network models
+    """Input layer used in neural network models.
 
-    Args:
-        input_shape: Shape of input tensor ignoring axis 0.
+    ### Parameters
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
     """
 
-    def __init__(self, input_shape: tuple[int, int]) -> None:
+    def __init__(self, input_shape: tuple[int]) -> None:
         super().__init__()
         self.input_shape = input_shape
         self.input = None
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init with ones and expand by adding batch dim
-        self.x = tensor.expand_dims(tensor.ones(self.input_shape), axis=0)
+        self.x = expand_dims(ones(self.input_shape), axis=0)
         self.forward()
 
     def forward(self) -> None:
@@ -75,7 +76,7 @@ class Input(Layer):
 class Output(Layer):
     "Output layer used in neural network models"
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         self.forward()
 
@@ -89,17 +90,23 @@ class Output(Layer):
 
 
 class Linear(ParamLayer):
-    """Fully connected layer
+    """Fully connected layer.
 
-    Args:
-        out_channels: Number of output channels of the layer.
-        act_fn: Activation function applied to the layers' output [optional].
-        norm_fn: Normalization applied before activation [optional].
-        init_fn: Weight initialization method [optional].
-        use_bias: Whether to use bias values [optional].
+    ### Parameters
+        out_channels: `int`
+            Number of output channels (neurons) of the layer.
+        act_fn: `Activation`, optional
+            Activation function applied to the layers' output. By default no function is applied.
+        norm_fn: `Normalization`
+            Normalization applied before activation. By default no normalization is applied.
+        init_fn: optional
+            Weight initialization method. By default Kaiming He initialization is used.
+        use_bias: `bool`, optional
+            Whether to use bias values. By default, bias is used.
 
-    Raises:
-        ValueError: If out_channels is less than 1.
+    ### Raises
+        ValueError:
+            If out_channels is less than 1.
     """
 
     def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
@@ -111,7 +118,7 @@ class Linear(ParamLayer):
 
         self.out_channels = out_channels
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init weights (c_in, c_out)
         _, in_channels = self.prev_layer.y.shape
@@ -120,7 +127,7 @@ class Linear(ParamLayer):
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tensor.zeros((self.out_channels, ))
+            self.b = zeros((self.out_channels, ))
 
         self.params = [self.w, self.b]
         self.forward()
@@ -143,22 +150,32 @@ class Linear(ParamLayer):
 
 
 class Convolution(ParamLayer):
-    """Convolutional layer used for spacialinformation
+    """Convolutional layer used for spacial information and feature extraction.
 
-    Args:
-        out_channels: Number of output channles of the layer.
-        kernel_shape: Shape of each kernel [optional].
-        act_fn: Activation function applied to the output [optional].
-        norm_fn: Normalization applied before activation [optional].
-        init_fn: Weight initialization method [optional].
-        pad_fn: Padding applied to the input before processing [optional].
-        use_bias: Whether to use bias values [optional].
+    ### Parameters
+        out_channels: `int`
+            Number of output channels (neurons) of the layer.
+        kernel_shape: `tuple[int]`, optional
+            Shape of each kernel.
+        act_fn: `Activation`, optional
+            Activation function applied to the layers' output. By default no function is applied.
+        norm_fn: `Normalization`
+            Normalization applied before activation. By default no normalization is applied.
+        init_fn: optional
+            Weight initialization method. By default Kaiming He initialization is used.
+        pad_fn: optional
+            Padding method applied to the input. By default valid padding is used.
+        use_bias: `bool`, optional
+            Whether to use bias values. By default, bias is used.
 
-    ValueError:
-        Error: If the out_channels is less than 1.
+    ### Raises
+        ValueError:
+            If out_channels is less than 1.
+        Error:
+            If output shape is smaller than kernel shape.
     """
 
-    def __init__(self, out_channels: int, kernel_shape: tuple[int, int] = (3, 3),
+    def __init__(self, out_channels: int, kernel_shape: tuple[int] = (3, 3),
                  act_fn: Layer = None, norm_fn: Layer = None, init_fn=inits.kaiming,
                  pad_fn=paddings.valid, use_bias: bool = True) -> None:
         super().__init__(act_fn, norm_fn, init_fn, use_bias)
@@ -170,7 +187,7 @@ class Convolution(ParamLayer):
         self.kernel_shape = kernel_shape
         self.pad_fn = pad_fn
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
 
         # init weights (c_out, c_in, y, x)
@@ -181,7 +198,7 @@ class Convolution(ParamLayer):
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tensor.zeros((self.out_channels,))
+            self.b = zeros((self.out_channels,))
 
         self.params = [self.w, self.b]
         self.forward()
@@ -205,8 +222,8 @@ class Convolution(ParamLayer):
         if self.use_bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
             batches = self.x.shape[0]
-            bias = self.b * tensor.ones((batches, 1))
-            self.y.data += tensor.match_dims(bias, 4).data
+            bias = self.b * ones((batches, 1))
+            self.y.data += match_dims(bias, 4).data
 
     def backward(self) -> None:
         super().backward()
@@ -239,35 +256,36 @@ class Convolution(ParamLayer):
             # sum over batches, y and x
             self.b.grad = np.sum(self.y.data, axis=(0, 2, 3))
 
-    def __convolve(self, tensor1, tensor2, exp_axis=None):
+    def __convolve(self, x1: np.ndarray, x2: np.ndarray, exp_axis: tuple[int] = None):
         # fft both tensors
-        target_shape = tensor1.shape[-2:]
-        t1_fft = fft2(tensor1, s=target_shape)
-        t2_fft = fft2(tensor2, s=target_shape)
+        target_shape = x1.shape[-2:]
+        x1_fft = fft2(x1, s=target_shape)
+        x2_fft = fft2(x2, s=target_shape)
 
         # expand dims if needed
         if exp_axis:
             ax1, ax2 = exp_axis
-            t1_fft_exp = np.expand_dims(t1_fft, ax1)
-            t2_fft_exp = np.expand_dims(t2_fft, ax2)
+            x1_fft_exp = np.expand_dims(x1_fft, ax1)
+            x2_fft_exp = np.expand_dims(x2_fft, ax2)
 
         # multiply, ifft and get real value to complete convolution
-        return np.real(ifft2(t1_fft_exp * t2_fft_exp)).astype('float32')
+        return np.real(ifft2(x1_fft_exp * x2_fft_exp)).astype('float32')
 
 
 class MaxPooling(Layer):
-    """MaxPoling layer used to reduce information and avoid overfitting
+    """MaxPoling layer used to reduce information to avoid overfitting.
 
-    Args:
-        p_window: Shape of the pooling window used for the pooling operation.
+    ### Parameters
+        p_window: `tuple[int]`, optional
+            Shape of the pooling window used for the pooling operation.
     """
 
-    def __init__(self, p_window: tuple[int, int]) -> None:
+    def __init__(self, p_window: tuple[int] = (2, 2)) -> None:
         super().__init__()
         self.p_window = p_window
         self.p_map = None
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         self.forward()
 
@@ -277,8 +295,8 @@ class MaxPooling(Layer):
         x_pad = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
-        self.y.data = tensor.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
-        self.p_map = tensor.zeros_like(x_pad).data
+        self.y.data = zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
+        self.p_map = zeros_like(x_pad).data
         _, _, y_y, y_x = self.y.shape
 
         for y in range(y_y):
@@ -309,18 +327,19 @@ class MaxPooling(Layer):
         x_fit = x_x // w_x * w_x
         return self.x.data[:, :, :y_fit, :x_fit]
 
-    def __stretch(self, t, streching, axis, target_shape):
+    def __stretch(self, x: np.ndarray, streching: tuple[int],
+                  axis: tuple[int], target_shape: tuple[int]):
         fa1, fa2 = streching
         ax1, ax2 = axis
-        t_stretched = np.repeat(t, fa1, axis=ax1)
-        t_stretched = np.repeat(t_stretched, fa2, axis=ax2)
-        return np.resize(t_stretched, target_shape)
+        x_stretched = np.repeat(x, fa1, axis=ax1)
+        x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
+        return np.resize(x_stretched, target_shape)
 
 
 class Flatten(Layer):
     "Flatten layer used to reshape tensors to shape (b, c_out)"
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         self.forward()
 
@@ -336,11 +355,13 @@ class Flatten(Layer):
 class Dropout(Layer):
     """Dropout layer used to randomly reduce information and avoid overfitting
 
-    Args:
-        drop_rate: Probability of values being set to 0.
+    ### Parameters
+        drop_rate: `float`
+            Probability of values being set to 0.
 
-    Raises:
-        ValueError: If the droprate is outside the interval [0, 1).
+    ### Raises
+        ValueError:
+            If the droprate is outside the interval [0, 1).
     """
 
     def __init__(self, d_rate: float) -> None:
@@ -352,7 +373,7 @@ class Dropout(Layer):
         self.d_rate = d_rate
         self.d_map = None
 
-    def compile(self, i, prev_layer, succ_layer) -> None:
+    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         self.forward()
 

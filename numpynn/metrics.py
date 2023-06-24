@@ -1,15 +1,14 @@
 """evaluation metrics module"""
 
 import numpy as np
-from numpynn import tensor
-from numpynn.tensor import Tensor
+from numpynn.tensor import Tensor, zeros_like
 
 
 def accuracy(output: Tensor, targets: Tensor) -> float:
     """Computes the accuracy score of a prediction compared to target values."""
 
     # create tensor with ones where highest probabilities occur
-    preds = tensor.zeros_like(output).data
+    preds = zeros_like(output).data
     p_b, _ = preds.shape
     max_prob_indices = np.argmax(output.data, axis=1)
     preds[np.arange(0, p_b), max_prob_indices] = 1

@@ -5,30 +5,33 @@ import numpy as np
 from numpynn.tensor import Tensor
 
 
-def valid(tensor: Tensor, **kwargs) -> Tensor:
+def valid(x: Tensor, **kwargs) -> Tensor:
     """Applies valid padding using zero-values to a tensor.
 
-    Args:
-        tensor: Tensor padding is to be applied to.
+    ### Parameters
+        x: `Tensor`
+            Tensor, padding is applied to.
 
-    Returns:
-        Padded tensor.
+    ### Returns
+        y: `Tensor`
+            Padded tensor.
     """
-    return tensor
+    return x
 
-def same(tensor: Tensor, **kwargs) -> Tensor:
+def same(x: Tensor, **kwargs) -> Tensor:
     """Applies same padding using zero-values to a tensor.
 
-    Args:
-        tensor: Tensor padding is to be applied to.
-
-    Kwargs:
-        kernel_shape: Kernel shape the padding width is adapted to.
-
-    Returns:
-        Padded tensor.
+    ### Parameters
+        x: `Tensor`
+            Tensor, padding is applied to.
+        **kwargs:
+            kernel_shape: `tuple[int]`
+                Kernel shape the padding width is adapted to.
+    ### Returns
+        y: `Tensor`
+            Padded tensor.
     """
     kernel_shape = kwargs['kernel_shape']
     width = math.floor(kernel_shape[0] / 2)
     # pad along axis 2 & 3
-    return Tensor(np.pad(tensor.data, ((0, 0), (0, 0), (width, width), (width, width))))
+    return Tensor(np.pad(x.data, ((0, 0), (0, 0), (width, width), (width, width))))

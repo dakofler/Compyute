@@ -1,32 +1,36 @@
 """tensor initializations module"""
 
-import numpy as np
-from numpynn.tensor import Tensor
+from numpynn.tensor import Tensor, randn
 
 
-def random(shape) -> Tensor:
+def random(shape: tuple[int]) -> Tensor:
     """Creates a tensor of a given shape following a normal distribution.
 
-    Args:
-        shape: Shape of the tensor.
+    ### Parameters
+        shape: `tuple[int]`
+            Shape of the new tensor.
 
-    Returns:
-        Tensor with random values.
+    ### Returns
+        y: `Tensor`
+            Tensor with random values.
     """
-    return Tensor(np.random.randn(*shape))
+    return randn(shape)
 
-def kaiming(shape, **kwargs) -> Tensor:
-    """Creates a tensor of a given shape with values according to the Kaiming He initialization.
+def kaiming(shape: tuple[int], **kwargs) -> Tensor:
+    """Creates a tensor of a given shape with values using Kaiming He initialization.
 
-    Args:
-        shape: Shape of the tensor.
+    ### Parameters
+        shape: `tuple[int]`
+            Shape of the new tensor.
+        **kwargs:
+            fan_mode: `int`
+                Integer value used for Kaiming initialization.
+            activation: `Activation`
+                Activation function used.
 
-    Kwargs:
-        fan_mode: Integer value used for Kaiming initialization [optional].
-        activation: Activation function used [optional].
-
-    Returns:
-        Tensor with random values.
+    ### Returns
+        y: `Tensor`
+            Tensor with random values.
     """
     act_fn = kwargs['act_fn']
     fan_mode = kwargs['fan_mode']
@@ -38,4 +42,4 @@ def kaiming(shape, **kwargs) -> Tensor:
         'Softmax': 1
     }
     gain = gains.get(act_fn.__class__.__name__, 1)
-    return Tensor(np.random.randn(*shape) * gain / fan_mode**0.5)
+    return randn(shape) * gain / fan_mode**0.5
