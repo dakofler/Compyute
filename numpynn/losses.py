@@ -3,8 +3,11 @@
 import numpy as np
 from numpynn.tensor import Tensor
 
+
 class Loss():
     """Loss base class."""
+
+    __slots__ = 'loss', '_y', '_t'
 
     def __init__(self) -> None:
         self.loss = 0

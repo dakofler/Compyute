@@ -8,24 +8,42 @@ class Tensor():
     """Tensor base class.
     
     ### Parameters
-        array_like: `ndarray`, `list`, `float` or `int`, optional
+        data: `ndarray`, `list`, `float` or `int`, optional
             Data to initialize the tensor.
     """
 
-    def __init__(self, array_like: np.ndarray | list | float | int = None):
-        if array_like is not None:
-            if isinstance(array_like, np.ndarray):
-                self.data = array_like.astype('float32')
-            elif isinstance(array_like, (list, int, float)):
-                self.data = np.array(array_like).astype('float32')
-            else:
-                raise ValueError('array_like must be np.ndarray, list, int or float')
-        else:
-            self._data = None
+    __slots__ = '_data', 'grad', 'params', 'shape', 'ndim', 'len', 'T'
 
+    def __init__(self, data: np.ndarray | list | float | int = None):
+        self.data = data
         self.grad = None
         self.params = {}
 
+    @property
+    def data(self) -> np.ndarray:
+        """Tensor data"""
+        return self._data
+
+    @data.setter
+    def data(self, other):
+        if other is not None:
+            if isinstance(other, np.ndarray):
+                self._data = other.astype('float32')
+            elif isinstance(other, (list, int, float)):
+                self._data = np.array(other).astype('float32')
+            else:
+                raise ValueError('data must be np.ndarray, list, int or float')
+
+            self.shape = self._data.shape
+            self.ndim = self._data.ndim
+            self.len = len(self._data) if self.ndim > 0 else 0
+            self.T = self._data.T
+        else:
+            self._data = None
+            self.shape = None
+            self.ndim = None
+            self.len = None
+            self.T = None
 
     def __repr__(self) -> str:
         return self._data.__repr__().replace('array', 'tnsor')
@@ -35,19 +53,6 @@ class Tensor():
 
     def __getitem__(self, item) -> np.ndarray:
         return Tensor(self.data[item])
-
-    @property
-    def data(self) -> np.ndarray:
-        """Tensor data"""
-        return self._data
-
-    @data.setter
-    def data(self, other):
-        self._data = other
-        self.shape = self._data.shape
-        self.ndim = self._data.ndim
-        self.len = len(self._data) if self.ndim > 0 else 0
-        self.T = self._data.T
 
     def sum(self, axis: int | tuple[int] = None, keepdims: bool = False):
         """Sum of tensor elements over a given axis.

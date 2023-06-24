@@ -16,6 +16,9 @@ class Layernorm(Normalization):
         eps: `float`, optional
             Constant for numerical stability.
     """
+
+    __slots__ = 'eps', '_var_inv', '_xhat', 'g'
+
     def __init__(self, eps: float = 1e-7) -> None:
         super().__init__(None, None, None, True)
         self.eps = eps

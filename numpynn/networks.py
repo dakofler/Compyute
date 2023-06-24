@@ -17,9 +17,11 @@ class Sequential():
             Layers of the neural network model.
     """
 
+    __slots__ = 'input_shape', 'mdl_layers', 'optimizer', 'loss_fn', 'metric', 'compiled'
+
     def __init__(self, input_shape: tuple[int], mdl_layers: list[layers.Layer]) -> None:
         self.input_shape = input_shape
-        self.layers = []
+        self.mdl_layers = []
 
         for layer in mdl_layers:
             self.__add_layer(layer)
@@ -49,9 +51,9 @@ class Sequential():
                 If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
-        self.layers[0].x.data = X.data
+        self.mdl_layers[0].x.data = X.data
         self.__forward()
-        output = self.layers[-1].y
+        output = self.mdl_layers[-1].y
         loss = None
 
         if Y is not None:
@@ -69,19 +71,19 @@ class Sequential():
             metric:
                 Metric to be used to evaluate the model.
         """
-        if not isinstance(self.layers[0], layers.Input):
+        if not isinstance(self.mdl_layers[0], layers.Input):
             self.__add_layer(layers.Input(self.input_shape), input_layer=True)
 
-        if not isinstance(self.layers[-1], layers.Output):
+        if not isinstance(self.mdl_layers[-1], layers.Output):
             self.__add_layer(layers.Output())
 
-        for i, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.mdl_layers):
             if isinstance(layer, layers.Input):
-                layer.compile(i, None, self.layers[i + 1])
+                layer.compile(i, None, self.mdl_layers[i + 1])
             elif isinstance(layer, layers.Output):
-                layer.compile(i, self.layers[i - 1], None)
+                layer.compile(i, self.mdl_layers[i - 1], None)
             else:
-                layer.compile(i, self.layers[i - 1], self.layers[i + 1])
+                layer.compile(i, self.mdl_layers[i - 1], self.mdl_layers[i + 1])
 
         self.optimizer = optimizer
         self.loss_fn = loss_fn
@@ -129,7 +131,7 @@ class Sequential():
             self.__train()
             _, loss = self(x_train, y_train)
             self.__backward()
-            self.optimizer(self.layers)
+            self.optimizer(self.mdl_layers)
 
             # validation
             self.__eval()
@@ -191,7 +193,7 @@ class Sequential():
               + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
         sum_params = 0
 
-        for layer in self.layers [1:-1]:
+        for layer in self.mdl_layers[1:-1]:
             if isinstance(layer, (layers.Input, layers.Output)):
                 continue
 
@@ -239,7 +241,7 @@ class Sequential():
         plt.figure(figsize=(20,4))
         legends = []
 
-        for i, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.mdl_layers):
             if (isinstance(layer, activations.Activation)
                     and not isinstance(layer, activations.Softmax)):
                 name = layer.__class__.__name__
@@ -263,7 +265,7 @@ class Sequential():
         plt.figure(figsize=(20,4))
         legends = []
 
-        for i, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.mdl_layers):
             if isinstance(layer, layers.ParamLayer) and not isinstance(layer, norms.Layernorm):
                 name = layer.__class__.__name__
                 mean = layer.w.grad.mean()
@@ -284,7 +286,7 @@ class Sequential():
             Exception:
                 If the model does not contain conv layers.
         """
-        conv_layers = [l for l in self.layers if isinstance(l, layers.Convolution)]
+        conv_layers = [l for l in self.mdl_layers if isinstance(l, layers.Convolution)]
 
         if not conv_layers:
             raise Exception('no convolutional layers found')
@@ -302,26 +304,26 @@ class Sequential():
 
     def __add_layer(self, layer, input_layer=False):
         if input_layer:
-            self.layers.insert(0, layer)
+            self.mdl_layers.insert(0, layer)
         else:
-            self.layers.append(layer)
+            self.mdl_layers.append(layer)
 
             if isinstance(layer, layers.ParamLayer):
                 if layer.norm_fn is not None:
-                    self.layers.append(layer.norm_fn)
+                    self.mdl_layers.append(layer.norm_fn)
                 if layer.act_fn is not None:
-                    self.layers.append(layer.act_fn)
+                    self.mdl_layers.append(layer.act_fn)
 
         self.compiled = False
 
     def __forward(self):
-        for layer in self.layers:
+        for layer in self.mdl_layers:
             layer.forward()
 
     def __backward(self):
         # set last layers gradient to be the loss gradient
-        self.layers[-1].y.grad = self.loss_fn.backward().data
-        layers_reversed = self.layers.copy()
+        self.mdl_layers[-1].y.grad = self.loss_fn.backward().data
+        layers_reversed = self.mdl_layers.copy()
         layers_reversed.reverse()
 
         for layer in layers_reversed:
@@ -342,23 +344,23 @@ class Sequential():
             __log_line()
 
     def __train(self):
-        for layer in self.layers:
+        for layer in self.mdl_layers:
             if layer.mode is not None:
                 layer.mode = 'train'
 
     def __eval(self):
-        for layer in self.layers:
+        for layer in self.mdl_layers:
             if layer.mode is not None:
                 layer.mode = 'eval'
 
     def __check_dims(self, x: Tensor, y: Tensor = None):
-        req_input_dim = self.layers[0].x.ndim
+        req_input_dim = self.mdl_layers[0].x.ndim
 
         if x.ndim != req_input_dim:
             raise ValueError(f'Input dimension must be {req_input_dim}.')
 
         if y is not None:
-            req_output_dim = self.layers[-1].y.ndim
+            req_output_dim = self.mdl_layers[-1].y.ndim
 
             if y.ndim != req_output_dim:
                 raise ValueError(f'Output dimension must be {req_output_dim}.')

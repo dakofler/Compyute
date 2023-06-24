@@ -9,6 +9,8 @@ from numpynn import paddings, inits
 class Layer:
     """Layer base class."""
 
+    __slots__ = 'compiled', 'mode', 'i', 'prev_layer', 'succ_layer', 'x', 'y'
+
     def __init__(self) -> None:
         self.compiled = False
         self.mode = 'eval'
@@ -38,6 +40,8 @@ class Layer:
 class ParamLayer(Layer):
     """Layer using trainable parameters."""
 
+    __slots__ = 'act_fn', 'norm_fn', 'init_fn', 'use_bias', 'w', 'b', 'params'
+
     def __init__(self, act_fn: Layer, norm_fn: Layer, init_fn, use_bias: bool) -> None:
         super().__init__()
         self.act_fn = act_fn
@@ -56,6 +60,8 @@ class Input(Layer):
         input_shape: `tuple[int]`
             Shape of input tensor ignoring axis 0.
     """
+
+    __slots__ = 'input_shape', 'input'
 
     def __init__(self, input_shape: tuple[int]) -> None:
         super().__init__()
@@ -108,6 +114,8 @@ class Linear(ParamLayer):
         ValueError:
             If out_channels is less than 1.
     """
+
+    __slots__ = 'out_channels'
 
     def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
                  init_fn = inits.kaiming, use_bias: bool = True) -> None:
@@ -174,6 +182,8 @@ class Convolution(ParamLayer):
         Error:
             If output shape is smaller than kernel shape.
     """
+
+    __slots__ = 'out_channels', 'kernel_shape', 'pad_fn'
 
     def __init__(self, out_channels: int, kernel_shape: tuple[int] = (3, 3),
                  act_fn: Layer = None, norm_fn: Layer = None, init_fn=inits.kaiming,
@@ -280,6 +290,8 @@ class MaxPooling(Layer):
             Shape of the pooling window used for the pooling operation.
     """
 
+    __slots__ = 'p_window', 'p_map'
+
     def __init__(self, p_window: tuple[int] = (2, 2)) -> None:
         super().__init__()
         self.p_window = p_window
@@ -363,6 +375,8 @@ class Dropout(Layer):
         ValueError:
             If the droprate is outside the interval [0, 1).
     """
+
+    __slots__ = 'd_rate', 'd_map'
 
     def __init__(self, d_rate: float) -> None:
         super().__init__()

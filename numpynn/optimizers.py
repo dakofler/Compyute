@@ -8,6 +8,8 @@ from numpynn.tensor import zeros
 class Optimizer():
     """Optimizer base class"""
 
+    __slots__ = 'l_r'
+
     def __init__(self, l_r: float) -> None:
         self.l_r = l_r
 
