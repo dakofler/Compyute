@@ -1,11 +1,12 @@
 """neural network module"""
 
 import time
+from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
-from walnut.nn import optimizers
-from walnut.nn import activations, layers, losses, norms
-from walnut.tensor import Tensor, shuffle
+from walnut import tensor
+from walnut.tensor import Tensor
+from walnut.nn import activations, layers, losses, norms, optimizers
 
 
 class Sequential():
@@ -27,10 +28,10 @@ class Sequential():
         for layer in mdl_layers:
             self.__add_layer(layer)
 
-        self.optimizer = None
-        self.loss_fn = None
-        self.metric = None
-        self.compiled = False
+        self.optimizer: optimizers.Optimizer = None
+        self.loss_fn: losses.Loss = None
+        self.metric: Callable = None
+        self.compiled: bool = False
 
     def __call__(self, X: Tensor, Y: Tensor = None) -> None:
         """Computes an output and the loss based on imput samples.
@@ -59,9 +60,10 @@ class Sequential():
 
         if Y is not None:
             loss = self.loss_fn(output, Y)
+
         return output, loss
 
-    def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric) -> None:
+    def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric: Callable) -> None:
         """ Compiles the model.
         
         ### Parameters
@@ -91,8 +93,8 @@ class Sequential():
         self.metric = metric
         self.compiled = True
 
-    def train(self, X: Tensor, Y: Tensor, epochs: int=100, batch_size: int = None,
-              verbose: bool=True, val_data: tuple[Tensor]=(None, None)) -> list[float]:
+    def train(self, X: Tensor, Y: Tensor, epochs: int = 100, batch_size: int = None,
+              verbose: bool = True, val_data: tuple[Tensor] = (None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
         ### Parameters
@@ -126,7 +128,7 @@ class Sequential():
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_train, y_train = shuffle(X, Y, batch_size)
+            x_train, y_train = tensor.shuffle(X, Y, batch_size)
 
             # training
             self.__train()
@@ -184,11 +186,11 @@ class Sequential():
         """ Gives an overview of the model architecture.
         
         ### Raises
-            Exception:
+            ValueError:
                 If the model has not been compiled yet.
         """
         if not self.compiled:
-            raise Exception('Model has not been compiled yet.')
+            raise ValueError('Model has not been compiled yet.')
 
         print(f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
               + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
@@ -281,16 +283,8 @@ class Sequential():
         plt.title('gradient distribution')
 
     def plot_conv_channels(self) -> None:
-        """ Plots output channel activations convolutional layers.
-        
-        ### Raises
-            Exception:
-                If the model does not contain conv layers.
-        """
+        """ Plots output channel activations convolutional layers."""
         conv_layers = [l for l in self.mdl_layers if isinstance(l, layers.Convolution)]
-
-        if not conv_layers:
-            raise Exception('no convolutional layers found')
 
         for i,layer in enumerate(conv_layers):
             print(layer.__class__.__name__, i + 1)
@@ -303,7 +297,7 @@ class Sequential():
 
             plt.show()
 
-    def __add_layer(self, layer, input_layer=False):
+    def __add_layer(self, layer: layers.Layer, input_layer: bool = False):
         if input_layer:
             self.mdl_layers.insert(0, layer)
         else:
@@ -330,7 +324,7 @@ class Sequential():
         for layer in layers_reversed:
             layer.backward()
 
-    def __log(self, epoch, epochs, step, loss, val_loss=None):
+    def __log(self, epoch: int, epochs: int, step: float, loss: float, val_loss: float = None):
         def __log_line():
             line = f'epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss.item():.4f}'
 

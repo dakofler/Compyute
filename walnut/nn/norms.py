@@ -1,8 +1,8 @@
 """Normalization functions"""
 
 import numpy as np
+from walnut import tensor
 from walnut.nn import layers
-from walnut.tensor import ones, match_dims, zeros_like
 
 
 class Normalization(layers.ParamLayer):
@@ -28,9 +28,9 @@ class Layernorm(Normalization):
 
     def compile(self, i: int, prev_layer: layers.Layer, succ_layer: layers.Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
-        gamma = ones((1, self.prev_layer.y.shape[1]))
-        self.g = match_dims(gamma, self.prev_layer.y.ndim)
-        self.b = zeros_like(self.g.data)
+        gamma = tensor.ones((1, self.prev_layer.y.shape[1]))
+        self.g = tensor.match_dims(gamma, self.prev_layer.y.ndim)
+        self.b = tensor.zeros_like(self.g.data)
         self.params = [self.g, self.b]
         self.forward()
 
@@ -55,5 +55,6 @@ class Layernorm(Normalization):
         sum_axis_x = tuple(i + 1 for i in range(self.x.ndim - 1))
         temp1 = n * self.y.grad
         temp2 = np.sum(self.y.grad, sum_axis_x, keepdims=True)
-        temp3 = n / (n - 1) * self._xhat * np.sum(self.y.grad * self._xhat, sum_axis_x, keepdims=True)
-        self.x.grad = self.g.data * self._var_inv / n * (temp1 - temp2 - temp3)
+        temp3 = np.sum(self.y.grad * self._xhat, sum_axis_x, keepdims=True)
+        temp4 = n / (n - 1) * self._xhat * temp3
+        self.x.grad = self.g.data * self._var_inv / n * (temp1 - temp2 - temp4)

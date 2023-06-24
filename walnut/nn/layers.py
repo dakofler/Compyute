@@ -1,10 +1,11 @@
 """neural network layers module"""
 
+from typing import Callable
 import numpy as np
-from numpy.fft  import fft2, ifft2
-from walnut.nn import inits
-from walnut.tensor import Tensor, ones, zeros, zeros_like, expand_dims, match_dims
-from walnut.nn import paddings
+import numpy.fft as npfft
+from walnut import tensor
+from walnut.tensor import Tensor
+from walnut.nn import inits, paddings
 
 
 class Layer:
@@ -13,12 +14,13 @@ class Layer:
     __slots__ = 'compiled', 'mode', 'i', 'prev_layer', 'succ_layer', 'x', 'y'
 
     def __init__(self) -> None:
-        self.compiled = False
-        self.mode = 'eval'
-        self.i = None
-        self.prev_layer = self.succ_layer = None
-        self.x = Tensor()
-        self.y = Tensor()
+        self.compiled: str = False
+        self.mode: str = 'eval'
+        self.i: int = None
+        self.prev_layer: Layer = None
+        self.succ_layer: Layer = None
+        self.x: Tensor = Tensor()
+        self.y: Tensor = Tensor()
 
     def compile(self, i: int, prev_layer, succ_layer) -> None:
         """Connects the layer with adjacent ones and initializes values."""
@@ -43,15 +45,15 @@ class ParamLayer(Layer):
 
     __slots__ = 'act_fn', 'norm_fn', 'init_fn', 'use_bias', 'w', 'b', 'params'
 
-    def __init__(self, act_fn: Layer, norm_fn: Layer, init_fn, use_bias: bool) -> None:
+    def __init__(self, act_fn: Layer, norm_fn: Layer, init_fn: Callable, use_bias: bool) -> None:
         super().__init__()
         self.act_fn = act_fn
         self.norm_fn = norm_fn
         self.init_fn = init_fn
         self.use_bias = use_bias
-        self.w = None
-        self.b = None
-        self.params = []
+        self.w: Tensor = None
+        self.b: Tensor = None
+        self.params: list[Tensor] = []
 
 
 class Input(Layer):
@@ -62,17 +64,16 @@ class Input(Layer):
             Shape of input tensor ignoring axis 0.
     """
 
-    __slots__ = 'input_shape', 'input'
+    __slots__ = 'input_shape',
 
     def __init__(self, input_shape: tuple[int]) -> None:
         super().__init__()
         self.input_shape = input_shape
-        self.input = None
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init with ones and expand by adding batch dim
-        self.x = expand_dims(ones(self.input_shape), axis=0)
+        self.x = tensor.ones((1, *self.input_shape))
         self.forward()
 
     def forward(self) -> None:
@@ -116,10 +117,10 @@ class Linear(ParamLayer):
             If out_channels is less than 1.
     """
 
-    __slots__ = 'out_channels'
+    __slots__ = 'out_channels',
 
     def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
-                 init_fn = inits.kaiming, use_bias: bool = True) -> None:
+                 init_fn: Callable = inits.kaiming, use_bias: bool = True) -> None:
         super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
@@ -136,7 +137,7 @@ class Linear(ParamLayer):
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = zeros((self.out_channels, ))
+            self.b = tensor.zeros((self.out_channels, ))
 
         self.params = [self.w, self.b]
         self.forward()
@@ -144,7 +145,8 @@ class Linear(ParamLayer):
     def forward(self) -> None:
         super().forward()
         # (b, c_out)
-        self.y.data = self.x.data @ self.w.data + (self.b.data if self.use_bias else 0)
+        b = self.b if self.use_bias else 0
+        self.y.data = (self.x @ self.w + b).data
 
     def backward(self) -> None:
         super().backward()
@@ -187,8 +189,8 @@ class Convolution(ParamLayer):
     __slots__ = 'out_channels', 'kernel_shape', 'pad_fn'
 
     def __init__(self, out_channels: int, kernel_shape: tuple[int] = (3, 3),
-                 act_fn: Layer = None, norm_fn: Layer = None, init_fn=inits.kaiming,
-                 pad_fn=paddings.valid, use_bias: bool = True) -> None:
+                 act_fn: Layer = None, norm_fn: Layer = None, init_fn: Callable = inits.kaiming,
+                 pad_fn: Callable = paddings.valid, use_bias: bool = True) -> None:
         super().__init__(act_fn, norm_fn, init_fn, use_bias)
 
         if out_channels < 1:
@@ -200,7 +202,6 @@ class Convolution(ParamLayer):
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
-
         # init weights (c_out, c_in, y, x)
         _, in_channels, _, _ = self.prev_layer.y.shape
         w_shape = (self.out_channels, in_channels, *self.kernel_shape)
@@ -209,7 +210,7 @@ class Convolution(ParamLayer):
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = zeros((self.out_channels,))
+            self.b = tensor.zeros((self.out_channels,))
 
         self.params = [self.w, self.b]
         self.forward()
@@ -233,8 +234,8 @@ class Convolution(ParamLayer):
         if self.use_bias:
             # before adding, reshape bias to fit output to get (b, c_out, 1, 1)
             batches = self.x.shape[0]
-            bias = self.b * ones((batches, 1))
-            self.y.data += match_dims(bias, 4).data
+            bias = self.b * tensor.ones((batches, 1))
+            self.y.data += tensor.match_dims(bias, 4).data
 
     def backward(self) -> None:
         super().backward()
@@ -270,8 +271,8 @@ class Convolution(ParamLayer):
     def __convolve(self, x1: np.ndarray, x2: np.ndarray, exp_axis: tuple[int] = None):
         # fft both tensors
         target_shape = x1.shape[-2:]
-        x1_fft = fft2(x1, s=target_shape)
-        x2_fft = fft2(x2, s=target_shape)
+        x1_fft = npfft.fft2(x1, s=target_shape)
+        x2_fft = npfft.fft2(x2, s=target_shape)
 
         # expand dims if needed
         if exp_axis:
@@ -280,7 +281,7 @@ class Convolution(ParamLayer):
             x2_fft_exp = np.expand_dims(x2_fft, ax2)
 
         # multiply, ifft and get real value to complete convolution
-        return np.real(ifft2(x1_fft_exp * x2_fft_exp)).astype('float32')
+        return np.real(npfft.ifft2(x1_fft_exp * x2_fft_exp)).astype('float32')
 
 
 class MaxPooling(Layer):
@@ -296,7 +297,7 @@ class MaxPooling(Layer):
     def __init__(self, p_window: tuple[int] = (2, 2)) -> None:
         super().__init__()
         self.p_window = p_window
-        self.p_map = None
+        self.p_map: np.ndarray = None
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -308,8 +309,8 @@ class MaxPooling(Layer):
         x_pad = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
-        self.y.data = zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
-        self.p_map = zeros_like(x_pad).data
+        self.y.data = tensor.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
+        self.p_map = tensor.zeros_like(x_pad).data
         _, _, y_y, y_x = self.y.shape
 
         for y in range(y_y):
@@ -386,7 +387,7 @@ class Dropout(Layer):
             raise ValueError("drop rate must be in the interval [0, 1)")
 
         self.d_rate = d_rate
-        self.d_map = None
+        self.d_map: np.ndarray = None
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)

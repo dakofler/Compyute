@@ -482,11 +482,11 @@ def shuffle(x1: Tensor, x2: Tensor,
             Second shuffled tensor.
 
     ### Raises
-        Error:
+        ValueError:
             If tensors are not of equal size along a axis 0.
     """
     if x1.len != x2.len:
-        raise Exception(f'Tensors must have equal lengths along axis 0')
+        raise ValueError('Tensors must have equal lengths along axis 0')
 
     length = x1.len
     shuffle_index = np.arange(length)

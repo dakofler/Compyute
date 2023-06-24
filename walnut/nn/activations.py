@@ -40,10 +40,10 @@ class Sigmoid(Activation):
         sigm = self.__sigmoid(self.y.data)
         self.x.grad = sigm * (1.0 - sigm) * self.y.grad
 
-    def __sigmoid(self, tensor):
+    def __sigmoid(self, x: np.ndarray):
         # clip to avoid high values when exponentiating
-        tensor = np.clip(tensor, -100, 100)
-        return 1.0 / (1.0 + np.exp(-tensor))
+        x = np.clip(x, -100, 100)
+        return 1.0 / (1.0 + np.exp(-x))
 
 
 class Tanh(Activation):
@@ -72,8 +72,7 @@ class Softmax(Activation):
     def forward(self) -> None:
         super().forward()
         # subtract max value to avoid high values when exponentiating.
-        expo = np.exp(self.x.data - np.amax(self.x.data, axis=1, keepdims=True))
-        self.y.data = expo / np.sum(expo, axis=1, keepdims=True)
+        self.y.data = self.__softmax(self.x.data)
 
     def backward(self) -> None:
         super().backward()
@@ -83,3 +82,7 @@ class Softmax(Activation):
         x2 = np.einsum('ij,jk->ijk', self.y.data, np.eye(channels, channels))
         delta = x2 - x1
         self.x.grad = np.einsum('ijk,ik->ij', delta, self.y.grad)
+
+    def __softmax(self, x: np.ndarray) -> np.ndarray:
+        expo = np.exp(x - np.amax(x, axis=1, keepdims=True))
+        return expo / np.sum(expo, axis=1, keepdims=True)

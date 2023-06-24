@@ -35,7 +35,7 @@ def split_train_val_test(x: Tensor, ratio_val: float = 0.1,
     test = t_shuffled[n2:]
     return Tensor(train), Tensor(val), Tensor(test)
 
-def split_features_labels(x: Tensor, num_x_cols: int) -> (Tensor|Tensor):
+def split_features_labels(x: Tensor, num_x_cols: int) -> (Tensor | Tensor):
     """Splits a tensor along axis 1 into two seperate tensors.
 
     ### Parameters

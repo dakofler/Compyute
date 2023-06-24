@@ -7,12 +7,11 @@ from walnut.tensor import Tensor
 class Loss():
     """Loss base class."""
 
-    __slots__ = 'loss', '_y', '_t'
+    __slots__ = '_y', '_t'
 
     def __init__(self) -> None:
-        self.loss = 0
-        self._y = None
-        self._t = None
+        self._y: np.ndarray = None
+        self._t: np.ndarray = None
 
     def set_vals(self, outputs: Tensor, targets: Tensor) -> None:
         """Offsets values to avoid dividing by zero."""

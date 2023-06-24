@@ -1,8 +1,8 @@
 """parameter optimizers module"""
 
 import numpy as np
+from walnut import tensor
 from walnut.nn import layers
-from walnut.tensor import zeros
 
 
 class Optimizer():
@@ -43,7 +43,7 @@ class SGD(Optimizer):
                 continue
 
             for param in layer.params:
-                delta = param.params.get('delta', zeros(param.data.shape).data)
+                delta = param.params.get('delta', tensor.zeros(param.data.shape).data)
                 delta_new = - self.l_r * param.grad + self.momentum * delta
 
                 if not self.nesterov:
@@ -87,12 +87,12 @@ class Adam(Optimizer):
                 continue
 
             for param in layer.params:
-                momentum = param.params.get('momentum', zeros(param.data.shape).data)
+                momentum = param.params.get('momentum', tensor.zeros(param.data.shape).data)
                 momentum_new = self.beta1 * momentum + (1 - self.beta1) * param.grad
                 m_bc = momentum_new / (1 - self.beta1)
                 param.params['momentum'] = momentum_new
 
-                velocity = param.params.get('velocity', zeros(param.data.shape).data)
+                velocity = param.params.get('velocity', tensor.zeros(param.data.shape).data)
                 velocity_new = self.beta2 * velocity + (1 - self.beta2) * param.grad**2
                 v_bc = velocity_new / (1 - self.beta2)
                 param.params['velocity'] = velocity_new

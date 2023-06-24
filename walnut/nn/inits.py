@@ -1,6 +1,7 @@
 """tensor initializations module"""
 
-from walnut.tensor import Tensor, randn
+from walnut import tensor
+from walnut.tensor import Tensor
 
 
 def random(shape: tuple[int]) -> Tensor:
@@ -14,7 +15,7 @@ def random(shape: tuple[int]) -> Tensor:
         y: `Tensor`
             Tensor with random values.
     """
-    return randn(shape)
+    return tensor.randn(shape)
 
 def kaiming(shape: tuple[int], **kwargs) -> Tensor:
     """Creates a tensor of a given shape with values using Kaiming He initialization.
@@ -42,4 +43,4 @@ def kaiming(shape: tuple[int], **kwargs) -> Tensor:
         'Softmax': 1
     }
     gain = gains.get(act_fn.__class__.__name__, 1)
-    return randn(shape) * gain / fan_mode**0.5
+    return tensor.randn(shape) * gain / fan_mode**0.5
