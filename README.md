@@ -1,16 +1,15 @@
-# Numpy Neural Network
+# Walnut
 
-This is a framework for building, training and analyzing neural networks created using NumPy only. Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd. Gradients are computed within a network's layer.
+This is a framework for working with tensors and building, training and analyzing neural networks created using NumPy only. Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd. Gradients are computed within a network's layer.
 
 ```Python
 import walnut
 
 a = walnut.Tensor([1, 2, 3])
 b = walnut.randn((3,))
-
-c = a + b
-
-d = walnut.zeros((5, 5))
+c = a + b # addition of tensors
+d = a @ b # matrix multiplication of tensors
+e = walnut.zeros((5, 5))
 ```
 
 ### Data preprocessing

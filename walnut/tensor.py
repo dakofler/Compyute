@@ -29,7 +29,7 @@ class Tensor():
         if other is not None:
             if isinstance(other, np.ndarray):
                 self._data = other.astype('float32')
-            elif isinstance(other, (list, int, float)):
+            elif isinstance(other, (list, int, float, np.float32)):
                 self._data = np.array(other).astype('float32')
             else:
                 raise ValueError('data must be np.ndarray, list, int or float')
