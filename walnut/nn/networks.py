@@ -3,8 +3,9 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from numpynn import activations, layers, losses, norms, optimizers
-from numpynn.tensor import Tensor, shuffle
+from walnut.nn import optimizers
+from walnut.nn import activations, layers, losses, norms
+from walnut.tensor import Tensor, shuffle
 
 
 class Sequential():

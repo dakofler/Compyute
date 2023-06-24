@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from numpynn.tensor import Tensor
+from walnut.tensor import Tensor
 
 
 def valid(x: Tensor, **kwargs) -> Tensor:

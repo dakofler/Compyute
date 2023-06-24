@@ -2,8 +2,9 @@
 
 import numpy as np
 from numpy.fft  import fft2, ifft2
-from numpynn.tensor import Tensor, ones, zeros, zeros_like, expand_dims, match_dims
-from numpynn import paddings, inits
+from walnut.nn import inits
+from walnut.tensor import Tensor, ones, zeros, zeros_like, expand_dims, match_dims
+from walnut.nn import paddings
 
 
 class Layer:

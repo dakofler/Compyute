@@ -1,6 +1,6 @@
 """tensor initializations module"""
 
-from numpynn.tensor import Tensor, randn
+from walnut.tensor import Tensor, randn
 
 
 def random(shape: tuple[int]) -> Tensor:

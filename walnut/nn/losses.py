@@ -1,7 +1,7 @@
 """loss functions module"""
 
 import numpy as np
-from numpynn.tensor import Tensor
+from walnut.tensor import Tensor
 
 
 class Loss():

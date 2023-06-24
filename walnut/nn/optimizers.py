@@ -1,8 +1,8 @@
 """parameter optimizers module"""
 
 import numpy as np
-from numpynn import layers
-from numpynn.tensor import zeros
+from walnut.nn import layers
+from walnut.tensor import zeros
 
 
 class Optimizer():

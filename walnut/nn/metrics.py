@@ -1,7 +1,7 @@
 """evaluation metrics module"""
 
 import numpy as np
-from numpynn.tensor import Tensor, zeros_like
+from walnut.tensor import Tensor, zeros_like
 
 
 def accuracy(output: Tensor, targets: Tensor) -> float:

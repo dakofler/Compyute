@@ -1,8 +1,8 @@
 """Normalization functions"""
 
 import numpy as np
-from numpynn import layers
-from numpynn.tensor import ones, match_dims, zeros_like
+from walnut.nn import layers
+from walnut.tensor import ones, match_dims, zeros_like
 
 
 class Normalization(layers.ParamLayer):

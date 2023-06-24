@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-from numpynn.tensor import Tensor
+from walnut.tensor import Tensor
 
 
 def split_train_val_test(x: Tensor, ratio_val: float = 0.1, 
