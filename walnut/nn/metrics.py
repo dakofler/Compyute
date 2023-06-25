@@ -1,6 +1,7 @@
 """evaluation metrics module"""
 
 import numpy as np
+
 from walnut import tensor
 from walnut.tensor import Tensor
 

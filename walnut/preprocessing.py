@@ -2,11 +2,14 @@
 
 import pandas as pd
 import numpy as np
+
 from walnut.tensor import Tensor
 
 
-def split_train_val_test(x: Tensor, ratio_val: float = 0.1, 
-                         ratio_test: float = 0.1) -> (Tensor | Tensor | Tensor):
+def split_train_val_test(
+        x: Tensor,
+        ratio_val: float = 0.1,
+        ratio_test: float = 0.1) -> (Tensor | Tensor | Tensor):
     """Splits a tensor along axis 0 into three seperate tensor using a given ratio.
 
     ### Parameters
@@ -85,8 +88,11 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     """
     return Tensor(np.eye(num_classes)[x.data])
 
-def normalize(x: Tensor, axis: int | tuple[int] = None,
-              l_bound: int = -1, u_bound: int = 1) -> Tensor:
+def normalize(
+        x: Tensor,
+        axis: int | tuple[int] = None,
+        l_bound: int = -1,
+        u_bound: int = 1) -> Tensor:
     """Normalizes a tensor using min-max feature scaling.
 
     ### Parameters

@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+
 from walnut.tensor import Tensor
 
 
@@ -33,5 +34,4 @@ def same(x: Tensor, **kwargs) -> Tensor:
     """
     kernel_shape = kwargs['kernel_shape']
     width = math.floor(kernel_shape[0] / 2)
-    # pad along axis 2 & 3
     return Tensor(np.pad(x.data, ((0, 0), (0, 0), (width, width), (width, width))))

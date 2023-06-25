@@ -1,6 +1,7 @@
 """activation layers module"""
 
 import numpy as np
+
 from walnut.nn.layers import Layer
 
 

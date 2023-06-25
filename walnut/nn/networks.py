@@ -4,6 +4,7 @@ import time
 from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
+
 from walnut import tensor
 from walnut.tensor import Tensor
 from walnut.nn import activations, layers, losses, norms, optimizers
@@ -63,7 +64,10 @@ class Sequential():
 
         return output, loss
 
-    def compile(self, optimizer: optimizers.Optimizer, loss_fn: losses.Loss, metric: Callable) -> None:
+    def compile(self,
+            optimizer: optimizers.Optimizer,
+            loss_fn: losses.Loss,
+            metric: Callable) -> None:
         """ Compiles the model.
         
         ### Parameters
@@ -93,8 +97,13 @@ class Sequential():
         self.metric = metric
         self.compiled = True
 
-    def train(self, X: Tensor, Y: Tensor, epochs: int = 100, batch_size: int = None,
-              verbose: bool = True, val_data: tuple[Tensor] = (None, None)) -> list[float]:
+    def train(self,
+            X: Tensor,
+            Y: Tensor,
+            epochs: int = 100,
+            batch_size: int = None,
+            verbose: bool = True,
+            val_data: tuple[Tensor] = (None, None)) -> list[float]:
         """Trains the model using samples and targets.
         
         ### Parameters
@@ -316,8 +325,7 @@ class Sequential():
             layer.forward()
 
     def __backward(self):
-        # set last layers gradient to be the loss gradient
-        self.mdl_layers[-1].y.grad = self.loss_fn.backward().data
+        self.mdl_layers[-1].y.grad = self.loss_fn.backward().data # set output grad to loss grad
         layers_reversed = self.mdl_layers.copy()
         layers_reversed.reverse()
 

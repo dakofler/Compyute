@@ -1,6 +1,7 @@
 """loss functions module"""
 
 import numpy as np
+
 from walnut.tensor import Tensor
 
 

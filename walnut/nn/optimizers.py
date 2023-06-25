@@ -1,6 +1,7 @@
 """parameter optimizers module"""
 
 import numpy as np
+
 from walnut import tensor
 from walnut.nn import layers
 
@@ -68,8 +69,11 @@ class Adam(Optimizer):
             Constant for numerical stability.
     """
 
-    def __init__(self, l_r: float=1e-3, beta1: float=0.9, beta2: float=0.999,
-                 eps: float=1e-07) -> None:
+    def __init__(self,
+            l_r: float = 1e-3,
+            beta1: float = 0.9,
+            beta2: float = 0.999,
+            eps: float = 1e-07) -> None:
         super().__init__(l_r)
         self.beta1 = beta1
         self.beta2 = beta2

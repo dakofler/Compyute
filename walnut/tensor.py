@@ -16,8 +16,8 @@ class Tensor():
 
     def __init__(self, data: np.ndarray | list | float | int = None):
         self.data = data
-        self.grad = None
-        self.params = {}
+        self.grad: np.ndarray = None
+        self.params: dict[str, np.ndarray] = {}
 
     @property
     def data(self) -> np.ndarray:
