@@ -22,14 +22,14 @@ class Layernorm(Normalization):
     __slots__ = 'eps', '_var_inv', '_xhat', 'g'
 
     def __init__(self, eps: float = 1e-7) -> None:
-        super().__init__(None, None, None, True)
+        super().__init__(use_bias=True)
         self.eps = eps
         self._var_inv: np.ndarray = None
         self._xhat: np.ndarray = None
         self.g: Tensor = None
 
-    def compile(self, i: int, prev_layer: layers.Layer, succ_layer: layers.Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: layers.Layer, succ_layer: layers.Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         gamma = tensor.ones((1, self.prev_layer.y.shape[1]))
         self.g = tensor.match_dims(gamma, self.prev_layer.y.ndim)
         self.b = tensor.zeros_like(self.g.data)

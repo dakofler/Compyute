@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Any
 import numpy as np
 import numpy.fft as npfft
 
@@ -10,35 +10,27 @@ from walnut import tensor
 from walnut.tensor import Tensor
 from walnut.nn import inits, paddings
 
-@dataclass
-class Layer:
+@dataclass(repr=False)
+class Layer():
     """Layer base class."""
 
-    i: int = None
-    mode: str = 'eval'
-    prev_layer: Layer = None
-    succ_layer: Layer = None
-    input_shape: tuple[int] = None
-    compiled: bool = False
     x: Tensor = None
     y: Tensor = None
+    mode: str = 'eval'
+    compiled: bool = False
+    prev_layer: Layer | None = None
+    succ_layer: Layer | None = None
+    input_shape: tuple[int] | None = None
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
         """Connects the layer with adjacent ones and initializes values."""
-        if self.prev_layer is None and self.input_shape is None:
+        if prev_layer is None and self.input_shape is None:
             raise AttributeError('input shape must be specified for input layers.')
-
-        self.i = i
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
-
-        if self.input_shape is not None:
-            self.x = tensor.ones((1, *self.input_shape))
-        else:
-            self.x = Tensor()
-
-        self.y = Tensor()
         self.compiled = True
+        self.x = Tensor() if self.input_shape is None else tensor.ones((1, *self.input_shape))
+        self.y = Tensor()
 
     def forward(self) -> None:
         """Performs a forward pass."""
@@ -50,15 +42,15 @@ class Layer:
         if self.succ_layer is not None:
             self.y.grad = self.succ_layer.x.grad
 
-@dataclass
+@dataclass(repr=False)
 class ParamLayer(Layer):
     """Layer using trainable parameters."""
-    act_fn: Layer = None
-    norm_fn: Layer = None
-    init_fn: Callable = inits.kaiming
+    act_fn: Layer | None = None
+    norm_fn: Layer | None = None
+    init_fn: Callable[[tuple[int], Any], Tensor] = inits.kaiming
     use_bias: bool = False
-    w: Tensor = None
-    b: Tensor = None
+    w: Tensor | None = None
+    b: Tensor | None = None
     params: list[Tensor] = field(default_factory=list)
 
 
@@ -83,14 +75,13 @@ class Linear(ParamLayer):
         AttributeError:
             If input shape is not specified for the input layer.
     """
-
     __slots__ = 'out_channels',
 
     def __init__(self,
             out_channels: int,
-            act_fn: Layer = None,
-            norm_fn: Layer = None,
-            init_fn: Callable = inits.kaiming,
+            act_fn: Layer | None = None,
+            norm_fn: Layer | None = None,
+            init_fn: Callable[[tuple[int], Any], Tensor] = inits.kaiming,
             use_bias: bool = True,
             input_shape: tuple[int] = None) -> None:
         super().__init__(
@@ -101,12 +92,12 @@ class Linear(ParamLayer):
             input_shape=input_shape)
         self.out_channels = out_channels
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         # init weights (c_in, c_out)
         _, in_channels = self.x.shape if self.x.data is not None else self.prev_layer.y.shape
         w_shape = (in_channels, self.out_channels)
-        self.w = self.init_fn(shape=w_shape, fan_mode=in_channels, act_fn=self.act_fn)
+        self.w = self.init_fn(w_shape, fan_mode=in_channels, act_fn=self.act_fn)
 
         # init bias (c_out,)
         if self.use_bias:
@@ -117,14 +108,13 @@ class Linear(ParamLayer):
 
     def forward(self) -> None:
         super().forward()
-        b = self.b if self.use_bias else 0.0
-        self.y.data = (self.x @ self.w + b).data # (b, c_out)
+        bias = self.b if self.use_bias else 0.0
+        self.y.data = (self.x @ self.w + bias).data # (b, c_out)
 
     def backward(self) -> None:
         super().backward()
         self.x.grad = self.y.grad @ self.w.T # input grads (b, c_in)
         self.w.grad = self.x.T @ self.y.grad # weight grads (c_in, c_out)
-
         if self.use_bias:
             self.b.grad = np.sum(self.y.grad, axis=0) # bias grads (c_out,)
 
@@ -162,12 +152,12 @@ class Convolution(ParamLayer):
     def __init__(self,
             out_channels: int,
             kernel_shape: tuple[int] = (3, 3),
-            act_fn: Layer = None,
-            norm_fn: Layer = None,
-            init_fn: Callable = inits.kaiming,
-            pad_fn: Callable = paddings.valid,
+            act_fn: Layer | None = None,
+            norm_fn: Layer | None = None,
+            init_fn: Callable[[tuple[int], Any], Tensor] = inits.kaiming,
+            pad_fn: Callable[[Tensor, Any], Tensor] = paddings.valid,
             use_bias: bool = True,
-            input_shape: tuple[int] = None) -> None:
+            input_shape: tuple[int] | None = None) -> None:
         super().__init__(
             act_fn=act_fn,
             norm_fn=norm_fn,
@@ -178,8 +168,8 @@ class Convolution(ParamLayer):
         self.kernel_shape = kernel_shape
         self.pad_fn = pad_fn
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         # init weights (c_out, c_in, y, x)
         _, in_channels, _, _ = self.x.shape if self.x.data is not None else self.prev_layer.y.shape
         w_shape = (self.out_channels, in_channels, *self.kernel_shape)
@@ -192,9 +182,7 @@ class Convolution(ParamLayer):
 
         self.params = [self.w, self.b]
         self.forward()
-        _, _, y_y, y_x = self.y.shape
-
-        if y_y < w_y or y_x < w_x:
+        if self.y.shape[2] < w_y or self.y.shape[3] < w_x:
             raise ValueError(self.__class__.__name__, ': Output shape smaller than kernel shape.')
 
     def forward(self) -> None:
@@ -204,7 +192,6 @@ class Convolution(ParamLayer):
         x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0)) # (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
         _, _, w_y, w_x = self.w.shape
         self.y.data = np.sum(x_conv_w, axis=2)[:, :, w_y - 1:, w_x - 1:] # sum over input channels
-
         if self.use_bias:
             batches = self.x.shape[0]
             bias = self.b * tensor.ones((batches, 1)) # broadcast bias over batches (b, c_out)
@@ -217,7 +204,7 @@ class Convolution(ParamLayer):
         _, _, dy_y, _ = self.y.shape
 
         # pad grads to fit input after convolution
-        if self.pad_fn != paddings.same:
+        if self.pad_fn.__name__ != paddings.same.__name__:
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
@@ -229,8 +216,7 @@ class Convolution(ParamLayer):
 
         # weight grads (c_out, c_in, y, x)
         dy_conv_x = self.__convolve(x_p, self.y.grad, exp_axis=(1, 2)) # (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        _, _, w_y, w_x = self.w.shape
-        self.w.grad = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]  # sum over batches
+        self.w.grad = np.sum(dy_conv_x, axis=0)[:, :, -self.w.shape[2]:, -self.w.shape[3]:] # sum over batches
 
         # bias grads (c_out,)
         if self.use_bias:
@@ -273,8 +259,8 @@ class MaxPooling(Layer):
         self.p_window = p_window
         self.p_map: np.ndarray = None
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -285,13 +271,10 @@ class MaxPooling(Layer):
         x_b, x_c, _, _ = self.x.shape
         self.y.data = tensor.zeros((x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)).data
         self.p_map = tensor.zeros_like(x_pad).data
-        _, _, y_y, y_x = self.y.shape
-
-        for y in range(y_y):
-            for x in range(y_x):
+        for y in range(self.y.shape[2]):
+            for x in range(self.y.shape[3]):
                 chunk = self.x.data[:, :,  y * p_y : (y + 1) * p_y, x * p_x : (x + 1) * p_x]
                 self.y.data[:, :, y, x] = np.max(chunk, axis=(2, 3))
-
         y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_pad.shape)
         self.p_map = (x_pad == y_s) * 1.0
 
@@ -335,8 +318,8 @@ class Flatten(Layer):
     def __init__(self, input_shape: tuple[int] = None) -> None:
         super().__init__(input_shape=input_shape)
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -369,13 +352,12 @@ class Dropout(Layer):
         self.d_rate = d_rate
         self.d_map: np.ndarray = None
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer) -> None:
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
         super().forward()
-
         if self.mode == 'eval':
             self.y.data = self.x.data
         else:

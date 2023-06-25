@@ -1,18 +1,21 @@
 """loss functions module"""
 
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
 import numpy as np
 
 from walnut.tensor import Tensor
 
-
-class Loss():
+@dataclass()
+class Loss(ABC):
     """Loss base class."""
 
-    __slots__ = '_y', '_t'
+    _y: np.ndarray = None
+    _t: np.ndarray = None
 
-    def __init__(self) -> None:
-        self._y: np.ndarray = None
-        self._t: np.ndarray = None
+    @abstractmethod
+    def __call__(self):
+        ...
 
     def set_vals(self, outputs: Tensor, targets: Tensor) -> None:
         """Offsets values to avoid dividing by zero."""

@@ -12,8 +12,8 @@ class Activation(Layer):
 class Relu(Activation):
     """Implements the ReLu activation function."""
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer):
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer):
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -28,8 +28,8 @@ class Relu(Activation):
 class Sigmoid(Activation):
     """Implements the Sigmoid activation function."""
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer):
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer):
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -50,8 +50,8 @@ class Sigmoid(Activation):
 class Tanh(Activation):
     """Implements the Tanh activation function."""
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer):
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer):
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -66,8 +66,8 @@ class Tanh(Activation):
 class Softmax(Activation):
     """Implements the Softmax activation function."""
 
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer):
-        super().compile(i, prev_layer, succ_layer)
+    def compile(self, prev_layer: Layer, succ_layer: Layer):
+        super().compile(prev_layer, succ_layer)
         self.forward()
 
     def forward(self) -> None:
@@ -81,8 +81,7 @@ class Softmax(Activation):
         # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
         x1 = np.einsum('ij,ik->ijk', self.y.data, self.y.data)
         x2 = np.einsum('ij,jk->ijk', self.y.data, np.eye(channels, channels))
-        delta = x2 - x1
-        self.x.grad = np.einsum('ijk,ik->ij', delta, self.y.grad)
+        self.x.grad = np.einsum('ijk,ik->ij', x2 - x1, self.y.grad)
 
     def __softmax(self, x: np.ndarray) -> np.ndarray:
         expo = np.exp(x - np.amax(x, axis=1, keepdims=True))

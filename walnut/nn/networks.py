@@ -22,14 +22,12 @@ class Sequential():
 
     def __init__(self, mdl_layers: list[layers.Layer]) -> None:
         self.mdl_layers = []
-
-        for layer in mdl_layers:
-            self.__add_layer(layer)
-
         self.optimizer: optimizers.Optimizer = None
         self.loss_fn: losses.Loss = None
-        self.metric: Callable = None
+        self.metric: Callable[[Tensor, Tensor], float] = None
         self.compiled: bool = False
+        for layer in mdl_layers:
+            self.__add_layer(layer)
 
     def __call__(self, X: Tensor, Y: Tensor = None) -> None:
         """Computes an output and the loss based on imput samples.
@@ -54,10 +52,8 @@ class Sequential():
         self.__forward(X)
         output = Tensor(self.mdl_layers[-1].y.data)
         loss = None
-
         if Y is not None:
             loss = self.loss_fn(output, Y)
-
         return output, loss
 
     def compile(self,
@@ -75,17 +71,15 @@ class Sequential():
                 Metric to be used to evaluate the model.
         """
         num_layers = len(self.mdl_layers) - 1
-
         for i, layer in enumerate(self.mdl_layers):
             if 0 < i < num_layers: # hidden layer
-                layer.compile(i, self.mdl_layers[i - 1], self.mdl_layers[i + 1])
+                layer.compile(self.mdl_layers[i - 1], self.mdl_layers[i + 1])
             elif 0 == i < num_layers: # input layer
-                layer.compile(i, None, self.mdl_layers[i + 1])
+                layer.compile(None, self.mdl_layers[i + 1])
             elif 0 < i == num_layers: # output layer
-                layer.compile(i, self.mdl_layers[i - 1], None)
+                layer.compile(self.mdl_layers[i - 1], None)
             else: # model only has one layer
-                layer.compile(i, None, None)
-
+                layer.compile(None, None)
         self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.metric = metric
@@ -141,16 +135,13 @@ class Sequential():
 
             # validation
             self.__eval()
-
             if val_data[0] is not None:
                 _, val_loss = self(*val_data)
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-
             if verbose:
                 self.__log(epoch, epochs, step, loss, val_loss)
-
             history.append(loss.item())
 
         return history
@@ -182,8 +173,7 @@ class Sequential():
         self.__eval()
         outputs, loss = self(X, Y)
         score = self.metric(outputs, Y)
-        metric = self.metric.__name__
-        print(f'loss {loss.item():.4f} | {metric:s}: {score:.4f}')
+        print(f'loss {loss.item():.4f} | {self.metric.__name__:s}: {score:.4f}')
 
     def summary(self) -> None:
         """ Gives an overview of the model architecture.
@@ -194,7 +184,6 @@ class Sequential():
         """
         if not self.compiled:
             raise ValueError('Model has not been compiled yet.')
-
         print(f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
               + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
         sum_params = 0
@@ -202,15 +191,12 @@ class Sequential():
         for layer in self.mdl_layers:
             w_size = b_size = 0
             w_shape = b_shape = '-'
-
             if isinstance(layer, layers.ParamLayer) and layer.w is not None:
                 w_size = np.size(layer.w.data)
                 w_shape = str(layer.w.shape)
-
             if isinstance(layer, layers.ParamLayer) and layer.b is not None:
                 b_size = np.size(layer.b.data)
                 b_shape = str(layer.b.shape)
-
             params = w_size + b_size
             sum_params += params
 
@@ -219,7 +205,6 @@ class Sequential():
             y_shape = str(layer.y.shape[1:])
             print(f'{name:15s} | {x_shape:15s} | {w_shape:15s} | '
                   + f'{b_shape:15s} | {y_shape:15s} | {str(params):15s}')
-
         print(f'\ntotal trainable parameters {sum_params}')
 
     def plot_training_loss(self, loss_hist: list[float]) -> None:
@@ -243,7 +228,6 @@ class Sequential():
         """
         plt.figure(figsize=(20,4))
         legends = []
-
         for i, layer in enumerate(self.mdl_layers):
             if (isinstance(layer, activations.Activation)
                     and not isinstance(layer, activations.Softmax)):
@@ -254,7 +238,6 @@ class Sequential():
                 y_vals, x_vals = np.histogram(layer.y.data, bins=bins)
                 plt.plot(np.delete(x_vals, -1), y_vals)
                 legends.append(f'layer {i:d} ({name:s})')
-
         plt.legend(legends)
         plt.title('activation distribution')
 
@@ -267,7 +250,6 @@ class Sequential():
         """
         plt.figure(figsize=(20,4))
         legends = []
-
         for i, layer in enumerate(self.mdl_layers):
             if isinstance(layer, layers.ParamLayer) and not isinstance(layer, norms.Layernorm):
                 name = layer.__class__.__name__
@@ -278,28 +260,25 @@ class Sequential():
                 x_vals = np.delete(x_vals, -1)
                 plt.plot(x_vals, y_vals)
                 legends.append(f'layer {i:d} ({name:s})')
-
         plt.legend(legends)
         plt.title('gradient distribution')
 
     def plot_conv_channels(self) -> None:
         """ Plots output channel activations convolutional layers."""
         conv_layers = [l for l in self.mdl_layers if isinstance(l, layers.Convolution)]
-
         for i,layer in enumerate(conv_layers):
             print(layer.__class__.__name__, i + 1)
             plt.figure(figsize=(40, 40))
-
+            vmin = layer.y.min()
+            vmax = layer.y.max()
             for j in range(layer.out_channels):
                 plt.subplot(10, 8, j + 1)
-                plt.imshow(layer.y.data[0, j, :, :], cmap='gray')
+                plt.imshow(layer.y.data[0, j, :, :], vmin=vmin, vmax=vmax)
                 plt.xlabel(f'out_channel {str(j)}')
-
             plt.show()
 
     def __add_layer(self, layer: layers.Layer):
         self.mdl_layers.append(layer)
-
         if isinstance(layer, layers.ParamLayer):
             if layer.norm_fn is not None:
                 self.mdl_layers.append(layer.norm_fn)
@@ -315,17 +294,14 @@ class Sequential():
         self.mdl_layers[-1].y.grad = self.loss_fn.backward().data.copy() # output grad = loss grad
         layers_reversed = self.mdl_layers.copy()
         layers_reversed.reverse()
-
         for layer in layers_reversed:
             layer.backward()
 
     def __log(self, epoch: int, epochs: int, step: float, loss: float, val_loss: float = None):
         def __log_line():
             line = f'epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss.item():.4f}'
-
             if val_loss is not None:
                 line += f' | val_loss {val_loss.item():.4f}'
-
             print(line)
 
         if epochs < 10:
@@ -345,12 +321,9 @@ class Sequential():
 
     def __check_dims(self, x: Tensor, y: Tensor = None):
         req_input_dim = self.mdl_layers[0].x.ndim
-
         if x.ndim != req_input_dim:
             raise ValueError(f'Input dimension must be {req_input_dim}.')
-
         if y is not None:
             req_output_dim = self.mdl_layers[-1].y.ndim
-
             if y.ndim != req_output_dim:
                 raise ValueError(f'Output dimension must be {req_output_dim}.')
