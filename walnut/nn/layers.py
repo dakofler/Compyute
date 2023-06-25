@@ -1,6 +1,7 @@
 """neural network layers module"""
 
 from __future__ import annotations
+from dataclasses import dataclass, field
 from typing import Callable
 import numpy as np
 import numpy.fft as npfft
@@ -9,26 +10,34 @@ from walnut import tensor
 from walnut.tensor import Tensor
 from walnut.nn import inits, paddings
 
-
+@dataclass
 class Layer:
     """Layer base class."""
 
-    __slots__ = 'compiled', 'mode', 'i', 'prev_layer', 'succ_layer', 'x', 'y'
-
-    def __init__(self) -> None:
-        self.i: int = None
-        self.mode: str = 'eval'
-        self.prev_layer: Layer = None
-        self.succ_layer: Layer = None
-        self.compiled: str = False
-        self.x: Tensor = Tensor()
-        self.y: Tensor = Tensor()
+    i: int = None
+    mode: str = 'eval'
+    prev_layer: Layer = None
+    succ_layer: Layer = None
+    input_shape: tuple[int] = None
+    compiled: bool = False
+    x: Tensor = None
+    y: Tensor = None
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         """Connects the layer with adjacent ones and initializes values."""
+        if self.prev_layer is None and self.input_shape is None:
+            raise AttributeError('input shape must be specified for input layers.')
+
         self.i = i
         self.prev_layer = prev_layer
         self.succ_layer = succ_layer
+
+        if self.input_shape is not None:
+            self.x = tensor.ones((1, *self.input_shape))
+        else:
+            self.x = Tensor()
+
+        self.y = Tensor()
         self.compiled = True
 
     def forward(self) -> None:
@@ -41,61 +50,16 @@ class Layer:
         if self.succ_layer is not None:
             self.y.grad = self.succ_layer.x.grad
 
-
+@dataclass
 class ParamLayer(Layer):
     """Layer using trainable parameters."""
-
-    __slots__ = 'act_fn', 'norm_fn', 'init_fn', 'use_bias', 'w', 'b', 'params'
-
-    def __init__(self, act_fn: Layer, norm_fn: Layer, init_fn: Callable, use_bias: bool) -> None:
-        super().__init__()
-        self.act_fn = act_fn
-        self.norm_fn = norm_fn
-        self.init_fn = init_fn
-        self.use_bias = use_bias
-        self.w: Tensor = None
-        self.b: Tensor = None
-        self.params: list[Tensor] = []
-
-
-class Input(Layer):
-    """Input layer used in neural network models.
-
-    ### Parameters
-        input_shape: `tuple[int]`
-            Shape of input tensor ignoring axis 0.
-    """
-
-    __slots__ = 'input_shape',
-
-    def __init__(self, input_shape: tuple[int]) -> None:
-        super().__init__()
-        self.input_shape = input_shape
-
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
-        self.x = tensor.ones((1, *self.input_shape)) # init input with ones when compiling
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y.data = self.x.data
-
-
-class Output(Layer):
-    "Output layer used in neural network models"
-
-    def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
-        super().compile(i, prev_layer, succ_layer)
-        self.forward()
-
-    def forward(self) -> None:
-        super().forward()
-        self.y.data = self.x.data
-
-    def backward(self) -> None:
-        super().backward()
-        self.x.grad = self.y.grad
+    act_fn: Layer = None
+    norm_fn: Layer = None
+    init_fn: Callable = inits.kaiming
+    use_bias: bool = False
+    w: Tensor = None
+    b: Tensor = None
+    params: list[Tensor] = field(default_factory=list)
 
 
 class Linear(ParamLayer):
@@ -112,19 +76,35 @@ class Linear(ParamLayer):
             Weight initialization method. By default Kaiming He initialization is used.
         use_bias: `bool`, optional
             Whether to use bias values. By default, bias is used.
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
+
+    ### Raises
+        AttributeError:
+            If input shape is not specified for the input layer.
     """
 
     __slots__ = 'out_channels',
 
-    def __init__(self, out_channels: int, act_fn: Layer=None, norm_fn: Layer = None,
-                 init_fn: Callable = inits.kaiming, use_bias: bool = True) -> None:
-        super().__init__(act_fn, norm_fn, init_fn, use_bias)
+    def __init__(self,
+            out_channels: int,
+            act_fn: Layer = None,
+            norm_fn: Layer = None,
+            init_fn: Callable = inits.kaiming,
+            use_bias: bool = True,
+            input_shape: tuple[int] = None) -> None:
+        super().__init__(
+            act_fn=act_fn,
+            norm_fn=norm_fn,
+            init_fn=init_fn,
+            use_bias=use_bias,
+            input_shape=input_shape)
         self.out_channels = out_channels
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init weights (c_in, c_out)
-        _, in_channels = self.prev_layer.y.shape
+        _, in_channels = self.x.shape if self.x.data is not None else self.prev_layer.y.shape
         w_shape = (in_channels, self.out_channels)
         self.w = self.init_fn(shape=w_shape, fan_mode=in_channels, act_fn=self.act_fn)
 
@@ -167,8 +147,12 @@ class Convolution(ParamLayer):
             Padding method applied to the input. By default valid padding is used.
         use_bias: `bool`, optional
             Whether to use bias values. By default, bias is used.
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
 
     ### Raises
+        AttributeError:
+            If input shape is not specified for the input layer.
         ValueError:
             If output shape is smaller than kernel shape.
     """
@@ -182,8 +166,14 @@ class Convolution(ParamLayer):
             norm_fn: Layer = None,
             init_fn: Callable = inits.kaiming,
             pad_fn: Callable = paddings.valid,
-            use_bias: bool = True) -> None:
-        super().__init__(act_fn, norm_fn, init_fn, use_bias)
+            use_bias: bool = True,
+            input_shape: tuple[int] = None) -> None:
+        super().__init__(
+            act_fn=act_fn,
+            norm_fn=norm_fn,
+            init_fn=init_fn,
+            use_bias=use_bias,
+            input_shape=input_shape)
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
         self.pad_fn = pad_fn
@@ -191,7 +181,7 @@ class Convolution(ParamLayer):
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
         # init weights (c_out, c_in, y, x)
-        _, in_channels, _, _ = self.prev_layer.y.shape
+        _, in_channels, _, _ = self.x.shape if self.x.data is not None else self.prev_layer.y.shape
         w_shape = (self.out_channels, in_channels, *self.kernel_shape)
         _, c_out, w_y, w_x = w_shape
         self.w = self.init_fn(w_shape, fan_mode=c_out*w_y*w_x, act_fn=self.act_fn)
@@ -268,12 +258,18 @@ class MaxPooling(Layer):
     ### Parameters
         p_window: `tuple[int]`, optional
             Shape of the pooling window used for the pooling operation.
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
+
+    ### Raises
+        AttributeError:
+            If input shape is not specified for the input layer.
     """
 
     __slots__ = 'p_window', 'p_map'
 
-    def __init__(self, p_window: tuple[int] = (2, 2)) -> None:
-        super().__init__()
+    def __init__(self, p_window: tuple[int] = (2, 2), input_shape: tuple[int] = None) -> None:
+        super().__init__(input_shape=input_shape)
         self.p_window = p_window
         self.p_map: np.ndarray = None
 
@@ -325,7 +321,19 @@ class MaxPooling(Layer):
 
 
 class Flatten(Layer):
-    "Flatten layer used to reshape tensors to shape (b, c_out)"
+    """Flatten layer used to reshape tensors to shape (b, c_out).
+
+    ### Parameters
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
+
+    ### Raises
+        AttributeError:
+            If input shape is not specified for the input layer.
+    """
+
+    def __init__(self, input_shape: tuple[int] = None) -> None:
+        super().__init__(input_shape=input_shape)
 
     def compile(self, i: int, prev_layer: Layer, succ_layer: Layer) -> None:
         super().compile(i, prev_layer, succ_layer)
@@ -346,12 +354,18 @@ class Dropout(Layer):
     ### Parameters
         drop_rate: `float`
             Probability of values being set to 0.
+        input_shape: `tuple[int]`
+            Shape of input tensor ignoring axis 0.
+
+    ### Raises
+        AttributeError:
+            If input shape is not specified for the input layer.
     """
 
     __slots__ = 'd_rate', 'd_map'
 
-    def __init__(self, d_rate: float) -> None:
-        super().__init__()
+    def __init__(self, d_rate: float, input_shape: tuple[int] = None) -> None:
+        super().__init__(input_shape=input_shape)
         self.d_rate = d_rate
         self.d_map: np.ndarray = None
 

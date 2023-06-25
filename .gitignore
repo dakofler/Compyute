@@ -2,4 +2,4 @@ __pycache__/
 experiments
 data/*
 .vscode
-test/*
+test.ipynb

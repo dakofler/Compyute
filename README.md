@@ -23,8 +23,8 @@ Models can be built using a variety of layers, including trainable layers such a
 ```python
 import walnut.nn as nn
 
-model = nn.Sequential(input_shape=(4,), mdl_layers=[
-    nn.layers.Linear(out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
+model = nn.Sequential(mdl_layers=[
+    nn.layers.Linear(input_shape=(4,), out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
     nn.layers.Linear(out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
     nn.layers.Linear(out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
     nn.layers.Linear(out_channels=3, act_fn=nn.activations.Softmax(), init_fn=nn.inits.Kaiming)
@@ -32,8 +32,8 @@ model = nn.Sequential(input_shape=(4,), mdl_layers=[
 ```
 
 ```python
-model = nn.Sequential(input_shape=(1, 28, 28), mdl_layers=[
-    nn.layers.Convolution(out_channels=8, kernel_shape=(3, 3), act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
+model = nn.Sequential(mdl_layers=[
+    nn.layers.Convolution(input_shape=(1, 28, 28), out_channels=8, kernel_shape=(3, 3), act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
     nn.layers.MaxPooling(p_window=(2, 2)),
     nn.layers.Convolution(out_channels=16, kernel_shape=(3, 3), act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
     nn.layers.MaxPooling(p_window=(2, 2)),

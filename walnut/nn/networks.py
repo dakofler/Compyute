@@ -14,16 +14,13 @@ class Sequential():
     """Feed forward neural network model.
     
     ### Parameters
-        input_shape: `tuple[int]`
-            Shape of input tensor ignoring axis 0 (batches).
         mdl_layers: `list[Layer]`
             Layers of the neural network model.
     """
 
-    __slots__ = 'input_shape', 'mdl_layers', 'optimizer', 'loss_fn', 'metric', 'compiled'
+    __slots__ = 'mdl_layers', 'optimizer', 'loss_fn', 'metric', 'compiled'
 
-    def __init__(self, input_shape: tuple[int], mdl_layers: list[layers.Layer]) -> None:
-        self.input_shape = input_shape
+    def __init__(self, mdl_layers: list[layers.Layer]) -> None:
         self.mdl_layers = []
 
         for layer in mdl_layers:
@@ -54,9 +51,8 @@ class Sequential():
                 If input shape is not of dim 3.
         """
         self.__check_dims(X, Y)
-        self.mdl_layers[0].x.data = X.data
-        self.__forward()
-        output = self.mdl_layers[-1].y
+        self.__forward(X)
+        output = Tensor(self.mdl_layers[-1].y.data)
         loss = None
 
         if Y is not None:
@@ -78,19 +74,17 @@ class Sequential():
             metric:
                 Metric to be used to evaluate the model.
         """
-        if not isinstance(self.mdl_layers[0], layers.Input):
-            self.__add_layer(layers.Input(self.input_shape), input_layer=True)
-
-        if not isinstance(self.mdl_layers[-1], layers.Output):
-            self.__add_layer(layers.Output())
+        num_layers = len(self.mdl_layers) - 1
 
         for i, layer in enumerate(self.mdl_layers):
-            if isinstance(layer, layers.Input):
-                layer.compile(i, None, self.mdl_layers[i + 1])
-            elif isinstance(layer, layers.Output):
-                layer.compile(i, self.mdl_layers[i - 1], None)
-            else:
+            if 0 < i < num_layers: # hidden layer
                 layer.compile(i, self.mdl_layers[i - 1], self.mdl_layers[i + 1])
+            elif 0 == i < num_layers: # input layer
+                layer.compile(i, None, self.mdl_layers[i + 1])
+            elif 0 < i == num_layers: # output layer
+                layer.compile(i, self.mdl_layers[i - 1], None)
+            else: # model only has one layer
+                layer.compile(i, None, None)
 
         self.optimizer = optimizer
         self.loss_fn = loss_fn
@@ -205,10 +199,7 @@ class Sequential():
               + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n')
         sum_params = 0
 
-        for layer in self.mdl_layers[1:-1]:
-            if isinstance(layer, (layers.Input, layers.Output)):
-                continue
-
+        for layer in self.mdl_layers:
             w_size = b_size = 0
             w_shape = b_shape = '-'
 
@@ -306,26 +297,22 @@ class Sequential():
 
             plt.show()
 
-    def __add_layer(self, layer: layers.Layer, input_layer: bool = False):
-        if input_layer:
-            self.mdl_layers.insert(0, layer)
-        else:
-            self.mdl_layers.append(layer)
+    def __add_layer(self, layer: layers.Layer):
+        self.mdl_layers.append(layer)
 
-            if isinstance(layer, layers.ParamLayer):
-                if layer.norm_fn is not None:
-                    self.mdl_layers.append(layer.norm_fn)
-                if layer.act_fn is not None:
-                    self.mdl_layers.append(layer.act_fn)
+        if isinstance(layer, layers.ParamLayer):
+            if layer.norm_fn is not None:
+                self.mdl_layers.append(layer.norm_fn)
+            if layer.act_fn is not None:
+                self.mdl_layers.append(layer.act_fn)
 
-        self.compiled = False
-
-    def __forward(self):
+    def __forward(self, X: np.ndarray):
+        self.mdl_layers[0].x.data = X.data.copy()
         for layer in self.mdl_layers:
             layer.forward()
 
     def __backward(self):
-        self.mdl_layers[-1].y.grad = self.loss_fn.backward().data # set output grad to loss grad
+        self.mdl_layers[-1].y.grad = self.loss_fn.backward().data.copy() # output grad = loss grad
         layers_reversed = self.mdl_layers.copy()
         layers_reversed.reverse()
 
