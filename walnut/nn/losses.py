@@ -1,42 +1,63 @@
-"""loss functions module"""
+"""Loss functions module"""
 
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from typing import Any
 import numpy as np
+import numpy.typing as npt
 
 from walnut.tensor import Tensor
+
 
 @dataclass()
 class Loss(ABC):
     """Loss base class."""
 
-    _y: np.ndarray = None
-    _t: np.ndarray = None
+    _y: npt.NDArray[Any] = np.empty(0, dtype="float32")
+    _t: npt.NDArray[Any] = np.empty(0, dtype="float32")
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
         ...
 
+    @abstractmethod
+    def backward(self) -> Tensor:
+        """Performs a backward pass and computes gradients."""
+
     def set_vals(self, outputs: Tensor, targets: Tensor) -> None:
-        """Offsets values to avoid dividing by zero."""
-        self._y = outputs.data + 1e-7 # to avoid dividing by 0
-        self._t = targets.data + 1e-7 # to avoid dividing by 0
+        """Offsets values to avoid dividing by zero.
+
+        Parameters
+        ----------
+        outputs : Tensor
+            A model's predictions.
+        targets : Tensor
+            Target values.
+        """
+        self._y = outputs.data + 1e-7  # to avoid dividing by 0
+        self._t = targets.data + 1e-7  # to avoid dividing by 0
 
 
 class MSE(Loss):
     """Mean squard error loss function."""
 
-    def __call__(self, outputs: Tensor, targets: Tensor) -> Tensor:
+    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
         """Computes the mean squared error loss.
 
-        ### Parameters:
-            outputs: `Tensor`
-                A model's predictions.
-            targets: `Tensor`
-                Target values.
+        Parameters
+        ----------
+        outputs : Tensor
+            A model's predictions.
+        targets : Tensor
+            Target values.
+
+        Returns
+        -------
+        Tensor
+            Mean squared error loss.
         """
         super().set_vals(outputs, targets)
-        return Tensor(0.5 * np.sum((self._t - self._y)**2))
+        return (0.5 * np.sum((self._t - self._y) ** 2)).item()
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""
@@ -46,17 +67,23 @@ class MSE(Loss):
 class Crossentropy(Loss):
     """Crossentropy loss function."""
 
-    def __call__(self, outputs: Tensor, targets: Tensor) -> Tensor:
+    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
         """Computes the crossentropy loss.
 
-        ### Parameters:
-            outputs: `Tensor`
-                A model's predictions.
-            targets: `Tensor`
-                Target values.
+        Parameters
+        ----------
+        outputs : Tensor
+            A model's predictions.
+        targets : Tensor
+            Target values.
+
+        Returns
+        -------
+        Tensor
+            Crossentropy loss.
         """
         super().set_vals(outputs, targets)
-        return Tensor(-np.mean(np.log(self._y) * self._t).item())
+        return -np.mean(np.log(self._y) * self._t).item()
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""

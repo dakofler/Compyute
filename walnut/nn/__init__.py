@@ -1,4 +1,5 @@
 """numpynn neural network module"""
 
-from walnut.nn import activations, inits, layers, losses, metrics, networks, norms, optimizers, paddings
-from walnut.nn.networks import Sequential
+import walnut.nn.layers as layers
+from walnut.nn import analysis, inits, losses, metrics, models, optimizers, paddings
+from walnut.nn.models import Sequential

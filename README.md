@@ -22,24 +22,26 @@ Models can be built using a variety of layers, including trainable layers such a
 
 ```python
 import walnut.nn as nn
+from walnut.nn import layers, inits
 
-model = nn.Sequential(mdl_layers=[
-    nn.layers.Linear(input_shape=(4,), out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
-    nn.layers.Linear(out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
-    nn.layers.Linear(out_channels=16, act_fn=nn.activations.Tanh(), init_fn=nn.inits.Kaiming),
-    nn.layers.Linear(out_channels=3, act_fn=nn.activations.Softmax(), init_fn=nn.inits.Kaiming)
+model = nn.Sequential(layers=[
+    layers.Linear(input_shape=(4,), out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(out_channels=3, init_fn=inits.kaiming), layers.Softmax()
 ])
 ```
 
 ```python
-model = nn.Sequential(mdl_layers=[
-    nn.layers.Convolution(input_shape=(1, 28, 28), out_channels=8, kernel_shape=(3, 3), act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
-    nn.layers.MaxPooling(p_window=(2, 2)),
-    nn.layers.Convolution(out_channels=16, kernel_shape=(3, 3), act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
-    nn.layers.MaxPooling(p_window=(2, 2)),
-    nn.layers.Flatten(),
-    nn.layers.Linear(out_channels=64, act_fn=nn.activations.Relu(), norm_fn=nn.norms.Layernorm()),
-    nn.layers.Linear(out_channels=10, act_fn=nn.activations.Softmax())
+import walnut.nn as nn
+from walnut.nn import layers
+
+model = nn.Sequential(layers=[
+    layers.Convolution(input_shape=(1, 28, 28), out_channels=16, kernel_shape=(3, 3)), layers.Layernorm(), layers.Relu(),
+    layers.MaxPooling(p_window=(2, 2)),
+    layers.Flatten(),
+    layers.Linear(out_channels=64), layers.Layernorm(), layers.Relu(),
+    layers.Linear(out_channels=10), layers.Softmax()
 ])
 ```
 
@@ -65,14 +67,23 @@ model.compile(
 
 ```python
 hist = model.train(x_train, y_train, epochs=10, batch_size=512, val_data=(x_val, y_val))
-model.plot_training_loss(hist)
 ```
 
 ### Analysis
 
 The framework also provides some functions for analyzing a models' parameters and gradients to gain insights (inspired by Andrej Karpathy :) )
 
+```python
+activations = {f"{i + 1} {l.__class__.__name__}" : l.y.data.copy() for i, l in enumerate(model.layers) if l.__class__.__name__ == "Tanh"}
+nn.analysis.plot_distrbution(activations, title="activation distribution") 
+```
+
 ![image](https://github.com/DKoflerGIT/NumpyNN/assets/74835806/a205f974-40a6-4d7b-9916-060d4ada9cae)
+
+```python
+gradients = {f"{i + 1} {l.__class__.__name__}" : l.y.grad.copy() for i, l in enumerate(model.layers) if l.__class__.__name__ == "Linear"}
+nn.analysis.plot_distrbution(gradients, title="gradient distribution")
+```
 
 ![image](https://github.com/DKoflerGIT/NumpyNN/assets/74835806/8119d55a-fb83-4300-8f9f-5ea1bd8e85d1)
 
