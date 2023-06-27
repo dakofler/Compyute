@@ -1,40 +1,80 @@
 """Parameter initializations module"""
 
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+
 from walnut import tensor
 from walnut.tensor import Tensor
 
 
-def random(shape: tuple[int, ...]) -> Tensor:
-    """Creates a tensor of a given shape following a normal distribution.
-
-    Parameters
-    ----------
-    shape : tuple[int, ...]
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    return tensor.randn(shape)
+KAIMING_GAINS = {
+    "tanh": 5.0 / 3.0,
+    "relu": 2**0.5,
+}
 
 
-def kaiming(shape: tuple[int, ...], **kwargs) -> Tensor:
-    """Creates a tensor of a given shape with values using Kaiming He initialization.
+@dataclass
+class InitParams:
+    """Parameters for initialization."""
 
-    Parameters
-    ----------
-    shape : tuple[int, ...]
-        Shape of the new tensor.
+    fan_mode: int = 1
+    act_fn: str | None = ""
 
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    act_fn = kwargs["act_fn"]
-    fan_mode = kwargs["fan_mode"]
-    gains = {"NoneType": 1, "Sigmoid": 1, "Tanh": 5 / 3, "Relu": 2**0.5, "Softmax": 1}
-    gain = gains.get(act_fn.__class__.__name__, 1)
-    return tensor.randn(shape) * gain / fan_mode**0.5
+
+@dataclass
+class Init(ABC):
+    """Padding base class."""
+
+    params: InitParams
+
+    @abstractmethod
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        ...
+
+
+@dataclass
+class Random(Init):
+    """Creates a tensor of a given shape following a normal distribution."""
+
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        """Creates a tensor of a given shape following a normal distribution.
+
+        Parameters
+        ----------
+        shape : tuple[int, ...]
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        return tensor.randn(shape)
+
+
+@dataclass
+class KaimingHe(Init):
+    """Creates a tensor of a given shape with values using Kaiming He initialization."""
+
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        """Creates a tensor of a given shape with values using Kaiming He initialization.
+
+        Parameters
+        ----------
+        shape : tuple[int, ...]
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        gain = (
+            KAIMING_GAINS.get(self.params.act_fn, 1.0)
+            if self.params.act_fn is not None
+            else 1.0
+        )
+        return tensor.randn(shape) * gain / self.params.fan_mode**0.5
+
+
+INITS = {"random": Random, "kaiming_he": KaimingHe}

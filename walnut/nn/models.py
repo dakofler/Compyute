@@ -3,22 +3,27 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import time
-from typing import Callable
 
 from walnut import tensor
 from walnut.tensor import Tensor
 from walnut.nn.losses import Loss
+from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.layers import activations
+from walnut.nn.layers import normalizations
 from walnut.nn.layers.parameter import Layer, ParamLayer
+
+
+class ModelCompilationError(Exception):
+    """Error with the compiling of the model."""
 
 
 @dataclass()
 class Model(ABC):
     """Neural network model base class."""
 
-    optimizer: Optimizer | None = None
     loss_fn: Loss | None = None
-    metric: Callable[[Tensor, Tensor], float] | None = None
+    metric: Metric | None = None
     compiled: bool = False
     input_shape: tuple[int, ...] | None = None
     output_shape: tuple[int, ...] | None = None
@@ -26,18 +31,14 @@ class Model(ABC):
     def __call__(self, X: Tensor, Y: Tensor | None = None) -> None:
         self.__check_dims(X, Y)
 
-    def compile(
-        self,
-        loss_fn: Loss,
-        metric: Callable[[Tensor, Tensor], float],
-    ) -> None:
+    def compile(self, loss_fn: Loss, metric: Metric) -> None:
         """Compiles the model.
 
         Parameters
         ----------
-        loss_fn : losses.Loss
+        loss_fn : Loss
             Loss function to be used to compute losses and gradients.
-        metric : Callable[[Tensor, Tensor], float]
+        metric : Metric
             Metric to be used to evaluate the model.
         """
         self.loss_fn = loss_fn
@@ -144,14 +145,13 @@ class Sequential(Model):
         -------
         Tensor
             Tensor of predicted values.
-        Tensor
+        float | None
             Loss value, if target values are provided else None.
         """
         super().__call__(X, Y)
         self.layers[0].x.data = X.data.copy()
         self.__forward(mode)
         output = Tensor(self.layers[-1].y.data)
-
         loss = None
         if self.loss_fn is not None and Y is not None:
             loss = self.loss_fn(output, Y)
@@ -161,38 +161,51 @@ class Sequential(Model):
         self,
         optimizer: Optimizer,
         loss_fn: Loss,
-        metric: Callable[[Tensor, Tensor], float],
+        metric: Metric,
     ) -> None:
         """Compiles the model.
 
         Parameters
         ----------
-        optimizer : optimizers.Optimizer
+        optimizer : Optimizer
             Optimizer algorithm to be used to update parameters.
-        loss_fn : losses.Loss
+        loss_fn : Loss
             Loss function to be used to compute losses and gradients.
-        metric : Callable[[Tensor, Tensor], float]
+        metric : Metric
             Metric to be used to evaluate the model.
+
+        Raises
+        ------
+        ModelCompilationError
+            If the model has already been compiled.
         """
+        if self.compiled:
+            raise ModelCompilationError(
+                "Model is already compiled. Initialize new model."
+            )
         super().compile(loss_fn, metric)
-
-        num_layers = len(self.layers) - 1
-
-        # connect layers
         for i, layer in enumerate(self.layers):
-            if 0 < i:
-                layer.prev_layer = self.layers[i - 1]
-            if i < num_layers:
-                layer.next_layer = self.layers[i + 1]
-            layer.compile()
-            layer.forward()
-
-            # set optimizer for parameter layers
+            if i > 0:
+                layer.x.data = self.layers[i - 1].y.data
             if isinstance(layer, ParamLayer):
-                layer.optimizer = optimizer
+                layer.compile(optimizer)
 
+                # Normalization functions
+                if layer.norm_name is not None:
+                    norm = normalizations.NORMALIZATIONS[layer.norm_name]
+                    self.layers.insert(i + 1, norm())
+
+                # Activation functions
+                if layer.act_fn_name is not None:
+                    act_fn = activations.ACTIVATIONS[layer.act_fn_name]
+                    index = 1 if layer.norm_name is None else 2
+                    self.layers.insert(i + index, act_fn())
+            else:
+                layer.compile()
+            layer.forward()
         self.input_shape = self.layers[0].x.shape
         self.output_shape = self.layers[-1].y.shape
+        self.compiled = True
 
     def train(
         self,
@@ -281,35 +294,24 @@ class Sequential(Model):
         score = self.metric(outputs, Y)
         return loss, score
 
-    def summary(self, reduced: bool = False) -> None:
-        """Gives an overview of the model architecture.
-
-        Parameters
-        ----------
-        reduced : bool, optional
-            If True, only parameter layers are shown, by default False.
-
-        Raises
-        ------
-        ValueError
-            If the model has not been compiled yet.
-        """
+    def __repr__(self) -> str:
         if not self.compiled:
-            raise ValueError("Model has not been compiled yet.")
-        print(
+            return "Sequential. Compile model for more information about its layers."
+        string = (
             f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
-            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n'
+            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
         )
         sum_params = 0
         for layer in self.layers:
-            if reduced and not isinstance(layer, ParamLayer):
-                continue
-            print(layer)
+            string += layer.__repr__() + "\n"
             sum_params += layer.get_parameter_count()
-        print(f"\ntotal trainable parameters {sum_params}")
+        string += f"\ntotal trainable parameters {sum_params}"
+        return string
 
     def __forward(self, mode: str = "eval") -> None:
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
+            if i > 0:
+                layer.x.data = self.layers[i - 1].y.data
             layer.forward(mode)
 
     def __backward(self):
@@ -318,5 +320,7 @@ class Sequential(Model):
         self.layers[-1].y.grad = self.loss_fn.backward().data.copy()
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
-        for layer in layers_reversed:
+        for i, layer in enumerate(layers_reversed):
+            if i > 0:
+                layer.y.grad = layers_reversed[i - 1].x.grad
             layer.backward()
