@@ -8,8 +8,18 @@ from walnut.tensor import Tensor
 
 
 @dataclass
+class PaddingParams:
+    """Parameters for padding."""
+
+    width: int = 1
+    axis: tuple[int, ...] = (-1, -2)
+
+
+@dataclass
 class Padding(ABC):
     """Padding base class."""
+
+    params: PaddingParams
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
@@ -50,10 +60,11 @@ class Same(Padding):
         Padded tensor.
     """
 
-    width: int
-
-    def __call__(self, x: Tensor, width: int, axis: tuple[int, ...]) -> Tensor:
-        pad_axis = tuple(
-            (width, width) if ax in axis else (0, 0) for ax in range(x.ndim)
-        )
+    def __call__(self, x: Tensor) -> Tensor:
+        wdt = self.params.width
+        axis = self.params.axis
+        pad_axis = tuple((wdt, wdt) if ax in axis else (0, 0) for ax in range(x.ndim))
         return Tensor(np.pad(x.data, pad_axis))
+
+
+PADDINGS = {"valid": Valid, "same": Same}

@@ -1,15 +1,31 @@
 """Parameter initializations module"""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 from walnut import tensor
 from walnut.tensor import Tensor
 
 
+KAIMING_GAINS = {
+    "tanh": 5.0 / 3.0,
+    "relu": 2**0.5,
+}
+
+
+@dataclass
+class InitParams:
+    """Parameters for initialization."""
+
+    fan_mode: int = 1
+    act_fn: str | None = ""
+
+
 @dataclass
 class Init(ABC):
     """Padding base class."""
+
+    params: InitParams
 
     @abstractmethod
     def __call__(self, shape: tuple[int, ...]) -> Tensor:
@@ -40,20 +56,6 @@ class Random(Init):
 class KaimingHe(Init):
     """Creates a tensor of a given shape with values using Kaiming He initialization."""
 
-    fan_mode: int
-    act_fn: str
-    GAINS: dict[str, float] = field(
-        default_factory=lambda: (
-            {
-                "NoneType": 1.0,
-                "Sigmoid": 1.0,
-                "Tanh": 5.0 / 3.0,
-                "Relu": 2**0.5,
-                "Softmax": 1.0,
-            }
-        )
-    )
-
     def __call__(self, shape: tuple[int, ...]) -> Tensor:
         """Creates a tensor of a given shape with values using Kaiming He initialization.
 
@@ -67,5 +69,12 @@ class KaimingHe(Init):
         Tensor
             Tensor with random values.
         """
-        gain = self.GAINS.get(self.act_fn, 1)
-        return tensor.randn(shape) * gain / self.fan_mode**0.5
+        gain = (
+            KAIMING_GAINS.get(self.params.act_fn, 1.0)
+            if self.params.act_fn is not None
+            else 1.0
+        )
+        return tensor.randn(shape) * gain / self.params.fan_mode**0.5
+
+
+INITS = {"random": Random, "kaiming_he": KaimingHe}

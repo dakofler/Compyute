@@ -2,27 +2,42 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+import math
 import numpy as np
 import numpy.fft as npfft
 
 from walnut import tensor
 from walnut.tensor import Tensor
+from walnut.nn import inits, paddings
 from walnut.nn.inits import Init
 from walnut.nn.paddings import Padding
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.utility import Layer
 
 
-@dataclass()
+@dataclass(repr=False, init=False)
 class ParamLayer(Layer):
     """Trainable layer base class."""
 
-    optimizer: Optimizer | None = None
-    init_fn: Init | None = None
-    use_bias: bool = False
-    w: Tensor = Tensor()
-    b: Tensor = Tensor()
-    parameters: list[Tensor] = field(default_factory=list)
+    def __init__(
+        self,
+        act_fn_name: str | None = None,
+        norm_name: str | None = None,
+        init_fn_name: str = "random",
+        optimizer: Optimizer | None = None,
+        use_bias: bool = True,
+        input_shape: tuple[int, ...] | None = None,
+    ) -> None:
+        super().__init__(input_shape=input_shape)
+        self.act_fn_name = act_fn_name
+        self.norm_name = norm_name
+        self.init_fn_name = init_fn_name
+        self.optimizer = optimizer
+        self.use_bias = use_bias
+
+        self.w: Tensor = Tensor()
+        self.b: Tensor = Tensor()
+        self.parameters: list[Tensor] = field(default_factory=list)
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -36,11 +51,30 @@ class ParamLayer(Layer):
             + f"{b_shape:15s} | {y_shape:15s} | {params:15s}"
         )
 
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        """Connects layers within a model.
+
+        Parameters
+        ----------
+        optimizer : Optimizer | None, optional
+            Optimizer used to update layer parameters when training, by default None.
+        """
+        super().compile()
+        self.optimizer = optimizer
+
     def optimize(self) -> None:
-        """Updates layer parameters using an optimizer object."""
+        """Updates layer parameters using an optimizer object.
+
+        Raises
+        ------
+        AttributeError
+            If no optimizer is defined for the layer.
+        """
         if self.optimizer:
             for parameter in self.parameters:
                 self.optimizer(parameter=parameter)
+        else:
+            raise AttributeError("Optimizer not set.")
 
     def get_parameter_count(self) -> int:
         """Returns the total number of trainable parameters of the layer.
@@ -60,7 +94,9 @@ class Linear(ParamLayer):
     def __init__(
         self,
         out_channels: int,
-        init_fn: Init,
+        act: str | None = None,
+        norm: str | None = None,
+        init: str = "random",
         use_bias: bool = True,
         input_shape: tuple[int, ...] | None = None,
     ) -> None:
@@ -70,48 +106,54 @@ class Linear(ParamLayer):
         ----------
         out_channels : int
             Number of output channels (neurons) of the layer.
-        init_fn : Callable[..., Tensor], optional
-            Weight initialization method, by default inits.kaiming.
+        act : str | None, optional
+            Activation function applied to the layers outputs, by default None.
+        norm : str | None, optional
+            Activation function applied to the layers outputs, by default None.
+        init : str, optional
+            Activation function applied to the layers outputs, by default "kaiming".
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : tuple[int] | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
-            init_fn=init_fn,
+            act_fn_name=act,
+            norm_name=norm,
+            init_fn_name=init,
             use_bias=use_bias,
             input_shape=input_shape,
         )
         self.out_channels = out_channels
+        self.init_fn: Init | None = None
 
-    def compile(self) -> None:
-        super().compile()
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        in_channels = self.x.shape[1]
+
+        # set initializer
+        initializer_params = inits.InitParams(in_channels, self.act_fn_name)
+        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
+
         # init weights (c_in, c_out)
-        _, in_channels = (
-            self.prev_layer.y.shape if self.prev_layer is not None else self.x.shape
-        )
-        w_shape = (in_channels, self.out_channels)
-        if self.init_fn is not None:
-            self.w = self.init_fn(w_shape)
+        self.w = self.init_fn((in_channels, self.out_channels))
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tensor.zeros((self.out_channels,))
-
         self.parameters = [self.w, self.b]
 
     def forward(self, mode: str = "eval") -> None:
-        super().forward()
         bias = self.b if self.use_bias else 0.0
         self.y.data = (self.x @ self.w + bias).data  # (b, c_out)
 
     def backward(self) -> None:
-        super().backward()
         self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
         self.w.grad = self.x.T @ self.y.grad  # weight grads (c_in, c_out)
         if self.use_bias:
             self.b.grad = np.sum(self.y.grad, axis=0)  # bias grads (c_out,)
-        self.optimize()
+        if self.optimizer:
+            self.optimize()
 
 
 @dataclass(init=False, repr=False)
@@ -121,9 +163,11 @@ class Convolution(ParamLayer):
     def __init__(
         self,
         out_channels: int,
-        init_fn: Init,
-        pad_fn: Padding,
         kernel_shape: tuple[int, int] = (3, 3),
+        act: str | None = None,
+        norm: str | None = None,
+        init: str = "random",
+        pad: str = "valid",
         use_bias: bool = True,
         input_shape: tuple[int, ...] | None = None,
     ) -> None:
@@ -135,51 +179,68 @@ class Convolution(ParamLayer):
             Number of output channels (neurons) of the layer.
         kernel_shape : tuple[int, int], optional
             Shape of each kernel, by default (3, 3).
-        init_fn : Callable[..., Tensor], optional
-            Weight initialization method, by default inits.kaiming.
-        pad_fn : Callable[..., Tensor], optional
-            Padding method applied to the input, by default paddings.valid.
+        act : str | None, optional
+            Activation function applied to the layers outputs, by default None.
+        norm : str | None, optional
+            Activation function applied to the layers outputs, by default None.
+        init : str, optional
+            Activation function applied to the layers outputs, by default "kaiming".
+        pad : str, optional
+            Padding method applied to the layer imputs, by default "valid".
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : tuple[int, ...] | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
-            init_fn=init_fn,
+            act_fn_name=act,
+            norm_name=norm,
+            init_fn_name=init,
             use_bias=use_bias,
             input_shape=input_shape,
         )
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
-        self.pad_fn = pad_fn
+        self.init_fn: Init | None = None
+        self.pad_fn_name = pad
+        self.pad_fn: Padding | None = None
 
-    def compile(self) -> None:
-        super().compile()
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        in_channels = self.x.shape[1]
+
+        # set initializer
+        fan_mode = int(in_channels * np.prod(self.kernel_shape))
+        initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
+        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
+
         # init weights (c_out, c_in, y, x)
-        _, in_channels, _, _ = (
-            self.prev_layer.y.shape if self.prev_layer is not None else self.x.shape
-        )
-        w_shape = (self.out_channels, in_channels, *self.kernel_shape)
-        if self.init_fn is not None:
-            self.w = self.init_fn(w_shape)
+        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_shape))
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tensor.zeros((self.out_channels,))
-
         self.parameters = [self.w, self.b]
 
+        # set padding
+        width = math.floor(self.kernel_shape[0] / 2)
+        padding_params = paddings.PaddingParams(width, (2, 3))
+        self.pad_fn = paddings.PADDINGS[self.pad_fn_name](padding_params)
+
     def forward(self, mode: str = "eval") -> None:
-        super().forward()
         # pad to fit pooling window
         x_pad = self.pad_fn(self.x).data
+
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w.data, axis=(2, 3))
+
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
         x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0))
+
         # sum over input channels
         _, _, w_y, w_x = self.w.shape
         self.y.data = np.sum(x_conv_w, axis=2)[:, :, w_y - 1 :, w_x - 1 :]
+
         if self.use_bias:
             # broadcast bias over batches (b, c_out)
             bias = self.b * tensor.ones(shape=(self.x.shape[0], 1))
@@ -187,14 +248,12 @@ class Convolution(ParamLayer):
             self.y.data += tensor.match_dims(x=bias, dims=4).data
 
     def backward(self) -> None:
-        super().backward()
         x_p = self.pad_fn(self.x).data
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.y.shape
 
         # pad grads to fit input after convolution
-        # TODO: Find more elegant solution
-        if self.pad_fn.__class__.__name__ != "Same":
+        if self.pad_fn_name != "same":
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
@@ -218,7 +277,8 @@ class Convolution(ParamLayer):
             # sum over batches, y and x
             self.b.grad = np.sum(self.y.data, axis=(0, 2, 3))
 
-        self.optimize()
+        if self.optimizer:
+            self.optimize()
 
     def __convolve(
         self, x1: np.ndarray, x2: np.ndarray, exp_axis: tuple[int, ...] | None = None

@@ -22,13 +22,13 @@ Models can be built using a variety of layers, including trainable layers such a
 
 ```python
 import walnut.nn as nn
-from walnut.nn import layers, inits
+from walnut.nn import layers
 
 model = nn.Sequential(layers=[
-    layers.Linear(16, input_shape=(4,), init_fn=inits.KaimingHe(fan_mode=4, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(16, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(16, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(3, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Softmax")), layers.Softmax()
+    layers.Linear(16, input_shape=(4,), act="tanh", init="random"),
+    layers.Linear(16, act="tanh", init="random"),
+    layers.Linear(16, act="tanh", init="random"),
+    layers.Linear(3, act="softmax", init="random")
 ])
 ```
 
@@ -37,11 +37,11 @@ import walnut.nn as nn
 from walnut.nn import layers
 
 model = nn.Sequential(layers=[
-    layers.Convolution(input_shape=(1, 28, 28), out_channels=16, kernel_shape=(3, 3)), layers.Layernorm(), layers.Relu(),
+    layers.Convolution(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer", init='kaiming_he'),
     layers.MaxPooling(p_window=(2, 2)),
     layers.Flatten(),
-    layers.Linear(out_channels=64), layers.Layernorm(), layers.Relu(),
-    layers.Linear(out_channels=10), layers.Softmax()
+    layers.Linear(64, act="relu", norm="layer", init='kaiming_he'),
+    layers.Linear(10, act="softmax", init='kaiming_he')
 ])
 ```
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor
+from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.parameter import ParamLayer
 
 
@@ -23,17 +24,14 @@ class Layernorm(ParamLayer):
         input_shape : tuple[int, ...] | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(use_bias=True, input_shape=input_shape)
+        super().__init__(input_shape=input_shape)
         self.eps = eps
         self._var_inv: np.ndarray | None = None
         self._xhat: np.ndarray | None = None
 
-    def compile(self) -> None:
-        super().compile()
-        w_shape = (
-            self.prev_layer.y.shape if self.prev_layer is not None else self.x.shape
-        )
-        self.w = tensor.ones(w_shape[1:])  # gain
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        self.w = tensor.ones(self.x.shape[1:])  # gain
         self.b = tensor.zeros_like(self.w)
         self.parameters = [self.w, self.b]
 
@@ -61,3 +59,8 @@ class Layernorm(ParamLayer):
         temp3 = np.sum(self.y.grad * self._xhat, axis_x, keepdims=True)
         temp4 = n / (n - 1) * self._xhat * temp3
         self.x.grad = self.w.data * self._var_inv / n * (temp1 - temp2 - temp4)
+        if self.optimizer:
+            self.optimize()
+
+
+NORMALIZATIONS = {"layer": Layernorm}
