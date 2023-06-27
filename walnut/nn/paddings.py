@@ -1,12 +1,23 @@
 """Padding functions module"""
 
-import math
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
 import numpy as np
 
 from walnut.tensor import Tensor
 
 
-def valid(x: Tensor, **kwargs) -> Tensor:
+@dataclass
+class Padding(ABC):
+    """Padding base class."""
+
+    @abstractmethod
+    def __call__(self, x: Tensor) -> Tensor:
+        ...
+
+
+@dataclass
+class Valid(Padding):
     """Applies valid padding using zero-values to a tensor.
 
     Parameters
@@ -19,10 +30,13 @@ def valid(x: Tensor, **kwargs) -> Tensor:
     Tensor
         Padded tensor.
     """
-    return x
+
+    def __call__(self, x: Tensor) -> Tensor:
+        return x
 
 
-def same(x: Tensor, **kwargs) -> Tensor:
+@dataclass
+class Same(Padding):
     """Applies same padding using zero-values to a tensor.
 
     Parameters
@@ -35,6 +49,11 @@ def same(x: Tensor, **kwargs) -> Tensor:
     Tensor
         Padded tensor.
     """
-    kernel_shape = kwargs["kernel_shape"]
-    width = math.floor(kernel_shape[0] / 2)
-    return Tensor(np.pad(x.data, ((0, 0), (0, 0), (width, width), (width, width))))
+
+    width: int
+
+    def __call__(self, x: Tensor, width: int, axis: tuple[int, ...]) -> Tensor:
+        pad_axis = tuple(
+            (width, width) if ax in axis else (0, 0) for ax in range(x.ndim)
+        )
+        return Tensor(np.pad(x.data, pad_axis))

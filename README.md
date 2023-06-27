@@ -25,10 +25,10 @@ import walnut.nn as nn
 from walnut.nn import layers, inits
 
 model = nn.Sequential(layers=[
-    layers.Linear(input_shape=(4,), out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(out_channels=16, init_fn=inits.kaiming), layers.Layernorm(), layers.Tanh(),
-    layers.Linear(out_channels=3, init_fn=inits.kaiming), layers.Softmax()
+    layers.Linear(16, input_shape=(4,), init_fn=inits.KaimingHe(fan_mode=4, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(16, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(16, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Tanh")), layers.Layernorm(), layers.Tanh(),
+    layers.Linear(3, init_fn=inits.KaimingHe(fan_mode=16, act_fn="Softmax")), layers.Softmax()
 ])
 ```
 

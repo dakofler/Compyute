@@ -1,40 +1,71 @@
 """Parameter initializations module"""
 
+from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
+
 from walnut import tensor
 from walnut.tensor import Tensor
 
 
-def random(shape: tuple[int, ...]) -> Tensor:
-    """Creates a tensor of a given shape following a normal distribution.
+@dataclass
+class Init(ABC):
+    """Padding base class."""
 
-    Parameters
-    ----------
-    shape : tuple[int, ...]
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    return tensor.randn(shape)
+    @abstractmethod
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        ...
 
 
-def kaiming(shape: tuple[int, ...], **kwargs) -> Tensor:
-    """Creates a tensor of a given shape with values using Kaiming He initialization.
+@dataclass
+class Random(Init):
+    """Creates a tensor of a given shape following a normal distribution."""
 
-    Parameters
-    ----------
-    shape : tuple[int, ...]
-        Shape of the new tensor.
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        """Creates a tensor of a given shape following a normal distribution.
 
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    act_fn = kwargs["act_fn"]
-    fan_mode = kwargs["fan_mode"]
-    gains = {"NoneType": 1, "Sigmoid": 1, "Tanh": 5 / 3, "Relu": 2**0.5, "Softmax": 1}
-    gain = gains.get(act_fn.__class__.__name__, 1)
-    return tensor.randn(shape) * gain / fan_mode**0.5
+        Parameters
+        ----------
+        shape : tuple[int, ...]
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        return tensor.randn(shape)
+
+
+@dataclass
+class KaimingHe(Init):
+    """Creates a tensor of a given shape with values using Kaiming He initialization."""
+
+    fan_mode: int
+    act_fn: str
+    GAINS: dict[str, float] = field(
+        default_factory=lambda: (
+            {
+                "NoneType": 1.0,
+                "Sigmoid": 1.0,
+                "Tanh": 5.0 / 3.0,
+                "Relu": 2**0.5,
+                "Softmax": 1.0,
+            }
+        )
+    )
+
+    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+        """Creates a tensor of a given shape with values using Kaiming He initialization.
+
+        Parameters
+        ----------
+        shape : tuple[int, ...]
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        gain = self.GAINS.get(self.act_fn, 1)
+        return tensor.randn(shape) * gain / self.fan_mode**0.5

@@ -91,21 +91,21 @@ class MaxPooling(Layer):
     def forward(self, mode: str = "eval") -> None:
         super().forward()
         # init output as zeros (b, c, y, k)
-        x_pad = self.__crop()
+        x_crop = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
         self.y.data = tensor.zeros(
-            (x_b, x_c, x_pad.shape[2] // p_y, x_pad.shape[3] // p_x)
+            (x_b, x_c, x_crop.shape[2] // p_y, x_crop.shape[3] // p_x)
         ).data
-        self.p_map = tensor.zeros_like(x_pad).data
+        self.p_map = tensor.zeros_like(x_crop).data
         for y in range(self.y.shape[2]):
             for x in range(self.y.shape[3]):
                 chunk = self.x.data[
                     :, :, y * p_y : (y + 1) * p_y, x * p_x : (x + 1) * p_x
                 ]
                 self.y.data[:, :, y, x] = np.max(chunk, axis=(2, 3))
-        y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_pad.shape)
-        self.p_map = (x_pad.data == y_s) * 1.0
+        y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_crop.shape)
+        self.p_map = (x_crop.data == y_s) * 1.0
 
     def backward(self) -> None:
         super().backward()

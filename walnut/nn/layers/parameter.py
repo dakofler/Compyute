@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Callable
 import numpy as np
 import numpy.fft as npfft
 
 from walnut import tensor
 from walnut.tensor import Tensor
-from walnut.nn import inits, paddings
+from walnut.nn.inits import Init
+from walnut.nn.paddings import Padding
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.utility import Layer
 
@@ -18,7 +18,7 @@ class ParamLayer(Layer):
     """Trainable layer base class."""
 
     optimizer: Optimizer | None = None
-    init_fn: Callable[..., Tensor] = inits.kaiming
+    init_fn: Init | None = None
     use_bias: bool = False
     w: Tensor = Tensor()
     b: Tensor = Tensor()
@@ -60,7 +60,7 @@ class Linear(ParamLayer):
     def __init__(
         self,
         out_channels: int,
-        init_fn: Callable[..., Tensor] = inits.kaiming,
+        init_fn: Init,
         use_bias: bool = True,
         input_shape: tuple[int, ...] | None = None,
     ) -> None:
@@ -91,7 +91,8 @@ class Linear(ParamLayer):
             self.prev_layer.y.shape if self.prev_layer is not None else self.x.shape
         )
         w_shape = (in_channels, self.out_channels)
-        self.w = self.init_fn(w_shape, fan_mode=in_channels, act_fn=None)
+        if self.init_fn is not None:
+            self.w = self.init_fn(w_shape)
 
         # init bias (c_out,)
         if self.use_bias:
@@ -120,9 +121,9 @@ class Convolution(ParamLayer):
     def __init__(
         self,
         out_channels: int,
+        init_fn: Init,
+        pad_fn: Padding,
         kernel_shape: tuple[int, int] = (3, 3),
-        init_fn: Callable[..., Tensor] = inits.kaiming,
-        pad_fn: Callable[..., Tensor] = paddings.valid,
         use_bias: bool = True,
         input_shape: tuple[int, ...] | None = None,
     ) -> None:
@@ -159,8 +160,8 @@ class Convolution(ParamLayer):
             self.prev_layer.y.shape if self.prev_layer is not None else self.x.shape
         )
         w_shape = (self.out_channels, in_channels, *self.kernel_shape)
-        _, c_out, w_y, w_x = w_shape
-        self.w = self.init_fn(w_shape, fan_mode=c_out * w_y * w_x, act_fn=None)
+        if self.init_fn is not None:
+            self.w = self.init_fn(w_shape)
 
         # init bias (c_out,)
         if self.use_bias:
@@ -171,7 +172,7 @@ class Convolution(ParamLayer):
     def forward(self, mode: str = "eval") -> None:
         super().forward()
         # pad to fit pooling window
-        x_pad = self.pad_fn(self.x, kernel_shape=self.kernel_shape).data
+        x_pad = self.pad_fn(self.x).data
         # rotate weights for cross correlation
         w_rotated = np.flip(self.w.data, axis=(2, 3))
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
@@ -187,12 +188,13 @@ class Convolution(ParamLayer):
 
     def backward(self) -> None:
         super().backward()
-        x_p = self.pad_fn(self.x, kernel_shape=self.kernel_shape).data
+        x_p = self.pad_fn(self.x).data
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.y.shape
 
         # pad grads to fit input after convolution
-        if self.pad_fn.__name__ != paddings.same.__name__:
+        # TODO: Find more elegant solution
+        if self.pad_fn.__class__.__name__ != "Same":
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
