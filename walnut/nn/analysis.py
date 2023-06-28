@@ -1,9 +1,9 @@
 """Model analysis module"""
 
-from typing import Any
 import numpy as np
-import numpy.typing as npt
 import matplotlib.pyplot as plt
+
+from walnut.tensor import NumpyArray
 
 
 def plot_curve(values: list[float]) -> None:
@@ -21,13 +21,13 @@ def plot_curve(values: list[float]) -> None:
 
 
 def plot_distrbution(
-    data: dict[str, npt.NDArray[Any]], title: str = "distribution", bins: int = 100
+    data: dict[str, NumpyArray], title: str = "distribution", bins: int = 100
 ) -> None:
     """Plots a line histogram.
 
     Parameters
     ----------
-    data : dict[str, npt.NDArray[Any]]
+    data : dict[str, NumpyArray]
         Dictionary of labels and arrays.
     bins : int, optional
         Number of bins used in the histogram, by default 100.
@@ -47,12 +47,12 @@ def plot_distrbution(
         plt.title(title)
 
 
-def plot_images(data: dict[str, npt.NDArray[Any]]) -> None:
+def plot_images(data: dict[str, NumpyArray]) -> None:
     """Plots array values as images.
 
     Parameters
     ----------
-    data : dict[str, npt.NDArray[Any]]
+    data : dict[str, NumpyArray]
         Dictionary of array names and values.
     """
     for label in data:

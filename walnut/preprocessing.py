@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, ShapeLike
 
 
 def split_train_val_test(
@@ -94,7 +94,7 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
 
 def normalize(
     x: Tensor,
-    axis: int | tuple[int, ...] | None = None,
+    axis: ShapeLike | None = None,
     l_bound: int = -1,
     u_bound: int = 1,
 ) -> Tensor:
@@ -104,7 +104,7 @@ def normalize(
     ----------
     x : Tensor
         Tensor to be normalized.
-    axis : int | tuple[int, ...] | None, optional
+    axis : ShapeLike | None, optional
         Axes over which normalization is applied, by default None.
         If None, the flattended tensor is normalized.
     l_bound : int, optional

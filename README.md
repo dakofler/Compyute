@@ -1,6 +1,9 @@
 # Walnut
 
-This is a framework for working with tensors and building, training and analyzing neural networks created using NumPy only. Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd. Gradients are computed within a network's layer.
+This is a framework for working with tensors and building, training and analyzing neural networks created using NumPy only. I have provided some examples that explain how to use the framework.
+
+## Overview
+Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd. Gradients are computed within a network's layer.
 
 ```Python
 import walnut
@@ -37,11 +40,11 @@ import walnut.nn as nn
 from walnut.nn import layers
 
 model = nn.Sequential(layers=[
-    layers.Convolution(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer", init='kaiming_he'),
+    layers.Convolution(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer"),
     layers.MaxPooling(p_window=(2, 2)),
     layers.Flatten(),
-    layers.Linear(64, act="relu", norm="layer", init='kaiming_he'),
-    layers.Linear(10, act="softmax", init='kaiming_he')
+    layers.Linear(64, act="relu", norm="layer"),
+    layers.Linear(10, act="softmax")
 ])
 ```
 
@@ -53,7 +56,7 @@ The model can be trained using common algorithms, such as SGD or Adam.
 model.compile(
     optimizer=nn.optimizers.SGD(l_r=1e-2, momentum=0.9, nesterov=True),
     loss_fn=nn.losses.Crossentropy(),
-    metric=nn.metrics.accuracy
+    metric=nn.metrics.Accuracy()
 )
 ```
 
@@ -61,7 +64,7 @@ model.compile(
 model.compile(
     optimizer=nn.optimizers.Adam(l_r=1e-3),
     loss_fn=nn.losses.Crossentropy(),
-    metric=nn.metrics.accuracy
+    metric=nn.metrics.Accuracy()
 )
 ```
 
@@ -90,8 +93,18 @@ nn.analysis.plot_distrbution(gradients, title="gradient distribution")
 
 ### Experimenting
 
-All layers can also be used individually without a model and their parameters can be inspected.
+All layers can also be used individually without a model and their parameters can be inspected. As an example, here is a forward and backward pass for a convolutional layer:
 ```python
+import walnut
+
+X = walnut.randint(0, 10, (1, 1, 5, 5))
+W = walnut.randn((1, 1, 3, 3))
+B = walnut.zeros((1,))
+```
+
+```python
+import walnut.nn as nn
+
 conv = nn.layers.Convolution(out_channels=2)
 
 conv.x = X
@@ -99,11 +112,14 @@ conv.w = W
 conv.b = B
 
 conv.forward()
+conv.y
+```
+
+```python
+conv.y.grad = walnut.randn(conv.y.shape).data
 conv.backward()
 
 conv.x.grad
-conv.w.grad
-conv.b.grad
 ```
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.

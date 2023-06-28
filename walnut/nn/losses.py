@@ -2,19 +2,17 @@
 
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any
 import numpy as np
-import numpy.typing as npt
 
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, NumpyArray
 
 
 @dataclass()
 class Loss(ABC):
     """Loss base class."""
 
-    _y: npt.NDArray[Any] = np.empty(0, dtype="float32")
-    _t: npt.NDArray[Any] = np.empty(0, dtype="float32")
+    _y: NumpyArray = np.empty(0, dtype="float32")
+    _t: NumpyArray = np.empty(0, dtype="float32")
 
     @abstractmethod
     def __call__(self, outputs: Tensor, targets: Tensor) -> float:

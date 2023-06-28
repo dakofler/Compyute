@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 from walnut import tensor
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, ShapeLike
 
 
 KAIMING_GAINS = {
@@ -28,20 +28,20 @@ class Init(ABC):
     params: InitParams
 
     @abstractmethod
-    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+    def __call__(self, shape: ShapeLike) -> Tensor:
         ...
 
 
 @dataclass
-class Random(Init):
+class Normal(Init):
     """Creates a tensor of a given shape following a normal distribution."""
 
-    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+    def __call__(self, shape: ShapeLike) -> Tensor:
         """Creates a tensor of a given shape following a normal distribution.
 
         Parameters
         ----------
-        shape : tuple[int, ...]
+        shape : ShapeLike
             Shape of the new tensor.
 
         Returns
@@ -56,12 +56,12 @@ class Random(Init):
 class KaimingHe(Init):
     """Creates a tensor of a given shape with values using Kaiming He initialization."""
 
-    def __call__(self, shape: tuple[int, ...]) -> Tensor:
+    def __call__(self, shape: ShapeLike) -> Tensor:
         """Creates a tensor of a given shape with values using Kaiming He initialization.
 
         Parameters
         ----------
-        shape : tuple[int, ...]
+        shape : ShapeLike
             Shape of the new tensor.
 
         Returns
@@ -77,4 +77,4 @@ class KaimingHe(Init):
         return tensor.randn(shape) * gain / self.params.fan_mode**0.5
 
 
-INITS = {"random": Random, "kaiming_he": KaimingHe}
+INITS = {"normal": Normal, "kaiming_he": KaimingHe}

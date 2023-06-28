@@ -1,9 +1,8 @@
 """Activation layers module"""
 
-from typing import Any
 import numpy as np
-import numpy.typing as npt
 
+from walnut.tensor import NumpyArray
 from walnut.nn.layers.utility import Layer
 
 
@@ -27,7 +26,7 @@ class Sigmoid(Layer):
         sigm = self.__sigmoid(self.y.data)
         self.x.grad = sigm * (1.0 - sigm) * self.y.grad
 
-    def __sigmoid(self, x: npt.NDArray[Any]):
+    def __sigmoid(self, x: NumpyArray):
         x = np.clip(x, -100, 100)  # clip to avoid high values when exponentiating
         return 1.0 / (1.0 + np.exp(-x))
 
@@ -56,7 +55,7 @@ class Softmax(Layer):
         x2 = np.einsum("ij,jk->ijk", self.y.data, np.eye(channels, channels))
         self.x.grad = np.einsum("ijk,ik->ij", x2 - x1, self.y.grad)
 
-    def __softmax(self, x: npt.NDArray[Any]) -> npt.NDArray[Any]:
+    def __softmax(self, x: NumpyArray) -> NumpyArray:
         expo = np.exp(x - np.amax(x, axis=1, keepdims=True))
         return expo / np.sum(expo, axis=1, keepdims=True)
 
