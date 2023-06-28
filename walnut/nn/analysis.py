@@ -6,18 +6,23 @@ import matplotlib.pyplot as plt
 from walnut.tensor import NumpyArray
 
 
-def plot_curve(values: list[float]) -> None:
-    """Plots a line graph based on a list of values.
+def plot_curve(traces: dict[str, list[float]]) -> None:
+    """Plots one or multiple line graphs.
 
     Parameters
     ----------
-    values : list[float]
-        List of values.
+    traces : dict[list[float]]
+        Dictionary of labels and value lists to plot.
     """
     plt.figure(figsize=(20, 4))
-    plt.plot(np.arange(len(values)), values)
+    legends = []
+    for label in traces:
+        values = traces[label]
+        plt.plot(np.arange(1, len(values) + 1), values)
+        legends.append(f"{label:s}")
     plt.xlabel("epoch")
     plt.ylabel("loss")
+    plt.legend(legends)
 
 
 def plot_distrbution(

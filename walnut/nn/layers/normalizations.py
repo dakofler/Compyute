@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.parameter import ParamLayer
 
@@ -31,8 +31,8 @@ class Layernorm(ParamLayer):
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        self.w = tensor.ones(self.x.shape[1:])  # gain
-        self.b = tensor.zeros_like(self.w)
+        self.w = tu.ones(self.x.shape[1:])  # gain
+        self.b = tu.zeros_like(self.w)
         self.parameters = [self.w, self.b]
 
     def forward(self, mode: str = "eval") -> None:

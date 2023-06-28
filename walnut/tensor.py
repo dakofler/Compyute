@@ -3,20 +3,26 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
-import pandas as pd
 import numpy as np
 import numpy.typing as npt
 
 
 ShapeLike = tuple[int, ...]
 NumpyArray = npt.NDArray[Any]
+numpyFloat = np.float32 | np.float64
+
+
+class ShapeError(Exception):
+    """Incompatible tensor shapes."""
 
 
 @dataclass(init=False, repr=False)
 class Tensor:
     """Tensor object."""
 
-    def __init__(self, data: NumpyArray | list[Any] | float | int | None = None):
+    def __init__(
+        self, data: NumpyArray | list[Any] | float | int | np.float32 | None = None
+    ):
         """Tensor object.
 
         Parameters
@@ -39,12 +45,12 @@ class Tensor:
         return self._data
 
     @data.setter
-    def data(self, other: NumpyArray | list[Any] | float | int | None):
+    def data(self, other: NumpyArray | list[Any] | float | int | np.float32 | None):
         if other is None:
             return
         if isinstance(other, np.ndarray):
             self._data = other.astype("float32")
-        elif isinstance(other, (list, float, int)):
+        elif isinstance(other, (list, float, int, np.ndarray, numpyFloat)):
             self._data = np.array(other).astype("float32")
         else:
             raise ValueError("data must be NumpyArray, list, int or float")
@@ -54,6 +60,8 @@ class Tensor:
         self.len = len(self._data) if self._data.ndim > 0 else 0
         self.T = self._data.T
 
+    # function overloading
+
     def __repr__(self) -> str:
         return self._data.__repr__().replace("array", "tnsor")
 
@@ -62,6 +70,105 @@ class Tensor:
 
     def __getitem__(self, item) -> Tensor:
         return Tensor(self.data[item])
+
+    def __add__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data + other.data)
+
+    def __mul__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data * other.data)
+
+    def __sub__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data - other.data)
+
+    def __truediv__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data / other.data)
+
+    def __floordiv__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data // other.data)
+
+    def __pow__(self, other: int) -> Tensor:
+        return Tensor(self._data**other)
+
+    def __mod__(self, other: int) -> Tensor:
+        return Tensor(self._data % other)
+
+    def __matmul__(self, other: Tensor) -> Tensor:
+        return Tensor(self._data @ other.data)
+
+    def __lt__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data < other.data)
+
+    def __gt__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data > other.data)
+
+    def __le__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data <= other.data)
+
+    def __ge__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data >= other.data)
+
+    def __eq__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data == other.data)
+
+    def __ne__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self._data != other.data)
+
+    def __isub__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data += other.data
+        return Tensor(self._data)
+
+    def __iadd__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data += other.data
+        return Tensor(self._data)
+
+    def __imul__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data *= other.data
+        return Tensor(self._data)
+
+    def __idiv__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data /= other.data
+        return Tensor(self._data)
+
+    def __ifloordiv__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data //= other.data
+        return Tensor(self._data)
+
+    def __imod__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data %= other.data
+        return Tensor(self._data)
+
+    def __ipow__(self, other: Tensor | float | int) -> Tensor:
+        other = self.__tensorify(other)
+        self._data **= other.data
+        return Tensor(self._data)
+
+    def __neg__(self) -> Tensor:
+        self._data = -1.0 * self._data
+        return Tensor(self._data)
+
+    def __tensorify(self, other: Tensor | float | int) -> Tensor:
+        if not isinstance(other, Tensor):
+            return Tensor(other)
+        return other
+
+    # functions
 
     def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
@@ -262,292 +369,3 @@ class Tensor:
         """
         paddings = tuple((w, w) for w in widths)
         return Tensor(np.pad(self._data, paddings))
-
-    def __add__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data + other.data)
-
-    def __mul__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data * other.data)
-
-    def __sub__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data - other.data)
-
-    def __truediv__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data / other.data)
-
-    def __floordiv__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data // other.data)
-
-    def __pow__(self, other: int) -> Tensor:
-        return Tensor(self._data**other)
-
-    def __mod__(self, other: int) -> Tensor:
-        return Tensor(self._data % other)
-
-    def __matmul__(self, other: Tensor) -> Tensor:
-        return Tensor(self._data @ other.data)
-
-    def __lt__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data < other.data)
-
-    def __gt__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data > other.data)
-
-    def __le__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data <= other.data)
-
-    def __ge__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data >= other.data)
-
-    def __eq__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data == other.data)
-
-    def __ne__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self._data != other.data)
-
-    def __isub__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data += other.data
-        return Tensor(self._data)
-
-    def __iadd__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data += other.data
-        return Tensor(self._data)
-
-    def __imul__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data *= other.data
-        return Tensor(self._data)
-
-    def __idiv__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data /= other.data
-        return Tensor(self._data)
-
-    def __ifloordiv__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data //= other.data
-        return Tensor(self._data)
-
-    def __imod__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data %= other.data
-        return Tensor(self._data)
-
-    def __ipow__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        self._data **= other.data
-        return Tensor(self._data)
-
-    def __neg__(self) -> Tensor:
-        self._data = -1.0 * self._data
-        return Tensor(self._data)
-
-    def __tensorify(self, other: Tensor | float | int) -> Tensor:
-        if not isinstance(other, Tensor):
-            return Tensor(other)
-        return other
-
-
-def pd_to_tensor(df: pd.DataFrame) -> Tensor:
-    """Converts a Pandas DataFrame into a Tensor.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Pandas DataFrame object to convert.
-
-    Returns
-    -------
-    Tensor
-        Tensor object.
-    """
-    return Tensor(df.to_numpy())
-
-
-def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
-    """Extends the dimensions of a tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor whose dimensions are to be extended.
-    axis : AxisLike]
-        Where to insert the new dimension.
-
-    Returns
-    -------
-    Tensor
-        Tensor with extended dimensions.
-    """
-    return Tensor(np.expand_dims(x.data, axis=axis))
-
-
-def match_dims(x: Tensor, dims: int) -> Tensor:
-    """Extends the dimensions of a tensor to fit a given number of dims.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be extended.
-    dims : int
-        Number of dimensions needed.
-
-    Returns
-    -------
-    Tensor
-        Tensor with extended dimensions.
-    """
-    while x.ndim < dims:
-        x = expand_dims(x, axis=(-1,))
-
-    return x
-
-
-def zeros(shape: ShapeLike) -> Tensor:
-    """Creates a tensor of a given shape with all values being zero.
-
-    Parameters
-    ----------
-    ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with all values being zero.
-    """
-    return Tensor(np.zeros(shape))
-
-
-def ones(shape: ShapeLike) -> Tensor:
-    """Creates a tensor of a given shape with all values being one.
-
-    Parameters
-    ----------
-    ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with all values being one.
-    """
-    return Tensor(np.ones(shape))
-
-
-def zeros_like(x: Tensor) -> Tensor:
-    """Creates a tensor based on the shape of a given other tensor with all values being zero.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor whose shape is used.
-
-    Returns
-    -------
-    Tensor
-        Tensor with all values being zero.
-    """
-    return Tensor(np.zeros_like(x.data))
-
-
-def ones_like(x: Tensor) -> Tensor:
-    """Creates a tensor based on the shape of a given other tensor with all values being one.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor whose shape is used.
-
-    Returns
-    -------
-    Tensor
-        Tensor with all values being one.
-    """
-    return Tensor(np.ones_like(x.data))
-
-
-def randn(shape: ShapeLike) -> Tensor:
-    """Creates a tensor of a given shape with random values following a normal distribution.
-
-    Parameters
-    ----------
-    ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    return Tensor(np.random.randn(*shape))
-
-
-def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
-    """Creates a tensor of a given shape with random integer values.
-
-    Parameters
-    ----------
-    lower_bound : int
-        Lower bound for random values.
-    upper_bound : int
-        Upper bound for random values.
-    ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    return Tensor(np.random.randint(lower_bound, upper_bound, shape))
-
-
-def shuffle(
-    x1: Tensor, x2: Tensor, batch_size: int | None = None
-) -> tuple[Tensor, Tensor]:
-    """Shuffles two tensors equally along axis 0.
-
-    Parameters
-    ----------
-    x1 : Tensor
-        First tensor to be shuffled.
-    x2 : Tensor
-        Second tensor to be shuffled.
-    batch_size : int | None, optional
-        Number of samples to be returned, by default None.
-        If None, all samples are returned.
-
-    Returns
-    -------
-    tuple[Tensor, Tensor]
-        Shuffled tensors.
-
-    Raises
-    ------
-    ValueError
-        If tensors are not of equal size along a axis 0
-    """
-    if x1.len != x2.len:
-        raise ValueError("Tensors must have equal lengths along axis 0")
-
-    length = x1.len
-    shuffle_index = np.arange(length)
-    batch_size = batch_size if batch_size else length
-    np.random.shuffle(shuffle_index)
-    y1 = x1[shuffle_index]
-    y2 = x2[shuffle_index]
-    return y1[:batch_size], y2[:batch_size]
