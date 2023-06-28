@@ -8,34 +8,38 @@ import numpy as np
 import numpy.typing as npt
 
 
+ShapeLike = tuple[int, ...]
+NumpyArray = npt.NDArray[Any]
+
+
 @dataclass(init=False, repr=False)
 class Tensor:
     """Tensor object."""
 
-    def __init__(self, data: npt.NDArray[Any] | list[Any] | float | int | None = None):
+    def __init__(self, data: NumpyArray | list[Any] | float | int | None = None):
         """Tensor object.
 
         Parameters
         ----------
-        data : npt.NDArray[Any] | list[Any] | float | int | None, optional
+        data : NumpyArray | list[Any] | float | int | None, optional
             Data to initialize the tensor, by default None.
         """
-        self._data: npt.NDArray[Any] = np.empty(0, dtype="float32")
+        self._data: NumpyArray = np.empty(0, dtype="float32")
         self.data = data
-        self.grad: npt.NDArray[Any] = np.empty(0, dtype="float32")
-        self.params: dict[str, npt.NDArray[Any]] = {}
-        self.shape: tuple[int, ...] = self._data.shape
+        self.grad: NumpyArray = np.empty(0, dtype="float32")
+        self.params: dict[str, NumpyArray] = {}
+        self.shape: ShapeLike = self._data.shape
         self.ndim: int = self._data.ndim
         self.len: int = len(self._data) if self._data.ndim > 0 else 0
-        self.T: npt.NDArray[Any] = self._data.T
+        self.T: NumpyArray = self._data.T
 
     @property
-    def data(self) -> npt.NDArray[Any]:
+    def data(self) -> NumpyArray:
         """Tensor data."""
         return self._data
 
     @data.setter
-    def data(self, other: npt.NDArray[Any] | list[Any] | float | int | None):
+    def data(self, other: NumpyArray | list[Any] | float | int | None):
         if other is None:
             return
         if isinstance(other, np.ndarray):
@@ -43,7 +47,7 @@ class Tensor:
         elif isinstance(other, (list, float, int)):
             self._data = np.array(other).astype("float32")
         else:
-            raise ValueError("data must be npt.NDArray[Any], list, int or float")
+            raise ValueError("data must be NumpyArray, list, int or float")
 
         self.shape = self._data.shape
         self.ndim = self._data.ndim
@@ -53,20 +57,18 @@ class Tensor:
     def __repr__(self) -> str:
         return self._data.__repr__().replace("array", "tnsor")
 
-    def __call__(self) -> npt.NDArray[Any]:
+    def __call__(self) -> NumpyArray:
         return self.data
 
     def __getitem__(self, item) -> Tensor:
         return Tensor(self.data[item])
 
-    def sum(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the sum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -80,14 +82,12 @@ class Tensor:
         """
         return Tensor(np.sum(self._data, axis=axis, keepdims=keepdims))
 
-    def mean(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def mean(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the mean is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -101,14 +101,12 @@ class Tensor:
         """
         return Tensor(np.mean(self._data, axis=axis, keepdims=keepdims))
 
-    def var(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def var(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Variance of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the variance is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -122,14 +120,12 @@ class Tensor:
         """
         return Tensor(np.var(self._data, axis=axis, ddof=1, keepdims=keepdims))
 
-    def std(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def std(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the standard deviation is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -143,14 +139,12 @@ class Tensor:
         """
         return Tensor(np.std(self._data, axis=axis, keepdims=keepdims))
 
-    def min(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def min(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the minimum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -164,14 +158,12 @@ class Tensor:
         """
         return Tensor(self._data.min(axis=axis, keepdims=keepdims))
 
-    def max(
-        self, axis: int | tuple[int] | None = None, keepdims: bool = False
-    ) -> Tensor:
+    def max(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : int | tuple[int] | None, optional
+        axis : ShapeLike | None, optional
             Axis over which the maximum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -240,12 +232,12 @@ class Tensor:
         """
         return self._data.item(args)
 
-    def reshape(self, shape: tuple[int, ...]) -> Tensor:
+    def reshape(self, shape: ShapeLike) -> Tensor:
         """Returns a reshaped tensor of data to fit a given shape.
 
         Parameters
         ----------
-        shape : tuple[int, ...]
+        ShapeLike
             Shape of the new tensor.
 
         Returns
@@ -385,14 +377,14 @@ def pd_to_tensor(df: pd.DataFrame) -> Tensor:
     return Tensor(df.to_numpy())
 
 
-def expand_dims(x: Tensor, axis: int | tuple[int, ...]) -> Tensor:
+def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
     """Extends the dimensions of a tensor.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose dimensions are to be extended.
-    axis : int | tuple[int, ...]
+    axis : AxisLike]
         Where to insert the new dimension.
 
     Returns
@@ -419,17 +411,17 @@ def match_dims(x: Tensor, dims: int) -> Tensor:
         Tensor with extended dimensions.
     """
     while x.ndim < dims:
-        x = expand_dims(x, axis=-1)
+        x = expand_dims(x, axis=(-1,))
 
     return x
 
 
-def zeros(shape: tuple[int, ...]) -> Tensor:
+def zeros(shape: ShapeLike) -> Tensor:
     """Creates a tensor of a given shape with all values being zero.
 
     Parameters
     ----------
-    shape : tuple[int, ...]
+    ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -440,12 +432,12 @@ def zeros(shape: tuple[int, ...]) -> Tensor:
     return Tensor(np.zeros(shape))
 
 
-def ones(shape: tuple[int, ...]) -> Tensor:
+def ones(shape: ShapeLike) -> Tensor:
     """Creates a tensor of a given shape with all values being one.
 
     Parameters
     ----------
-    shape : tuple[int, ...]
+    ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -488,12 +480,12 @@ def ones_like(x: Tensor) -> Tensor:
     return Tensor(np.ones_like(x.data))
 
 
-def randn(shape: tuple[int, ...]) -> Tensor:
+def randn(shape: ShapeLike) -> Tensor:
     """Creates a tensor of a given shape with random values following a normal distribution.
 
     Parameters
     ----------
-    shape : tuple[int, ...]
+    ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -504,7 +496,7 @@ def randn(shape: tuple[int, ...]) -> Tensor:
     return Tensor(np.random.randn(*shape))
 
 
-def randint(lower_bound: int, upper_bound: int, shape: tuple[int, ...]) -> Tensor:
+def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
     """Creates a tensor of a given shape with random integer values.
 
     Parameters
@@ -513,7 +505,7 @@ def randint(lower_bound: int, upper_bound: int, shape: tuple[int, ...]) -> Tenso
         Lower bound for random values.
     upper_bound : int
         Upper bound for random values.
-    shape : tuple[int, ...]
+    ShapeLike
         Shape of the new tensor.
 
     Returns

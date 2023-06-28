@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import time
 
 from walnut import tensor
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, ShapeLike
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
@@ -25,8 +25,8 @@ class Model(ABC):
     loss_fn: Loss | None = None
     metric: Metric | None = None
     compiled: bool = False
-    input_shape: tuple[int, ...] | None = None
-    output_shape: tuple[int, ...] | None = None
+    input_shape: ShapeLike | None = None
+    output_shape: ShapeLike | None = None
 
     def __call__(self, X: Tensor, Y: Tensor | None = None) -> None:
         self.__check_dims(X, Y)
@@ -58,12 +58,16 @@ class Model(ABC):
         """Trains the model."""
 
     @abstractmethod
-    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
-        """Evaluates the model."""
+    def forward(self):
+        """Performs a forward pass."""
 
     @abstractmethod
-    def predict(self, X: Tensor) -> Tensor:
-        """Makes a prediction."""
+    def backward(self):
+        """Performs a backward pass."""
+
+    @abstractmethod
+    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
+        """Evaluates the model."""
 
     def log(
         self,
@@ -129,33 +133,25 @@ class Sequential(Model):
         super().__init__()
         self.layers = layers
 
-    def __call__(
-        self, X: Tensor, Y: Tensor | None = None, mode: str = "eval"
-    ) -> tuple[Tensor, float | None]:
-        """Computes a prediction and loss.
+    def __call__(self, X: Tensor, mode: str = "eval") -> Tensor:
+        """Computes a prediction.
 
         Parameters
         ----------
         X : Tensor
             Tensor of input values (features).
-        Y : Tensor | None, optional
-            Tensor of target values, by default None.
+        mode : str, optional
+            Defines the model mode used for the pass.
 
         Returns
         -------
         Tensor
             Tensor of predicted values.
-        float | None
-            Loss value, if target values are provided else None.
         """
-        super().__call__(X, Y)
+        super().__call__(X)
         self.layers[0].x.data = X.data.copy()
-        self.__forward(mode)
-        output = Tensor(self.layers[-1].y.data)
-        loss = None
-        if self.loss_fn is not None and Y is not None:
-            loss = self.loss_fn(output, Y)
-        return output, loss
+        self.forward(mode)
+        return Tensor(self.layers[-1].y.data)
 
     def compile(
         self,
@@ -238,21 +234,39 @@ class Sequential(Model):
         -------
         list[float]
             List of loss values for each epoch.
+
+        Raises
+        -------
+        ModelCompilationError
+            If the model has not been compiled yet.
         """
+        if not self.compiled:
+            raise ModelCompilationError("Model not compiled yet.")
         history = []
         val_loss = None
+        if self.loss_fn is None:
+            return history
 
         for epoch in range(1, epochs + 1):
             start = time.time()
             x_train, y_train = tensor.shuffle(X, Y, batch_size)
 
-            # training
-            _, loss = self(x_train, y_train, mode="train")
-            self.__backward()
+            # forward pass
+            prediction = self(x_train, mode="train")
+
+            # compute loss
+            loss = self.loss_fn(prediction, y_train)
+
+            # backward pass
+            loss_grad = self.loss_fn.backward().data.copy()
+            self.layers[-1].y.grad = loss_grad
+            self.backward()
 
             # validation
             if val_data is not None:
-                _, val_loss = self(*val_data)
+                x_val, y_val = val_data
+                val_predictions = self(x_val)
+                val_loss = self.loss_fn(val_predictions, y_val)
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
@@ -262,23 +276,7 @@ class Sequential(Model):
 
         return history
 
-    def predict(self, X: Tensor) -> Tensor:
-        """Applies the input to the model and returns it's predictions.
-
-        Parameters
-        ----------
-        X : Tensor
-            Tensor of input features.
-
-        Returns
-        -------
-        Tensor
-            Tensor of predicted values.
-        """
-        pred, _ = self(X)
-        return pred
-
-    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
+    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -287,11 +285,24 @@ class Sequential(Model):
             Tensor of input values (features).
         Y : Tensor
             Tensor of target values.
+
+        Returns
+        ----------
+        float
+            Loss value.
+        float
+            Metric score.
+
+        Raises
+        ----------
+        ModelCompilationError
+            If the model has not been compiled yet.
         """
-        if self.metric is None:
-            return None, None
-        outputs, loss = self(X, Y)
-        score = self.metric(outputs, Y)
+        if self.metric is None or self.loss_fn is None:
+            raise ModelCompilationError("Model not compiled yet.")
+        predictions = self(X)
+        loss = self.loss_fn(predictions, Y)
+        score = self.metric(predictions, Y)
         return loss, score
 
     def __repr__(self) -> str:
@@ -308,16 +319,13 @@ class Sequential(Model):
         string += f"\ntotal trainable parameters {sum_params}"
         return string
 
-    def __forward(self, mode: str = "eval") -> None:
+    def forward(self, mode: str = "eval") -> None:
         for i, layer in enumerate(self.layers):
             if i > 0:
                 layer.x.data = self.layers[i - 1].y.data
             layer.forward(mode)
 
-    def __backward(self):
-        if self.loss_fn is None:
-            return
-        self.layers[-1].y.grad = self.loss_fn.backward().data.copy()
+    def backward(self):
         layers_reversed = self.layers.copy()
         layers_reversed.reverse()
         for i, layer in enumerate(layers_reversed):

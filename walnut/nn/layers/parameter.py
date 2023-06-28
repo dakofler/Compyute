@@ -7,10 +7,9 @@ import numpy as np
 import numpy.fft as npfft
 
 from walnut import tensor
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, ShapeLike
 from walnut.nn import inits, paddings
 from walnut.nn.inits import Init
-from walnut.nn.paddings import Padding
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.utility import Layer
 
@@ -26,7 +25,7 @@ class ParamLayer(Layer):
         init_fn_name: str = "random",
         optimizer: Optimizer | None = None,
         use_bias: bool = True,
-        input_shape: tuple[int, ...] | None = None,
+        input_shape: ShapeLike | None = None,
     ) -> None:
         super().__init__(input_shape=input_shape)
         self.act_fn_name = act_fn_name
@@ -96,9 +95,9 @@ class Linear(ParamLayer):
         out_channels: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "random",
+        init: str = "kaiming_he",
         use_bias: bool = True,
-        input_shape: tuple[int, ...] | None = None,
+        input_shape: ShapeLike | None = None,
     ) -> None:
         """Fully connected layer.
 
@@ -109,12 +108,12 @@ class Linear(ParamLayer):
         act : str | None, optional
             Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
-            Activation function applied to the layers outputs, by default None.
+            Normalization function applied to the layers outputs, by default None.
         init : str, optional
-            Activation function applied to the layers outputs, by default "kaiming".
+            Initialization function for weights, by default "kaiming_he".
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        input_shape : tuple[int] | None, optional
+        input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
@@ -166,10 +165,10 @@ class Convolution(ParamLayer):
         kernel_shape: tuple[int, int] = (3, 3),
         act: str | None = None,
         norm: str | None = None,
-        init: str = "random",
+        init: str = "kaiming_he",
         pad: str = "valid",
         use_bias: bool = True,
-        input_shape: tuple[int, ...] | None = None,
+        input_shape: ShapeLike | None = None,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
 
@@ -177,19 +176,19 @@ class Convolution(ParamLayer):
         ----------
         out_channels : int
             Number of output channels (neurons) of the layer.
-        kernel_shape : tuple[int, int], optional
+        kernel_shape : ShapeLike, optional
             Shape of each kernel, by default (3, 3).
         act : str | None, optional
             Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
-            Activation function applied to the layers outputs, by default None.
+            Normalization function applied to the layers outputs, by default None.
         init : str, optional
-            Activation function applied to the layers outputs, by default "kaiming".
+            Initialization function for weights, by default "kaiming_he".
         pad : str, optional
             Padding method applied to the layer imputs, by default "valid".
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        input_shape : tuple[int, ...] | None, optional
+        input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
@@ -203,7 +202,11 @@ class Convolution(ParamLayer):
         self.kernel_shape = kernel_shape
         self.init_fn: Init | None = None
         self.pad_fn_name = pad
-        self.pad_fn: Padding | None = None
+
+        # set padding
+        width = math.floor(self.kernel_shape[0] / 2)
+        padding_params = paddings.PaddingParams(width, (2, 3))
+        self.pad_fn = paddings.PADDINGS[self.pad_fn_name](padding_params)
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
@@ -221,11 +224,6 @@ class Convolution(ParamLayer):
         if self.use_bias:
             self.b = tensor.zeros((self.out_channels,))
         self.parameters = [self.w, self.b]
-
-        # set padding
-        width = math.floor(self.kernel_shape[0] / 2)
-        padding_params = paddings.PaddingParams(width, (2, 3))
-        self.pad_fn = paddings.PADDINGS[self.pad_fn_name](padding_params)
 
     def forward(self, mode: str = "eval") -> None:
         # pad to fit pooling window
@@ -248,24 +246,22 @@ class Convolution(ParamLayer):
             self.y.data += tensor.match_dims(x=bias, dims=4).data
 
     def backward(self) -> None:
-        x_p = self.pad_fn(self.x).data
+        # input grads (b, c_in, y, x)
+        # pad grads to fit input after convolution
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.y.shape
-
-        # pad grads to fit input after convolution
         if self.pad_fn_name != "same":
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
             dy_p = self.y.grad
-
-        # input grads (b, c_in, y, x)
         # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
         dy_conv_w = self.__convolve(dy_p, self.w.data, exp_axis=(2, 0))
         # sum over output channels
         self.x.grad = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
 
         # weight grads (c_out, c_in, y, x)
+        x_p = self.pad_fn(self.x).data
         # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
         dy_conv_x = self.__convolve(x_p, self.y.grad, exp_axis=(1, 2))
         # sum over batches
@@ -281,7 +277,7 @@ class Convolution(ParamLayer):
             self.optimize()
 
     def __convolve(
-        self, x1: np.ndarray, x2: np.ndarray, exp_axis: tuple[int, ...] | None = None
+        self, x1: np.ndarray, x2: np.ndarray, exp_axis: ShapeLike | None = None
     ):
         # fft both tensors
         target_shape = x1.shape[-2:]

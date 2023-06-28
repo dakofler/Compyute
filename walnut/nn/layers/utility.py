@@ -3,13 +3,11 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any
 from abc import ABC, abstractmethod
 import numpy as np
-import numpy.typing as npt
 
 from walnut import tensor
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, NumpyArray, ShapeLike
 
 
 class LayerCompilationError(Exception):
@@ -20,7 +18,7 @@ class LayerCompilationError(Exception):
 class Layer(ABC):
     """Layer base class."""
 
-    def __init__(self, input_shape: tuple[int, ...] | None = None):
+    def __init__(self, input_shape: ShapeLike | None = None):
         self.input_shape = input_shape
         self.x: Tensor = Tensor()
         self.y: Tensor = Tensor()
@@ -64,7 +62,7 @@ class MaxPooling(Layer):
     def __init__(
         self,
         p_window: tuple[int, int] = (2, 2),
-        input_shape: tuple[int, ...] | None = None,
+        input_shape: ShapeLike | None = None,
     ) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
@@ -72,12 +70,12 @@ class MaxPooling(Layer):
         ----------
         p_window : tuple[int, int], optional
              Shape of the pooling window used for the pooling operation, by default (2, 2)
-        input_shape : tuple[int, ...] | None, optional
+        input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None
         """
         super().__init__(input_shape=input_shape)
         self.p_window = p_window
-        self.p_map: npt.NDArray[Any] = np.empty(0, dtype="float32")
+        self.p_map: NumpyArray = np.empty(0, dtype="float32")
 
     def forward(self, mode: str = "eval") -> None:
         # init output as zeros (b, c, y, k)
@@ -113,11 +111,11 @@ class MaxPooling(Layer):
 
     def __stretch(
         self,
-        x: npt.NDArray[Any],
+        x: NumpyArray,
         streching: tuple[int, int],
         axis: tuple[int, int],
-        target_shape: tuple[int, ...],
-    ) -> npt.NDArray[Any]:
+        target_shape: ShapeLike,
+    ) -> NumpyArray:
         fa1, fa2 = streching
         ax1, ax2 = axis
         x_stretched = np.repeat(x, fa1, axis=ax1)
@@ -128,12 +126,12 @@ class MaxPooling(Layer):
 class Flatten(Layer):
     """Flatten layer used to reshape tensors to shape (b, c_out)."""
 
-    def __init__(self, input_shape: tuple[int, ...] | None = None) -> None:
+    def __init__(self, input_shape: ShapeLike | None = None) -> None:
         """Flatten layer used to reshape tensors to shape (b, c_out).
 
         Parameters
         ----------
-        input_shape : tuple[int, ...] | None, optional
+        input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
@@ -149,21 +147,19 @@ class Flatten(Layer):
 class Dropout(Layer):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 
-    def __init__(
-        self, d_rate: float, input_shape: tuple[int, ...] | None = None
-    ) -> None:
+    def __init__(self, d_rate: float, input_shape: ShapeLike | None = None) -> None:
         """Dropout layer used to randomly reduce information and avoid overfitting.
 
         Parameters
         ----------
         d_rate : float
             Probability of values being set to 0.
-        input_shape : tuple[int, ...] | None, optional
+        input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.d_rate = d_rate
-        self.d_map: npt.NDArray[Any] = np.empty(0, dtype="float32")
+        self.d_map: NumpyArray = np.empty(0, dtype="float32")
 
     def forward(self, mode: str = "eval") -> None:
         if mode == "eval":
