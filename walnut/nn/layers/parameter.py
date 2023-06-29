@@ -36,7 +36,7 @@ class ParamLayer(Layer):
 
         self.w: Tensor = Tensor()
         self.b: Tensor = Tensor()
-        self.parameters: list[Tensor] = field(default_factory=list)
+        self.parameters: list[Tensor] = []
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -136,11 +136,12 @@ class Linear(ParamLayer):
 
         # init weights (c_in, c_out)
         self.w = self.init_fn((in_channels, self.out_channels))
+        self.parameters.append(self.w)
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tu.zeros((self.out_channels,))
-        self.parameters = [self.w, self.b]
+            self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
         bias = self.b if self.use_bias else 0.0
@@ -219,11 +220,12 @@ class Convolution(ParamLayer):
 
         # init weights (c_out, c_in, y, x)
         self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_shape))
+        self.parameters.append(self.w)
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tu.zeros((self.out_channels,))
-        self.parameters = [self.w, self.b]
+            self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
         # apply padding

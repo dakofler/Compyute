@@ -226,10 +226,10 @@ class Sequential(Model):
             x_train, y_train = tu.shuffle(X, Y, batch_size)
 
             # forward pass
-            prediction = self(x_train, mode="train")
+            predictions = self(x_train, mode="train")
 
             # compute loss
-            train_loss = self.loss_fn(prediction, y_train)
+            train_loss = self.loss_fn(predictions, y_train)
             train_loss_history.append(train_loss)
 
             # backward pass
