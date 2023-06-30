@@ -59,7 +59,7 @@ class MSE(Loss):
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return Tensor(self._y - self._t)
+        return Tensor((self._y - self._t) / self._y.shape[0])
 
 
 class Crossentropy(Loss):
