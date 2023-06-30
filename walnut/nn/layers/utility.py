@@ -22,6 +22,7 @@ class Layer(ABC):
         self.input_shape = input_shape
         self.x: Tensor = Tensor()
         self.y: Tensor = Tensor()
+        self.parameters: list[Tensor] | None = None
         self.compiled: bool = False
 
     def __repr__(self) -> str:

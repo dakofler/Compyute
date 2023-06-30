@@ -60,6 +60,7 @@ class Model(ABC):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
+        reset_params: bool = True,
     ) -> list[float]:
         """Trains the model."""
 
@@ -183,6 +184,7 @@ class Sequential(Model):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
+        reset_params: bool = True,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -201,6 +203,8 @@ class Sequential(Model):
             Whether to print out intermediate results while training, by default True.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
+        reset_params : bool, optional
+            Whether to reset grads after training. Improves memory usage, by default True.
 
         Returns
         -------
@@ -250,7 +254,8 @@ class Sequential(Model):
 
             if verbose and train_loss is not None:
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
-
+        if reset_params:
+            self.__reset_params()
         return train_loss_history, val_loss_history
 
     def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float, float]:
@@ -297,3 +302,12 @@ class Sequential(Model):
             if i > 0:
                 layer.y.grad = layers_reversed[i - 1].x.grad
             layer.backward()
+
+    def __reset_params(self):
+        for layer in self.layers:
+            layer.x.reset_params()
+            layer.y.reset_params()
+            if not layer.parameters:
+                continue
+            for parameter in layer.parameters:
+                parameter.reset_params()

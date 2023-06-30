@@ -170,6 +170,11 @@ class Tensor:
 
     # functions
 
+    def reset_params(self):
+        """Resets additional parameters to improve memory usage."""
+        self.grad = np.empty(0, dtype="float32")
+        self.params: dict[str, NumpyArray] = {}
+
     def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
 
