@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import numpy as np
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
@@ -37,7 +37,7 @@ class Accuracy(Metric):
             Accuracy value.
         """
         # create tensor with ones where highest probabilities occur
-        preds = tensor.zeros_like(X).data
+        preds = tu.zeros_like(X).data
         p_b, _ = preds.shape
         max_prob_indices = np.argmax(X.data, axis=1)
         preds[np.arange(0, p_b), max_prob_indices] = 1

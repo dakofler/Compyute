@@ -69,7 +69,7 @@ model.compile(
 ```
 
 ```python
-hist = model.train(x_train, y_train, epochs=10, batch_size=512, val_data=(x_val, y_val))
+train_loss_hist, val_loss_hist = model.train(x_train, y_train, epochs=10, batch_size=512, val_data=(x_val, y_val))
 ```
 
 ### Analysis

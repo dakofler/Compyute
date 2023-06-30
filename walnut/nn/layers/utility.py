@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import numpy as np
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
 
 
@@ -22,6 +22,7 @@ class Layer(ABC):
         self.input_shape = input_shape
         self.x: Tensor = Tensor()
         self.y: Tensor = Tensor()
+        self.parameters: list[Tensor] | None = None
         self.compiled: bool = False
 
     def __repr__(self) -> str:
@@ -39,7 +40,7 @@ class Layer(ABC):
     def compile(self) -> None:
         """Connects layers within a model."""
         if self.input_shape is not None:
-            self.x = tensor.ones((1, *self.input_shape))
+            self.x = tu.ones((1, *self.input_shape))
         self.compiled = True
 
     @abstractmethod
@@ -82,10 +83,10 @@ class MaxPooling(Layer):
         x_crop = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
-        self.y.data = tensor.zeros(
+        self.y.data = tu.zeros(
             (x_b, x_c, x_crop.shape[2] // p_y, x_crop.shape[3] // p_x)
         ).data
-        self.p_map = tensor.zeros_like(x_crop).data
+        self.p_map = tu.zeros_like(x_crop).data
         for y in range(self.y.shape[2]):
             for x in range(self.y.shape[3]):
                 chunk = self.x.data[

@@ -6,8 +6,8 @@ import math
 import numpy as np
 import numpy.fft as npfft
 
-from walnut import tensor
-from walnut.tensor import Tensor, ShapeLike
+from walnut import tensor_utils as tu
+from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn import inits, paddings
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
@@ -36,7 +36,7 @@ class ParamLayer(Layer):
 
         self.w: Tensor = Tensor()
         self.b: Tensor = Tensor()
-        self.parameters: list[Tensor] = field(default_factory=list)
+        self.parameters: list[Tensor] = []
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -136,11 +136,12 @@ class Linear(ParamLayer):
 
         # init weights (c_in, c_out)
         self.w = self.init_fn((in_channels, self.out_channels))
+        self.parameters.append(self.w)
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tensor.zeros((self.out_channels,))
-        self.parameters = [self.w, self.b]
+            self.b = tu.zeros((self.out_channels,))
+            self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
         bias = self.b if self.use_bias else 0.0
@@ -219,14 +220,15 @@ class Convolution(ParamLayer):
 
         # init weights (c_out, c_in, y, x)
         self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_shape))
+        self.parameters.append(self.w)
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tensor.zeros((self.out_channels,))
-        self.parameters = [self.w, self.b]
+            self.b = tu.zeros((self.out_channels,))
+            self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
-        # pad to fit pooling window
+        # apply padding
         x_pad = self.pad_fn(self.x).data
 
         # rotate weights for cross correlation
@@ -241,9 +243,9 @@ class Convolution(ParamLayer):
 
         if self.use_bias:
             # broadcast bias over batches (b, c_out)
-            bias = self.b * tensor.ones(shape=(self.x.shape[0], 1))
+            bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
             # reshape to fit output (b, c_out, 1, 1)
-            self.y.data += tensor.match_dims(x=bias, dims=4).data
+            self.y.data += tu.match_dims(x=bias, dims=4).data
 
     def backward(self) -> None:
         # input grads (b, c_in, y, x)
@@ -276,9 +278,10 @@ class Convolution(ParamLayer):
         if self.optimizer:
             self.optimize()
 
+    # bottleneck
     def __convolve(
-        self, x1: np.ndarray, x2: np.ndarray, exp_axis: ShapeLike | None = None
-    ):
+        self, x1: NumpyArray, x2: NumpyArray, exp_axis: ShapeLike | None = None
+    ) -> NumpyArray:
         # fft both tensors
         target_shape = x1.shape[-2:]
         x1_fft = npfft.fft2(x1, s=target_shape)

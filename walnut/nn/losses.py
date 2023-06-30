@@ -55,11 +55,11 @@ class MSE(Loss):
             Mean squared error loss.
         """
         super().set_vals(outputs, targets)
-        return (0.5 * np.sum((self._t - self._y) ** 2)).item()
+        return np.mean(0.5 * np.sum((self._t - self._y) ** 2, axis=1)).item()
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return Tensor(self._y - self._t)
+        return Tensor((self._y - self._t) / self._y.shape[0])
 
 
 class Crossentropy(Loss):

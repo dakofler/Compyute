@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike
 
 
@@ -49,7 +49,7 @@ class Normal(Init):
         Tensor
             Tensor with random values.
         """
-        return tensor.randn(shape)
+        return tu.randn(shape)
 
 
 @dataclass
@@ -74,7 +74,7 @@ class KaimingHe(Init):
             if self.params.act_fn is not None
             else 1.0
         )
-        return tensor.randn(shape) * gain / self.params.fan_mode**0.5
+        return tu.randn(shape) * gain / self.params.fan_mode**0.5
 
 
 INITS = {"normal": Normal, "kaiming_he": KaimingHe}

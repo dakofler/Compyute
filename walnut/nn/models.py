@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import time
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike
+from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
@@ -18,18 +19,23 @@ class ModelCompilationError(Exception):
     """Error with the compiling of the model."""
 
 
-@dataclass()
+@dataclass(repr=False)
 class Model(ABC):
     """Neural network model base class."""
 
     loss_fn: Loss | None = None
     metric: Metric | None = None
     compiled: bool = False
-    input_shape: ShapeLike | None = None
-    output_shape: ShapeLike | None = None
+    input_shape: ShapeLike = ()
+    output_shape: ShapeLike = ()
 
-    def __call__(self, X: Tensor, Y: Tensor | None = None) -> None:
-        self.__check_dims(X, Y)
+    @abstractmethod
+    def __call__(self, X: Tensor) -> None:
+        """Calls the model."""
+
+    @abstractmethod
+    def __repr__(self) -> str:
+        """Returns a string representation of the model."""
 
     def compile(self, loss_fn: Loss, metric: Metric) -> None:
         """Compiles the model.
@@ -54,8 +60,13 @@ class Model(ABC):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
+        reset_params: bool = True,
     ) -> list[float]:
         """Trains the model."""
+
+    @abstractmethod
+    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
+        """Evaluates the model."""
 
     @abstractmethod
     def forward(self):
@@ -64,58 +75,6 @@ class Model(ABC):
     @abstractmethod
     def backward(self):
         """Performs a backward pass."""
-
-    @abstractmethod
-    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
-        """Evaluates the model."""
-
-    def log(
-        self,
-        epoch: int,
-        epochs: int,
-        step: float,
-        loss: float,
-        val_loss: float | None = None,
-    ):
-        """Logs information while training the model
-
-        Parameters
-        ----------
-        epoch : int
-            Current traning epoch.
-        epochs : int
-            Total number of epochs.
-        step : float
-            Computation time for the current epoch.
-        loss : float
-            Current training loss.
-        val_loss : float | None, optional
-            Current validation loss, by default None.
-        """
-
-        def __log_line():
-            line = (
-                f"epoch {epoch:5d}/{epochs:5d} | step {step:.2f} ms | loss {loss:.4f}"
-            )
-            if val_loss is not None:
-                line += f" | val_loss {val_loss:.4f}"
-            print(line)
-
-        if epochs < 10:
-            __log_line()
-        elif epoch % (epochs // 10) == 0:
-            __log_line()
-
-    def __check_dims(self, x: Tensor, y: Tensor | None = None):
-        if not self.input_shape or not self.output_shape:
-            return
-        req_input_dim = len(self.input_shape)
-        if x.ndim != req_input_dim:
-            raise ValueError(f"Input dimension must be {req_input_dim}.")
-        if y is not None:
-            req_output_dim = len(self.output_shape)
-            if y.ndim != req_output_dim:
-                raise ValueError(f"Output dimension must be {req_output_dim}.")
 
 
 @dataclass(init=False)
@@ -148,10 +107,24 @@ class Sequential(Model):
         Tensor
             Tensor of predicted values.
         """
-        super().__call__(X)
+        tu.check_dims(X, len(self.input_shape))
         self.layers[0].x.data = X.data.copy()
         self.forward(mode)
         return Tensor(self.layers[-1].y.data)
+
+    def __repr__(self) -> str:
+        if not self.compiled:
+            return "Sequential. Compile model for more information about its layers."
+        string = (
+            f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
+            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
+        )
+        sum_params = 0
+        for layer in self.layers:
+            string += layer.__repr__() + "\n"
+            sum_params += layer.get_parameter_count()
+        string += f"\ntotal trainable parameters {sum_params}"
+        return string
 
     def compile(
         self,
@@ -211,7 +184,8 @@ class Sequential(Model):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
-    ) -> list[float]:
+        reset_params: bool = True,
+    ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
         Parameters
@@ -229,33 +203,38 @@ class Sequential(Model):
             Whether to print out intermediate results while training, by default True.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
+        reset_params : bool, optional
+            Whether to reset grads after training. Improves memory usage, by default True.
 
         Returns
         -------
         list[float]
             List of loss values for each epoch.
+        list[float] | None
+            List of validation loss values for each epoch, if validation data is provided.
 
         Raises
         -------
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if not self.compiled:
+        if not self.compiled or not self.loss_fn:
             raise ModelCompilationError("Model not compiled yet.")
-        history = []
-        val_loss = None
-        if self.loss_fn is None:
-            return history
+        tu.check_dims(X, len(self.input_shape))
+        tu.check_dims(Y, len(self.output_shape))
+        train_loss_history = []
+        val_loss_history = []
 
         for epoch in range(1, epochs + 1):
             start = time.time()
-            x_train, y_train = tensor.shuffle(X, Y, batch_size)
+            x_train, y_train = tu.shuffle(X, Y, batch_size)
 
             # forward pass
-            prediction = self(x_train, mode="train")
+            predictions = self(x_train, mode="train")
 
             # compute loss
-            loss = self.loss_fn(prediction, y_train)
+            train_loss = self.loss_fn(predictions, y_train)
+            train_loss_history.append(train_loss)
 
             # backward pass
             loss_grad = self.loss_fn.backward().data.copy()
@@ -263,18 +242,21 @@ class Sequential(Model):
             self.backward()
 
             # validation
+            val_loss = None
             if val_data is not None:
                 x_val, y_val = val_data
                 val_predictions = self(x_val)
                 val_loss = self.loss_fn(val_predictions, y_val)
+                val_loss_history.append(val_loss)
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-            if verbose and loss is not None:
-                self.log(epoch, epochs, step, loss, val_loss)
-            history.append(loss)
 
-        return history
+            if verbose and train_loss is not None:
+                log_training_progress(epoch, epochs, step, train_loss, val_loss)
+        if reset_params:
+            self.__reset_params()
+        return train_loss_history, val_loss_history
 
     def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
@@ -300,24 +282,12 @@ class Sequential(Model):
         """
         if self.metric is None or self.loss_fn is None:
             raise ModelCompilationError("Model not compiled yet.")
+        tu.check_dims(X, len(self.input_shape))
+        tu.check_dims(Y, len(self.output_shape))
         predictions = self(X)
         loss = self.loss_fn(predictions, Y)
         score = self.metric(predictions, Y)
         return loss, score
-
-    def __repr__(self) -> str:
-        if not self.compiled:
-            return "Sequential. Compile model for more information about its layers."
-        string = (
-            f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
-            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
-        )
-        sum_params = 0
-        for layer in self.layers:
-            string += layer.__repr__() + "\n"
-            sum_params += layer.get_parameter_count()
-        string += f"\ntotal trainable parameters {sum_params}"
-        return string
 
     def forward(self, mode: str = "eval") -> None:
         for i, layer in enumerate(self.layers):
@@ -332,3 +302,12 @@ class Sequential(Model):
             if i > 0:
                 layer.y.grad = layers_reversed[i - 1].x.grad
             layer.backward()
+
+    def __reset_params(self):
+        for layer in self.layers:
+            layer.x.reset_params()
+            layer.y.reset_params()
+            if not layer.parameters:
+                continue
+            for parameter in layer.parameters:
+                parameter.reset_params()

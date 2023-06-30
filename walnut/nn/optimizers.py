@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import numpy as np
 
-from walnut import tensor
+from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
@@ -44,7 +44,7 @@ class SGD(Optimizer):
             Tensor whose data is to be updated.
         """
         # get delta of previous updating cycle. If not availlable, initlaize with zeros.
-        delta = parameter.params.get("delta", tensor.zeros(parameter.data.shape).data)
+        delta = parameter.params.get("delta", tu.zeros(parameter.data.shape).data)
         delta_new = -self.l_r * parameter.grad + self.momentum * delta
 
         if not self.nesterov:
@@ -87,17 +87,13 @@ class Adam(Optimizer):
             Tensor whose data is to be updated.
         """
         # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
-        momentum = parameter.params.get(
-            "momentum", tensor.zeros(parameter.data.shape).data
-        )
+        momentum = parameter.params.get("momentum", tu.zeros(parameter.data.shape).data)
         momentum_new = self.beta1 * momentum + (1 - self.beta1) * parameter.grad
         m_bc = momentum_new / (1 - self.beta1)
         parameter.params["momentum"] = momentum_new
 
         # get velocity of previous updating cycle. If not availlable, initlaize with zeros.
-        velocity = parameter.params.get(
-            "velocity", tensor.zeros(parameter.data.shape).data
-        )
+        velocity = parameter.params.get("velocity", tu.zeros(parameter.data.shape).data)
         velocity_new = self.beta2 * velocity + (1 - self.beta2) * parameter.grad**2
         v_bc = velocity_new / (1 - self.beta2)
         parameter.params["velocity"] = velocity_new

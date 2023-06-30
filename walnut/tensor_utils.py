@@ -1,0 +1,202 @@
+"""Tensor utils module"""
+
+import pandas as pd
+import numpy as np
+from walnut.tensor import Tensor, ShapeLike, ShapeError
+
+
+def pd_to_tensor(df: pd.DataFrame) -> Tensor:
+    """Converts a Pandas DataFrame into a Tensor.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas DataFrame object to convert.
+
+    Returns
+    -------
+    Tensor
+        Tensor object.
+    """
+    return Tensor(df.to_numpy())
+
+
+def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
+    """Extends the dimensions of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor whose dimensions are to be extended.
+    axis : AxisLike]
+        Where to insert the new dimension.
+
+    Returns
+    -------
+    Tensor
+        Tensor with extended dimensions.
+    """
+    return Tensor(np.expand_dims(x.data, axis=axis))
+
+
+def match_dims(x: Tensor, dims: int) -> Tensor:
+    """Extends the dimensions of a tensor to fit a given number of dims.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor to be extended.
+    dims : int
+        Number of dimensions needed.
+
+    Returns
+    -------
+    Tensor
+        Tensor with extended dimensions.
+    """
+    while x.ndim < dims:
+        x = expand_dims(x, axis=(-1,))
+
+    return x
+
+
+def zeros(shape: ShapeLike) -> Tensor:
+    """Creates a tensor of a given shape with all values being zero.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor with all values being zero.
+    """
+    return Tensor(np.zeros(shape))
+
+
+def ones(shape: ShapeLike) -> Tensor:
+    """Creates a tensor of a given shape with all values being one.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor with all values being one.
+    """
+    return Tensor(np.ones(shape))
+
+
+def zeros_like(x: Tensor) -> Tensor:
+    """Creates a tensor based on the shape of a given other tensor with all values being zero.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor whose shape is used.
+
+    Returns
+    -------
+    Tensor
+        Tensor with all values being zero.
+    """
+    return Tensor(np.zeros_like(x.data))
+
+
+def ones_like(x: Tensor) -> Tensor:
+    """Creates a tensor based on the shape of a given other tensor with all values being one.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor whose shape is used.
+
+    Returns
+    -------
+    Tensor
+        Tensor with all values being one.
+    """
+    return Tensor(np.ones_like(x.data))
+
+
+def randn(shape: ShapeLike) -> Tensor:
+    """Creates a tensor of a given shape with random values following a normal distribution.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    return Tensor(np.random.randn(*shape))
+
+
+def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
+    """Creates a tensor of a given shape with random integer values.
+
+    Parameters
+    ----------
+    lower_bound : int
+        Lower bound for random values.
+    upper_bound : int
+        Upper bound for random values.
+    ShapeLike
+        Shape of the new tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    return Tensor(np.random.randint(lower_bound, upper_bound, shape))
+
+
+def shuffle(
+    x1: Tensor, x2: Tensor, batch_size: int | None = None
+) -> tuple[Tensor, Tensor]:
+    """Shuffles two tensors equally along axis 0.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        First tensor to be shuffled.
+    x2 : Tensor
+        Second tensor to be shuffled.
+    batch_size : int | None, optional
+        Number of samples to be returned, by default None.
+        If None, all samples are returned.
+
+    Returns
+    -------
+    tuple[Tensor, Tensor]
+        Shuffled tensors.
+
+    Raises
+    ------
+    ShapeError
+        If tensors are not of equal size along a axis 0
+    """
+    if x1.len != x2.len:
+        raise ShapeError("Tensors must have equal lengths along axis 0")
+
+    length = x1.len
+    shuffle_index = np.arange(length)
+    batch_size = batch_size if batch_size else length
+    np.random.shuffle(shuffle_index)
+    y1 = x1[shuffle_index]
+    y2 = x2[shuffle_index]
+    return y1[:batch_size], y2[:batch_size]
+
+
+def check_dims(x: Tensor, target_dim: int) -> None:
+    if x.ndim != target_dim:
+        raise ShapeError("Input dimensions do not match.")
