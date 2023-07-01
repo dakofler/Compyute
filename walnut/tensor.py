@@ -21,49 +21,53 @@ class Tensor:
     """Tensor object."""
 
     def __init__(
-        self, data: NumpyArray | list[Any] | float | int | np.float32 | None = None
+        self, values: NumpyArray | list[Any] | float | int | np.float32 | None = None
     ):
         """Tensor object.
 
         Parameters
         ----------
-        data : NumpyArray | list[Any] | float | int | None, optional
+        values : NumpyArray | list[Any] | float | int | None, optional
             Data to initialize the tensor, by default None.
         """
-        self._data: NumpyArray = np.empty(0, dtype="float32")
-        self.data = data
+        self.data = np.empty(0, dtype="float32")
+
+        if values is None:
+            self.data = np.empty(0, dtype="float32")
+        elif isinstance(values, np.ndarray):
+            self.data = values.astype("float32")
+        elif isinstance(values, (list, float, int, numpyFloat)):
+            self.data = np.array(values).astype("float32")
+        else:
+            raise ValueError("values must be NumpyArray, list, int or float")
+
         self.grad: NumpyArray = np.empty(0, dtype="float32")
         self.params: dict[str, NumpyArray] = {}
-        self.shape: ShapeLike = self._data.shape
-        self.ndim: int = self._data.ndim
-        self.len: int = len(self._data) if self._data.ndim > 0 else 0
-        self.T: NumpyArray = self._data.T
 
     @property
-    def data(self) -> NumpyArray:
-        """Tensor data."""
-        return self._data
+    def shape(self) -> ShapeLike:
+        """Tensor shape."""
+        return self.data.shape
 
-    @data.setter
-    def data(self, other: NumpyArray | list[Any] | float | int | np.float32 | None):
-        if other is None:
-            return
-        if isinstance(other, np.ndarray):
-            self._data = other.astype("float32")
-        elif isinstance(other, (list, float, int, np.ndarray, numpyFloat)):
-            self._data = np.array(other).astype("float32")
-        else:
-            raise ValueError("data must be NumpyArray, list, int or float")
+    @property
+    def ndim(self) -> int:
+        """Tensor dimensions."""
+        return self.data.ndim
 
-        self.shape = self._data.shape
-        self.ndim = self._data.ndim
-        self.len = len(self._data) if self._data.ndim > 0 else 0
-        self.T = self._data.T
+    @property
+    def len(self) -> int:
+        """Tensor length along axis 0."""
+        return len(self.data) if self.data.ndim > 0 else 0
+
+    @property
+    def T(self) -> NumpyArray:
+        """Tensor data transposed."""
+        return self.data.T
 
     # function overloading
 
     def __repr__(self) -> str:
-        return self._data.__repr__().replace("array", "tnsor")
+        return self.data.__repr__().replace("array", "tnsor")
 
     def __call__(self) -> NumpyArray:
         return self.data
@@ -73,95 +77,95 @@ class Tensor:
 
     def __add__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data + other.data)
+        return Tensor(self.data + other.data)
 
     def __mul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data * other.data)
+        return Tensor(self.data * other.data)
 
     def __sub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data - other.data)
+        return Tensor(self.data - other.data)
 
     def __truediv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data / other.data)
+        return Tensor(self.data / other.data)
 
     def __floordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data // other.data)
+        return Tensor(self.data // other.data)
 
     def __pow__(self, other: int) -> Tensor:
-        return Tensor(self._data**other)
+        return Tensor(self.data**other)
 
     def __mod__(self, other: int) -> Tensor:
-        return Tensor(self._data % other)
+        return Tensor(self.data % other)
 
     def __matmul__(self, other: Tensor) -> Tensor:
-        return Tensor(self._data @ other.data)
+        return Tensor(self.data @ other.data)
 
     def __lt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data < other.data)
+        return Tensor(self.data < other.data)
 
     def __gt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data > other.data)
+        return Tensor(self.data > other.data)
 
     def __le__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data <= other.data)
+        return Tensor(self.data <= other.data)
 
     def __ge__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data >= other.data)
+        return Tensor(self.data >= other.data)
 
     def __eq__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data == other.data)
+        return Tensor(self.data == other.data)
 
     def __ne__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self._data != other.data)
+        return Tensor(self.data != other.data)
 
     def __isub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data += other.data
-        return Tensor(self._data)
+        self.data += other.data
+        return Tensor(self.data)
 
     def __iadd__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data += other.data
-        return Tensor(self._data)
+        self.data += other.data
+        return Tensor(self.data)
 
     def __imul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data *= other.data
-        return Tensor(self._data)
+        self.data *= other.data
+        return Tensor(self.data)
 
     def __idiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data /= other.data
-        return Tensor(self._data)
+        self.data /= other.data
+        return Tensor(self.data)
 
     def __ifloordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data //= other.data
-        return Tensor(self._data)
+        self.data //= other.data
+        return Tensor(self.data)
 
     def __imod__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data %= other.data
-        return Tensor(self._data)
+        self.data %= other.data
+        return Tensor(self.data)
 
     def __ipow__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        self._data **= other.data
-        return Tensor(self._data)
+        self.data **= other.data
+        return Tensor(self.data)
 
     def __neg__(self) -> Tensor:
-        self._data = -1.0 * self._data
-        return Tensor(self._data)
+        self.data = -1.0 * self.data
+        return Tensor(self.data)
 
     def __tensorify(self, other: Tensor | float | int) -> Tensor:
         if not isinstance(other, Tensor):
@@ -170,8 +174,16 @@ class Tensor:
 
     # functions
 
-    def reset_params(self):
-        """Resets additional parameters to improve memory usage."""
+    def reset_params(self, reset_data: bool = False):
+        """Resets additional parameters to improve memory usage.
+
+        Parameters
+        ----------
+        reset_data : bool, optional
+            Whether to also reset the tensor data, by default False.
+        """
+        if reset_data:
+            self.data = np.empty(0, dtype="float32")
         self.grad = np.empty(0, dtype="float32")
         self.params: dict[str, NumpyArray] = {}
 
@@ -192,7 +204,7 @@ class Tensor:
         Tensor
             Tensor containing the sum of elements.
         """
-        return Tensor(np.sum(self._data, axis=axis, keepdims=keepdims))
+        return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
 
     def mean(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
@@ -211,7 +223,7 @@ class Tensor:
         Tensor
             Tensor containing the mean of elements.
         """
-        return Tensor(np.mean(self._data, axis=axis, keepdims=keepdims))
+        return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
 
     def var(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Variance of tensor elements over a given axis.
@@ -230,7 +242,7 @@ class Tensor:
         Tensor
             Tensor containing the variance of elements.
         """
-        return Tensor(np.var(self._data, axis=axis, ddof=1, keepdims=keepdims))
+        return Tensor(np.var(self.data, axis=axis, ddof=1, keepdims=keepdims))
 
     def std(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
@@ -249,7 +261,7 @@ class Tensor:
         Tensor
             Tensor containing the standard deviation of elements.
         """
-        return Tensor(np.std(self._data, axis=axis, keepdims=keepdims))
+        return Tensor(np.std(self.data, axis=axis, keepdims=keepdims))
 
     def min(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
@@ -268,7 +280,7 @@ class Tensor:
         Tensor
             Tensor containing the minimum of elements.
         """
-        return Tensor(self._data.min(axis=axis, keepdims=keepdims))
+        return Tensor(self.data.min(axis=axis, keepdims=keepdims))
 
     def max(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
@@ -287,7 +299,7 @@ class Tensor:
         Tensor
             Tensor containing the maximum of elements.
         """
-        return Tensor(self._data.max(axis=axis, keepdims=keepdims))
+        return Tensor(self.data.max(axis=axis, keepdims=keepdims))
 
     def round(self, decimals: int) -> Tensor:
         """Rounds the value of tensor elements.
@@ -302,7 +314,7 @@ class Tensor:
         Tensor
             Tensor containing the rounded values.
         """
-        return Tensor(self._data.round(decimals))
+        return Tensor(self.data.round(decimals))
 
     def exp(self) -> Tensor:
         """Exponential of tensor elements.
@@ -312,7 +324,7 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        return Tensor(np.exp(self._data))
+        return Tensor(np.exp(self.data))
 
     def log(self) -> Tensor:
         """Logarithm of tensor elements.
@@ -322,7 +334,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        return Tensor(np.log(self._data))
+        return Tensor(np.log(self.data))
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
@@ -332,7 +344,7 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        return Tensor(np.tanh(self._data))
+        return Tensor(np.tanh(self.data))
 
     def item(self, *args) -> float:
         """Returns the scalar value of the tensor data.
@@ -342,7 +354,7 @@ class Tensor:
         float
             Scalar of the tensor data.
         """
-        return self._data.item(args)
+        return self.data.item(args)
 
     def reshape(self, shape: ShapeLike) -> Tensor:
         """Returns a reshaped tensor of data to fit a given shape.
@@ -357,7 +369,7 @@ class Tensor:
         Tensor
             Reshapded tensor.
         """
-        return Tensor(self._data.reshape(*shape))
+        return Tensor(self.data.reshape(*shape))
 
     def pad(self, widths: tuple[int, ...]) -> Tensor:
         """Returns a padded tensor using zero padding.
@@ -373,4 +385,4 @@ class Tensor:
             Padded tensor.
         """
         paddings = tuple((w, w) for w in widths)
-        return Tensor(np.pad(self._data, paddings))
+        return Tensor(np.pad(self.data, paddings))

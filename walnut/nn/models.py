@@ -254,8 +254,11 @@ class Sequential(Model):
 
             if verbose and train_loss is not None:
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
+
+        # reset parameters to improve memory efficiency
         if reset_params:
             self.__reset_params()
+
         return train_loss_history, val_loss_history
 
     def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float, float]:
@@ -305,8 +308,8 @@ class Sequential(Model):
 
     def __reset_params(self):
         for layer in self.layers:
-            layer.x.reset_params()
-            layer.y.reset_params()
+            layer.x.reset_params(reset_data=True)
+            layer.y.reset_params(reset_data=True)
             if not layer.parameters:
                 continue
             for parameter in layer.parameters:
