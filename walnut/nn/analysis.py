@@ -8,7 +8,11 @@ import walnut.tensor_utils as tu
 
 
 def plot_curve(
-    traces: dict[str, list[float]], figsize: ShapeLike, x_label: str, y_label: str
+    traces: dict[str, list[float]],
+    figsize: ShapeLike,
+    title: str,
+    x_label: str,
+    y_label: str,
 ) -> None:
     """Plots one or multiple line graphs.
 
@@ -18,6 +22,12 @@ def plot_curve(
         Dictionary of labels and value lists to plot.
     figsize : ShapeLike
         Size of the plot.
+    title : str
+        Plot title.
+    x_label : str
+        Label for the x axis.
+    y_label : str
+        Label for the x axis.
     """
     plt.figure(figsize=figsize)
     legends = []
@@ -25,9 +35,11 @@ def plot_curve(
         values = traces[label]
         plt.plot(np.arange(1, len(values) + 1), values)
         legends.append(f"{label:s}")
+    plt.grid(color="gray", linestyle="--", linewidth=0.5)
+    plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.legend(legends, frameon=False)
+    plt.legend(legends)
 
 
 def plot_distrbution(
@@ -44,6 +56,8 @@ def plot_distrbution(
         Dictionary of labels and arrays.
     figsize : ShapeLike
         Size of the plot.
+    title : str, optional
+        Plot title, by default "distribution".
     bins : int, optional
         Number of bins used in the histogram, by default 100.
     """
@@ -58,12 +72,18 @@ def plot_distrbution(
         x_vals = np.delete(x_vals, -1)
         plt.plot(x_vals, y_vals)
         legends.append(f"{label:s}")
-        plt.legend(legends, frameon=False)
-        plt.title(title)
+    plt.grid(color="gray", linestyle="--", linewidth=0.5)
+    plt.title(title)
+    plt.xlabel("values")
+    plt.ylabel("count")
+    plt.legend(legends)
 
 
 def plot_images(
-    data: dict[str, NumpyArray], figsize: ShapeLike, cmap: str = "viridis"
+    data: dict[str, NumpyArray],
+    figsize: ShapeLike,
+    cmap: str = "gray",
+    plot_axis: bool = False,
 ) -> None:
     """Plots array values as images.
 
@@ -73,8 +93,8 @@ def plot_images(
         Dictionary of array names and values.
     figsize : ShapeLike
         Size of the plot.
-    cmap : str
-        Colormap used in the plot.
+    cmap : str, optional
+        Colormap used in the plot, by default "gray".
     """
     for label in data:
         values = data[label]
@@ -89,6 +109,10 @@ def plot_images(
             plt.subplot(10, 8, i + 1)
             plt.imshow(values[i, :, :], vmin=vmin, vmax=vmax, cmap=cmap)
             plt.xlabel(f"channel {str(i + 1)}")
+            if not plot_axis:
+                plt.tick_params(
+                    left=False, bottom=False, labelleft=False, labelbottom=False
+                )
         plt.show()
 
 
@@ -105,6 +129,8 @@ def plot_confusion_matrix(
         Target values.
     figsize : ShapeLike
         Size of the plot.
+    cmap : str, optional
+        Colormap used for the plot, by defautl "Blues".
     """
 
     # create tensor with ones where highest probabilities occur

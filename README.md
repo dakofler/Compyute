@@ -123,5 +123,5 @@ conv.x.grad
 ```
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.
-The code is not perfect, as I am still learning with every new feature that is implement.
+The code is not perfect, as I am still learning with every new feature that is added.
 If you have any suggestions or find any bugs, please don't hesitate to contact me.

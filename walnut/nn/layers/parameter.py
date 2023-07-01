@@ -284,8 +284,8 @@ class Convolution(ParamLayer):
     ) -> NumpyArray:
         # fft both tensors
         target_shape = x1.shape[-2:]
-        x1_fft = npfft.fft2(x1, s=target_shape)
-        x2_fft = npfft.fft2(x2, s=target_shape)
+        x1_fft = npfft.fft2(x1, s=target_shape).astype("complex64")
+        x2_fft = npfft.fft2(x2, s=target_shape).astype("complex64")
 
         # expand dims if needed
         if exp_axis:
