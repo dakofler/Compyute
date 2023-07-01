@@ -98,10 +98,8 @@ class MaxPooling(Layer):
 
     def backward(self) -> None:
         dy_s = self.__stretch(self.y.grad, self.p_window, (2, 3), self.p_map.shape)
-        _, _, x_y, x_x = self.x.shape
-        self.x.grad = (dy_s * self.p_map)[
-            :, :, :x_y, :x_x
-        ]  # use p_map as mask for grads
+        # use p_map as mask for grads
+        self.x.grad = np.resize((dy_s * self.p_map), self.x.shape)
 
     def __crop(self) -> Tensor:
         w_y, w_x = self.p_window
@@ -121,6 +119,7 @@ class MaxPooling(Layer):
         ax1, ax2 = axis
         x_stretched = np.repeat(x, fa1, axis=ax1)
         x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
+        # resize to fit target shape by filling with zeros
         return np.resize(x_stretched, target_shape)
 
 
