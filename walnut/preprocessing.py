@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-from walnut.tensor import Tensor, ShapeLike
+from walnut.tensor import Tensor, ShapeLike, ShapeError
 
 
 def split_train_val_test(
@@ -74,7 +74,7 @@ def pd_one_hot_encode(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
 
 
 def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
-    """One-hot-encodes a tensor.
+    """One-hot-encodes a one-dimensional tensor.
 
     Parameters
     ----------
@@ -89,7 +89,9 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     Tensor
         One-hot-encoded tensor of shape (n, num_classes).
     """
-    return Tensor(np.eye(num_classes)[x.data])
+    if x.ndim != 1:
+        raise ShapeError("Tensor must be of dim 1.")
+    return Tensor(np.eye(num_classes)[x.data.astype("int")])
 
 
 def normalize(

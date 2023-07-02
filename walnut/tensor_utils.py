@@ -198,5 +198,36 @@ def shuffle(
 
 
 def check_dims(x: Tensor, target_dim: int) -> None:
+    """Checks if a tensors dimensions match desired target dimensions.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor whose dimensions are checked.
+    target_dim : int
+        Number of dimension the tensor should have.
+
+    Raises
+    ------
+    ShapeError
+        If the tensor's dimensions do not match the target dimensions.
+    """
     if x.ndim != target_dim:
         raise ShapeError("Input dimensions do not match.")
+
+
+def choice(x: Tensor) -> int:
+    """Returns a random index based on a probability distribution tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor containing a probablitity distribution.
+
+    Returns
+    -------
+    int
+        Index chosen using the probability distribuition.
+    """
+    arange = np.arange(x.flatten().len)
+    return np.random.choice(arange, p=x.data.flatten())

@@ -134,16 +134,14 @@ def plot_confusion_matrix(
     """
 
     # create tensor with ones where highest probabilities occur
-    preds = tu.zeros_like(X).data
-    max_prob_indices = np.argmax(X.data, axis=1)
-    preds[np.arange(0, preds.shape[0]), max_prob_indices] = 1
+    predicitons = (X / X.max(axis=1, keepdims=True) == 1.0) * 1.0
 
     # get indeces of correct labels from Y
     y_index = np.argmax(Y.data, axis=1)
 
     classes = Y.shape[1]
     matrix = np.zeros((classes, classes))
-    for i, pred in enumerate(preds):
+    for i, pred in enumerate(predicitons.data):
         matrix[y_index[i]] += pred
 
     plt.figure(figsize=figsize)

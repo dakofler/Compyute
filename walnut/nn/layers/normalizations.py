@@ -34,7 +34,6 @@ class Layernorm(ParamLayer):
         self.parameters.append(self.w)
         self.b = tu.zeros_like(self.w)
         self.parameters.append(self.b)
-        # self.parameters = [self.w, self.b]
 
     def forward(self, mode: str = "eval") -> None:
         super().forward()

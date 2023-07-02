@@ -174,19 +174,6 @@ class Tensor:
 
     # functions
 
-    def reset_params(self, reset_data: bool = False):
-        """Resets additional parameters to improve memory usage.
-
-        Parameters
-        ----------
-        reset_data : bool, optional
-            Whether to also reset the tensor data, by default False.
-        """
-        if reset_data:
-            self.data = np.empty(0, dtype="float32")
-        self.grad = np.empty(0, dtype="float32")
-        self.params: dict[str, NumpyArray] = {}
-
     def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
 
@@ -386,3 +373,26 @@ class Tensor:
         """
         paddings = tuple((w, w) for w in widths)
         return Tensor(np.pad(self.data, paddings))
+
+    def reset_params(self, reset_data: bool = False):
+        """Resets additional parameters to improve memory usage.
+
+        Parameters
+        ----------
+        reset_data : bool, optional
+            Whether to also reset the tensor data, by default False.
+        """
+        if reset_data:
+            self.data = np.empty(0, dtype="float32")
+        self.grad = np.empty(0, dtype="float32")
+        self.params: dict[str, NumpyArray] = {}
+
+    def flatten(self) -> Tensor:
+        """Returns a flattened, one-dimensional tensor.
+
+        Returns
+        -------
+        Tensor
+            Flattened, one-dimensional version of the tensor.
+        """
+        return Tensor(self.data.reshape((-1,)))

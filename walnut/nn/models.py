@@ -58,7 +58,7 @@ class Model(ABC):
         Y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
-        verbose: bool = True,
+        verbose: str = "reduced",
         val_data: tuple[Tensor, Tensor] | None = None,
         reset_params: bool = True,
     ) -> list[float]:
@@ -182,7 +182,7 @@ class Sequential(Model):
         Y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
-        verbose: bool = True,
+        verbose: str = "reduced",
         val_data: tuple[Tensor, Tensor] | None = None,
         reset_params: bool = True,
     ) -> tuple[list[float], list[float]]:
@@ -199,8 +199,8 @@ class Sequential(Model):
         batch_size : int | None, optional
             Number of training samples used per epoch, by default None.
             If None, all samples are used.
-        verbose : bool, optional
-            Whether to print out intermediate results while training, by default True.
+        verbose : str, optional
+            Whether to print out intermediate results while training, by default "reduced".
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
         reset_params : bool, optional
@@ -251,9 +251,7 @@ class Sequential(Model):
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-
-            if verbose and train_loss is not None:
-                log_training_progress(epoch, epochs, step, train_loss, val_loss)
+            log_training_progress(verbose, epoch, epochs, step, train_loss, val_loss)
 
         # reset parameters to improve memory efficiency
         if reset_params:
