@@ -21,7 +21,9 @@ class Tensor:
     """Tensor object."""
 
     def __init__(
-        self, values: NumpyArray | list[Any] | float | int | np.float32 | None = None
+        self,
+        values: NumpyArray | list[Any] | float | int | np.float32 | None = None,
+        dtype: str = "float32",
     ):
         """Tensor object.
 
@@ -30,14 +32,14 @@ class Tensor:
         values : NumpyArray | list[Any] | float | int | None, optional
             Data to initialize the tensor, by default None.
         """
-        self.data = np.empty(0, dtype="float32")
+        self.data = np.empty(0, dtype=dtype)
 
         if values is None:
-            self.data = np.empty(0, dtype="float32")
+            self.data = np.empty(0, dtype=dtype)
         elif isinstance(values, np.ndarray):
-            self.data = values.astype("float32")
+            self.data = values.astype(dtype)
         elif isinstance(values, (list, float, int, numpyFloat)):
-            self.data = np.array(values).astype("float32")
+            self.data = np.array(values).astype(dtype)
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
 
@@ -63,6 +65,11 @@ class Tensor:
     def T(self) -> NumpyArray:
         """Tensor data transposed."""
         return self.data.T
+
+    @property
+    def dtype(self) -> str:
+        """Tensor data datatype."""
+        return str(self.data.dtype)
 
     # function overloading
 
@@ -383,7 +390,7 @@ class Tensor:
             Whether to also reset the tensor data, by default False.
         """
         if reset_data:
-            self.data = np.empty(0, dtype="float32")
+            self.data = np.empty(0, dtype=self.dtype)
         self.grad = np.empty(0, dtype="float32")
         self.params: dict[str, NumpyArray] = {}
 
@@ -396,3 +403,18 @@ class Tensor:
             Flattened, one-dimensional version of the tensor.
         """
         return Tensor(self.data.reshape((-1,)))
+
+    def transpose(self, axis: ShapeLike) -> Tensor:
+        """Transposes a tensor along given axes.
+
+        Parameters
+        ----------
+        axes : ShapeLike
+            Permutation of axes of the transposed tensor.
+
+        Returns
+        -------
+        Tensor
+            Transposed tensor.
+        """
+        return Tensor(np.transpose(self.data, axes=axis))
