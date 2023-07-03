@@ -1,8 +1,7 @@
 """walnut module"""
 
 import walnut.nn as nn
-import walnut.preprocessing as pp
-from walnut import utils
+from walnut import utils, preprocessing
 from walnut.tensor_utils import *
 from walnut.tensor import Tensor
 
