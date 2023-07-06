@@ -1,5 +1,6 @@
 """text preprocessing module"""
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
@@ -32,7 +33,7 @@ def remove_punctuation(data: str):
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    tokens: dict = field(default_factory=dict)
+    tokens: dict[str, int] = field(default_factory=dict)
 
     @abstractmethod
     def fit(self, data: str, max_tokens: int = 100) -> None:
@@ -63,4 +64,34 @@ class WordTokenizer(Tokenizer):
         data_sorted = sorted(data_unique, key=data_split.count, reverse=True)
         tokens = data_sorted[:max_tokens]
         self.tokens = {token: i + 1 for i, token in enumerate(tokens)}
-        self.tokens[dummy] = max_tokens + 1
+        self.tokens[dummy] = len(self.tokens) + 1
+
+    def encode(self, string: str) -> int:
+        """Encodes a string.
+
+        Parameters
+        ----------
+        data : str
+            String to be encoded.
+
+        Returns
+        -------
+        int
+            Token id.
+        """
+        return self.tokens.get(string, len(self.tokens))
+
+    def decode(self, token: int) -> str:
+        """Decodes an integer.
+
+        Parameters
+        ----------
+        token : int
+            Integer value to be decoded.
+
+        Returns
+        -------
+        str
+            Token.
+        """
+        return list(filter(lambda x: self.tokens[x] == token, self.tokens))[0]
