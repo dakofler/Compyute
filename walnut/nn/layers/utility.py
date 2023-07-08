@@ -123,6 +123,7 @@ class MaxPooling(Layer):
         return np.resize(x_stretched, target_shape)
 
 
+@dataclass(init=False, repr=False)
 class Flatten(Layer):
     """Flatten layer used to reshape tensors to shape (b, c_out)."""
 

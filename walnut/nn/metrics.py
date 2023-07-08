@@ -2,13 +2,11 @@
 
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-import numpy as np
 
-from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
-@dataclass
+@dataclass(slots=True)
 class Metric(ABC):
     """Metric base class."""
 
@@ -17,7 +15,7 @@ class Metric(ABC):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class Accuracy(Metric):
     """Accuracy base class."""
 
@@ -36,12 +34,10 @@ class Accuracy(Metric):
         float
             Accuracy value.
         """
+
         # create tensor with ones where highest probabilities occur
-        preds = tu.zeros_like(X).data
-        p_b, _ = preds.shape
-        max_prob_indices = np.argmax(X.data, axis=1)
-        preds[np.arange(0, p_b), max_prob_indices] = 1
+        predicitons = (X / X.max(axis=1, keepdims=True) == 1.0) * 1.0
 
         # count number of correct samples
-        num_correct_preds = np.sum(preds * Y.data).item()
-        return num_correct_preds / p_b
+        num_correct_preds = (predicitons * Y).sum().item()
+        return num_correct_preds / predicitons.shape[0]

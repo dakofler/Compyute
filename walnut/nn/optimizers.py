@@ -8,16 +8,16 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
-@dataclass()
+@dataclass(slots=True)
 class Optimizer(ABC):
     """Optimizer base class"""
 
     @abstractmethod
-    def __call__(self, parameter: Tensor):
+    def __call__(self, param: Tensor):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class SGD(Optimizer):
     """Implements the stochastic gradient descent algorithm.
 
@@ -35,29 +35,26 @@ class SGD(Optimizer):
     momentum: float = 0
     nesterov: bool = False
 
-    def __call__(self, parameter: Tensor) -> None:
+    def __call__(self, param: Tensor) -> None:
         """Updates a tensors data based on its gradients.
 
         Parameters
         ----------
-        parameter : Tensor
+        param : Tensor
             Tensor whose data is to be updated.
         """
         # get delta of previous updating cycle. If not availlable, initlaize with zeros.
-        delta = parameter.params.get("delta", tu.zeros(parameter.data.shape).data)
-        delta_new = -self.l_r * parameter.grad + self.momentum * delta
+        delta_prev = param.params.get("delta", tu.zeros(param.data.shape).data)
+        delta = -self.l_r * param.grad + self.momentum * delta_prev
 
-        if not self.nesterov:
-            parameter.data = parameter.data + delta_new
-        else:
-            parameter.data = (
-                parameter.data + self.momentum * delta_new - self.l_r * parameter.grad
-            )
+        if self.nesterov:
+            delta = self.momentum * delta - self.l_r * param.grad
 
-        parameter.params["delta"] = delta_new
+        param.data += delta
+        param.params["delta"] = delta
 
 
-@dataclass
+@dataclass(slots=True)
 class Adam(Optimizer):
     """Implements the adam algorithm according to Kingma et al., 2014.
 
@@ -78,7 +75,7 @@ class Adam(Optimizer):
     beta2: float = 0.999
     eps: float = 1e-07
 
-    def __call__(self, parameter: Tensor):
+    def __call__(self, param: Tensor):
         """Updates a tensors data based on its gradients.
 
         Parameters
@@ -87,14 +84,17 @@ class Adam(Optimizer):
             Tensor whose data is to be updated.
         """
         # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
-        momentum = parameter.params.get("momentum", tu.zeros(parameter.data.shape).data)
-        momentum_new = self.beta1 * momentum + (1 - self.beta1) * parameter.grad
-        m_bc = momentum_new / (1 - self.beta1)
-        parameter.params["momentum"] = momentum_new
+        mom_prev = param.params.get("adam_mom", tu.zeros(param.data.shape).data)
+        mom = self.beta1 * mom_prev + (1 - self.beta1) * param.grad
+        m_bc = mom / (1 - self.beta1)
+        param.params["adam_mom"] = mom
 
         # get velocity of previous updating cycle. If not availlable, initlaize with zeros.
-        velocity = parameter.params.get("velocity", tu.zeros(parameter.data.shape).data)
-        velocity_new = self.beta2 * velocity + (1 - self.beta2) * parameter.grad**2
-        v_bc = velocity_new / (1 - self.beta2)
-        parameter.params["velocity"] = velocity_new
-        parameter.data = parameter.data - m_bc * (self.l_r / (np.sqrt(v_bc) + self.eps))
+        velo_prev = param.params.get("adam_velo", tu.zeros(param.data.shape).data)
+        velo = self.beta2 * velo_prev + (1 - self.beta2) * param.grad**2
+        v_bc = velo / (1 - self.beta2)
+        param.params["adam_velo"] = velo
+
+        delta = -m_bc * (self.l_r / (np.sqrt(v_bc) + self.eps))
+        param.data += delta
+        param.params["delta"] = delta

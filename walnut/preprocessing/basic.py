@@ -1,6 +1,5 @@
-"""Data preprocessing module"""
+"""basic preprocessing module"""
 
-import pandas as pd
 import numpy as np
 from walnut.tensor import Tensor, ShapeLike
 
@@ -53,43 +52,6 @@ def split_features_labels(x: Tensor, num_x_cols: int) -> tuple[Tensor, Tensor]:
     features = Tensor(x.data[:, :num_x_cols])
     labels = Tensor(x.data[:, num_x_cols:])
     return features, labels
-
-
-def pd_one_hot_encode(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """One-hot-encodes categorical columns of a dataframe into numerical columns.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Dataframe containing categorical columns.
-    columns : list[str]
-        Names of columns to be encoded.
-
-    Returns
-    -------
-    pd.DataFrame
-        Dataframe containing transformed categorical columns.
-    """
-    return pd.get_dummies(df, columns=columns)
-
-
-def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
-    """One-hot-encodes a tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor containing categorical columns of type `int`.
-    num_classes : int
-        Number of classes to be considered when encoding.
-        Defines axis 1 of the output tensor.
-
-    Returns
-    -------
-    Tensor
-        One-hot-encoded tensor of shape (n, num_classes).
-    """
-    return Tensor(np.eye(num_classes)[x.data])
 
 
 def normalize(

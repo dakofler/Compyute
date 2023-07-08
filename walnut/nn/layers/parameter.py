@@ -1,7 +1,7 @@
 """parameter layers module"""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import math
 import numpy as np
 import numpy.fft as npfft
@@ -71,7 +71,7 @@ class ParamLayer(Layer):
         """
         if self.optimizer:
             for parameter in self.parameters:
-                self.optimizer(parameter=parameter)
+                self.optimizer(param=parameter)
         else:
             raise AttributeError("Optimizer not set.")
 
@@ -144,8 +144,9 @@ class Linear(ParamLayer):
             self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
-        bias = self.b if self.use_bias else 0.0
-        self.y.data = (self.x @ self.w + bias).data  # (b, c_out)
+        self.y.data = (self.x @ self.w).data  # (b, c_out)
+        if self.use_bias:
+            self.y.data += self.b.data
 
     def backward(self) -> None:
         self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
@@ -295,3 +296,57 @@ class Convolution(ParamLayer):
 
         # multiply, ifft and get real value to complete convolution
         return np.real(npfft.ifft2(x1_fft * x2_fft)).astype("float32")
+
+
+@dataclass(init=False, repr=False)
+class Embedding(ParamLayer):
+    """Embedding layer used for token embedding."""
+
+    def __init__(
+        self,
+        out_channels: int,
+        init: str = "kaiming_he",
+        input_shape: ShapeLike | None = None,
+    ) -> None:
+        """Embedding layer used for token embedding.
+
+        Parameters
+        ----------
+        out_channels : int
+            Number of output channels (embedding dimensions) of the layer.
+        init : str, optional
+            Initialization function for weights, by default "kaiming_he".
+        input_shape : ShapeLike | None, optional
+            Shape of a sample. Required if the layer is used as input, by default None.
+        """
+        super().__init__(
+            init_fn_name=init,
+            input_shape=input_shape,
+        )
+        self.out_channels = out_channels  # embedding dimensions
+        self.init_fn: Init | None = None
+        self.block_size: int = 0
+
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        vocab_size = self.x.shape[2]
+
+        # set initializer
+        initializer_params = inits.InitParams(vocab_size, self.act_fn_name)
+        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
+
+        # init weights (vocab_size, c_out)
+        self.w = self.init_fn((vocab_size, self.out_channels))
+        self.parameters.append(self.w)
+
+    def forward(self, mode: str = "eval") -> None:
+        y = self.x @ self.w
+        # flatten trailing dims to make output 2 dimensonal
+        self.y.data = y.reshape((self.x.shape[0], -1)).data  # (s, b*d)
+
+    def backward(self) -> None:
+        # (s, b, d) from (x, b*d)
+        y_grad = self.y.grad.reshape((*self.x.shape[:2], self.out_channels))
+        x_ma = np.moveaxis(self.x.data, 0, -1)  # (b, v, s)
+        y_grad_ma = np.moveaxis(y_grad, 1, 0)  # (b, s, d)
+        self.w.grad = np.sum(x_ma @ y_grad_ma, axis=0)

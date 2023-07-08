@@ -16,12 +16,18 @@ class ShapeError(Exception):
     """Incompatible tensor shapes."""
 
 
-@dataclass(init=False, repr=False)
+@dataclass(init=False, repr=False, slots=True)
 class Tensor:
     """Tensor object."""
 
+    data: NumpyArray
+    grad: NumpyArray
+    params: dict[str, NumpyArray]
+
     def __init__(
-        self, values: NumpyArray | list[Any] | float | int | np.float32 | None = None
+        self,
+        values: NumpyArray | list[Any] | float | int | np.float32 | None = None,
+        dtype: str = "float32",
     ):
         """Tensor object.
 
@@ -30,14 +36,12 @@ class Tensor:
         values : NumpyArray | list[Any] | float | int | None, optional
             Data to initialize the tensor, by default None.
         """
-        self.data = np.empty(0, dtype="float32")
-
         if values is None:
-            self.data = np.empty(0, dtype="float32")
+            self.data = np.empty(0, dtype=dtype)
         elif isinstance(values, np.ndarray):
-            self.data = values.astype("float32")
+            self.data = values.astype(dtype, copy=values.dtype != dtype)
         elif isinstance(values, (list, float, int, numpyFloat)):
-            self.data = np.array(values).astype("float32")
+            self.data = np.array(values).astype(dtype)
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
 
@@ -63,6 +67,11 @@ class Tensor:
     def T(self) -> NumpyArray:
         """Tensor data transposed."""
         return self.data.T
+
+    @property
+    def dtype(self) -> str:
+        """Tensor data datatype."""
+        return str(self.data.dtype)
 
     # function overloading
 
@@ -173,19 +182,6 @@ class Tensor:
         return other
 
     # functions
-
-    def reset_params(self, reset_data: bool = False):
-        """Resets additional parameters to improve memory usage.
-
-        Parameters
-        ----------
-        reset_data : bool, optional
-            Whether to also reset the tensor data, by default False.
-        """
-        if reset_data:
-            self.data = np.empty(0, dtype="float32")
-        self.grad = np.empty(0, dtype="float32")
-        self.params: dict[str, NumpyArray] = {}
 
     def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
@@ -346,6 +342,16 @@ class Tensor:
         """
         return Tensor(np.tanh(self.data))
 
+    def abs(self) -> Tensor:
+        """Absolute values of tensor elements.
+
+        Returns
+        -------
+            Tensor
+            Tensor containing the absolute value for each element.
+        """
+        return Tensor(np.abs(self.data))
+
     def item(self, *args) -> float:
         """Returns the scalar value of the tensor data.
 
@@ -386,3 +392,41 @@ class Tensor:
         """
         paddings = tuple((w, w) for w in widths)
         return Tensor(np.pad(self.data, paddings))
+
+    def reset_params(self, reset_data: bool = False):
+        """Resets additional parameters to improve memory usage.
+
+        Parameters
+        ----------
+        reset_data : bool, optional
+            Whether to also reset the tensor data, by default False.
+        """
+        if reset_data:
+            self.data = np.empty(0, dtype=self.dtype)
+        self.grad = np.empty(0, dtype="float32")
+        self.params: dict[str, NumpyArray] = {}
+
+    def flatten(self) -> Tensor:
+        """Returns a flattened, one-dimensional tensor.
+
+        Returns
+        -------
+        Tensor
+            Flattened, one-dimensional version of the tensor.
+        """
+        return Tensor(self.data.reshape((-1,)))
+
+    def transpose(self, axis: ShapeLike) -> Tensor:
+        """Transposes a tensor along given axes.
+
+        Parameters
+        ----------
+        axes : ShapeLike
+            Permutation of axes of the transposed tensor.
+
+        Returns
+        -------
+        Tensor
+            Transposed tensor.
+        """
+        return Tensor(np.transpose(self.data, axes=axis))
