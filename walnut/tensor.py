@@ -323,7 +323,7 @@ class Tensor:
         return Tensor(np.exp(self.data))
 
     def log(self) -> Tensor:
-        """Logarithm of tensor elements.
+        """Natural logarithm of tensor elements.
 
         Returns
         -------
@@ -331,6 +331,16 @@ class Tensor:
                 Tensor containing the value of log(x) for each element.
         """
         return Tensor(np.log(self.data))
+
+    def log10(self) -> Tensor:
+        """Logarithm with base 10 of tensor elements.
+
+        Returns
+        -------
+            Tensor
+                Tensor containing the value of log10(x) for each element.
+        """
+        return Tensor(np.log10(self.data))
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
