@@ -71,7 +71,7 @@ class ParamLayer(Layer):
         """
         if self.optimizer:
             for parameter in self.parameters:
-                self.optimizer(parameter=parameter)
+                self.optimizer(param=parameter)
         else:
             raise AttributeError("Optimizer not set.")
 
@@ -144,8 +144,9 @@ class Linear(ParamLayer):
             self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
-        bias = self.b if self.use_bias else 0.0
-        self.y.data = (self.x @ self.w + bias).data  # (b, c_out)
+        self.y.data = (self.x @ self.w).data  # (b, c_out)
+        if self.use_bias:
+            self.y.data += self.b.data
 
     def backward(self) -> None:
         self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)

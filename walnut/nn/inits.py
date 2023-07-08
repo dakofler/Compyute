@@ -13,7 +13,7 @@ KAIMING_GAINS = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class InitParams:
     """Parameters for initialization."""
 
@@ -21,7 +21,7 @@ class InitParams:
     act_fn: str | None = ""
 
 
-@dataclass
+@dataclass(slots=True)
 class Init(ABC):
     """Padding base class."""
 
@@ -32,7 +32,7 @@ class Init(ABC):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class Normal(Init):
     """Creates a tensor of a given shape following a normal distribution."""
 
@@ -52,7 +52,7 @@ class Normal(Init):
         return tu.randn(shape)
 
 
-@dataclass
+@dataclass(slots=True)
 class KaimingHe(Init):
     """Creates a tensor of a given shape with values using Kaiming He initialization."""
 

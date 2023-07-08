@@ -77,7 +77,7 @@ class Model(ABC):
         """Performs a backward pass."""
 
 
-@dataclass(init=False)
+@dataclass(init=False, repr=False)
 class Sequential(Model):
     """Feed forward neural network model."""
 
@@ -225,7 +225,7 @@ class Sequential(Model):
         train_loss_history = []
         val_loss_history = []
 
-        for epoch in range(1, epochs + 1):
+        for epoch in range(0, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(X, Y, batch_size)
 

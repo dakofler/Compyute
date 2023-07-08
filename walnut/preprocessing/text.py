@@ -29,32 +29,78 @@ def remove_punctuation(data: str):
     return data_clean
 
 
-@dataclass
+@dataclass(slots=True)
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
     tokens: dict[str, int] = field(default_factory=dict)
 
+    @property
+    def vocab_size(self) -> int:
+        """Number of tokens."""
+        return len(self.tokens)
+
     @abstractmethod
     def fit(self, data: str, max_tokens: int = 100) -> None:
         """Fits the tokenizer to data."""
 
+    @abstractmethod
+    def encode(self, string: str) -> list[int]:
+        """Encodes a string."""
 
-@dataclass(init=False)
-class WordTokenizer(Tokenizer):
-    """Creates tokens from entire words."""
+    @abstractmethod
+    def decode(self, tokens: list[int]) -> str:
+        """Decodes a list of tokens."""
 
-    def fit(self, data: str, max_tokens: int = 100, dummy: str = "<DUMMY>"):
+
+@dataclass(slots=True)
+class CharacterTokenizer(Tokenizer):
+    """Creates character tokens."""
+
+    oov_token: str = "|"
+
+    def fit(self, data: str, max_tokens: int = 100) -> None:
         """Fits the tokenizer to data.
 
         Parameters
         ----------
         data : str
-            Text the tokens should be extracted from
+            Text the tokens should be extracted from.
         max_tokens : int, optional
-            Maximum number of tokens to be generated, by default 100
-        dummy : str, optional
-            Dummy token for unknown words, by default "<DUMMY>"
+            Maximum number of tokens to be generated, by default 100.
+        oov_token : str, optional
+            Token used for unknown words, by default "|".
+        """
+        data_sorted = sorted(set(data))
+        data_sorted.insert(0, self.oov_token)
+        tokens = data_sorted[:max_tokens]
+        self.tokens = {s: t for t, s in enumerate(tokens)}
+
+    def encode(self, string: str) -> list[int]:
+        return [self.tokens.get(s, 0) for s in string]
+
+    def decode(self, tokens: list[int]) -> str:
+        reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
+        return "".join([reverse_tokens.get(t, self.oov_token) for t in tokens])
+
+
+@dataclass(slots=True)
+class WordTokenizer(Tokenizer):
+    """Creates word tokens."""
+
+    oov_token: str = "<OOV>"
+
+    def fit(self, data: str, max_tokens: int = 100) -> None:
+        """Fits the tokenizer to data.
+
+        Parameters
+        ----------
+        data : str
+            Text the tokens should be extracted from.
+        max_tokens : int, optional
+            Maximum number of tokens to be generated, by default 100.
+        oov_token : str, optional
+            Token for unknown words, by default "<OOV>".
         """
         data_clean = remove_punctuation(data).lower()
         data_split = data_clean.split(" ")
@@ -62,11 +108,11 @@ class WordTokenizer(Tokenizer):
         data_unique = list(set(data_split))
         # sort elements by occurence in data
         data_sorted = sorted(data_unique, key=data_split.count, reverse=True)
+        data_sorted.insert(0, self.oov_token)
         tokens = data_sorted[:max_tokens]
-        self.tokens = {token: i + 1 for i, token in enumerate(tokens)}
-        self.tokens[dummy] = len(self.tokens) + 1
+        self.tokens = {token: i for i, token in enumerate(tokens)}
 
-    def encode(self, string: str) -> int:
+    def encode(self, string: str) -> list[int]:
         """Encodes a string.
 
         Parameters
@@ -76,22 +122,25 @@ class WordTokenizer(Tokenizer):
 
         Returns
         -------
-        int
-            Token id.
+        list[int]
+            List of tokens.
         """
-        return self.tokens.get(string, len(self.tokens))
+        string_clean = remove_punctuation(string.lower())
+        string_split = string_clean.split(" ")
+        return [self.tokens.get(s, 0) for s in string_split]
 
-    def decode(self, token: int) -> str:
-        """Decodes an integer.
+    def decode(self, tokens: list[int]) -> str:
+        """Decodes a list of tokens.
 
         Parameters
         ----------
-        token : int
-            Integer value to be decoded.
+        totokensken : list[int]
+            List of integer values to be decoded.
 
         Returns
         -------
         str
-            Token.
+            Concatenated tokens.
         """
-        return list(filter(lambda x: self.tokens[x] == token, self.tokens))[0]
+        reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
+        return " ".join([reverse_tokens.get(token, self.oov_token) for token in tokens])

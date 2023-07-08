@@ -7,46 +7,34 @@ import numpy as np
 from walnut.tensor import Tensor, NumpyArray
 
 
-@dataclass()
+@dataclass(init=False)
 class Loss(ABC):
     """Loss base class."""
 
-    _y: NumpyArray = np.empty(0, dtype="float32")
-    _t: NumpyArray = np.empty(0, dtype="float32")
+    def __init__(self) -> None:
+        self.y: NumpyArray = np.empty(0, dtype="float32")
+        self.t: NumpyArray = np.empty(0, dtype="float32")
 
     @abstractmethod
-    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> float:
         ...
 
     @abstractmethod
     def backward(self) -> Tensor:
         """Performs a backward pass and computes gradients."""
 
-    def set_vals(self, outputs: Tensor, targets: Tensor) -> None:
-        """Offsets values to avoid dividing by zero.
-
-        Parameters
-        ----------
-        outputs : Tensor
-            A model's predictions.
-        targets : Tensor
-            Target values.
-        """
-        self._y = outputs.data + 1e-7  # to avoid dividing by 0
-        self._t = targets.data + 1e-7  # to avoid dividing by 0
-
 
 class MSE(Loss):
     """Mean squard error loss function."""
 
-    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> float:
         """Computes the mean squared error loss.
 
         Parameters
         ----------
-        outputs : Tensor
+        y : Tensor
             A model's predictions.
-        targets : Tensor
+        t : Tensor
             Target values.
 
         Returns
@@ -54,25 +42,26 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        super().set_vals(outputs, targets)
-        return np.mean(0.5 * np.sum((self._t - self._y) ** 2, axis=1)).item()
+        self.y = y.data + 1e-7
+        self.t = t.data + 1e-7
+        return np.mean(0.5 * np.sum((self.t - self.y) ** 2, axis=1)).item()
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return Tensor((self._y - self._t) / self._y.shape[0])
+        return Tensor((self.y - self.t) / self.y.shape[0])
 
 
 class Crossentropy(Loss):
     """Crossentropy loss function."""
 
-    def __call__(self, outputs: Tensor, targets: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> float:
         """Computes the crossentropy loss.
 
         Parameters
         ----------
-        outputs : Tensor
+        y : Tensor
             A model's predictions.
-        targets : Tensor
+        t : Tensor
             Target values.
 
         Returns
@@ -80,9 +69,10 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        super().set_vals(outputs, targets)
-        return -np.mean(np.log(self._y) * self._t).item()
+        self.y = y.data + 1e-7
+        self.t = t.data + 1e-7
+        return -np.mean(np.log(self.y) * self.t).item()
 
     def backward(self) -> Tensor:
         """Performs a backward pass."""
-        return Tensor(-1.0 * self._t / (self._y * self._t.size))
+        return Tensor(-1.0 * self.t / (self.y * self.t.size))

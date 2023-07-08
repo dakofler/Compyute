@@ -16,9 +16,13 @@ class ShapeError(Exception):
     """Incompatible tensor shapes."""
 
 
-@dataclass(init=False, repr=False)
+@dataclass(init=False, repr=False, slots=True)
 class Tensor:
     """Tensor object."""
+
+    data: NumpyArray
+    grad: NumpyArray
+    params: dict[str, NumpyArray]
 
     def __init__(
         self,
@@ -32,12 +36,10 @@ class Tensor:
         values : NumpyArray | list[Any] | float | int | None, optional
             Data to initialize the tensor, by default None.
         """
-        self.data = np.empty(0, dtype=dtype)
-
         if values is None:
             self.data = np.empty(0, dtype=dtype)
         elif isinstance(values, np.ndarray):
-            self.data = values.astype(dtype)
+            self.data = values.astype(dtype, copy=values.dtype != dtype)
         elif isinstance(values, (list, float, int, numpyFloat)):
             self.data = np.array(values).astype(dtype)
         else:
@@ -339,6 +341,16 @@ class Tensor:
             Tensor containing the value of tanh(x) for each element.
         """
         return Tensor(np.tanh(self.data))
+
+    def abs(self) -> Tensor:
+        """Absolute values of tensor elements.
+
+        Returns
+        -------
+            Tensor
+            Tensor containing the absolute value for each element.
+        """
+        return Tensor(np.abs(self.data))
 
     def item(self, *args) -> float:
         """Returns the scalar value of the tensor data.

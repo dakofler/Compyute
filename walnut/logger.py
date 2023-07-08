@@ -34,7 +34,8 @@ def log_training_progress(
         case "muted":
             return
         case "reduced":
-            if epochs < 10 or epoch % (epochs // 10) == 0:
+            div = epochs // 10
+            if div == 0 or epoch % div == 0:
                 print(line)
         case _:
             print(line)

@@ -7,7 +7,7 @@ import numpy as np
 from walnut.tensor import Tensor
 
 
-@dataclass
+@dataclass(slots=True)
 class PaddingParams:
     """Parameters for padding."""
 
@@ -15,7 +15,7 @@ class PaddingParams:
     axis: tuple[int, ...] = (-1, -2)
 
 
-@dataclass
+@dataclass(slots=True)
 class Padding(ABC):
     """Padding base class."""
 
@@ -26,7 +26,7 @@ class Padding(ABC):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class Valid(Padding):
     """Applies valid padding using zero-values to a tensor.
 
@@ -45,7 +45,7 @@ class Valid(Padding):
         return x
 
 
-@dataclass
+@dataclass(slots=True)
 class Same(Padding):
     """Applies same padding using zero-values to a tensor.
 

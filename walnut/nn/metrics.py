@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from walnut.tensor import Tensor
 
 
-@dataclass
+@dataclass(slots=True)
 class Metric(ABC):
     """Metric base class."""
 
@@ -15,7 +15,7 @@ class Metric(ABC):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class Accuracy(Metric):
     """Accuracy base class."""
 
