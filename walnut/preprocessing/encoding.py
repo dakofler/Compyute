@@ -47,7 +47,7 @@ def one_hot_encode(x: __Tensor, num_classes: int) -> __Tensor:
     """
     if x.ndim != 1:
         raise __ShapeError("Tensor must be of dim 1.")
-    return __Tensor(__np.eye(num_classes)[x.data.astype("int")])
+    return __Tensor(__np.eye(num_classes)[x.data], dtype="int")
 
 
 def list_one_hot_encode(x: list[int], num_classes: int) -> __NumpyArray:

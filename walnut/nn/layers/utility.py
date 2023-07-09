@@ -124,24 +124,29 @@ class MaxPooling(Layer):
 
 
 @dataclass(init=False, repr=False)
-class Flatten(Layer):
+class Reshape(Layer):
     """Flatten layer used to reshape tensors to shape (b, c_out)."""
 
-    def __init__(self, input_shape: ShapeLike | None = None) -> None:
-        """Flatten layer used to reshape tensors to shape (b, c_out).
+    def __init__(
+        self, output_shape: ShapeLike = (-1,), input_shape: ShapeLike | None = None
+    ) -> None:
+        """Reshapes a tensor to fit a given shape.
 
         Parameters
         ----------
+        output_shape : ShapeLike, optional
+            The output's target shape, by default (-1,).
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
+        self.output_shape = output_shape
 
     def forward(self, mode: str = "eval") -> None:
-        self.y.data = self.x.data.reshape(self.x.shape[0], -1)
+        self.y.data = self.x.data.reshape((self.x.shape[0], *self.output_shape))
 
     def backward(self) -> None:
-        self.x.grad = np.resize(self.y.grad, self.x.shape)
+        self.x.grad = self.y.grad.reshape(self.x.shape)
 
 
 @dataclass(init=False, repr=False)

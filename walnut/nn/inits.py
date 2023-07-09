@@ -34,7 +34,7 @@ class Init(ABC):
 
 @dataclass(slots=True)
 class Normal(Init):
-    """Creates a tensor of a given shape following a normal distribution."""
+    """Creates a tensor with values following a normal distribution."""
 
     def __call__(self, shape: ShapeLike) -> Tensor:
         """Creates a tensor of a given shape following a normal distribution.
@@ -57,7 +57,7 @@ class KaimingHe(Init):
     """Creates a tensor of a given shape with values using Kaiming He initialization."""
 
     def __call__(self, shape: ShapeLike) -> Tensor:
-        """Creates a tensor of a given shape with values using Kaiming He initialization.
+        """Creates a tensor with random values as described by He, K. et al. (2015).
 
         Parameters
         ----------

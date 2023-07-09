@@ -11,7 +11,7 @@ from walnut.nn.layers.parameter import ParamLayer
 
 @dataclass(init=False, repr=False)
 class Layernorm(ParamLayer):
-    """Implements layer normalization."""
+    """Normalizes values per sample."""
 
     def __init__(self, eps: float = 1e-7, input_shape: ShapeLike | None = None) -> None:
         """Implements layer normalization.

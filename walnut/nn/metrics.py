@@ -17,7 +17,7 @@ class Metric(ABC):
 
 @dataclass(slots=True)
 class Accuracy(Metric):
-    """Accuracy base class."""
+    """Computes the percentage of correctly predicted classes."""
 
     def __call__(self, X: Tensor, Y: Tensor) -> float:
         """Computes the accuracy score of a prediction compared to target values.

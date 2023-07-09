@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 ShapeLike = tuple[int, ...]
 NumpyArray = npt.NDArray[Any]
-numpyFloat = np.float32 | np.float64
+numpyType = np.float32 | np.float64 | np.int32 | np.int64
 
 
 class ShapeError(Exception):
@@ -40,7 +40,7 @@ class Tensor:
             self.data = np.empty(0, dtype=dtype)
         elif isinstance(values, np.ndarray):
             self.data = values.astype(dtype, copy=values.dtype != dtype)
-        elif isinstance(values, (list, float, int, numpyFloat)):
+        elif isinstance(values, (list, float, int, numpyType)):
             self.data = np.array(values).astype(dtype)
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
@@ -81,8 +81,11 @@ class Tensor:
     def __call__(self) -> NumpyArray:
         return self.data
 
-    def __getitem__(self, item) -> Tensor:
-        return Tensor(self.data[item])
+    def __getitem__(self, key) -> Tensor:
+        return Tensor(self.data[key], dtype=self.dtype)
+
+    def __setitem__(self, key, value) -> None:
+        self.data[key] = value
 
     def __add__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
@@ -115,27 +118,27 @@ class Tensor:
 
     def __lt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data < other.data)
+        return Tensor(self.data < other.data, dtype="int")
 
     def __gt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data > other.data)
+        return Tensor(self.data > other.data, dtype="int")
 
     def __le__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data <= other.data)
+        return Tensor(self.data <= other.data, dtype="int")
 
     def __ge__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data >= other.data)
+        return Tensor(self.data >= other.data, dtype="int")
 
     def __eq__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data == other.data)
+        return Tensor(self.data == other.data, dtype="int")
 
     def __ne__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data != other.data)
+        return Tensor(self.data != other.data, dtype="int")
 
     def __isub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
@@ -426,13 +429,13 @@ class Tensor:
         """
         return Tensor(self.data.reshape((-1,)))
 
-    def transpose(self, axis: ShapeLike) -> Tensor:
+    def transpose(self, axis: ShapeLike | None = None) -> Tensor:
         """Transposes a tensor along given axes.
 
         Parameters
         ----------
-        axes : ShapeLike
-            Permutation of axes of the transposed tensor.
+        axes : ShapeLike, optional
+            Permutation of axes of the transposed tensor, by default None.
 
         Returns
         -------
@@ -440,3 +443,35 @@ class Tensor:
             Transposed tensor.
         """
         return Tensor(np.transpose(self.data, axes=axis))
+
+    def astype(self, dtype: str) -> Tensor:
+        """Returns a copy of the tensor with parsed values.
+
+        Parameters
+        ----------
+        dtype : str
+            Datatype of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor of dtype.
+        """
+        return Tensor(self.data, dtype=dtype)
+
+    def append(self, values: Tensor, axis: int) -> Tensor:
+        """Returns a copy of the tensor with appended values.
+
+        Parameters
+        ----------
+        values : Tensor
+            Values to append.
+        axis : int
+            Axis alown which to append the values
+
+        Returns
+        -------
+        Tensor
+            Tensor containing appended values.
+        """
+        return Tensor(np.append(self.data, values.data, axis=axis))

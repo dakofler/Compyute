@@ -36,7 +36,7 @@ def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
     Tensor
         Tensor with extended dimensions.
     """
-    return Tensor(np.expand_dims(x.data, axis=axis))
+    return Tensor(np.expand_dims(x.data, axis=axis), dtype=x.dtype)
 
 
 def match_dims(x: Tensor, dims: int) -> Tensor:
@@ -157,7 +157,7 @@ def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.randint(lower_bound, upper_bound, shape))
+    return Tensor(np.random.randint(lower_bound, upper_bound, shape), dtype="int")
 
 
 def shuffle(
@@ -216,18 +216,21 @@ def check_dims(x: Tensor, target_dim: int) -> None:
         raise ShapeError("Input dimensions do not match.")
 
 
-def choice(x: Tensor) -> int:
+def choice(x: Tensor, num_samples: int = 1) -> Tensor:
     """Returns a random index based on a probability distribution tensor.
 
     Parameters
     ----------
     x : Tensor
         Tensor containing a probablitity distribution.
+    num_samples : int, optional
+        Number of samples drawn, by default 1.
 
     Returns
     -------
-    int
-        Index chosen using the probability distribuition.
+    Tensor
+        Chosen samples.
     """
     arange = np.arange(x.flatten().len)
-    return np.random.choice(arange, p=x.data.flatten())
+    samples = np.random.choice(arange, size=num_samples, p=x.data.flatten())
+    return Tensor(samples, dtype="int")

@@ -125,10 +125,12 @@ class Linear(ParamLayer):
         )
         self.out_channels = out_channels
         self.init_fn: Init | None = None
+        self.b_sum_axis: ShapeLike | None = None
+        self.x_transp_axis: ShapeLike | None = None
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        in_channels = self.x.shape[1]
+        in_channels = self.x.shape[-1]
 
         # set initializer
         initializer_params = inits.InitParams(in_channels, self.act_fn_name)
@@ -144,22 +146,33 @@ class Linear(ParamLayer):
             self.parameters.append(self.b)
 
     def forward(self, mode: str = "eval") -> None:
-        self.y.data = (self.x @ self.w).data  # (b, c_out)
+        self.y.data = (self.x @ self.w).data  # (b, [c], c_out)
         if self.use_bias:
             self.y.data += self.b.data
 
     def backward(self) -> None:
         self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
-        self.w.grad = self.x.T @ self.y.grad  # weight grads (c_in, c_out)
+
+        # weight grads (c_in, c_out)
+        if self.x.ndim == 2:
+            self.w.grad = self.x.T @ self.y.grad
+        else:
+            self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)
+
+        # bias grads (c_out,)
         if self.use_bias:
-            self.b.grad = np.sum(self.y.grad, axis=0)  # bias grads (c_out,)
+            if self.x.ndim == 2:
+                self.b.grad = np.sum(self.y.grad, axis=0)
+            else:
+                self.b.grad = np.sum(self.y.grad, axis=(0, 1))
+
         if self.optimizer:
             self.optimize()
 
 
 @dataclass(init=False, repr=False)
 class Convolution(ParamLayer):
-    """Convolutional layer used for spacial information and feature extraction."""
+    """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
@@ -300,7 +313,7 @@ class Convolution(ParamLayer):
 
 @dataclass(init=False, repr=False)
 class Embedding(ParamLayer):
-    """Embedding layer used for token embedding."""
+    """Layer used for token embedding."""
 
     def __init__(
         self,
@@ -325,11 +338,10 @@ class Embedding(ParamLayer):
         )
         self.out_channels = out_channels  # embedding dimensions
         self.init_fn: Init | None = None
-        self.block_size: int = 0
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        vocab_size = self.x.shape[2]
+        vocab_size = self.x.shape[-1]
 
         # set initializer
         initializer_params = inits.InitParams(vocab_size, self.act_fn_name)
@@ -340,13 +352,7 @@ class Embedding(ParamLayer):
         self.parameters.append(self.w)
 
     def forward(self, mode: str = "eval") -> None:
-        y = self.x @ self.w
-        # flatten trailing dims to make output 2 dimensonal
-        self.y.data = y.reshape((self.x.shape[0], -1)).data  # (s, b*d)
+        self.y.data = (self.x @ self.w).data
 
     def backward(self) -> None:
-        # (s, b, d) from (x, b*d)
-        y_grad = self.y.grad.reshape((*self.x.shape[:2], self.out_channels))
-        x_ma = np.moveaxis(self.x.data, 0, -1)  # (b, v, s)
-        y_grad_ma = np.moveaxis(y_grad, 1, 0)  # (b, s, d)
-        self.w.grad = np.sum(x_ma @ y_grad_ma, axis=0)
+        self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)

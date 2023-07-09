@@ -3,6 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from walnut.tensor import Tensor
 
 
 def remove_punctuation(data: str):
@@ -45,12 +46,12 @@ class Tokenizer(ABC):
         """Fits the tokenizer to data."""
 
     @abstractmethod
-    def encode(self, string: str) -> list[int]:
+    def encode(self, string: str) -> Tensor:
         """Encodes a string."""
 
     @abstractmethod
-    def decode(self, tokens: list[int]) -> str:
-        """Decodes a list of tokens."""
+    def decode(self, tokens: Tensor) -> str:
+        """Decodes tokens."""
 
 
 @dataclass(slots=True)
@@ -76,12 +77,38 @@ class CharacterTokenizer(Tokenizer):
         tokens = data_sorted[:max_tokens]
         self.tokens = {s: t for t, s in enumerate(tokens)}
 
-    def encode(self, string: str) -> list[int]:
-        return [self.tokens.get(s, 0) for s in string]
+    def encode(self, string: str) -> Tensor:
+        """Encodes a string.
 
-    def decode(self, tokens: list[int]) -> str:
+        Parameters
+        ----------
+        data : str
+            String to be encoded.
+
+        Returns
+        -------
+        Tensor
+            Tokens.
+        """
+        return Tensor([self.tokens.get(s, 0) for s in string], dtype="int")
+
+    def decode(self, tokens: Tensor) -> str:
+        """Decodes tokens.
+
+        Parameters
+        ----------
+        tokens : Tensor
+            Tensor of integer tokens to be decoded.
+
+        Returns
+        -------
+        str
+            Concatenated tokens.
+        """
         reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
-        return "".join([reverse_tokens.get(t, self.oov_token) for t in tokens])
+        return "".join(
+            [reverse_tokens.get(token.item(), self.oov_token) for token in tokens.data]
+        )
 
 
 @dataclass(slots=True)
@@ -112,7 +139,7 @@ class WordTokenizer(Tokenizer):
         tokens = data_sorted[:max_tokens]
         self.tokens = {token: i for i, token in enumerate(tokens)}
 
-    def encode(self, string: str) -> list[int]:
+    def encode(self, string: str) -> Tensor:
         """Encodes a string.
 
         Parameters
@@ -122,20 +149,20 @@ class WordTokenizer(Tokenizer):
 
         Returns
         -------
-        list[int]
-            List of tokens.
+        Tensor
+            Tokens.
         """
         string_clean = remove_punctuation(string.lower())
         string_split = string_clean.split(" ")
-        return [self.tokens.get(s, 0) for s in string_split]
+        return Tensor([self.tokens.get(s, 0) for s in string_split])
 
-    def decode(self, tokens: list[int]) -> str:
+    def decode(self, tokens: Tensor) -> str:
         """Decodes a list of tokens.
 
         Parameters
         ----------
-        totokensken : list[int]
-            List of integer values to be decoded.
+        tokens : Tensor
+            Tensor of integer tokens to be decoded.
 
         Returns
         -------
@@ -143,4 +170,6 @@ class WordTokenizer(Tokenizer):
             Concatenated tokens.
         """
         reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
-        return " ".join([reverse_tokens.get(token, self.oov_token) for token in tokens])
+        return " ".join(
+            [reverse_tokens.get(token.item(), self.oov_token) for token in tokens.data]
+        )

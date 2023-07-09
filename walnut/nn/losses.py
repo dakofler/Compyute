@@ -25,7 +25,7 @@ class Loss(ABC):
 
 
 class MSE(Loss):
-    """Mean squard error loss function."""
+    """Computes the mean squared error loss."""
 
     def __call__(self, y: Tensor, t: Tensor) -> float:
         """Computes the mean squared error loss.
@@ -52,7 +52,7 @@ class MSE(Loss):
 
 
 class Crossentropy(Loss):
-    """Crossentropy loss function."""
+    """Computes the crossentropy loss."""
 
     def __call__(self, y: Tensor, t: Tensor) -> float:
         """Computes the crossentropy loss.
