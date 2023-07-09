@@ -1,25 +1,25 @@
-"""Activation layers module"""
+"""Activation modules module"""
 
 import numpy as np
 
 from walnut.tensor import NumpyArray
-from walnut.nn.layers.utility import Layer
+from walnut.nn.modules.utility import Module
 
 
-class Relu(Layer):
+class Relu(Module):
     """Implements the ReLu activation function."""
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = np.maximum(0, self.x.data)
 
     def backward(self) -> None:
         self.x.grad = (self.y.data > 0) * self.y.grad
 
 
-class Sigmoid(Layer):
+class Sigmoid(Module):
     """Implements the Sigmoid activation function."""
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = self.__sigmoid(self.x.data)
 
     def backward(self) -> None:
@@ -31,10 +31,10 @@ class Sigmoid(Layer):
         return 1.0 / (1.0 + np.exp(-x))
 
 
-class Tanh(Layer):
+class Tanh(Module):
     """Implements the Tanh activation function."""
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = np.tanh(self.x.data)
 
     def backward(self) -> None:
@@ -42,10 +42,10 @@ class Tanh(Layer):
         self.x.grad = (1.0 - self.y.data**2) * self.y.grad
 
 
-class Softmax(Layer):
+class Softmax(Module):
     """Implements the Softmax activation function."""
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = self.__softmax(self.x.data)
 
     def backward(self) -> None:

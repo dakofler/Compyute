@@ -1,4 +1,4 @@
-"""utility layers module"""
+"""utility modules module"""
 
 
 from __future__ import annotations
@@ -10,13 +10,13 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
 
 
-class LayerCompilationError(Exception):
-    """Error with the compiling of the layer."""
+class ModuleCompilationError(Exception):
+    """Error with the compiling of the module."""
 
 
 @dataclass(repr=False, init=False)
-class Layer(ABC):
-    """Layer base class."""
+class Module(ABC):
+    """Module base class."""
 
     def __init__(self, input_shape: ShapeLike | None = None):
         self.input_shape = input_shape
@@ -24,27 +24,28 @@ class Layer(ABC):
         self.y: Tensor = Tensor()
         self.parameters: list[Tensor] | None = None
         self.compiled: bool = False
+        self.training: bool = False
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
         if not self.compiled:
             return name
-        x_shape = str(self.x.shape[1:])  # x is never none here if layer is compiled
+        x_shape = str(self.x.shape[1:])
         w_shape = b_shape = "(,)"
-        y_shape = str(self.y.shape[1:])  # y is never none here if layer is compiled
+        y_shape = str(self.y.shape[1:])
         return (
             f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "
             + f"{b_shape:15s} | {y_shape:15s} | 0"
         )
 
     def compile(self) -> None:
-        """Connects layers within a model."""
+        """Connects modules within a model."""
         if self.input_shape is not None:
             self.x = tu.ones((1, *self.input_shape))
         self.compiled = True
 
     @abstractmethod
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         """Performs a forward pass ."""
 
     @abstractmethod
@@ -52,33 +53,33 @@ class Layer(ABC):
         """Performs a backward pass and computes gradients."""
 
     def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the layer."""
+        """Returns the total number of trainable parameters of the module."""
         return 0
 
 
 @dataclass(init=False, repr=False)
-class MaxPooling(Layer):
-    """MaxPoling layer used to reduce information to avoid overfitting."""
+class MaxPooling(Module):
+    """MaxPoling module used to reduce information to avoid overfitting."""
 
     def __init__(
         self,
         p_window: tuple[int, int] = (2, 2),
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """MaxPoling layer used to reduce information to avoid overfitting.
+        """MaxPoling module used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         p_window : tuple[int, int], optional
              Shape of the pooling window used for the pooling operation, by default (2, 2)
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None
+            Shape of a sample. Required if the module is used as input, by default None
         """
         super().__init__(input_shape=input_shape)
         self.p_window = p_window
         self.p_map: NumpyArray = np.empty(0, dtype="float32")
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         # init output as zeros (b, c, y, k)
         x_crop = self.__crop()
         p_y, p_x = self.p_window
@@ -124,8 +125,8 @@ class MaxPooling(Layer):
 
 
 @dataclass(init=False, repr=False)
-class Reshape(Layer):
-    """Flatten layer used to reshape tensors to shape (b, c_out)."""
+class Reshape(Module):
+    """Flatten module used to reshape tensors to shape (b, c_out)."""
 
     def __init__(
         self, output_shape: ShapeLike = (-1,), input_shape: ShapeLike | None = None
@@ -137,12 +138,12 @@ class Reshape(Layer):
         output_shape : ShapeLike, optional
             The output's target shape, by default (-1,).
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.output_shape = output_shape
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = self.x.data.reshape((self.x.shape[0], *self.output_shape))
 
     def backward(self) -> None:
@@ -150,25 +151,25 @@ class Reshape(Layer):
 
 
 @dataclass(init=False, repr=False)
-class Dropout(Layer):
-    """Dropout layer used to randomly reduce information and avoid overfitting."""
+class Dropout(Module):
+    """Dropout module used to randomly reduce information and avoid overfitting."""
 
     def __init__(self, d_rate: float, input_shape: ShapeLike | None = None) -> None:
-        """Dropout layer used to randomly reduce information and avoid overfitting.
+        """Dropout module used to randomly reduce information and avoid overfitting.
 
         Parameters
         ----------
         d_rate : float
             Probability of values being set to 0.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.d_rate = d_rate
         self.d_map: NumpyArray = np.empty(0, dtype="float32")
 
-    def forward(self, mode: str = "eval") -> None:
-        if mode == "eval":
+    def forward(self) -> None:
+        if not self.training:
             self.y.data = self.x.data
         else:
             drop_rate = self.d_rate

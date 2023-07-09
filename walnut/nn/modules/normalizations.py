@@ -1,4 +1,4 @@
-"""Normalization layers module"""
+"""Normalization modules module"""
 
 from dataclasses import dataclass
 import numpy as np
@@ -6,22 +6,22 @@ import numpy as np
 from walnut import tensor_utils as tu
 from walnut.tensor import ShapeLike
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers.parameter import ParamLayer
+from walnut.nn.modules.parameter import ParamModule
 
 
 @dataclass(init=False, repr=False)
-class Layernorm(ParamLayer):
+class Layernorm(ParamModule):
     """Normalizes values per sample."""
 
     def __init__(self, eps: float = 1e-7, input_shape: ShapeLike | None = None) -> None:
-        """Implements layer normalization.
+        """Implements module normalization.
 
         Parameters
         ----------
         eps : float, optional
             Constant for numerical stability, by default 1e-7.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.eps = eps
@@ -35,7 +35,7 @@ class Layernorm(ParamLayer):
         self.b = tu.zeros_like(self.w)
         self.parameters.append(self.b)
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         super().forward()
         std_axis = tuple(i + 1 for i in range(self.x.ndim - 1))
         mean = np.mean(self.x.data, axis=std_axis, keepdims=True)

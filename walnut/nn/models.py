@@ -10,9 +10,9 @@ from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers import activations
-from walnut.nn.layers import normalizations
-from walnut.nn.layers.parameter import Layer, ParamLayer
+from walnut.nn.modules import activations
+from walnut.nn.modules import normalizations
+from walnut.nn.modules.parameter import Module, ParamModule
 
 
 class ModelCompilationError(Exception):
@@ -81,18 +81,18 @@ class Model(ABC):
 class Sequential(Model):
     """Feed forward neural network model."""
 
-    def __init__(self, layers: list[Layer]) -> None:
+    def __init__(self, layers: list[Module]) -> None:
         """Feed forward neural network model.
 
         Parameters
         ----------
-        layers : list[Layer]
-            List of layers that make up the model.
+        layers : list[Module]
+            List of modules that make up the model.
         """
         super().__init__()
         self.layers = layers
 
-    def __call__(self, X: Tensor, mode: str = "eval") -> Tensor:
+    def __call__(self, X: Tensor) -> Tensor:
         """Computes a prediction.
 
         Parameters
@@ -109,7 +109,7 @@ class Sequential(Model):
         """
         tu.check_dims(X, len(self.input_shape))
         self.layers[0].x.data = X.data.copy()
-        self.forward(mode)
+        self.forward()
         return Tensor(self.layers[-1].y.data)
 
     def __repr__(self) -> str:
@@ -156,7 +156,7 @@ class Sequential(Model):
         for i, layer in enumerate(self.layers):
             if i > 0:
                 layer.x.data = self.layers[i - 1].y.data
-            if isinstance(layer, ParamLayer):
+            if isinstance(layer, ParamModule):
                 layer.compile(optimizer)
 
                 # Normalization functions
@@ -225,12 +225,15 @@ class Sequential(Model):
         train_loss_history = []
         val_loss_history = []
 
+        for layer in self.layers:
+            layer.training = True
+
         for epoch in range(0, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(X, Y, batch_size)
 
             # forward pass
-            predictions = self(x_train, mode="train")
+            predictions = self(x_train)
 
             # compute loss
             train_loss = self.loss_fn(predictions, y_train)
@@ -256,6 +259,9 @@ class Sequential(Model):
         # reset parameters to improve memory efficiency
         if reset_params:
             self.__reset_params()
+
+        for layer in self.layers:
+            layer.training = False
 
         return train_loss_history, val_loss_history
 
@@ -290,11 +296,11 @@ class Sequential(Model):
         score = self.metric(predictions, Y)
         return loss, score
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         for i, layer in enumerate(self.layers):
             if i > 0:
                 layer.x.data = self.layers[i - 1].y.data
-            layer.forward(mode)
+            layer.forward()
 
     def backward(self):
         layers_reversed = self.layers.copy()

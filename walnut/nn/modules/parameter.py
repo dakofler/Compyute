@@ -1,4 +1,4 @@
-"""parameter layers module"""
+"""parameter modules module"""
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -11,12 +11,12 @@ from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn import inits, paddings
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers.utility import Layer
+from walnut.nn.modules.utility import Module
 
 
 @dataclass(repr=False, init=False)
-class ParamLayer(Layer):
-    """Trainable layer base class."""
+class ParamModule(Module):
+    """Trainable module base class."""
 
     def __init__(
         self,
@@ -51,23 +51,23 @@ class ParamLayer(Layer):
         )
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
-        """Connects layers within a model.
+        """Connects modules within a model.
 
         Parameters
         ----------
         optimizer : Optimizer | None, optional
-            Optimizer used to update layer parameters when training, by default None.
+            Optimizer used to update module parameters when training, by default None.
         """
         super().compile()
         self.optimizer = optimizer
 
     def optimize(self) -> None:
-        """Updates layer parameters using an optimizer object.
+        """Updates module parameters using an optimizer.
 
         Raises
         ------
         AttributeError
-            If no optimizer is defined for the layer.
+            If no optimizer is defined for the module.
         """
         if self.optimizer:
             for parameter in self.parameters:
@@ -76,7 +76,7 @@ class ParamLayer(Layer):
             raise AttributeError("Optimizer not set.")
 
     def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the layer.
+        """Returns the total number of trainable parameters of the module.
 
         Returns
         -------
@@ -87,8 +87,8 @@ class ParamLayer(Layer):
 
 
 @dataclass(init=False, repr=False)
-class Linear(ParamLayer):
-    """Fully connected layer."""
+class Linear(ParamModule):
+    """Fully connected module."""
 
     def __init__(
         self,
@@ -99,22 +99,22 @@ class Linear(ParamLayer):
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Fully connected layer.
+        """Fully connected module.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (neurons) of the layer.
+            Number of output channels (neurons) of the module.
         act : str | None, optional
-            Activation function applied to the layers outputs, by default None.
+            Activation function applied to the modules outputs, by default None.
         norm : str | None, optional
-            Normalization function applied to the layers outputs, by default None.
+            Normalization function applied to the modules outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(
             act_fn_name=act,
@@ -145,7 +145,7 @@ class Linear(ParamLayer):
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = (self.x @ self.w).data  # (b, [c], c_out)
         if self.use_bias:
             self.y.data += self.b.data
@@ -171,8 +171,8 @@ class Linear(ParamLayer):
 
 
 @dataclass(init=False, repr=False)
-class Convolution(ParamLayer):
-    """Layer used for spacial information and feature extraction."""
+class Convolution(ParamModule):
+    """Module used for spacial information and feature extraction."""
 
     def __init__(
         self,
@@ -185,26 +185,26 @@ class Convolution(ParamLayer):
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Convolutional layer used for spacial information and feature extraction.
+        """Convolutional module used for spacial information and feature extraction.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (neurons) of the layer.
+            Number of output channels (neurons) of the module.
         kernel_shape : ShapeLike, optional
             Shape of each kernel, by default (3, 3).
         act : str | None, optional
-            Activation function applied to the layers outputs, by default None.
+            Activation function applied to the modules outputs, by default None.
         norm : str | None, optional
-            Normalization function applied to the layers outputs, by default None.
+            Normalization function applied to the modules outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         pad : str, optional
-            Padding method applied to the layer imputs, by default "valid".
+            Padding method applied to the module imputs, by default "valid".
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(
             act_fn_name=act,
@@ -241,7 +241,7 @@ class Convolution(ParamLayer):
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         # apply padding
         x_pad = self.pad_fn(self.x).data
 
@@ -312,8 +312,8 @@ class Convolution(ParamLayer):
 
 
 @dataclass(init=False, repr=False)
-class Embedding(ParamLayer):
-    """Layer used for token embedding."""
+class Embedding(ParamModule):
+    """Module used for token embedding."""
 
     def __init__(
         self,
@@ -321,16 +321,16 @@ class Embedding(ParamLayer):
         init: str = "kaiming_he",
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Embedding layer used for token embedding.
+        """Embedding module used for token embedding.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (embedding dimensions) of the layer.
+            Number of output channels (embedding dimensions) of the module.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
+            Shape of a sample. Required if the module is used as input, by default None.
         """
         super().__init__(
             init_fn_name=init,
@@ -351,7 +351,7 @@ class Embedding(ParamLayer):
         self.w = self.init_fn((vocab_size, self.out_channels))
         self.parameters.append(self.w)
 
-    def forward(self, mode: str = "eval") -> None:
+    def forward(self) -> None:
         self.y.data = (self.x @ self.w).data
 
     def backward(self) -> None:
