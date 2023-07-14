@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import numpy as np
 
 from walnut import tensor_utils as tu
@@ -15,13 +14,13 @@ class ModuleCompilationError(Exception):
 
 
 @dataclass(repr=False, init=False)
-class Module(ABC):
+class Module:
     """Module base class."""
 
-    def __init__(self, input_shape: ShapeLike | None = None):
+    def __init__(self, input_shape: ShapeLike | None = None) -> None:
         self.input_shape = input_shape
-        self.x: Tensor = Tensor()
-        self.y: Tensor = Tensor()
+        self.x: Tensor = tu.empty()
+        self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] | None = None
         self.compiled: bool = False
         self.training: bool = False
@@ -44,13 +43,35 @@ class Module(ABC):
             self.x = tu.ones((1, *self.input_shape))
         self.compiled = True
 
-    @abstractmethod
-    def forward(self) -> None:
-        """Performs a forward pass ."""
+    def __call__(self, x: Tensor) -> None:
+        """Performs a forward pass.
 
-    @abstractmethod
-    def backward(self) -> None:
-        """Performs a backward pass and computes gradients."""
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor.
+
+        Returns
+        ----------
+        Tensor
+            Computed Output.
+        """
+        self.x.data = x.data
+
+    def backward(self, y_grad: NumpyArray) -> None:
+        """Performs a backward pass and computes gradients.
+
+        Parameters
+        ----------
+        x : NumpyArray
+            Output gradients.
+
+        Returns
+        ----------
+        NumpyArray
+            Input gradients.
+        """
+        self.y.grad = y_grad
 
     def get_parameter_count(self) -> int:
         """Returns the total number of trainable parameters of the module."""
@@ -79,7 +100,8 @@ class MaxPooling(Module):
         self.p_window = p_window
         self.p_map: NumpyArray = np.empty(0, dtype="float32")
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         # init output as zeros (b, c, y, k)
         x_crop = self.__crop()
         p_y, p_x = self.p_window
@@ -96,11 +118,14 @@ class MaxPooling(Module):
                 self.y.data[:, :, y, x] = np.max(chunk, axis=(2, 3))
         y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_crop.shape)
         self.p_map = (x_crop.data == y_s) * 1.0
+        return self.y
 
-    def backward(self) -> None:
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         dy_s = self.__stretch(self.y.grad, self.p_window, (2, 3), self.p_map.shape)
         # use p_map as mask for grads
         self.x.grad = np.resize((dy_s * self.p_map), self.x.shape)
+        return self.x.grad
 
     def __crop(self) -> Tensor:
         w_y, w_x = self.p_window
@@ -143,11 +168,15 @@ class Reshape(Module):
         super().__init__(input_shape=input_shape)
         self.output_shape = output_shape
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         self.y.data = self.x.data.reshape((self.x.shape[0], *self.output_shape))
+        return self.y
 
-    def backward(self) -> None:
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         self.x.grad = self.y.grad.reshape(self.x.shape)
+        return self.x.grad
 
 
 @dataclass(init=False, repr=False)
@@ -168,7 +197,8 @@ class Dropout(Module):
         self.d_rate = d_rate
         self.d_map: NumpyArray = np.empty(0, dtype="float32")
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         if not self.training:
             self.y.data = self.x.data
         else:
@@ -176,7 +206,10 @@ class Dropout(Module):
             d_map = np.random.choice([0, 1], self.x.shape, p=[drop_rate, 1 - drop_rate])
             self.d_map = d_map.astype("float32")
             self.y.data = self.x.data * self.d_map / (1.0 - drop_rate)
+        return self.y
 
-    def backward(self) -> None:
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         # use d_map as mask for grads
         self.x.grad = self.y.grad * self.d_map / (1.0 - self.d_rate)
+        return self.x.grad

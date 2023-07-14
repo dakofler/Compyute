@@ -34,8 +34,8 @@ class ParamModule(Module):
         self.optimizer = optimizer
         self.use_bias = use_bias
 
-        self.w: Tensor = Tensor()
-        self.b: Tensor = Tensor()
+        self.w: Tensor = tu.empty()
+        self.b: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
 
     def __repr__(self) -> str:
@@ -145,12 +145,15 @@ class Linear(ParamModule):
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         self.y.data = (self.x @ self.w).data  # (b, [c], c_out)
         if self.use_bias:
             self.y.data += self.b.data
+        return self.y
 
-    def backward(self) -> None:
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
 
         # weight grads (c_in, c_out)
@@ -168,6 +171,8 @@ class Linear(ParamModule):
 
         if self.optimizer:
             self.optimize()
+
+        return self.x.grad
 
 
 @dataclass(init=False, repr=False)
@@ -241,7 +246,8 @@ class Convolution(ParamModule):
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         # apply padding
         x_pad = self.pad_fn(self.x).data
 
@@ -261,7 +267,10 @@ class Convolution(ParamModule):
             # reshape to fit output (b, c_out, 1, 1)
             self.y.data += tu.match_dims(x=bias, dims=4).data
 
-    def backward(self) -> None:
+        return self.y
+
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         # input grads (b, c_in, y, x)
         # pad grads to fit input after convolution
         _, _, x_y, _ = self.x.shape
@@ -291,6 +300,8 @@ class Convolution(ParamModule):
 
         if self.optimizer:
             self.optimize()
+
+        return self.x.grad
 
     # bottleneck
     def __convolve(
@@ -351,8 +362,12 @@ class Embedding(ParamModule):
         self.w = self.init_fn((vocab_size, self.out_channels))
         self.parameters.append(self.w)
 
-    def forward(self) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         self.y.data = (self.x @ self.w).data
+        return self.y
 
-    def backward(self) -> None:
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)
+        return self.x.grad

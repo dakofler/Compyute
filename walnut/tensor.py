@@ -26,19 +26,19 @@ class Tensor:
 
     def __init__(
         self,
-        values: NumpyArray | list[Any] | float | int | np.float32 | None = None,
+        values: NumpyArray | list[Any] | float | int | np.float32,
         dtype: str = "float32",
-    ):
+    ) -> None:
         """Tensor object.
 
         Parameters
         ----------
-        values : NumpyArray | list[Any] | float | int | None, optional
-            Data to initialize the tensor, by default None.
+        values : NumpyArray | list[Any] | float | int
+            Data to initialize the tensor.
+        dtype: str, optional
+            Datatype of the tensor data, by default float32.
         """
-        if values is None:
-            self.data = np.empty(0, dtype=dtype)
-        elif isinstance(values, np.ndarray):
+        if isinstance(values, np.ndarray):
             self.data = values.astype(dtype, copy=values.dtype != dtype)
         elif isinstance(values, (list, float, int, numpyType)):
             self.data = np.array(values).astype(dtype)

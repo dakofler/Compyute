@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import ShapeLike
+from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.modules.parameter import ParamModule
 
@@ -35,17 +35,18 @@ class Layernorm(ParamModule):
         self.b = tu.zeros_like(self.w)
         self.parameters.append(self.b)
 
-    def forward(self) -> None:
-        super().forward()
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         std_axis = tuple(i + 1 for i in range(self.x.ndim - 1))
         mean = np.mean(self.x.data, axis=std_axis, keepdims=True)
         var = np.var(self.x.data, axis=std_axis, keepdims=True, ddof=1)
         self._var_inv = (var + self.eps) ** -0.5
         self._xhat = (self.x.data - mean) * self._var_inv
         self.y.data = self.w.data * self._xhat + self.b.data
+        return self.y
 
-    def backward(self) -> None:
-        super().backward()
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
         n = self.x.data[0].size
         # axis tuple for summation
         axis_x = tuple(i + 1 for i in range(self.x.ndim - 1))
@@ -61,6 +62,7 @@ class Layernorm(ParamModule):
         self.x.grad = self.w.data * self._var_inv / n * (temp1 - temp2 - temp4)
         if self.optimizer:
             self.optimize()
+        return self.x.grad
 
 
 NORMALIZATIONS = {"layer": Layernorm}

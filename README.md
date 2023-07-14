@@ -105,19 +105,15 @@ import walnut.nn as nn
 
 conv = nn.modules.Convolution(out_channels=2)
 
-conv.x = X
 conv.w = W
 conv.b = B
 
-conv.forward()
-conv.y
+conv(X)
 ```
 
 ```python
-conv.y.grad = walnut.randn(conv.y.shape).data
-conv.backward()
-
-conv.x.grad
+y_grad = walnut.randn(conv.y.shape).data
+conv.backward(y_grad)
 ```
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.

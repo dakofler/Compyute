@@ -234,3 +234,18 @@ def choice(x: Tensor, num_samples: int = 1) -> Tensor:
     arange = np.arange(x.flatten().len)
     samples = np.random.choice(arange, size=num_samples, p=x.data.flatten())
     return Tensor(samples, dtype="int")
+
+
+def empty(dtype: str = "float32") -> Tensor:
+    """Return an empty tensor.
+
+    Parameters
+    ----------
+    dtype: str, optional
+        Datatype of the tensor data, by default float32.
+    Returns
+    -------
+    Tensor
+        Empty tensor.
+    """
+    return Tensor(np.empty(0, dtype=dtype))

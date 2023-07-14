@@ -30,7 +30,7 @@ class Model(ABC):
     output_shape: ShapeLike = ()
 
     @abstractmethod
-    def __call__(self, X: Tensor) -> None:
+    def __call__(self, x: Tensor) -> None:
         """Calls the model."""
 
     @abstractmethod
@@ -54,8 +54,8 @@ class Model(ABC):
     @abstractmethod
     def train(
         self,
-        X: Tensor,
-        Y: Tensor,
+        x: Tensor,
+        y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
         verbose: str = "reduced",
@@ -65,16 +65,8 @@ class Model(ABC):
         """Trains the model."""
 
     @abstractmethod
-    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float | None, float | None]:
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float | None, float | None]:
         """Evaluates the model."""
-
-    @abstractmethod
-    def forward(self):
-        """Performs a forward pass."""
-
-    @abstractmethod
-    def backward(self):
-        """Performs a backward pass."""
 
 
 @dataclass(init=False, repr=False)
@@ -92,12 +84,12 @@ class Sequential(Model):
         super().__init__()
         self.layers = layers
 
-    def __call__(self, X: Tensor) -> Tensor:
+    def __call__(self, x: Tensor) -> Tensor:
         """Computes a prediction.
 
         Parameters
         ----------
-        X : Tensor
+        x : Tensor
             Tensor of input values (features).
         mode : str, optional
             Defines the model mode used for the pass.
@@ -107,10 +99,10 @@ class Sequential(Model):
         Tensor
             Tensor of predicted values.
         """
-        tu.check_dims(X, len(self.input_shape))
-        self.layers[0].x.data = X.data.copy()
-        self.forward()
-        return Tensor(self.layers[-1].y.data)
+        tu.check_dims(x, len(self.input_shape))
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
     def __repr__(self) -> str:
         if not self.compiled:
@@ -153,9 +145,11 @@ class Sequential(Model):
                 "Model is already compiled. Initialize new model."
             )
         super().compile(loss_fn, metric)
+
+        x = tu.ones((1, *self.layers[0].input_shape))
+
         for i, layer in enumerate(self.layers):
-            if i > 0:
-                layer.x.data = self.layers[i - 1].y.data
+            layer.x = x
             if isinstance(layer, ParamModule):
                 layer.compile(optimizer)
 
@@ -171,15 +165,16 @@ class Sequential(Model):
                     self.layers.insert(i + index, act_fn())
             else:
                 layer.compile()
-            layer.forward()
+            x = layer(x)
+
         self.input_shape = self.layers[0].x.shape
         self.output_shape = self.layers[-1].y.shape
         self.compiled = True
 
     def train(
         self,
-        X: Tensor,
-        Y: Tensor,
+        x: Tensor,
+        y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
         verbose: str = "reduced",
@@ -190,9 +185,9 @@ class Sequential(Model):
 
         Parameters
         ----------
-        X : Tensor
+        x : Tensor
             Tensor of input values (features).
-        Y : Tensor
+        y : Tensor
             Tensor of target values.
         epochs : int, optional
             Number of training iterations, by default 100.
@@ -220,8 +215,8 @@ class Sequential(Model):
         """
         if not self.compiled or not self.loss_fn:
             raise ModelCompilationError("Model not compiled yet.")
-        tu.check_dims(X, len(self.input_shape))
-        tu.check_dims(Y, len(self.output_shape))
+        tu.check_dims(x, len(self.input_shape))
+        tu.check_dims(y, len(self.output_shape))
         train_loss_history = []
         val_loss_history = []
 
@@ -230,7 +225,7 @@ class Sequential(Model):
 
         for epoch in range(0, epochs + 1):
             start = time.time()
-            x_train, y_train = tu.shuffle(X, Y, batch_size)
+            x_train, y_train = tu.shuffle(x, y, batch_size)
 
             # forward pass
             predictions = self(x_train)
@@ -240,9 +235,11 @@ class Sequential(Model):
             train_loss_history.append(train_loss)
 
             # backward pass
-            loss_grad = self.loss_fn.backward().data.copy()
-            self.layers[-1].y.grad = loss_grad
-            self.backward()
+            dy = self.loss_fn.backward().data
+            layers_reversed = self.layers.copy()
+            layers_reversed.reverse()
+            for layer in layers_reversed:
+                dy = layer.backward(dy)
 
             # validation
             val_loss = None
@@ -265,14 +262,14 @@ class Sequential(Model):
 
         return train_loss_history, val_loss_history
 
-    def evaluate(self, X: Tensor, Y: Tensor) -> tuple[float, float]:
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
 
         Parameters
         ----------
-        X : Tensor
+        x : Tensor
             Tensor of input values (features).
-        Y : Tensor
+        y : Tensor
             Tensor of target values.
 
         Returns
@@ -289,26 +286,12 @@ class Sequential(Model):
         """
         if self.metric is None or self.loss_fn is None:
             raise ModelCompilationError("Model not compiled yet.")
-        tu.check_dims(X, len(self.input_shape))
-        tu.check_dims(Y, len(self.output_shape))
-        predictions = self(X)
-        loss = self.loss_fn(predictions, Y)
-        score = self.metric(predictions, Y)
+        tu.check_dims(x, len(self.input_shape))
+        tu.check_dims(y, len(self.output_shape))
+        predictions = self(x)
+        loss = self.loss_fn(predictions, y)
+        score = self.metric(predictions, y)
         return loss, score
-
-    def forward(self) -> None:
-        for i, layer in enumerate(self.layers):
-            if i > 0:
-                layer.x.data = self.layers[i - 1].y.data
-            layer.forward()
-
-    def backward(self):
-        layers_reversed = self.layers.copy()
-        layers_reversed.reverse()
-        for i, layer in enumerate(layers_reversed):
-            if i > 0:
-                layer.y.grad = layers_reversed[i - 1].x.grad
-            layer.backward()
 
     def __reset_params(self):
         for layer in self.layers:
