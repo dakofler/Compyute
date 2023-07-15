@@ -102,8 +102,12 @@ class MaxPooling(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
+        # cut off values to fit the pooling window
+        y_fit = self.x.shape[2] // self.p_window[0] * self.p_window[0]
+        x_fit = self.x.shape[3] // self.p_window[1] * self.p_window[1]
+        x_crop = self.x[:, :, :y_fit, :x_fit]
+
         # init output as zeros (b, c, y, k)
-        x_crop = self.__crop()
         p_y, p_x = self.p_window
         x_b, x_c, _, _ = self.x.shape
         self.y.data = tu.zeros(
@@ -126,13 +130,6 @@ class MaxPooling(Module):
         # use p_map as mask for grads
         self.x.grad = np.resize((dy_s * self.p_map), self.x.shape)
         return self.x.grad
-
-    def __crop(self) -> Tensor:
-        w_y, w_x = self.p_window
-        _, _, x_y, x_x = self.x.shape
-        y_fit = x_y // w_y * w_y
-        x_fit = x_x // w_x * w_x
-        return self.x[:, :, :y_fit, :x_fit]
 
     def __stretch(
         self,

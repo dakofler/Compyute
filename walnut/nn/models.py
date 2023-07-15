@@ -91,8 +91,6 @@ class Sequential(Model):
         ----------
         x : Tensor
             Tensor of input values (features).
-        mode : str, optional
-            Defines the model mode used for the pass.
 
         Returns
         -------
@@ -235,11 +233,11 @@ class Sequential(Model):
             train_loss_history.append(train_loss)
 
             # backward pass
-            dy = self.loss_fn.backward().data
+            y_grad = self.loss_fn.backward().data
             layers_reversed = self.layers.copy()
             layers_reversed.reverse()
             for layer in layers_reversed:
-                dy = layer.backward(dy)
+                y_grad = layer.backward(y_grad)
 
             # validation
             val_loss = None

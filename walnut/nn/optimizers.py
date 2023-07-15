@@ -80,7 +80,7 @@ class Adam(Optimizer):
 
         Parameters
         ----------
-        parameter : Tensor
+        param : Tensor
             Tensor whose data is to be updated.
         """
         # get momentum of previous updating cycle. If not availlable, initlaize with zeros.

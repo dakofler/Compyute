@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 
 ShapeLike = tuple[int, ...]
+AxisLike = int | tuple[int, ...]
 NumpyArray = npt.NDArray[Any]
 numpyType = np.float32 | np.float64 | np.int32 | np.int64
 
@@ -186,12 +187,12 @@ class Tensor:
 
     # functions
 
-    def sum(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def sum(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the sum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -205,12 +206,12 @@ class Tensor:
         """
         return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
 
-    def mean(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the mean is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -224,12 +225,12 @@ class Tensor:
         """
         return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
 
-    def var(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def var(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Variance of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the variance is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -243,12 +244,12 @@ class Tensor:
         """
         return Tensor(np.var(self.data, axis=axis, ddof=1, keepdims=keepdims))
 
-    def std(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def std(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the standard deviation is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -262,12 +263,12 @@ class Tensor:
         """
         return Tensor(np.std(self.data, axis=axis, keepdims=keepdims))
 
-    def min(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def min(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the minimum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -281,12 +282,12 @@ class Tensor:
         """
         return Tensor(self.data.min(axis=axis, keepdims=keepdims))
 
-    def max(self, axis: ShapeLike | None = None, keepdims: bool = False) -> Tensor:
+    def max(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : ShapeLike | None, optional
+        axis : AxisLike | None, optional
             Axis over which the maximum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -429,12 +430,12 @@ class Tensor:
         """
         return Tensor(self.data.reshape((-1,)))
 
-    def transpose(self, axis: ShapeLike | None = None) -> Tensor:
+    def transpose(self, axis: AxisLike | None = None) -> Tensor:
         """Transposes a tensor along given axes.
 
         Parameters
         ----------
-        axes : ShapeLike, optional
+        axes : AxisLike, optional
             Permutation of axes of the transposed tensor, by default None.
 
         Returns
@@ -475,3 +476,18 @@ class Tensor:
             Tensor containing appended values.
         """
         return Tensor(np.append(self.data, values.data, axis=axis))
+
+    def flip(self, axis: AxisLike) -> Tensor:
+        """Returns a tensor with flipped elements along given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike
+            Axis alown which to flip the tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing flipped values.
+        """
+        return Tensor(np.flip(self.data, axis=axis))

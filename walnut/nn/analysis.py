@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
-import walnut.tensor_utils as tu
 
 
 def plot_curve(
@@ -95,6 +94,8 @@ def plot_images(
         Size of the plot.
     cmap : str, optional
         Colormap used in the plot, by default "gray".
+    plot_axis : bool, optional
+        Whether to plot axes, by default False.
     """
     for label in data:
         values = data[label]
@@ -117,29 +118,29 @@ def plot_images(
 
 
 def plot_confusion_matrix(
-    X: Tensor, Y: Tensor, figsize: ShapeLike, cmap: str = "Blues"
+    x: Tensor, y: Tensor, figsize: ShapeLike, cmap: str = "Blues"
 ) -> None:
     """Plots the confusion matrix for predictions and targets.
 
     Parameters
     ----------
-    X : Tensor
+    x : Tensor
         A model's predictions.
-    Y : Tensor
+    y : Tensor
         Target values.
     figsize : ShapeLike
         Size of the plot.
     cmap : str, optional
-        Colormap used for the plot, by defautl "Blues".
+        Colormap used for the plot, by default "Blues".
     """
 
     # create tensor with ones where highest probabilities occur
-    predicitons = (X / X.max(axis=1, keepdims=True) == 1.0) * 1.0
+    predicitons = (x / x.max(axis=1, keepdims=True) == 1.0) * 1.0
 
-    # get indeces of correct labels from Y
-    y_index = np.argmax(Y.data, axis=1)
+    # get indeces of correct labels from y
+    y_index = np.argmax(y.data, axis=1)
 
-    classes = Y.shape[1]
+    classes = y.shape[1]
     matrix = np.zeros((classes, classes))
     for i, pred in enumerate(predicitons.data):
         matrix[y_index[i]] += pred
@@ -153,19 +154,19 @@ def plot_confusion_matrix(
         plt.text(i, j, str(int(label)), ha="center", va="center")
 
 
-def plot_probabilities(X: Tensor, figsize: ShapeLike) -> None:
+def plot_probabilities(x: Tensor, figsize: ShapeLike) -> None:
     """Plots model predictions as a bar chart.
 
     Parameters
     ----------
-    X : Tensor
+    x : Tensor
         A model's predictions.
     figsize : ShapeLike
         Size of the plot.
     """
-    classes = X.shape[1]
+    classes = x.shape[1]
     plt.figure(figsize=figsize)
     plt.xticks(ticks=np.arange(0, classes, 1), labels=np.arange(0, classes, 1))
-    plt.bar(np.arange(0, 10), X.reshape((10,)).data)
+    plt.bar(np.arange(0, 10), x.reshape((10,)).data)
     plt.xlabel("class")
     plt.ylabel("probability")

@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-from walnut.tensor import Tensor, ShapeLike, ShapeError
+from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError
 
 
 def pd_to_tensor(df: pd.DataFrame) -> Tensor:
@@ -21,14 +21,14 @@ def pd_to_tensor(df: pd.DataFrame) -> Tensor:
     return Tensor(df.to_numpy())
 
 
-def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
+def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
     """Extends the dimensions of a tensor.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose dimensions are to be extended.
-    axis : AxisLike]
+    axis : AxisLike
         Where to insert the new dimension.
 
     Returns

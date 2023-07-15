@@ -3,6 +3,7 @@
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
+from walnut.nn.funcional import sigmoid, softmax
 from walnut.nn.modules.utility import Module
 
 
@@ -25,18 +26,13 @@ class Sigmoid(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
-        self.y.data = self.__sigmoid(self.x.data)
+        self.y.data = sigmoid(self.x).data
         return self.y
 
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
-        sigm = self.__sigmoid(self.y.data)
-        self.x.grad = sigm * (1.0 - sigm) * self.y.grad
+        self.x.grad = self.y.data * (1.0 - self.y.data) * self.y.grad
         return self.x.grad
-
-    def __sigmoid(self, x: NumpyArray):
-        x = np.clip(x, -100, 100)  # clip to avoid high values when exponentiating
-        return 1.0 / (1.0 + np.exp(-x))
 
 
 class Tanh(Module):
@@ -58,7 +54,7 @@ class Softmax(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
-        self.y.data = self.__softmax(self.x.data)
+        self.y.data = softmax(self.x).data
         return self.y
 
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
@@ -69,10 +65,6 @@ class Softmax(Module):
         x2 = np.einsum("ij,jk->ijk", self.y.data, np.eye(channels, channels))
         self.x.grad = np.einsum("ijk,ik->ij", x2 - x1, self.y.grad)
         return self.x.grad
-
-    def __softmax(self, x: NumpyArray) -> NumpyArray:
-        expo = np.exp(x - np.amax(x, axis=1, keepdims=True))
-        return expo / np.sum(expo, axis=1, keepdims=True)
 
 
 ACTIVATIONS = {

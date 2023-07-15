@@ -4,13 +4,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 import numpy as np
-import numpy.fft as npfft
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn import inits, paddings
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.funcional import convolve2d
 from walnut.nn.modules.utility import Module
 
 
@@ -176,7 +176,7 @@ class Linear(ParamModule):
 
 
 @dataclass(init=False, repr=False)
-class Convolution(ParamModule):
+class Convolution2d(ParamModule):
     """Module used for spacial information and feature extraction."""
 
     def __init__(
@@ -249,13 +249,15 @@ class Convolution(ParamModule):
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
         # apply padding
-        x_pad = self.pad_fn(self.x).data
+        x_pad = self.pad_fn(self.x)
 
         # rotate weights for cross correlation
-        w_rotated = np.flip(self.w.data, axis=(2, 3))
+        w_rotated = self.w.flip(axis=(2, 3))
 
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
-        x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0))
+        x_pad_ext = tu.expand_dims(x_pad, 1)
+        w_rotated_ext = tu.expand_dims(w_rotated, 0)
+        x_conv_w = convolve2d(x_pad_ext, w_rotated_ext).data
 
         # sum over input channels
         _, _, w_y, w_x = self.w.shape
@@ -272,26 +274,30 @@ class Convolution(ParamModule):
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
         # input grads (b, c_in, y, x)
-        # pad grads to fit input after convolution
         _, _, x_y, _ = self.x.shape
         _, _, dy_y, _ = self.y.shape
+        # pad grads to fit input after convolution
         if self.pad_fn_name != "same":
             pad = int((x_y - dy_y) / 2)
             dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
         else:
             dy_p = self.y.grad
         # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
-        dy_conv_w = self.__convolve(dy_p, self.w.data, exp_axis=(2, 0))
+        dy_p_ext = tu.expand_dims(Tensor(dy_p), 2)
+        w_ext = tu.expand_dims(self.w, 0)
+        dy_conv_w = convolve2d(dy_p_ext, w_ext).data
         # sum over output channels
         self.x.grad = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
 
         # weight grads (c_out, c_in, y, x)
-        x_p = self.pad_fn(self.x).data
+        x_p = self.pad_fn(self.x)
         # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        dy_conv_x = self.__convolve(x_p, self.y.grad, exp_axis=(1, 2))
+        x_p_ext = tu.expand_dims(x_p, 1)
+        y_grad_ext = tu.expand_dims(Tensor(self.y.grad), 2)
+        x_conv_dy = convolve2d(x_p_ext, y_grad_ext).data
         # sum over batches
         _, _, w_y, w_x = self.w.shape
-        self.w.grad = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]
+        self.w.grad = np.sum(x_conv_dy, axis=0)[:, :, -w_y:, -w_x:]
 
         # bias grads (c_out,)
         if self.use_bias:
@@ -302,24 +308,6 @@ class Convolution(ParamModule):
             self.optimize()
 
         return self.x.grad
-
-    # bottleneck
-    def __convolve(
-        self, x1: NumpyArray, x2: NumpyArray, exp_axis: ShapeLike | None = None
-    ) -> NumpyArray:
-        # fft both tensors
-        target_shape = x1.shape[-2:]
-        x1_fft = npfft.fft2(x1, s=target_shape).astype("complex64")
-        x2_fft = npfft.fft2(x2, s=target_shape).astype("complex64")
-
-        # expand dims if needed
-        if exp_axis:
-            ax1, ax2 = exp_axis
-            x1_fft = np.expand_dims(x1_fft, ax1)
-            x2_fft = np.expand_dims(x2_fft, ax2)
-
-        # multiply, ifft and get real value to complete convolution
-        return np.real(npfft.ifft2(x1_fft * x2_fft)).astype("float32")
 
 
 @dataclass(init=False, repr=False)

@@ -69,8 +69,6 @@ class CharacterTokenizer(Tokenizer):
             Text the tokens should be extracted from.
         max_tokens : int, optional
             Maximum number of tokens to be generated, by default 100.
-        oov_token : str, optional
-            Token used for unknown words, by default "|".
         """
         data_sorted = sorted(set(data))
         data_sorted.insert(0, self.oov_token)
@@ -126,8 +124,6 @@ class WordTokenizer(Tokenizer):
             Text the tokens should be extracted from.
         max_tokens : int, optional
             Maximum number of tokens to be generated, by default 100.
-        oov_token : str, optional
-            Token for unknown words, by default "<OOV>".
         """
         data_clean = remove_punctuation(data).lower()
         data_split = data_clean.split(" ")
