@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-import math
 import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray
-from walnut.nn import inits, paddings
+from walnut.nn import inits
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.funcional import convolve2d
@@ -186,7 +185,7 @@ class Convolution2d(ParamModule):
         act: str | None = None,
         norm: str | None = None,
         init: str = "kaiming_he",
-        pad: str = "valid",
+        stride: int = 1,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -204,8 +203,8 @@ class Convolution2d(ParamModule):
             Normalization function applied to the modules outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
-        pad : str, optional
-            Padding method applied to the module imputs, by default "valid".
+        stride : int, optional
+            Stride used for the convolution operation, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
@@ -221,12 +220,7 @@ class Convolution2d(ParamModule):
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
         self.init_fn: Init | None = None
-        self.pad_fn_name = pad
-
-        # set padding
-        width = math.floor(self.kernel_shape[0] / 2)
-        padding_params = paddings.PaddingParams(width, (2, 3))
-        self.pad_fn = paddings.PADDINGS[self.pad_fn_name](padding_params)
+        self.stride = stride
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
@@ -248,20 +242,16 @@ class Convolution2d(ParamModule):
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
-        # apply padding
-        x_pad = self.pad_fn(self.x)
-
         # rotate weights for cross correlation
         w_rotated = self.w.flip(axis=(2, 3))
 
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
-        x_pad_ext = tu.expand_dims(x_pad, 1)
-        w_rotated_ext = tu.expand_dims(w_rotated, 0)
-        x_conv_w = convolve2d(x_pad_ext, w_rotated_ext).data
+        x_ext = tu.expand_dims(self.x, 1)  # add fake c_out dim
+        w_rotated_ext = tu.expand_dims(w_rotated, 0)  # add fake b dim
+        x_conv_w = convolve2d(x_ext, w_rotated_ext, self.stride)
 
         # sum over input channels
-        _, _, w_y, w_x = self.w.shape
-        self.y.data = np.sum(x_conv_w, axis=2)[:, :, w_y - 1 :, w_x - 1 :]
+        self.y.data = x_conv_w.sum(axis=2).data
 
         if self.use_bias:
             # broadcast bias over batches (b, c_out)
@@ -273,40 +263,35 @@ class Convolution2d(ParamModule):
 
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
+
+        # undo strides by filling with zeros
+        b, c, dy_y, dy_x = self.y.grad.shape
+        y_grad_p = np.zeros((b, c, self.stride * dy_y, self.stride * dy_x))
+        y_grad_p[:, :, :: self.stride, :: self.stride] = self.y.grad
+        out_y = 1 + (self.x.shape[-2] - self.w.shape[-2])
+        out_x = 1 + (self.x.shape[-1] - self.w.shape[-1])
+        y_grad_p = y_grad_p[:, :, :out_y, :out_x]
+
         # input grads (b, c_in, y, x)
-        _, _, x_y, _ = self.x.shape
-        _, _, dy_y, _ = self.y.shape
-        # pad grads to fit input after convolution
-        if self.pad_fn_name != "same":
-            pad = int((x_y - dy_y) / 2)
-            dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
-        else:
-            dy_p = self.y.grad
-        # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
-        dy_p_ext = tu.expand_dims(Tensor(dy_p), 2)
+        y_grad_p_ext = tu.expand_dims(Tensor(y_grad_p), 2)
         w_ext = tu.expand_dims(self.w, 0)
-        dy_conv_w = convolve2d(dy_p_ext, w_ext).data
-        # sum over output channels
-        self.x.grad = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
+        # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
+        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, mode="full")
+        self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
         # weight grads (c_out, c_in, y, x)
-        x_p = self.pad_fn(self.x)
+        x_ext = tu.expand_dims(self.x, 1)
+        y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
         # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        x_p_ext = tu.expand_dims(x_p, 1)
-        y_grad_ext = tu.expand_dims(Tensor(self.y.grad), 2)
-        x_conv_dy = convolve2d(x_p_ext, y_grad_ext).data
-        # sum over batches
-        _, _, w_y, w_x = self.w.shape
-        self.w.grad = np.sum(x_conv_dy, axis=0)[:, :, -w_y:, -w_x:]
+        x_conv_dy = convolve2d(x_ext, y_grad_p_ext)
+        self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
 
         # bias grads (c_out,)
         if self.use_bias:
-            # sum over batches, y and x
-            self.b.grad = np.sum(self.y.data, axis=(0, 2, 3))
+            self.b.grad = np.sum(self.y.grad, axis=(0, 2, 3))  # sum over b, y and x
 
         if self.optimizer:
             self.optimize()
-
         return self.x.grad
 
 

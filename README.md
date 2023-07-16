@@ -38,9 +38,9 @@ model = nn.Sequential(layers=[
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.modules.Convolution(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer"),
+    nn.modules.Convolution2d(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer"),
     nn.modules.MaxPooling(p_window=(2, 2)),
-    nn.modules.Flatten(),
+    nn.modules.Reshape(),
     nn.modules.Linear(64, act="relu", norm="layer"),
     nn.modules.Linear(10, act="softmax")
 ])
@@ -103,7 +103,7 @@ B = walnut.zeros((1,))
 ```python
 import walnut.nn as nn
 
-conv = nn.modules.Convolution(out_channels=2)
+conv = nn.modules.Convolution2d(out_channels=2)
 
 conv.w = W
 conv.b = B

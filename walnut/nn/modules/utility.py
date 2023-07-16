@@ -21,7 +21,7 @@ class Module:
         self.input_shape = input_shape
         self.x: Tensor = tu.empty()
         self.y: Tensor = tu.empty()
-        self.parameters: list[Tensor] | None = None
+        self.parameters: list[Tensor] = []
         self.compiled: bool = False
         self.training: bool = False
 

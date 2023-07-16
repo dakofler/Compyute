@@ -3,7 +3,7 @@
 import numpy as np
 import numpy.fft as npfft
 
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, ShapeError
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -40,8 +40,8 @@ def softmax(x: Tensor) -> Tensor:
     return Tensor(expo / np.sum(expo, axis=1, keepdims=True))
 
 
-def convolve2d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
-    """Convolves two tensors using their trainling two dims.
+def convolve2d(x: Tensor, f: Tensor, s: int = 1, mode: str = "valid") -> Tensor:
+    """Convolves two tensors using their trailing two dims.
 
     Parameters
     ----------
@@ -49,15 +49,54 @@ def convolve2d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
         Input tensor.
     f : Tensor
         Filter tensor.
-    stride : int, optional
-        Strides used for the convolution, by default 1.
+    s : int, optional
+        Stride used for the convolution operation, by default 1.
+    mode : str, optional
+        Convolution mode, by default "valid".
 
     Returns
     -------
     Tensor
         Output tensor.
+
+    Raises
+    -------
+    ShapeError
+        If dimensions of input and filter do not match.
     """
-    target_shape = x.shape[-2:]
-    x_fft = npfft.fft2(x.data, s=target_shape).astype("complex64")
-    f_fft = npfft.fft2(f.data, s=target_shape).astype("complex64")
-    return Tensor(np.real(npfft.ifft2(x_fft * f_fft)).astype("float32"))
+    if x.ndim != f.ndim:
+        raise ShapeError("Dimensions of input and filter must match.")
+
+    match mode:
+        case "full":
+            p = (f.shape[-2] - 1, f.shape[-1] - 1)
+        case "same":
+            p = (f.shape[-2] // 2, f.shape[-1] // 2)
+        case _:
+            p = (0, 0)
+
+    # padding
+    d = x.ndim
+    tpl = tuple((p[-d + ax], p[-d + ax]) if ax >= d - 2 else (0, 0) for ax in range(d))
+    x = Tensor(np.pad(x.data, tpl))
+
+    # convolution
+    conv_shape = x.shape[-2:]
+    x_fft = npfft.fft2(x.data, s=conv_shape).astype("complex64")
+    f_fft = npfft.fft2(f.data, s=conv_shape).astype("complex64")
+    ifft = Tensor(np.real(npfft.ifft2(x_fft * f_fft)))
+
+    # slicing
+    out_y = 1 + (x.shape[-2] - f.shape[-2])
+    out_x = 1 + (x.shape[-1] - f.shape[-1])
+    match x.ndim:
+        case 2:
+            return ifft[-out_y:, -out_x:][::s, ::s]
+        case 3:
+            return ifft[:, -out_y:, -out_x:][:, ::s, ::s]
+        case 4:
+            return ifft[:, :, -out_y:, -out_x:][:, :, ::s, ::s]
+        case 5:
+            return ifft[:, :, :, -out_y:, -out_x:][:, :, :, ::s, ::s]
+        case _:
+            return ifft
