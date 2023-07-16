@@ -188,7 +188,8 @@ class Convolution2d(ParamModule):
         act: str | None = None,
         norm: str | None = None,
         init: str = "kaiming_he",
-        stride: int = 1,
+        strides: int | tuple[int, int] = 1,
+        dil: int | tuple[int, int] = 1,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -206,8 +207,10 @@ class Convolution2d(ParamModule):
             Normalization function applied to the modules outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
-        stride : int, optional
-            Stride used for the convolution operation, by default 1.
+        strides : int | tuple [int, int], optional
+            Strides used for the convolution operation, by default 1.
+        dil : int | tuple [int, int], optional
+            Dilations used for each axis of the filter, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
@@ -223,7 +226,8 @@ class Convolution2d(ParamModule):
         self.out_channels = out_channels
         self.kernel_shape = kernel_shape
         self.init_fn: Init | None = None
-        self.stride = stride
+        self.strides = (strides, strides) if isinstance(strides, int) else strides
+        self.dil = (dil, dil) if isinstance(dil, int) else dil
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
@@ -251,7 +255,7 @@ class Convolution2d(ParamModule):
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
         x_ext = tu.expand_dims(self.x, 1)  # add fake c_out dim
         w_rotated_ext = tu.expand_dims(w_rotated, 0)  # add fake b dim
-        x_conv_w = convolve2d(x_ext, w_rotated_ext, self.stride)
+        x_conv_w = convolve2d(x_ext, w_rotated_ext, strides=self.strides, dil=self.dil)
 
         # sum over input channels
         self.y.data = x_conv_w.sum(axis=2).data
@@ -268,9 +272,9 @@ class Convolution2d(ParamModule):
         super().backward(y_grad)
 
         # undo strides by filling with zeros
-        b, c, dy_y, dy_x = self.y.grad.shape
-        y_grad_p = np.zeros((b, c, self.stride * dy_y, self.stride * dy_x))
-        y_grad_p[:, :, :: self.stride, :: self.stride] = self.y.grad
+        bat, chn, dy_y, dy_x = self.y.grad.shape
+        y_grad_p = np.zeros((bat, chn, self.strides[0] * dy_y, self.strides[1] * dy_x))
+        y_grad_p[:, :, :: self.strides[0], :: self.strides[1]] = self.y.grad
         out_y = 1 + (self.x.shape[-2] - self.w.shape[-2])
         out_x = 1 + (self.x.shape[-1] - self.w.shape[-1])
         y_grad_p = y_grad_p[:, :, :out_y, :out_x]
@@ -279,14 +283,15 @@ class Convolution2d(ParamModule):
         y_grad_p_ext = tu.expand_dims(Tensor(y_grad_p), 2)
         w_ext = tu.expand_dims(self.w, 0)
         # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
-        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, mode="full")
+        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, mode="full", dil=self.dil)
         self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
         # weight grads (c_out, c_in, y, x)
         x_ext = tu.expand_dims(self.x, 1)
         y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
         # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        x_conv_dy = convolve2d(x_ext, y_grad_p_ext)
+        d1, d2 = self.dil
+        x_conv_dy = convolve2d(x_ext, y_grad_p_ext)[:, :, :, ::d1, ::d2]
         self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
 
         # bias grads (c_out,)
