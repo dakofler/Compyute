@@ -9,11 +9,11 @@ from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn import inits
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.funcional import convolve2d
+from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.modules.module import Module
 
 
-__all__ = ["Linear", "Convolution2d", "Embedding"]
+__all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
 
 
 @dataclass(repr=False, init=False)
@@ -178,17 +178,140 @@ class Linear(ParamModule):
 
 
 @dataclass(init=False, repr=False)
+class Convolution1d(ParamModule):
+    """Module used for spacial information and feature extraction."""
+
+    def __init__(
+        self,
+        out_channels: int,
+        kernel_size: int,
+        act: str | None = None,
+        norm: str | None = None,
+        init: str = "kaiming_he",
+        stride: int = 1,
+        dil: int = 1,
+        use_bias: bool = True,
+        input_shape: ShapeLike | None = None,
+    ) -> None:
+        """Convolutional module used for spacial information and feature extraction.
+
+        Parameters
+        ----------
+        out_channels : int
+            Number of output channels (neurons) of the module.
+        kernel_size : int
+            Shape of each kernel.
+        act : str | None, optional
+            Activation function applied to the modules outputs, by default None.
+        norm : str | None, optional
+            Normalization function applied to the modules outputs, by default None.
+        init : str, optional
+            Initialization function for weights, by default "kaiming_he".
+        stride : int, optional
+            Stride used for the convolution operation, by default 1.
+        dil : int, optional
+            Dilation used for each axis of the filter, by default 1.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
+        input_shape : ShapeLike | None, optional
+            Shape of a sample. Required if the module is used as input, by default None.
+        """
+        super().__init__(
+            act_fn_name=act,
+            norm_name=norm,
+            init_fn_name=init,
+            use_bias=use_bias,
+            input_shape=input_shape,
+        )
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.init_fn: Init | None = None
+        self.stride = stride
+        self.dil = dil
+
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        in_channels = self.x.shape[1]
+
+        # set initializer
+        fan_mode = int(in_channels * np.prod(self.kernel_size))
+        initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
+        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
+
+        # init weights (c_out, c_in, y, x)
+        self.w = self.init_fn((self.out_channels, in_channels, self.kernel_size))
+        self.parameters.append(self.w)
+
+        # init bias (c_out,)
+        if self.use_bias:
+            self.b = tu.zeros((self.out_channels,))
+            self.parameters.append(self.b)
+
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
+        # rotate weights for cross correlation
+        w_rotated = self.w.flip(-1)
+        x_ext = tu.expand_dims(self.x, 1)
+        w_rotated_ext = tu.expand_dims(w_rotated, 0)
+        # convolve (b, _, c_in, x) * (_, c_out, c_in, x)
+        x_conv_w = convolve1d(x_ext, w_rotated_ext, stride=self.stride, dil=self.dil)
+
+        # sum over input channels
+        self.y.data = x_conv_w.sum(axis=2).data
+
+        if self.use_bias:
+            # broadcast bias over batches (b, c_out)
+            bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
+            # reshape to fit output (b, c_out, 1, 1)
+            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
+
+        return self.y
+
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+
+        # undo strides by filling with zeros
+        bat, chn, dy_x = self.y.grad.shape
+        y_grad_p = np.zeros((bat, chn, self.stride * dy_x))
+        y_grad_p[:, :, :: self.stride] = self.y.grad
+        out = 1 + (self.x.shape[-1] - self.w.shape[-1])
+        y_grad_p = y_grad_p[:, :, :out]
+
+        # input grads (b, c_in, x)
+        y_grad_p_ext = tu.expand_dims(Tensor(y_grad_p), 2)
+        w_ext = tu.expand_dims(self.w, 0)
+        # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
+        dy_conv_w = convolve1d(y_grad_p_ext, w_ext, mode="full", dil=self.dil)
+        self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
+
+        # weight grads (c_out, c_in, x)
+        x_ext = tu.expand_dims(self.x, 1)
+        y_grad_p_ext = y_grad_p_ext.flip(-1)
+        # convolve (b, _, c_in, x) * (b, c_out, _, x)
+        x_conv_dy = convolve1d(x_ext, y_grad_p_ext)[:, :, :, :: self.dil]
+        self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
+
+        # bias grads (c_out,)
+        if self.use_bias:
+            self.b.grad = np.sum(self.y.grad, axis=(0, 2))  # sum over b and x
+
+        if self.optimizer:
+            self.optimize()
+        return self.x.grad
+
+
+@dataclass(init=False, repr=False)
 class Convolution2d(ParamModule):
     """Module used for spacial information and feature extraction."""
 
     def __init__(
         self,
         out_channels: int,
-        kernel_shape: tuple[int, int] = (3, 3),
+        kernel_size: tuple[int, int] = (3, 3),
         act: str | None = None,
         norm: str | None = None,
         init: str = "kaiming_he",
-        strides: int | tuple[int, int] = 1,
+        stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
@@ -199,7 +322,7 @@ class Convolution2d(ParamModule):
         ----------
         out_channels : int
             Number of output channels (neurons) of the module.
-        kernel_shape : ShapeLike, optional
+        kernel_size : ShapeLike, optional
             Shape of each kernel, by default (3, 3).
         act : str | None, optional
             Activation function applied to the modules outputs, by default None.
@@ -207,7 +330,7 @@ class Convolution2d(ParamModule):
             Normalization function applied to the modules outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
-        strides : int | tuple [int, int], optional
+        stride : int | tuple [int, int], optional
             Strides used for the convolution operation, by default 1.
         dil : int | tuple [int, int], optional
             Dilations used for each axis of the filter, by default 1.
@@ -224,9 +347,9 @@ class Convolution2d(ParamModule):
             input_shape=input_shape,
         )
         self.out_channels = out_channels
-        self.kernel_shape = kernel_shape
+        self.kernel_size = kernel_size
         self.init_fn: Init | None = None
-        self.strides = (strides, strides) if isinstance(strides, int) else strides
+        self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
@@ -234,12 +357,12 @@ class Convolution2d(ParamModule):
         in_channels = self.x.shape[1]
 
         # set initializer
-        fan_mode = int(in_channels * np.prod(self.kernel_shape))
+        fan_mode = int(in_channels * np.prod(self.kernel_size))
         initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_out, c_in, y, x)
-        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_shape))
+        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_size))
         self.parameters.append(self.w)
 
         # init bias (c_out,)
@@ -250,12 +373,12 @@ class Convolution2d(ParamModule):
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
         # rotate weights for cross correlation
-        w_rotated = self.w.flip(axis=(2, 3))
+        w_rotated = self.w.flip((-2, -1))
 
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
         x_ext = tu.expand_dims(self.x, 1)  # add fake c_out dim
         w_rotated_ext = tu.expand_dims(w_rotated, 0)  # add fake b dim
-        x_conv_w = convolve2d(x_ext, w_rotated_ext, strides=self.strides, dil=self.dil)
+        x_conv_w = convolve2d(x_ext, w_rotated_ext, strides=self.stride, dil=self.dil)
 
         # sum over input channels
         self.y.data = x_conv_w.sum(axis=2).data
@@ -264,7 +387,7 @@ class Convolution2d(ParamModule):
             # broadcast bias over batches (b, c_out)
             bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
             # reshape to fit output (b, c_out, 1, 1)
-            self.y.data += tu.match_dims(x=bias, dims=4).data
+            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
 
         return self.y
 
@@ -273,8 +396,8 @@ class Convolution2d(ParamModule):
 
         # undo strides by filling with zeros
         bat, chn, dy_y, dy_x = self.y.grad.shape
-        y_grad_p = np.zeros((bat, chn, self.strides[0] * dy_y, self.strides[1] * dy_x))
-        y_grad_p[:, :, :: self.strides[0], :: self.strides[1]] = self.y.grad
+        y_grad_p = np.zeros((bat, chn, self.stride[0] * dy_y, self.stride[1] * dy_x))
+        y_grad_p[:, :, :: self.stride[0], :: self.stride[1]] = self.y.grad
         out_y = 1 + (self.x.shape[-2] - self.w.shape[-2])
         out_x = 1 + (self.x.shape[-1] - self.w.shape[-1])
         y_grad_p = y_grad_p[:, :, :out_y, :out_x]

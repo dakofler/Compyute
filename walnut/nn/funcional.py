@@ -6,7 +6,7 @@ import numpy.fft as npfft
 from walnut.tensor import Tensor, ShapeError
 
 
-__all__ = ["sigmoid", "softmax", "convolve2d", "dilate"]
+__all__ = ["sigmoid", "softmax", "convolve1d", "convolve2d", "dilate1d", "dilate2d"]
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -43,14 +43,14 @@ def softmax(x: Tensor) -> Tensor:
     return Tensor(expo / np.sum(expo, axis=1, keepdims=True))
 
 
-def convolve2d(
+def convolve1d(
     x: Tensor,
     f: Tensor,
-    strides: int | tuple[int, int] = 1,
-    dil: int | tuple[int, int] = 1,
+    stride: int = 1,
+    dil: int = 1,
     mode: str = "valid",
 ) -> Tensor:
-    """Convolves two tensors using their trailing two dims.
+    """Convolves two tensors along their trailing dim.
 
     Parameters
     ----------
@@ -58,7 +58,78 @@ def convolve2d(
         Input tensor.
     f : Tensor
         Filter tensor.
-    strides : int | tuple [int, int], optional
+    stride : int, optional
+        Stride used in the convolution operation, by default 1.
+    dil : int, optional
+        Dilation used in the filter, by default 1.
+    mode : str, optional
+        Convolution mode, by default "valid".
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+
+    Raises
+    -------
+    ShapeError
+        If dimensions of input and filter do not match.
+    """
+    if x.ndim < 3:
+        raise ShapeError("Expected 3D input or higher.")
+    if x.ndim != f.ndim:
+        raise ShapeError("Dimensions of input and filter must match.")
+
+    # dilation
+    f_dil = dilate1d(f, dil)
+
+    # padding
+    match mode:
+        case "full":
+            p = f_dil.shape[-1] - 1
+        case "same":
+            p = f_dil.shape[-1] // 2
+        case _:
+            p = 0
+    dim = x.ndim
+    tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
+    x = Tensor(np.pad(x.data, tpl))
+
+    # convolution
+    conv_shape = x.shape[-1]
+    x_fft = npfft.fft(x.data, n=conv_shape).astype("complex64")
+    f_fft = npfft.fft(f_dil.data, n=conv_shape).astype("complex64")
+    ifft = Tensor(np.real(npfft.ifft(x_fft * f_fft)))
+
+    # slicing
+    out = 1 + (x.shape[-1] - f_dil.shape[-1])
+    match x.ndim:
+        case 3:
+            return ifft[:, :, -out:][:, :, ::stride]
+        case 4:
+            return ifft[:, :, :, -out:][:, :, :, ::stride]
+        case 5:
+            return ifft[:, :, :, :, -out:][:, :, :, :, ::stride]
+        case _:
+            return ifft
+
+
+def convolve2d(
+    x: Tensor,
+    f: Tensor,
+    stride: int | tuple[int, int] = 1,
+    dil: int | tuple[int, int] = 1,
+    mode: str = "valid",
+) -> Tensor:
+    """Convolves two tensors along their last two trailing dims.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    f : Tensor
+        Filter tensor.
+    stride : int | tuple [int, int], optional
         Strides used for each axis in the convolution operation, by default 1.
     dil : int | tuple [int, int], optional
         Dilations used for each axis of the filter, by default 1.
@@ -75,11 +146,13 @@ def convolve2d(
     ShapeError
         If dimensions of input and filter do not match.
     """
+    if x.ndim < 4:
+        raise ShapeError("Expected 4D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
 
     # dilation
-    f_dil = dilate(f, dil)
+    f_dil = dilate2d(f, dil)
 
     # padding
     match mode:
@@ -89,8 +162,10 @@ def convolve2d(
             p = (f_dil.shape[-2] // 2, f_dil.shape[-1] // 2)
         case _:
             p = (0, 0)
-    d = x.ndim
-    tpl = tuple((p[-d + ax], p[-d + ax]) if ax >= d - 2 else (0, 0) for ax in range(d))
+    dim = x.ndim
+    tpl = tuple(
+        (p[-dim + d], p[-dim + d]) if d >= dim - 2 else (0, 0) for d in range(dim)
+    )
     x = Tensor(np.pad(x.data, tpl))
 
     # convolution
@@ -102,12 +177,8 @@ def convolve2d(
     # slicing
     out_y = 1 + (x.shape[-2] - f_dil.shape[-2])
     out_x = 1 + (x.shape[-1] - f_dil.shape[-1])
-    s_y, s_x = (strides, strides) if isinstance(strides, int) else strides
+    s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
     match x.ndim:
-        case 2:
-            return ifft[-out_y:, -out_x:][::s_y, ::s_x]
-        case 3:
-            return ifft[:, -out_y:, -out_x:][:, ::s_y, ::s_x]
         case 4:
             return ifft[:, :, -out_y:, -out_x:][:, :, ::s_y, ::s_x]
         case 5:
@@ -116,7 +187,35 @@ def convolve2d(
             return ifft
 
 
-def dilate(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
+def dilate1d(f: Tensor, dil: int) -> Tensor:
+    """Dilates a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        _description_
+    dil : int | tuple [int, int]
+        Dilations used for each axis of the tensor.
+
+    Returns
+    -------
+    Tensor
+        Dilated tensor.
+    """
+    dim = f.ndim
+    tpl = tuple(
+        ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
+    )
+    f_dil = np.zeros(tpl)
+    match f.ndim:
+        case 3:
+            f_dil[:, :, ::dil] = f.data
+        case 4:
+            f_dil[:, :, :, ::dil] = f.data
+    return Tensor(f_dil)
+
+
+def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
     """Dilates a tensor.
 
     Parameters
