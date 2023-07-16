@@ -7,6 +7,9 @@ import numpy as np
 import numpy.typing as npt
 
 
+__all__ = ["Tensor"]
+
+
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
 NumpyArray = npt.NDArray[Any]

@@ -7,6 +7,9 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike
 
 
+__all__ = ["Normal", "KaimingHe"]
+
+
 KAIMING_GAINS = {
     "tanh": 5.0 / 3.0,
     "relu": 2**0.5,

@@ -4,7 +4,10 @@ import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.funcional import sigmoid, softmax
-from walnut.nn.modules.utility import Module
+from walnut.nn.modules.module import Module
+
+
+__all__ = ["Relu", "Sigmoid", "Tanh", "Softmax"]
 
 
 class Relu(Module):

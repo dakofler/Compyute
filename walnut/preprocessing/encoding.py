@@ -2,7 +2,9 @@
 
 import pandas as pd
 import numpy as np
+
 from walnut.tensor import Tensor, ShapeError
+
 
 __all__ = ["pd_one_hot_encode", "one_hot_encode"]
 

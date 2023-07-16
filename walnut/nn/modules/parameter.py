@@ -10,7 +10,10 @@ from walnut.nn import inits
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.funcional import convolve2d
-from walnut.nn.modules.utility import Module
+from walnut.nn.modules.module import Module
+
+
+__all__ = ["Linear", "Convolution2d", "Embedding"]
 
 
 @dataclass(repr=False, init=False)

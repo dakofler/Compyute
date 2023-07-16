@@ -6,6 +6,9 @@ import numpy.fft as npfft
 from walnut.tensor import Tensor, ShapeError
 
 
+__all__ = ["sigmoid", "softmax", "convolve2d"]
+
+
 def sigmoid(x: Tensor) -> Tensor:
     """Applies the sigmoid function.
 
@@ -40,7 +43,13 @@ def softmax(x: Tensor) -> Tensor:
     return Tensor(expo / np.sum(expo, axis=1, keepdims=True))
 
 
-def convolve2d(x: Tensor, f: Tensor, s: int = 1, mode: str = "valid") -> Tensor:
+def convolve2d(
+    x: Tensor,
+    f: Tensor,
+    stride: int | tuple[int, int] = 1,
+    dilation: int | tuple[int, int] = 1,
+    mode: str = "valid",
+) -> Tensor:
     """Convolves two tensors using their trailing two dims.
 
     Parameters
@@ -49,8 +58,10 @@ def convolve2d(x: Tensor, f: Tensor, s: int = 1, mode: str = "valid") -> Tensor:
         Input tensor.
     f : Tensor
         Filter tensor.
-    s : int, optional
+    stride : int, optional
         Stride used for the convolution operation, by default 1.
+    dilation : int | tuple [int, int], optional
+        Dilation used on filters, by default 1.
     mode : str, optional
         Convolution mode, by default "valid".
 
@@ -91,12 +102,12 @@ def convolve2d(x: Tensor, f: Tensor, s: int = 1, mode: str = "valid") -> Tensor:
     out_x = 1 + (x.shape[-1] - f.shape[-1])
     match x.ndim:
         case 2:
-            return ifft[-out_y:, -out_x:][::s, ::s]
+            return ifft[-out_y:, -out_x:][::stride, ::stride]
         case 3:
-            return ifft[:, -out_y:, -out_x:][:, ::s, ::s]
+            return ifft[:, -out_y:, -out_x:][:, ::stride, ::stride]
         case 4:
-            return ifft[:, :, -out_y:, -out_x:][:, :, ::s, ::s]
+            return ifft[:, :, -out_y:, -out_x:][:, :, ::stride, ::stride]
         case 5:
-            return ifft[:, :, :, -out_y:, -out_x:][:, :, :, ::s, ::s]
+            return ifft[:, :, :, -out_y:, -out_x:][:, :, :, ::stride, ::stride]
         case _:
             return ifft

@@ -15,6 +15,9 @@ from walnut.nn.modules import normalizations
 from walnut.nn.modules.parameter import Module, ParamModule
 
 
+__all__ = ["Sequential"]
+
+
 class ModelCompilationError(Exception):
     """Error with the compiling of the model."""
 

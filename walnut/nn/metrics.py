@@ -6,6 +6,9 @@ from abc import ABC, abstractmethod
 from walnut.tensor import Tensor
 
 
+__all__ = ["Accuracy"]
+
+
 @dataclass(slots=True)
 class Metric(ABC):
     """Metric base class."""

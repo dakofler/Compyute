@@ -1,6 +1,9 @@
 """Logging functions."""
 
 
+__all__ = ["log_training_progress"]
+
+
 def log_training_progress(
     verbose_mode: str,
     epoch: int,

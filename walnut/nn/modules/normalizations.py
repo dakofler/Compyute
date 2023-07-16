@@ -9,6 +9,9 @@ from walnut.nn.optimizers import Optimizer
 from walnut.nn.modules.parameter import ParamModule
 
 
+__all__ = ["Layernorm"]
+
+
 @dataclass(init=False, repr=False)
 class Layernorm(ParamModule):
     """Normalizes values per sample."""

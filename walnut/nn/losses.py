@@ -7,6 +7,9 @@ import numpy as np
 from walnut.tensor import Tensor, NumpyArray
 
 
+__all__ = ["MSE", "Crossentropy"]
+
+
 @dataclass(init=False)
 class Loss(ABC):
     """Loss base class."""

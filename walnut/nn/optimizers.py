@@ -8,6 +8,9 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
+__all__ = ["SGD", "Adam"]
+
+
 @dataclass(slots=True)
 class Optimizer(ABC):
     """Optimizer base class"""

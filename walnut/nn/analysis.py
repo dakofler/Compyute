@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
 
+__all__ = [
+    "plot_curve",
+    "plot_distrbution",
+    "plot_images",
+    "plot_confusion_matrix",
+    "plot_probabilities",
+]
+
 
 def plot_curve(
     traces: dict[str, list[float]],

@@ -5,6 +5,9 @@ import psutil
 import numpy as np
 
 
+__all__ = ["stopwatch", "memlog", "set_numpy_format"]
+
+
 def stopwatch(func):
     """Decorator that reports the execution time."""
 
