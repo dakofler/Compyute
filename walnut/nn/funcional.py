@@ -48,7 +48,7 @@ def convolve1d(
     f: Tensor,
     stride: int = 1,
     dil: int = 1,
-    mode: str = "valid",
+    mode: str | int = "valid",
 ) -> Tensor:
     """Convolves two tensors along their trailing dim.
 
@@ -62,8 +62,9 @@ def convolve1d(
         Stride used in the convolution operation, by default 1.
     dil : int, optional
         Dilation used in the filter, by default 1.
-    mode : str, optional
-        Convolution mode, by default "valid".
+    mode : str | int, optional
+        Padding applied before convolution.
+        Options are "valid", "same" and "full" or the padding width as int, by default "valid".
 
     Returns
     -------
@@ -84,13 +85,16 @@ def convolve1d(
     f_dil = dilate1d(f, dil)
 
     # padding
-    match mode:
-        case "full":
-            p = f_dil.shape[-1] - 1
-        case "same":
-            p = f_dil.shape[-1] // 2
-        case _:
-            p = 0
+    if isinstance(mode, int):
+        p = mode
+    else:
+        match mode:
+            case "full":
+                p = f_dil.shape[-1] - 1
+            case "same":
+                p = f_dil.shape[-1] // 2
+            case _:
+                p = 0
     dim = x.ndim
     tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
     x = Tensor(np.pad(x.data, tpl))
@@ -119,7 +123,7 @@ def convolve2d(
     f: Tensor,
     stride: int | tuple[int, int] = 1,
     dil: int | tuple[int, int] = 1,
-    mode: str = "valid",
+    mode: str | tuple[int, int] = "valid",
 ) -> Tensor:
     """Convolves two tensors along their last two trailing dims.
 
@@ -133,8 +137,9 @@ def convolve2d(
         Strides used for each axis in the convolution operation, by default 1.
     dil : int | tuple [int, int], optional
         Dilations used for each axis of the filter, by default 1.
-    mode : str, optional
-        Convolution mode, by default "valid".
+    mode : str | tuple[int, int], optional
+        Padding applied before convolution.
+        Options are "valid", "same" and "full" or a tuple of padding widths, by default "valid".
 
     Returns
     -------
@@ -155,13 +160,16 @@ def convolve2d(
     f_dil = dilate2d(f, dil)
 
     # padding
-    match mode:
-        case "full":
-            p = (f_dil.shape[-2] - 1, f_dil.shape[-1] - 1)
-        case "same":
-            p = (f_dil.shape[-2] // 2, f_dil.shape[-1] // 2)
-        case _:
-            p = (0, 0)
+    if isinstance(mode, tuple):
+        p = mode
+    else:
+        match mode:
+            case "full":
+                p = (f_dil.shape[-2] - 1, f_dil.shape[-1] - 1)
+            case "same":
+                p = (f_dil.shape[-2] // 2, f_dil.shape[-1] // 2)
+            case _:
+                p = (0, 0)
     dim = x.ndim
     tpl = tuple(
         (p[-dim + d], p[-dim + d]) if d >= dim - 2 else (0, 0) for d in range(dim)
