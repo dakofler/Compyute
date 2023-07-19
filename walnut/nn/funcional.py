@@ -48,7 +48,7 @@ def convolve1d(
     f: Tensor,
     stride: int = 1,
     dil: int = 1,
-    mode: str | int = "valid",
+    mode: str | int = "same",
 ) -> Tensor:
     """Convolves two tensors along their trailing dim.
 
@@ -64,7 +64,7 @@ def convolve1d(
         Dilation used in the filter, by default 1.
     mode : str | int, optional
         Padding applied before convolution.
-        Options are "valid", "same" and "full" or the padding width as int, by default "valid".
+        Options are "valid", "same" and "full" or the padding width as int, by default "same".
 
     Returns
     -------
@@ -96,7 +96,7 @@ def convolve1d(
             case _:
                 p = 0
     dim = x.ndim
-    tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
+    tpl = tuple((2 * p, 0) if d == dim - 1 else (0, 0) for d in range(dim))
     x = Tensor(np.pad(x.data, tpl))
 
     # convolution

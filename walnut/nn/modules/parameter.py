@@ -127,8 +127,6 @@ class Linear(ParamModule):
         )
         self.out_channels = out_channels
         self.init_fn: Init | None = None
-        self.b_sum_axis: ShapeLike | None = None
-        self.x_transp_axis: ShapeLike | None = None
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
@@ -283,22 +281,22 @@ class Convolution1d(ParamModule):
         y_grad_p = np.zeros((dy1, dy2, self.stride * dy3))
         y_grad_p[:, :, :: self.stride] = self.y.grad
         out = 1 + (x3 - w3) if self.pad == "valid" else x3
-        y_grad_p = y_grad_p[:, :, :out]
+        y_grad_p = Tensor(y_grad_p[:, :, :out])
 
         # input grads (b, c_in, x)
-        y_grad_p_ext = tu.expand_dims(Tensor(y_grad_p), 2)
+        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
         w_ext = tu.expand_dims(self.w, 0)
         # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
         mode = "full" if self.pad == "valid" else "same"
-        dy_conv_w = convolve1d(y_grad_p_ext, w_ext, mode=mode, dil=self.dil)
+        dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
         self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
         # weight grads (c_out, c_in, x)
         x_ext = tu.expand_dims(self.x, 1)
         y_grad_p_ext = y_grad_p_ext.flip(-1)
         # convolve (b, _, c_in, x) * (b, c_out, _, x)
-        p = w3 // 2 * self.dil if self.pad == "same" else "valid"
-        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=p)[:, :, :, :: self.dil]
+        pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
+        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, :: self.dil]
         self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
 
         # bias grads (c_out,)
@@ -414,19 +412,19 @@ class Convolution2d(ParamModule):
         s1, s2 = self.stride
         d1, d2 = self.dil
 
-        # undo strides by filling with zeros
+        # fill elements skipped by strides with zeros
         y_grad_p = np.zeros((dy1, dy2, s1 * dy3, s2 * dy4))
         y_grad_p[:, :, ::s1, ::s2] = self.y.grad
         out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
         out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
-        y_grad_p = y_grad_p[:, :, :out_y, :out_x]
+        y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x])
 
         # input grads (b, c_in, y, x)
-        y_grad_p_ext = tu.expand_dims(Tensor(y_grad_p), 2)
+        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
         w_ext = tu.expand_dims(self.w, 0)
         # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
         pad = "full" if self.pad == "valid" else "same"
-        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, mode=pad, dil=self.dil)
+        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
         self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
         # weight grads (c_out, c_in, y, x)
