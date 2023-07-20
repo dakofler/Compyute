@@ -27,6 +27,7 @@ class Tensor:
     data: NumpyArray
     grad: NumpyArray
     params: dict[str, NumpyArray]
+    iterator: int
 
     def __init__(
         self,
@@ -51,6 +52,7 @@ class Tensor:
 
         self.grad: NumpyArray = np.empty(0, dtype="float32")
         self.params: dict[str, NumpyArray] = {}
+        self.iterator = 0
 
     @property
     def shape(self) -> ShapeLike:
@@ -90,6 +92,17 @@ class Tensor:
 
     def __setitem__(self, key, value) -> None:
         self.data[key] = value
+
+    def __iter__(self):
+        self.iterator = 0
+        return self
+
+    def __next__(self):
+        if self.iterator < self.len:
+            ret = Tensor(self.data[self.iterator], dtype=self.dtype)
+            self.iterator += 1
+            return ret
+        raise StopIteration
 
     def __add__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)

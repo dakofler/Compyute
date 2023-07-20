@@ -6,11 +6,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NumpyArray, ShapeLike, AxisLike
 from walnut.nn.modules.module import Module
 
 
-__all__ = ["MaxPooling", "Reshape", "Dropout"]
+__all__ = ["MaxPooling", "Reshape", "Moveaxis", "Dropout"]
 
 
 @dataclass(init=False, repr=False)
@@ -108,6 +108,42 @@ class Reshape(Module):
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
         self.x.grad = self.y.grad.reshape(self.x.shape)
+        return self.x.grad
+
+
+@dataclass(init=False, repr=False)
+class Moveaxis(Module):
+    """Moveaxis module used to swap tensor dimensions."""
+
+    def __init__(
+        self,
+        axis_from: AxisLike,
+        axis_to: AxisLike,
+        input_shape: ShapeLike | None = None,
+    ) -> None:
+        """Reshapes a tensor to fit a given shape.
+
+        Parameters
+        ----------
+        axis_from : AxisLike
+            What axis to move.
+        axis_to : AxisLike
+            Where to move the axis.
+        input_shape : ShapeLike | None, optional
+            Shape of a sample. Required if the module is used as input, by default None.
+        """
+        super().__init__(input_shape=input_shape)
+        self.axis_from = axis_from
+        self.axis_to = axis_to
+
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
+        self.y.data = np.moveaxis(self.x.data, self.axis_from, self.axis_to)
+        return self.y
+
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+        self.x.grad = np.moveaxis(self.y.grad, self.axis_to, self.axis_from)
         return self.x.grad
 
 
