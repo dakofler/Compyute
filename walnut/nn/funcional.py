@@ -39,8 +39,8 @@ def softmax(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    expo = np.exp(x.data - np.amax(x.data, axis=1, keepdims=True))
-    return Tensor(expo / np.sum(expo, axis=1, keepdims=True))
+    expo = np.exp(x.data - np.amax(x.data, axis=-1, keepdims=True))
+    return Tensor(expo / np.sum(expo, axis=-1, keepdims=True))
 
 
 def convolve1d(
@@ -75,11 +75,15 @@ def convolve1d(
     -------
     ShapeError
         If dimensions of input and filter do not match.
+    NotImplementedError
+        If padding is "same" and the kernel shape is even.
     """
     if x.ndim < 3:
         raise ShapeError("Expected 3D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
+    if mode == "same" and f.shape[-1] % 2 == 0:
+        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation
     f_dil = dilate1d(f, dil)
@@ -96,18 +100,18 @@ def convolve1d(
             case _:
                 p = 0
     dim = x.ndim
-    tpl = tuple((2 * p, 0) if d == dim - 1 else (0, 0) for d in range(dim))
-    x = Tensor(np.pad(x.data, tpl))
+    tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
+    x_pad = Tensor(np.pad(x.data, tpl))
 
     # convolution
-    conv_shape = x.shape[-1]
-    x_fft = npfft.fft(x.data, n=conv_shape).astype("complex64")
+    conv_shape = x_pad.shape[-1]
+    x_fft = npfft.fft(x_pad.data, n=conv_shape).astype("complex64")
     f_fft = npfft.fft(f_dil.data, n=conv_shape).astype("complex64")
     ifft = Tensor(np.real(npfft.ifft(x_fft * f_fft)))
 
     # slicing
-    out = 1 + (x.shape[-1] - f_dil.shape[-1])
-    match x.ndim:
+    out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
+    match x_pad.ndim:
         case 3:
             return ifft[:, :, -out:][:, :, ::stride]
         case 4:
@@ -150,11 +154,15 @@ def convolve2d(
     -------
     ShapeError
         If dimensions of input and filter do not match.
+    NotImplementedError
+        If padding is "same" and the kernel shape is even.
     """
     if x.ndim < 4:
         raise ShapeError("Expected 4D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
+    if mode == "same" and f.shape[-1] % 2 == 0:
+        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation
     f_dil = dilate2d(f, dil)

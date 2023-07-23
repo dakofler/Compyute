@@ -127,6 +127,9 @@ class Linear(ParamModule):
         )
         self.out_channels = out_channels
         self.init_fn: Init | None = None
+        self.w_tpl: tuple[int, ...] | None = None
+        self.b_tpl: tuple[int, ...] | None = None
+        self.w_s_tpl: tuple[int, ...] | None = None
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
@@ -139,11 +142,16 @@ class Linear(ParamModule):
         # init weights (c_in, c_out)
         self.w = self.init_fn((in_channels, self.out_channels))
         self.parameters.append(self.w)
+        dims = self.x.ndim
+        self.w_tpl = tuple(d if d < dims - 2 else 2 * dims - d - 3 for d in range(dims))
+        if dims > 2:
+            self.w_s_tpl = tuple(d for d in range(dims - 2))
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
+            self.b_tpl = tuple(d for d in range(dims - 1))
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
@@ -154,20 +162,17 @@ class Linear(ParamModule):
 
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
-        self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
+        # input grads (b, c_in)
+        self.x.grad = self.y.grad @ self.w.T
 
         # weight grads (c_in, c_out)
-        if self.x.ndim == 2:
-            self.w.grad = self.x.T @ self.y.grad
-        else:
-            self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)
+        self.w.grad = self.x.transpose(self.w_tpl).data @ self.y.grad
+        if self.x.ndim > 2:
+            self.w.grad = np.sum(self.w.grad, axis=self.w_s_tpl)
 
         # bias grads (c_out,)
         if self.use_bias:
-            if self.x.ndim == 2:
-                self.b.grad = np.sum(self.y.grad, axis=0)
-            else:
-                self.b.grad = np.sum(self.y.grad, axis=(0, 1))
+            self.b.grad = np.sum(self.y.grad, axis=self.b_tpl)
 
         if self.optimizer:
             self.optimize()
@@ -289,7 +294,8 @@ class Convolution1d(ParamModule):
         # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
         mode = "full" if self.pad == "valid" else "same"
         dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
-        self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
+        # sum over output channels
+        self.x.grad = dy_conv_w.sum(axis=1).data
 
         # weight grads (c_out, c_in, x)
         x_ext = tu.expand_dims(self.x, 1)
@@ -297,7 +303,8 @@ class Convolution1d(ParamModule):
         # convolve (b, _, c_in, x) * (b, c_out, _, x)
         pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
         x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, :: self.dil]
-        self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
+        # sum over batches
+        self.w.grad = x_conv_dy.sum(axis=0).data
 
         # bias grads (c_out,)
         if self.use_bias:
