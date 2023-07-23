@@ -241,7 +241,9 @@ class Tensor:
         """
         return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
 
-    def var(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def var(
+        self, axis: AxisLike | None = None, ddof: int = 0, keepdims: bool = False
+    ) -> Tensor:
         """Variance of tensor elements over a given axis.
 
         Parameters
@@ -249,6 +251,9 @@ class Tensor:
         axis : AxisLike | None, optional
             Axis over which the variance is computed, by default None.
             If none it is computed over the flattened tensor.
+        ddof : int, optional
+            "Delta Degrees of Freedom": the divisor used in the calculation is N - ddof,
+            where N represents the number of elements, by default 0.
         keepdims : bool, optional
             Whether to keep the tensors dimensions, by default False.
             If false the tensor is collapsed along the given axis.
@@ -258,7 +263,7 @@ class Tensor:
         Tensor
             Tensor containing the variance of elements.
         """
-        return Tensor(np.var(self.data, axis=axis, ddof=1, keepdims=keepdims))
+        return Tensor(np.var(self.data, axis=axis, ddof=ddof, keepdims=keepdims))
 
     def std(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
@@ -381,6 +386,16 @@ class Tensor:
             Tensor containing the absolute value for each element.
         """
         return Tensor(np.abs(self.data))
+
+    def sqrt(self) -> Tensor:
+        """Square root of tensor elements.
+
+        Returns
+        -------
+            Tensor
+            Tensor containing the square root value for each element.
+        """
+        return Tensor(np.sqrt(self.data))
 
     def item(self, *args) -> float:
         """Returns the scalar value of the tensor data.
