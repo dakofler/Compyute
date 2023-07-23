@@ -302,9 +302,9 @@ class Convolution1d(ParamModule):
         y_grad_p_ext = y_grad_p_ext.flip(-1)
         # convolve (b, _, c_in, x) * (b, c_out, _, x)
         pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
-        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, :: self.dil]
+        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, -w3 * self.dil :]
         # sum over batches
-        self.w.grad = x_conv_dy.sum(axis=0).data
+        self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
 
         # bias grads (c_out,)
         if self.use_bias:
@@ -439,8 +439,11 @@ class Convolution2d(ParamModule):
         y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
         # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
         pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
-        x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, ::d1, ::d2]
-        self.w.grad = x_conv_dy.sum(axis=0).data  # sum over batches
+        x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
+            :, :, :, -w3 * d1 :, -w4 * d2 :
+        ]
+        # sum over batches
+        self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
 
         # bias grads (c_out,)
         if self.use_bias:

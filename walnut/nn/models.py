@@ -221,12 +221,12 @@ class Sequential(Model):
         train_loss_history = []
         val_loss_history = []
 
-        for layer in self.layers:
-            layer.training = True
-
         for epoch in range(0, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
+
+            for layer in self.layers:
+                layer.training = True
 
             # forward pass
             predictions = self(x_train)
@@ -241,6 +241,9 @@ class Sequential(Model):
             layers_reversed.reverse()
             for layer in layers_reversed:
                 y_grad = layer.backward(y_grad)
+
+            for layer in self.layers:
+                layer.training = False
 
             # validation
             val_loss = None
@@ -257,9 +260,6 @@ class Sequential(Model):
         # reset parameters to improve memory efficiency
         if reset_params:
             self.__reset_params()
-
-        for layer in self.layers:
-            layer.training = False
 
         return train_loss_history, val_loss_history
 

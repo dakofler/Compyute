@@ -38,11 +38,11 @@ model = nn.Sequential(layers=[
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.modules.Convolution2d(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer"),
+    nn.modules.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch"),
     nn.modules.MaxPooling(p_window=(2, 2)),
     nn.modules.Reshape(),
-    nn.modules.Linear(64, act="relu", norm="layer"),
-    nn.modules.Linear(10, act="softmax")
+    nn.modules.Linear(64, act="relu", norm="batch"),
+    nn.modules.Linear(10, act="softmax", norm="batch")
 ])
 ```
 

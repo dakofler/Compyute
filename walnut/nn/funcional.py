@@ -82,7 +82,7 @@ def convolve1d(
         raise ShapeError("Expected 3D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if mode == "same" and f.shape[-1] % 2 == 0:
+    if mode == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation
@@ -161,7 +161,7 @@ def convolve2d(
         raise ShapeError("Expected 4D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if mode == "same" and f.shape[-1] % 2 == 0:
+    if mode == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation

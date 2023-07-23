@@ -44,20 +44,21 @@ class Batchnorm(ParamModule):
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        self.w = tu.ones((self.x.shape[0],))  # gain
+        self.w = tu.ones((self.x.shape[1],))  # gain
         self.parameters.append(self.w)
         self.b = tu.zeros_like(self.w)
         self.parameters.append(self.b)
         self._ax = (0,) + tuple(i + 2 for i in range(self.x.ndim - 2))
+        self._rmean = tu.ones(self.x.shape[1:]).data
+        self._rvar = tu.ones(self.x.shape[1:]).data
 
     def __call__(self, x: Tensor) -> Tensor:
         super().__call__(x)
-
         if self.training:
             mean = np.mean(self.x.data, axis=self._ax, keepdims=True)
             var = np.var(self.x.data, axis=self._ax, keepdims=True)
             # compute a running mean
-            if self._rmean is None and self._rvar is None:
+            if self._rmean is None or self._rmean.mean() == 1:
                 self._rmean = mean
                 self._rvar = var
             else:
