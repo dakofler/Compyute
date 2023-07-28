@@ -10,9 +10,9 @@ from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.modules import activations
-from walnut.nn.modules import normalizations
-from walnut.nn.modules.parameter import Module, ParamModule
+from walnut.nn.layers import activations
+from walnut.nn.layers import normalizations
+from walnut.nn.layers.parameter import Module, Parameter
 
 
 __all__ = ["Sequential"]
@@ -151,7 +151,7 @@ class Sequential(Model):
 
         for i, layer in enumerate(self.layers):
             layer.x = x
-            if isinstance(layer, ParamModule):
+            if isinstance(layer, Parameter):
                 layer.compile(optimizer)
 
                 # Normalization functions

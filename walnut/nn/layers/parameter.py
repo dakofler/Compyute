@@ -1,4 +1,4 @@
-"""parameter modules module"""
+"""parameter layers layer"""
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -10,15 +10,15 @@ from walnut.nn import inits
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.funcional import convolve1d, convolve2d
-from walnut.nn.modules.module import Module
+from walnut.nn.module import Module
 
 
 __all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
 
 
 @dataclass(repr=False, init=False)
-class ParamModule(Module):
-    """Trainable module base class."""
+class Parameter(Module):
+    """Trainable layer base class."""
 
     def __init__(
         self,
@@ -53,23 +53,23 @@ class ParamModule(Module):
         )
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
-        """Connects modules within a model.
+        """Connects layers within a model.
 
         Parameters
         ----------
         optimizer : Optimizer | None, optional
-            Optimizer used to update module parameters when training, by default None.
+            Optimizer used to update layer parameters when training, by default None.
         """
         super().compile()
         self.optimizer = optimizer
 
     def optimize(self) -> None:
-        """Updates module parameters using an optimizer.
+        """Updates layer parameters using an optimizer.
 
         Raises
         ------
         AttributeError
-            If no optimizer is defined for the module.
+            If no optimizer is defined for the layer.
         """
         if self.optimizer:
             for parameter in self.parameters:
@@ -78,7 +78,7 @@ class ParamModule(Module):
             raise AttributeError("Optimizer not set.")
 
     def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the module.
+        """Returns the total number of trainable parameters of the layer.
 
         Returns
         -------
@@ -89,8 +89,8 @@ class ParamModule(Module):
 
 
 @dataclass(init=False, repr=False)
-class Linear(ParamModule):
-    """Fully connected module."""
+class Linear(Parameter):
+    """Fully connected layer."""
 
     def __init__(
         self,
@@ -101,22 +101,22 @@ class Linear(ParamModule):
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Fully connected module.
+        """Fully connected layer.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (neurons) of the module.
+            Number of output channels (neurons) of the layer.
         act : str | None, optional
-            Activation function applied to the modules outputs, by default None.
+            Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
-            Normalization function applied to the modules outputs, by default None.
+            Normalization function applied to the layers outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
             act_fn_name=act,
@@ -181,8 +181,8 @@ class Linear(ParamModule):
 
 
 @dataclass(init=False, repr=False)
-class Convolution1d(ParamModule):
-    """Module used for spacial information and feature extraction."""
+class Convolution1d(Parameter):
+    """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
@@ -197,18 +197,18 @@ class Convolution1d(ParamModule):
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Convolutional module used for spacial information and feature extraction.
+        """Convolutional layer used for spacial information and feature extraction.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (neurons) of the module.
+            Number of output channels (neurons) of the layer.
         kernel_size : int
             Shape of each kernel.
         act : str | None, optional
-            Activation function applied to the modules outputs, by default None.
+            Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
-            Normalization function applied to the modules outputs, by default None.
+            Normalization function applied to the layers outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         pad: str, optional
@@ -221,7 +221,7 @@ class Convolution1d(ParamModule):
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
             act_fn_name=act,
@@ -316,8 +316,8 @@ class Convolution1d(ParamModule):
 
 
 @dataclass(init=False, repr=False)
-class Convolution2d(ParamModule):
-    """Module used for spacial information and feature extraction."""
+class Convolution2d(Parameter):
+    """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
@@ -332,18 +332,18 @@ class Convolution2d(ParamModule):
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Convolutional module used for spacial information and feature extraction.
+        """Convolutional layer used for spacial information and feature extraction.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (neurons) of the module.
+            Number of output channels (neurons) of the layer.
         kernel_size : ShapeLike, optional
             Shape of each kernel, by default (3, 3).
         act : str | None, optional
-            Activation function applied to the modules outputs, by default None.
+            Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
-            Normalization function applied to the modules outputs, by default None.
+            Normalization function applied to the layers outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         pad: str, optional
@@ -356,7 +356,7 @@ class Convolution2d(ParamModule):
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
             act_fn_name=act,
@@ -455,8 +455,8 @@ class Convolution2d(ParamModule):
 
 
 @dataclass(init=False, repr=False)
-class Embedding(ParamModule):
-    """Module used for token embedding."""
+class Embedding(Parameter):
+    """Layer used for token embedding."""
 
     def __init__(
         self,
@@ -464,16 +464,16 @@ class Embedding(ParamModule):
         init: str = "kaiming_he",
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """Embedding module used for token embedding.
+        """Embedding layer used for token embedding.
 
         Parameters
         ----------
         out_channels : int
-            Number of output channels (embedding dimensions) of the module.
+            Number of output channels (embedding dimensions) of the layer.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
             init_fn_name=init,

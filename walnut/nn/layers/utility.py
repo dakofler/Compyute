@@ -1,4 +1,4 @@
-"""utility modules module"""
+"""utility layers layer"""
 
 
 from __future__ import annotations
@@ -7,7 +7,7 @@ import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray, ShapeLike, AxisLike
-from walnut.nn.modules.module import Module
+from walnut.nn.module import Module
 
 
 __all__ = ["MaxPooling", "Reshape", "Moveaxis", "Dropout"]
@@ -15,21 +15,21 @@ __all__ = ["MaxPooling", "Reshape", "Moveaxis", "Dropout"]
 
 @dataclass(init=False, repr=False)
 class MaxPooling(Module):
-    """MaxPoling module used to reduce information to avoid overfitting."""
+    """MaxPoling layer used to reduce information to avoid overfitting."""
 
     def __init__(
         self,
         p_window: tuple[int, int] = (2, 2),
         input_shape: ShapeLike | None = None,
     ) -> None:
-        """MaxPoling module used to reduce information to avoid overfitting.
+        """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         p_window : tuple[int, int], optional
              Shape of the pooling window used for the pooling operation, by default (2, 2)
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None
+            Shape of a sample. Required if the layer is used as input, by default None
         """
         super().__init__(input_shape=input_shape)
         self.p_window = p_window
@@ -49,12 +49,12 @@ class MaxPooling(Module):
             (x_b, x_c, x_crop.shape[2] // p_y, x_crop.shape[3] // p_x)
         ).data
         self.p_map = tu.zeros_like(x_crop).data
-        for y in range(self.y.shape[2]):
-            for x in range(self.y.shape[3]):
+        for yi in range(self.y.shape[2]):
+            for xi in range(self.y.shape[3]):
                 chunk = self.x.data[
-                    :, :, y * p_y : (y + 1) * p_y, x * p_x : (x + 1) * p_x
+                    :, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x
                 ]
-                self.y.data[:, :, y, x] = np.max(chunk, axis=(2, 3))
+                self.y.data[:, :, yi, xi] = np.max(chunk, axis=(2, 3))
         y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_crop.shape)
         self.p_map = (x_crop.data == y_s) * 1.0
         return self.y
@@ -83,7 +83,7 @@ class MaxPooling(Module):
 
 @dataclass(init=False, repr=False)
 class Reshape(Module):
-    """Flatten module used to reshape tensors to shape (b, c_out)."""
+    """Flatten layer used to reshape tensors to shape (b, c_out)."""
 
     def __init__(
         self, output_shape: ShapeLike = (-1,), input_shape: ShapeLike | None = None
@@ -95,7 +95,7 @@ class Reshape(Module):
         output_shape : ShapeLike, optional
             The output's target shape, by default (-1,).
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.output_shape = output_shape
@@ -113,7 +113,7 @@ class Reshape(Module):
 
 @dataclass(init=False, repr=False)
 class Moveaxis(Module):
-    """Moveaxis module used to swap tensor dimensions."""
+    """Moveaxis layer used to swap tensor dimensions."""
 
     def __init__(
         self,
@@ -130,7 +130,7 @@ class Moveaxis(Module):
         axis_to : AxisLike
             Where to move the axis.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.axis_from = axis_from
@@ -149,17 +149,17 @@ class Moveaxis(Module):
 
 @dataclass(init=False, repr=False)
 class Dropout(Module):
-    """Dropout module used to randomly reduce information and avoid overfitting."""
+    """Dropout layer used to randomly reduce information and avoid overfitting."""
 
     def __init__(self, d_rate: float, input_shape: ShapeLike | None = None) -> None:
-        """Dropout module used to randomly reduce information and avoid overfitting.
+        """Dropout layer used to randomly reduce information and avoid overfitting.
 
         Parameters
         ----------
         d_rate : float
             Probability of values being set to 0.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.d_rate = d_rate

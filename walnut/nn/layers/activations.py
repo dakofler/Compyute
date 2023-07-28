@@ -1,10 +1,10 @@
-"""Activation modules module"""
+"""Activation layers module"""
 
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.funcional import sigmoid, softmax
-from walnut.nn.modules.module import Module
+from walnut.nn.module import Module
 
 
 __all__ = ["Relu", "Sigmoid", "Tanh", "Softmax"]

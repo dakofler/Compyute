@@ -1,4 +1,4 @@
-"""Normalization modules module"""
+"""Normalization layers module"""
 
 from dataclasses import dataclass
 import numpy as np
@@ -6,14 +6,14 @@ import numpy as np
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray, AxisLike
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.modules.parameter import ParamModule
+from walnut.nn.layers.parameter import Parameter
 
 
 __all__ = ["Batchnorm", "Layernorm"]
 
 
 @dataclass(init=False, repr=False)
-class Batchnorm(ParamModule):
+class Batchnorm(Parameter):
     """Batch Normalization."""
 
     def __init__(
@@ -31,7 +31,7 @@ class Batchnorm(ParamModule):
         momentum : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.eps = eps
@@ -58,7 +58,7 @@ class Batchnorm(ParamModule):
             mean = np.mean(self.x.data, axis=self._ax, keepdims=True)
             var = np.var(self.x.data, axis=self._ax, keepdims=True)
             # compute a running mean
-            if self._rmean is None or self._rmean.mean() == 1:
+            if self._rmean is None or self._rvar is None or self._rmean.mean() == 1:
                 self._rmean = mean
                 self._rvar = var
             else:
@@ -96,18 +96,18 @@ class Batchnorm(ParamModule):
 
 
 @dataclass(init=False, repr=False)
-class Layernorm(ParamModule):
+class Layernorm(Parameter):
     """Normalizes values per sample."""
 
     def __init__(self, eps: float = 1e-5, input_shape: ShapeLike | None = None) -> None:
-        """Implements module normalization.
+        """Implements layer normalization.
 
         Parameters
         ----------
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the module is used as input, by default None.
+            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
         self.eps = eps

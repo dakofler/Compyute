@@ -1,7 +1,7 @@
 """numpynn neural network module"""
 
 from walnut.nn import (
-    modules,
+    layers,
     analysis,
     inits,
     losses,
@@ -11,4 +11,4 @@ from walnut.nn import (
     funcional,
 )
 from walnut.nn.models import Sequential
-from walnut.nn.modules.module import Module
+from walnut.nn.module import Module
