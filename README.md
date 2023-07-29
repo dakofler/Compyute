@@ -27,10 +27,10 @@ Models can be built using a variety of modules, including trainable modules such
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.modules.Linear(16, input_shape=(4,), act="tanh", init="random"),
-    nn.modules.Linear(16, act="tanh", init="random"),
-    nn.modules.Linear(16, act="tanh", init="random"),
-    nn.modules.Linear(3, act="softmax", init="random")
+    nn.layers.Linear(16, input_shape=(4,), act="tanh", init="random"),
+    nn.layers.Linear(16, act="tanh", init="random"),
+    nn.layers.Linear(16, act="tanh", init="random"),
+    nn.layers.Linear(3, act="softmax", init="random")
 ])
 ```
 
@@ -38,11 +38,11 @@ model = nn.Sequential(layers=[
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.modules.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch"),
-    nn.modules.MaxPooling(p_window=(2, 2)),
-    nn.modules.Reshape(),
-    nn.modules.Linear(64, act="relu", norm="batch"),
-    nn.modules.Linear(10, act="softmax", norm="batch")
+    nn.layers.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch"),
+    nn.layers.MaxPooling(p_window=(2, 2)),
+    nn.layers.Reshape(),
+    nn.layers.Linear(64, act="relu", norm="batch"),
+    nn.layers.Linear(10, act="softmax", norm="batch")
 ])
 ```
 
@@ -103,7 +103,7 @@ B = walnut.zeros((1,))
 ```python
 import walnut.nn as nn
 
-conv = nn.modules.Convolution2d(out_channels=2)
+conv = nn.layers.Convolution2d(out_channels=2)
 
 conv.w = W
 conv.b = B

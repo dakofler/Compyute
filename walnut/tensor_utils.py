@@ -177,6 +177,22 @@ def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
     return Tensor(np.random.randint(lower_bound, upper_bound, shape), dtype="int")
 
 
+def uniform(low: float, high: float, shape: ShapeLike) -> Tensor:
+    """Creates a tensor of a given shape with random values following a uniform distribution.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    return Tensor(np.random.uniform(low, high, shape))
+
+
 def shuffle(
     x1: Tensor, x2: Tensor, batch_size: int | None = None
 ) -> tuple[Tensor, Tensor]:

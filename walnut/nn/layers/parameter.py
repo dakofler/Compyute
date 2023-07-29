@@ -97,7 +97,7 @@ class Linear(Parameter):
         out_channels: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kaiming_he",
+        init: str = "kuniform",
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -136,7 +136,9 @@ class Linear(Parameter):
         in_channels = self.x.shape[-1]
 
         # set initializer
-        initializer_params = inits.InitParams(in_channels, self.act_fn_name)
+        initializer_params = inits.InitParams(
+            in_channels, self.out_channels, self.act_fn_name
+        )
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_in, c_out)
@@ -190,7 +192,7 @@ class Convolution1d(Parameter):
         kernel_size: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kaiming_he",
+        init: str = "kuniform",
         pad: str = "valid",
         stride: int = 1,
         dil: int = 1,
@@ -242,8 +244,9 @@ class Convolution1d(Parameter):
         in_channels = self.x.shape[1]
 
         # set initializer
-        fan_mode = int(in_channels * np.prod(self.kernel_size))
-        initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
+        fan_in = int(in_channels * np.prod(self.kernel_size))
+        fan_out = int(self.out_channels * np.prod(self.kernel_size))
+        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_out, c_in, y, x)
@@ -325,7 +328,7 @@ class Convolution2d(Parameter):
         kernel_size: tuple[int, int] = (3, 3),
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kaiming_he",
+        init: str = "kuniform",
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
@@ -377,8 +380,9 @@ class Convolution2d(Parameter):
         in_channels = self.x.shape[1]
 
         # set initializer
-        fan_mode = int(in_channels * np.prod(self.kernel_size))
-        initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
+        fan_in = int(in_channels * np.prod(self.kernel_size))
+        fan_out = int(self.out_channels * np.prod(self.kernel_size))
+        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_out, c_in, y, x)
@@ -461,7 +465,7 @@ class Embedding(Parameter):
     def __init__(
         self,
         out_channels: int,
-        init: str = "kaiming_he",
+        init: str = "kuniform",
         input_shape: ShapeLike | None = None,
     ) -> None:
         """Embedding layer used for token embedding.
@@ -487,7 +491,9 @@ class Embedding(Parameter):
         vocab_size = self.x.shape[-1]
 
         # set initializer
-        initializer_params = inits.InitParams(vocab_size, self.act_fn_name)
+        initializer_params = inits.InitParams(
+            vocab_size, self.out_channels, self.act_fn_name
+        )
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (vocab_size, c_out)

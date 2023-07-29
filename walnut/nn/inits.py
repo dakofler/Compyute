@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+import math
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike
@@ -20,7 +21,8 @@ KAIMING_GAINS = {
 class InitParams:
     """Parameters for initialization."""
 
-    fan_mode: int = 1
+    fan_in: int = 1
+    fan_out: int = 1
     act_fn: str | None = ""
 
 
@@ -77,7 +79,54 @@ class KaimingHe(Init):
             if self.params.act_fn is not None
             else 1.0
         )
-        return tu.randn(shape) * gain / self.params.fan_mode**0.5
+        return tu.randn(shape) * gain / self.params.fan_in**0.5
 
 
-INITS = {"normal": Normal, "kaiming_he": KaimingHe}
+@dataclass(slots=True)
+class KUniform(Init):
+    """Creates a tensor of a given shape with values following a scaled uniform distribution."""
+
+    def __call__(self, shape: ShapeLike) -> Tensor:
+        """Creates a tensor with random values following a scaled uniform distribution.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        scale = math.sqrt(1.0 / self.params.fan_in)
+        return tu.uniform(-scale, scale, shape)
+
+
+@dataclass(slots=True)
+class Glorot(Init):
+    """Creates a tensor of a given shape with values following a scaled uniform distribution."""
+
+    def __call__(self, shape: ShapeLike) -> Tensor:
+        """Creates a tensor with random values following a scaled uniform distribution.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor with random values.
+        """
+        scale = math.sqrt(6.0 / (self.params.fan_in + self.params.fan_out))
+        return tu.uniform(-scale, scale, shape)
+
+
+INITS = {
+    "normal": Normal,
+    "kaiming_he": KaimingHe,
+    "kuniform": KUniform,
+    "glorot": Glorot,
+}
