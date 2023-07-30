@@ -2,7 +2,24 @@
 
 import pandas as pd
 import numpy as np
-from walnut.tensor import Tensor, ShapeLike, ShapeError
+from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError
+
+
+__all__ = [
+    "pd_to_tensor",
+    "expand_dims",
+    "match_dims",
+    "zeros",
+    "ones",
+    "zeros_like",
+    "ones_like",
+    "randn",
+    "randint",
+    "shuffle",
+    "check_dims",
+    "choice",
+    "empty",
+]
 
 
 def pd_to_tensor(df: pd.DataFrame) -> Tensor:
@@ -21,14 +38,14 @@ def pd_to_tensor(df: pd.DataFrame) -> Tensor:
     return Tensor(df.to_numpy())
 
 
-def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
+def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
     """Extends the dimensions of a tensor.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose dimensions are to be extended.
-    axis : AxisLike]
+    axis : AxisLike
         Where to insert the new dimension.
 
     Returns
@@ -36,7 +53,7 @@ def expand_dims(x: Tensor, axis: ShapeLike) -> Tensor:
     Tensor
         Tensor with extended dimensions.
     """
-    return Tensor(np.expand_dims(x.data, axis=axis))
+    return Tensor(np.expand_dims(x.data, axis=axis), dtype=x.dtype)
 
 
 def match_dims(x: Tensor, dims: int) -> Tensor:
@@ -124,40 +141,64 @@ def ones_like(x: Tensor) -> Tensor:
     return Tensor(np.ones_like(x.data))
 
 
-def randn(shape: ShapeLike) -> Tensor:
+def randn(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     """Creates a tensor of a given shape with random values following a normal distribution.
 
     Parameters
     ----------
     ShapeLike
         Shape of the new tensor.
+    mean : float, optional
+        Mean of random values, by default 0.
+    std : float, optional
+        Standard deviation of random values, by default 1.
 
     Returns
     -------
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.randn(*shape))
+    return Tensor(np.random.normal(mean, std, shape))
 
 
-def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
+def randu(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
+    """Creates a tensor of a given shape with random values following a uniform distribution.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+    low : float, optional
+        Lower bound for random values, by default 0.
+    high : float, optional
+        Upper bound for random values, by default 1.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    return Tensor(np.random.uniform(low, high, shape))
+
+
+def randint(shape: ShapeLike, low: int, high: int) -> Tensor:
     """Creates a tensor of a given shape with random integer values.
 
     Parameters
     ----------
-    lower_bound : int
-        Lower bound for random values.
-    upper_bound : int
-        Upper bound for random values.
     ShapeLike
         Shape of the new tensor.
+    low : int
+        Lower bound for random values.
+    high : int
+        Upper bound for random values.
 
     Returns
     -------
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.randint(lower_bound, upper_bound, shape))
+    return Tensor(np.random.randint(low, high, shape), dtype="int")
 
 
 def shuffle(
@@ -216,18 +257,36 @@ def check_dims(x: Tensor, target_dim: int) -> None:
         raise ShapeError("Input dimensions do not match.")
 
 
-def choice(x: Tensor) -> int:
+def choice(x: Tensor, num_samples: int = 1) -> Tensor:
     """Returns a random index based on a probability distribution tensor.
 
     Parameters
     ----------
     x : Tensor
         Tensor containing a probablitity distribution.
+    num_samples : int, optional
+        Number of samples drawn, by default 1.
 
     Returns
     -------
-    int
-        Index chosen using the probability distribuition.
+    Tensor
+        Chosen samples.
     """
     arange = np.arange(x.flatten().len)
-    return np.random.choice(arange, p=x.data.flatten())
+    samples = np.random.choice(arange, size=num_samples, p=x.data.flatten())
+    return Tensor(samples, dtype="int")
+
+
+def empty(dtype: str = "float32") -> Tensor:
+    """Return an empty tensor.
+
+    Parameters
+    ----------
+    dtype: str, optional
+        Datatype of the tensor data, by default float32.
+    Returns
+    -------
+    Tensor
+        Empty tensor.
+    """
+    return Tensor(np.empty(0, dtype=dtype))

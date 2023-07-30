@@ -8,6 +8,9 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
+__all__ = ["SGD", "Adam"]
+
+
 @dataclass(slots=True)
 class Optimizer(ABC):
     """Optimizer base class"""
@@ -19,7 +22,7 @@ class Optimizer(ABC):
 
 @dataclass(slots=True)
 class SGD(Optimizer):
-    """Implements the stochastic gradient descent algorithm.
+    """Updates parameters using stochastic gradient descent.
 
     Parameters
     ----------
@@ -36,7 +39,7 @@ class SGD(Optimizer):
     nesterov: bool = False
 
     def __call__(self, param: Tensor) -> None:
-        """Updates a tensors data based on its gradients.
+        """Updates parameters using stochastic gradient descent.
 
         Parameters
         ----------
@@ -56,7 +59,7 @@ class SGD(Optimizer):
 
 @dataclass(slots=True)
 class Adam(Optimizer):
-    """Implements the adam algorithm according to Kingma et al., 2014.
+    """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014.
 
     Parameters
     ----------
@@ -76,11 +79,11 @@ class Adam(Optimizer):
     eps: float = 1e-07
 
     def __call__(self, param: Tensor):
-        """Updates a tensors data based on its gradients.
+        """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014.
 
         Parameters
         ----------
-        parameter : Tensor
+        param : Tensor
             Tensor whose data is to be updated.
         """
         # get momentum of previous updating cycle. If not availlable, initlaize with zeros.

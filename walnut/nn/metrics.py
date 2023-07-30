@@ -6,27 +6,30 @@ from abc import ABC, abstractmethod
 from walnut.tensor import Tensor
 
 
+__all__ = ["Accuracy"]
+
+
 @dataclass(slots=True)
 class Metric(ABC):
     """Metric base class."""
 
     @abstractmethod
-    def __call__(self, X: Tensor, Y: Tensor) -> float:
+    def __call__(self, x: Tensor, y: Tensor) -> float:
         ...
 
 
 @dataclass(slots=True)
 class Accuracy(Metric):
-    """Accuracy base class."""
+    """Computes the percentage of correctly predicted classes."""
 
-    def __call__(self, X: Tensor, Y: Tensor) -> float:
+    def __call__(self, x: Tensor, y: Tensor) -> float:
         """Computes the accuracy score of a prediction compared to target values.
 
         Parameters
         ----------
-        X : Tensor
+        x : Tensor
             A model's predictions.
-        Y : Tensor
+        y : Tensor
             Target values.
 
         Returns
@@ -36,8 +39,8 @@ class Accuracy(Metric):
         """
 
         # create tensor with ones where highest probabilities occur
-        predicitons = (X / X.max(axis=1, keepdims=True) == 1.0) * 1.0
+        predicitons = (x / x.max(axis=1, keepdims=True) == 1.0) * 1.0
 
         # count number of correct samples
-        num_correct_preds = (predicitons * Y).sum().item()
+        num_correct_preds = (predicitons * y).sum().item()
         return num_correct_preds / predicitons.shape[0]

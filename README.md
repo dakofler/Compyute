@@ -21,30 +21,28 @@ The framework offers some utility functions, such as `split_train_val_test()` to
 
 ### Designing a model
 
-Models can be built using a variety of layers, including trainable layers such as linear or convolutional layers. Most of the common activation functions as well as normalization can be applied.
+Models can be built using a variety of modules, including trainable modules such as linear or convolutional modules. Most of the common activation functions as well as normalization can be applied.
 
 ```python
 import walnut.nn as nn
-from walnut.nn import layers
 
 model = nn.Sequential(layers=[
-    layers.Linear(16, input_shape=(4,), act="tanh", init="random"),
-    layers.Linear(16, act="tanh", init="random"),
-    layers.Linear(16, act="tanh", init="random"),
-    layers.Linear(3, act="softmax", init="random")
+    nn.layers.Linear(16, input_shape=(4,), act="tanh", init="random"),
+    nn.layers.Linear(16, act="tanh", init="random"),
+    nn.layers.Linear(16, act="tanh", init="random"),
+    nn.layers.Linear(3, act="softmax", init="random")
 ])
 ```
 
 ```python
 import walnut.nn as nn
-from walnut.nn import layers
 
 model = nn.Sequential(layers=[
-    layers.Convolution(16, input_shape=(1, 28, 28), kernel_shape=(3, 3), act="relu", norm="layer"),
-    layers.MaxPooling(p_window=(2, 2)),
-    layers.Flatten(),
-    layers.Linear(64, act="relu", norm="layer"),
-    layers.Linear(10, act="softmax")
+    nn.layers.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch"),
+    nn.layers.MaxPooling(p_window=(2, 2)),
+    nn.layers.Reshape(),
+    nn.layers.Linear(64, act="relu", norm="batch"),
+    nn.layers.Linear(10, act="softmax", norm="batch")
 ])
 ```
 
@@ -93,7 +91,7 @@ nn.analysis.plot_distrbution(gradients, title="gradient distribution")
 
 ### Experimenting
 
-All layers can also be used individually without a model and their parameters can be inspected. As an example, here is a forward and backward pass for a convolutional layer:
+All modules can also be used individually without a model and their parameters can be inspected. As an example, here is a forward and backward pass for a convolutional layer:
 ```python
 import walnut
 
@@ -105,21 +103,17 @@ B = walnut.zeros((1,))
 ```python
 import walnut.nn as nn
 
-conv = nn.layers.Convolution(out_channels=2)
+conv = nn.layers.Convolution2d(out_channels=2)
 
-conv.x = X
 conv.w = W
 conv.b = B
 
-conv.forward()
-conv.y
+conv(X)
 ```
 
 ```python
-conv.y.grad = walnut.randn(conv.y.shape).data
-conv.backward()
-
-conv.x.grad
+y_grad = walnut.randn(conv.y.shape).data
+conv.backward(y_grad)
 ```
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.

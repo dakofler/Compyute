@@ -1,7 +1,11 @@
 """basic preprocessing module"""
 
 import numpy as np
-from walnut.tensor import Tensor, ShapeLike
+
+from walnut.tensor import Tensor, AxisLike
+
+
+__all__ = ["split_train_val_test", "split_features_labels", "normalize"]
 
 
 def split_train_val_test(
@@ -56,7 +60,7 @@ def split_features_labels(x: Tensor, num_x_cols: int) -> tuple[Tensor, Tensor]:
 
 def normalize(
     x: Tensor,
-    axis: ShapeLike | None = None,
+    axis: AxisLike | None = None,
     l_bound: int = -1,
     u_bound: int = 1,
 ) -> Tensor:
@@ -66,7 +70,7 @@ def normalize(
     ----------
     x : Tensor
         Tensor to be normalized.
-    axis : ShapeLike | None, optional
+    axis : AxisLike | None, optional
         Axes over which normalization is applied, by default None.
         If None, the flattended tensor is normalized.
     l_bound : int, optional

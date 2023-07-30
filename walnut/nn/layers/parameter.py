@@ -1,28 +1,30 @@
-"""parameter layers module"""
+"""parameter layers layer"""
 
 from __future__ import annotations
 from dataclasses import dataclass
-import math
 import numpy as np
-import numpy.fft as npfft
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray
-from walnut.nn import inits, paddings
+from walnut.nn import inits
 from walnut.nn.inits import Init
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers.utility import Layer
+from walnut.nn.funcional import convolve1d, convolve2d
+from walnut.nn.module import Module
+
+
+__all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
 
 
 @dataclass(repr=False, init=False)
-class ParamLayer(Layer):
+class Parameter(Module):
     """Trainable layer base class."""
 
     def __init__(
         self,
         act_fn_name: str | None = None,
         norm_name: str | None = None,
-        init_fn_name: str = "random",
+        init_fn_name: str = "xavier_uniform",
         optimizer: Optimizer | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
@@ -34,8 +36,8 @@ class ParamLayer(Layer):
         self.optimizer = optimizer
         self.use_bias = use_bias
 
-        self.w: Tensor = Tensor()
-        self.b: Tensor = Tensor()
+        self.w: Tensor = tu.empty()
+        self.b: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
 
     def __repr__(self) -> str:
@@ -62,7 +64,7 @@ class ParamLayer(Layer):
         self.optimizer = optimizer
 
     def optimize(self) -> None:
-        """Updates layer parameters using an optimizer object.
+        """Updates layer parameters using an optimizer.
 
         Raises
         ------
@@ -87,7 +89,7 @@ class ParamLayer(Layer):
 
 
 @dataclass(init=False, repr=False)
-class Linear(ParamLayer):
+class Linear(Parameter):
     """Fully connected layer."""
 
     def __init__(
@@ -95,7 +97,7 @@ class Linear(ParamLayer):
         out_channels: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kaiming_he",
+        init: str = "xavier_uniform",
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -125,50 +127,75 @@ class Linear(ParamLayer):
         )
         self.out_channels = out_channels
         self.init_fn: Init | None = None
+        self.w_tpl: tuple[int, ...] | None = None
+        self.b_tpl: tuple[int, ...] | None = None
+        self.w_s_tpl: tuple[int, ...] | None = None
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        in_channels = self.x.shape[1]
+        in_channels = self.x.shape[-1]
 
         # set initializer
-        initializer_params = inits.InitParams(in_channels, self.act_fn_name)
+        initializer_params = inits.InitParams(
+            in_channels, self.out_channels, self.act_fn_name
+        )
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_in, c_out)
         self.w = self.init_fn((in_channels, self.out_channels))
         self.parameters.append(self.w)
+        dims = self.x.ndim
+        self.w_tpl = tuple(d if d < dims - 2 else 2 * dims - d - 3 for d in range(dims))
+        if dims > 2:
+            self.w_s_tpl = tuple(d for d in range(dims - 2))
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
+            self.b_tpl = tuple(d for d in range(dims - 1))
 
-    def forward(self, mode: str = "eval") -> None:
-        self.y.data = (self.x @ self.w).data  # (b, c_out)
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
+        self.y.data = (self.x @ self.w).data  # (b, [c], c_out)
         if self.use_bias:
             self.y.data += self.b.data
+        return self.y
 
-    def backward(self) -> None:
-        self.x.grad = self.y.grad @ self.w.T  # input grads (b, c_in)
-        self.w.grad = self.x.T @ self.y.grad  # weight grads (c_in, c_out)
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+        # input grads (b, c_in)
+        self.x.grad = self.y.grad @ self.w.T
+
+        # weight grads (c_in, c_out)
+        self.w.grad = self.x.transpose(self.w_tpl).data @ self.y.grad
+        if self.x.ndim > 2:
+            self.w.grad = np.sum(self.w.grad, axis=self.w_s_tpl)
+
+        # bias grads (c_out,)
         if self.use_bias:
-            self.b.grad = np.sum(self.y.grad, axis=0)  # bias grads (c_out,)
+            self.b.grad = np.sum(self.y.grad, axis=self.b_tpl)
+
         if self.optimizer:
             self.optimize()
 
+        return self.x.grad
+
 
 @dataclass(init=False, repr=False)
-class Convolution(ParamLayer):
-    """Convolutional layer used for spacial information and feature extraction."""
+class Convolution1d(Parameter):
+    """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
         out_channels: int,
-        kernel_shape: tuple[int, int] = (3, 3),
+        kernel_size: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kaiming_he",
+        init: str = "xavier_uniform",
         pad: str = "valid",
+        stride: int = 1,
+        dil: int = 1,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -178,16 +205,21 @@ class Convolution(ParamLayer):
         ----------
         out_channels : int
             Number of output channels (neurons) of the layer.
-        kernel_shape : ShapeLike, optional
-            Shape of each kernel, by default (3, 3).
+        kernel_size : int
+            Shape of each kernel.
         act : str | None, optional
             Activation function applied to the layers outputs, by default None.
         norm : str | None, optional
             Normalization function applied to the layers outputs, by default None.
         init : str, optional
             Initialization function for weights, by default "kaiming_he".
-        pad : str, optional
-            Padding method applied to the layer imputs, by default "valid".
+        pad: str, optional
+            Padding applied before convolution.
+            Options are "valid" and "same", by default "valid".
+        stride : int, optional
+            Stride used for the convolution operation, by default 1.
+        dil : int, optional
+            Dilation used for each axis of the filter, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
@@ -201,26 +233,24 @@ class Convolution(ParamLayer):
             input_shape=input_shape,
         )
         self.out_channels = out_channels
-        self.kernel_shape = kernel_shape
+        self.kernel_size = kernel_size
         self.init_fn: Init | None = None
-        self.pad_fn_name = pad
-
-        # set padding
-        width = math.floor(self.kernel_shape[0] / 2)
-        padding_params = paddings.PaddingParams(width, (2, 3))
-        self.pad_fn = paddings.PADDINGS[self.pad_fn_name](padding_params)
+        self.pad = pad
+        self.stride = stride
+        self.dil = dil
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
         in_channels = self.x.shape[1]
 
         # set initializer
-        fan_mode = int(in_channels * np.prod(self.kernel_shape))
-        initializer_params = inits.InitParams(fan_mode, self.act_fn_name)
+        fan_in = int(in_channels * np.prod(self.kernel_size))
+        fan_out = int(self.out_channels * np.prod(self.kernel_size))
+        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (c_out, c_in, y, x)
-        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_shape))
+        self.w = self.init_fn((self.out_channels, in_channels, self.kernel_size))
         self.parameters.append(self.w)
 
         # init bias (c_out,)
@@ -228,84 +258,214 @@ class Convolution(ParamLayer):
             self.b = tu.zeros((self.out_channels,))
             self.parameters.append(self.b)
 
-    def forward(self, mode: str = "eval") -> None:
-        # apply padding
-        x_pad = self.pad_fn(self.x).data
-
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
         # rotate weights for cross correlation
-        w_rotated = np.flip(self.w.data, axis=(2, 3))
+        w_rot = self.w.flip(-1)
 
-        # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
-        x_conv_w = self.__convolve(x_pad, w_rotated, exp_axis=(1, 0))
+        # convolve (b, _, c_in, x) * (_, c_out, c_in, x)
+        x_ext = tu.expand_dims(self.x, 1)
+        w_rot_ext = tu.expand_dims(w_rot, 0)
+        x_conv_w = convolve1d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
 
         # sum over input channels
-        _, _, w_y, w_x = self.w.shape
-        self.y.data = np.sum(x_conv_w, axis=2)[:, :, w_y - 1 :, w_x - 1 :]
+        self.y.data = x_conv_w.sum(axis=2).data
 
         if self.use_bias:
             # broadcast bias over batches (b, c_out)
             bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
             # reshape to fit output (b, c_out, 1, 1)
-            self.y.data += tu.match_dims(x=bias, dims=4).data
+            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
 
-    def backward(self) -> None:
-        # input grads (b, c_in, y, x)
-        # pad grads to fit input after convolution
-        _, _, x_y, _ = self.x.shape
-        _, _, dy_y, _ = self.y.shape
-        if self.pad_fn_name != "same":
-            pad = int((x_y - dy_y) / 2)
-            dy_p = np.pad(self.y.grad, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
-        else:
-            dy_p = self.y.grad
-        # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
-        dy_conv_w = self.__convolve(dy_p, self.w.data, exp_axis=(2, 0))
+        return self.y
+
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+        x3 = self.x.shape[-1]
+        w3 = self.w.shape[-1]
+        dy1, dy2, dy3 = self.y.grad.shape
+
+        # undo strides by filling with zeros
+        y_grad_p = np.zeros((dy1, dy2, self.stride * dy3))
+        y_grad_p[:, :, :: self.stride] = self.y.grad
+        out = 1 + (x3 - w3) if self.pad == "valid" else x3
+        y_grad_p = Tensor(y_grad_p[:, :, :out])
+
+        # input grads (b, c_in, x)
+        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+        w_ext = tu.expand_dims(self.w, 0)
+        # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
+        mode = "full" if self.pad == "valid" else "same"
+        dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
         # sum over output channels
-        self.x.grad = np.roll(np.sum(dy_conv_w, axis=1), shift=(-1, -1), axis=(2, 3))
+        self.x.grad = dy_conv_w.sum(axis=1).data
 
-        # weight grads (c_out, c_in, y, x)
-        x_p = self.pad_fn(self.x).data
-        # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        dy_conv_x = self.__convolve(x_p, self.y.grad, exp_axis=(1, 2))
+        # weight grads (c_out, c_in, x)
+        x_ext = tu.expand_dims(self.x, 1)
+        y_grad_p_ext = y_grad_p_ext.flip(-1)
+        # convolve (b, _, c_in, x) * (b, c_out, _, x)
+        pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
+        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, -w3 * self.dil :]
         # sum over batches
-        _, _, w_y, w_x = self.w.shape
-        self.w.grad = np.sum(dy_conv_x, axis=0)[:, :, -w_y:, -w_x:]
+        self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
 
         # bias grads (c_out,)
         if self.use_bias:
-            # sum over batches, y and x
-            self.b.grad = np.sum(self.y.data, axis=(0, 2, 3))
+            self.b.grad = np.sum(self.y.grad, axis=(0, 2))  # sum over b and x
 
         if self.optimizer:
             self.optimize()
-
-    # bottleneck
-    def __convolve(
-        self, x1: NumpyArray, x2: NumpyArray, exp_axis: ShapeLike | None = None
-    ) -> NumpyArray:
-        # fft both tensors
-        target_shape = x1.shape[-2:]
-        x1_fft = npfft.fft2(x1, s=target_shape).astype("complex64")
-        x2_fft = npfft.fft2(x2, s=target_shape).astype("complex64")
-
-        # expand dims if needed
-        if exp_axis:
-            ax1, ax2 = exp_axis
-            x1_fft = np.expand_dims(x1_fft, ax1)
-            x2_fft = np.expand_dims(x2_fft, ax2)
-
-        # multiply, ifft and get real value to complete convolution
-        return np.real(npfft.ifft2(x1_fft * x2_fft)).astype("float32")
+        return self.x.grad
 
 
 @dataclass(init=False, repr=False)
-class Embedding(ParamLayer):
-    """Embedding layer used for token embedding."""
+class Convolution2d(Parameter):
+    """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
         out_channels: int,
-        init: str = "kaiming_he",
+        kernel_size: tuple[int, int] = (3, 3),
+        act: str | None = None,
+        norm: str | None = None,
+        init: str = "xavier_uniform",
+        pad: str = "valid",
+        stride: int | tuple[int, int] = 1,
+        dil: int | tuple[int, int] = 1,
+        use_bias: bool = True,
+        input_shape: ShapeLike | None = None,
+    ) -> None:
+        """Convolutional layer used for spacial information and feature extraction.
+
+        Parameters
+        ----------
+        out_channels : int
+            Number of output channels (neurons) of the layer.
+        kernel_size : ShapeLike, optional
+            Shape of each kernel, by default (3, 3).
+        act : str | None, optional
+            Activation function applied to the layers outputs, by default None.
+        norm : str | None, optional
+            Normalization function applied to the layers outputs, by default None.
+        init : str, optional
+            Initialization function for weights, by default "kaiming_he".
+        pad: str, optional
+            Padding applied before convolution.
+            Options are "valid" and "same", by default "valid".
+        stride : int | tuple [int, int], optional
+            Strides used for the convolution operation, by default 1.
+        dil : int | tuple [int, int], optional
+            Dilations used for each axis of the filter, by default 1.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
+        input_shape : ShapeLike | None, optional
+            Shape of a sample. Required if the layer is used as input, by default None.
+        """
+        super().__init__(
+            act_fn_name=act,
+            norm_name=norm,
+            init_fn_name=init,
+            use_bias=use_bias,
+            input_shape=input_shape,
+        )
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.init_fn: Init | None = None
+        self.pad = pad
+        self.stride = (stride, stride) if isinstance(stride, int) else stride
+        self.dil = (dil, dil) if isinstance(dil, int) else dil
+
+    def compile(self, optimizer: Optimizer | None = None) -> None:
+        super().compile(optimizer)
+        in_channels = self.x.shape[1]
+
+        # set initializer
+        fan_in = int(in_channels * np.prod(self.kernel_size))
+        fan_out = int(self.out_channels * np.prod(self.kernel_size))
+        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
+        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
+
+        # init weights (c_out, c_in, y, x)
+        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_size))
+        self.parameters.append(self.w)
+
+        # init bias (c_out,)
+        if self.use_bias:
+            self.b = tu.zeros((self.out_channels,))
+            self.parameters.append(self.b)
+
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
+        # rotate weights for cross correlation
+        w_rot = self.w.flip((-2, -1))
+
+        # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
+        x_ext = tu.expand_dims(self.x, 1)  # add fake c_out dim
+        w_rot_ext = tu.expand_dims(w_rot, 0)  # add fake b dim
+        x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
+
+        # sum over input channels
+        self.y.data = x_conv_w.sum(axis=2).data
+
+        if self.use_bias:
+            # broadcast bias over batches (b, c_out)
+            bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
+            # reshape to fit output (b, c_out, 1, 1)
+            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
+
+        return self.y
+
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+        w3, w4 = self.w.shape[-2:]
+        x3, x4 = self.x.shape[-2:]
+        dy1, dy2, dy3, dy4 = self.y.grad.shape
+        s1, s2 = self.stride
+        d1, d2 = self.dil
+
+        # fill elements skipped by strides with zeros
+        y_grad_p = np.zeros((dy1, dy2, s1 * dy3, s2 * dy4))
+        y_grad_p[:, :, ::s1, ::s2] = self.y.grad
+        out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
+        out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
+        y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x])
+
+        # input grads (b, c_in, y, x)
+        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+        w_ext = tu.expand_dims(self.w, 0)
+        # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
+        pad = "full" if self.pad == "valid" else "same"
+        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
+        self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
+
+        # weight grads (c_out, c_in, y, x)
+        x_ext = tu.expand_dims(self.x, 1)
+        y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
+        # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
+        pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
+        x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
+            :, :, :, -w3 * d1 :, -w4 * d2 :
+        ]
+        # sum over batches
+        self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
+
+        # bias grads (c_out,)
+        if self.use_bias:
+            self.b.grad = np.sum(self.y.grad, axis=(0, 2, 3))  # sum over b, y and x
+
+        if self.optimizer:
+            self.optimize()
+        return self.x.grad
+
+
+@dataclass(init=False, repr=False)
+class Embedding(Parameter):
+    """Layer used for token embedding."""
+
+    def __init__(
+        self,
+        out_channels: int,
+        init: str = "xavier_uniform",
         input_shape: ShapeLike | None = None,
     ) -> None:
         """Embedding layer used for token embedding.
@@ -325,28 +485,27 @@ class Embedding(ParamLayer):
         )
         self.out_channels = out_channels  # embedding dimensions
         self.init_fn: Init | None = None
-        self.block_size: int = 0
 
     def compile(self, optimizer: Optimizer | None = None) -> None:
         super().compile(optimizer)
-        vocab_size = self.x.shape[2]
+        vocab_size = self.x.shape[-1]
 
         # set initializer
-        initializer_params = inits.InitParams(vocab_size, self.act_fn_name)
+        initializer_params = inits.InitParams(
+            vocab_size, self.out_channels, self.act_fn_name
+        )
         self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
 
         # init weights (vocab_size, c_out)
         self.w = self.init_fn((vocab_size, self.out_channels))
         self.parameters.append(self.w)
 
-    def forward(self, mode: str = "eval") -> None:
-        y = self.x @ self.w
-        # flatten trailing dims to make output 2 dimensonal
-        self.y.data = y.reshape((self.x.shape[0], -1)).data  # (s, b*d)
+    def __call__(self, x: Tensor) -> Tensor:
+        super().__call__(x)
+        self.y.data = (self.x @ self.w).data
+        return self.y
 
-    def backward(self) -> None:
-        # (s, b, d) from (x, b*d)
-        y_grad = self.y.grad.reshape((*self.x.shape[:2], self.out_channels))
-        x_ma = np.moveaxis(self.x.data, 0, -1)  # (b, v, s)
-        y_grad_ma = np.moveaxis(y_grad, 1, 0)  # (b, s, d)
-        self.w.grad = np.sum(x_ma @ y_grad_ma, axis=0)
+    def backward(self, y_grad: NumpyArray) -> NumpyArray:
+        super().backward(y_grad)
+        self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)
+        return self.x.grad

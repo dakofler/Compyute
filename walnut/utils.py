@@ -5,6 +5,9 @@ import psutil
 import numpy as np
 
 
+__all__ = ["stopwatch", "memlog", "set_numpy_format"]
+
+
 def stopwatch(func):
     """Decorator that reports the execution time."""
 
@@ -31,4 +34,6 @@ def memlog(func):
 
 def set_numpy_format():
     """Sets numpy's float output to show 4 decimal places."""
-    np.set_printoptions(precision=4)
+    np.set_printoptions(
+        precision=4, formatter={"float": "{: 0.4f}".format}, linewidth=100
+    )
