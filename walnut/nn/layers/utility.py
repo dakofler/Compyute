@@ -151,18 +151,18 @@ class Moveaxis(Module):
 class Dropout(Module):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 
-    def __init__(self, d_rate: float, input_shape: ShapeLike | None = None) -> None:
+    def __init__(self, p: float = 0.5, input_shape: ShapeLike | None = None) -> None:
         """Dropout layer used to randomly reduce information and avoid overfitting.
 
         Parameters
         ----------
-        d_rate : float
-            Probability of values being set to 0.
+        p : float, optional
+            Probability of values being set to zero, by default 0.5.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
-        self.d_rate = d_rate
+        self.p = p
         self.d_map: NumpyArray = np.empty(0, dtype="float32")
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -170,14 +170,14 @@ class Dropout(Module):
         if not self.training:
             self.y.data = self.x.data
         else:
-            drop_rate = self.d_rate
-            d_map = np.random.choice([0, 1], self.x.shape, p=[drop_rate, 1 - drop_rate])
-            self.d_map = d_map.astype("float32")
-            self.y.data = self.x.data * self.d_map / (1.0 - drop_rate)
+            self.d_map = np.random.choice(
+                [0.0, 1.0], self.x.shape, p=[self.p, 1.0 - self.p]
+            )
+            self.y.data = self.x.data * self.d_map / (1.0 - self.p)
         return self.y
 
     def backward(self, y_grad: NumpyArray) -> NumpyArray:
         super().backward(y_grad)
         # use d_map as mask for grads
-        self.x.grad = self.y.grad * self.d_map / (1.0 - self.d_rate)
+        self.x.grad = self.y.grad * self.d_map / (1.0 - self.p)
         return self.x.grad

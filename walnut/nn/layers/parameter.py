@@ -24,7 +24,7 @@ class Parameter(Module):
         self,
         act_fn_name: str | None = None,
         norm_name: str | None = None,
-        init_fn_name: str = "random",
+        init_fn_name: str = "xavier_uniform",
         optimizer: Optimizer | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
@@ -97,7 +97,7 @@ class Linear(Parameter):
         out_channels: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kuniform",
+        init: str = "xavier_uniform",
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -192,7 +192,7 @@ class Convolution1d(Parameter):
         kernel_size: int,
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kuniform",
+        init: str = "xavier_uniform",
         pad: str = "valid",
         stride: int = 1,
         dil: int = 1,
@@ -328,7 +328,7 @@ class Convolution2d(Parameter):
         kernel_size: tuple[int, int] = (3, 3),
         act: str | None = None,
         norm: str | None = None,
-        init: str = "kuniform",
+        init: str = "xavier_uniform",
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
@@ -465,7 +465,7 @@ class Embedding(Parameter):
     def __init__(
         self,
         out_channels: int,
-        init: str = "kuniform",
+        init: str = "xavier_uniform",
         input_shape: ShapeLike | None = None,
     ) -> None:
         """Embedding layer used for token embedding.

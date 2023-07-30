@@ -141,49 +141,37 @@ def ones_like(x: Tensor) -> Tensor:
     return Tensor(np.ones_like(x.data))
 
 
-def randn(shape: ShapeLike) -> Tensor:
+def randn(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     """Creates a tensor of a given shape with random values following a normal distribution.
 
     Parameters
     ----------
     ShapeLike
         Shape of the new tensor.
+    mean : float, optional
+        Mean of random values, by default 0.
+    std : float, optional
+        Standard deviation of random values, by default 1.
 
     Returns
     -------
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.randn(*shape))
+    return Tensor(np.random.normal(mean, std, shape))
 
 
-def randint(lower_bound: int, upper_bound: int, shape: ShapeLike) -> Tensor:
-    """Creates a tensor of a given shape with random integer values.
-
-    Parameters
-    ----------
-    lower_bound : int
-        Lower bound for random values.
-    upper_bound : int
-        Upper bound for random values.
-    ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor with random values.
-    """
-    return Tensor(np.random.randint(lower_bound, upper_bound, shape), dtype="int")
-
-
-def uniform(low: float, high: float, shape: ShapeLike) -> Tensor:
+def randu(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
     """Creates a tensor of a given shape with random values following a uniform distribution.
 
     Parameters
     ----------
     ShapeLike
         Shape of the new tensor.
+    low : float, optional
+        Lower bound for random values, by default 0.
+    high : float, optional
+        Upper bound for random values, by default 1.
 
     Returns
     -------
@@ -191,6 +179,26 @@ def uniform(low: float, high: float, shape: ShapeLike) -> Tensor:
         Tensor with random values.
     """
     return Tensor(np.random.uniform(low, high, shape))
+
+
+def randint(shape: ShapeLike, low: int, high: int) -> Tensor:
+    """Creates a tensor of a given shape with random integer values.
+
+    Parameters
+    ----------
+    ShapeLike
+        Shape of the new tensor.
+    low : int
+        Lower bound for random values.
+    high : int
+        Upper bound for random values.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    return Tensor(np.random.randint(low, high, shape), dtype="int")
 
 
 def shuffle(
