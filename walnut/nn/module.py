@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import Callable
+from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
@@ -16,7 +18,7 @@ class ModuleCompilationError(Exception):
 
 
 @dataclass(repr=False, init=False)
-class Module:
+class Module(ABC):
     """Module base class."""
 
     def __init__(self, input_shape: ShapeLike | None = None) -> None:
@@ -24,6 +26,7 @@ class Module:
         self.x: Tensor = tu.empty()
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
+        self.backward: Callable[[NumpyArray], NumpyArray] | None = None
         self.compiled: bool = False
         self.training: bool = False
 
@@ -45,7 +48,8 @@ class Module:
             self.x = tu.ones((1, *self.input_shape))
         self.compiled = True
 
-    def __call__(self, x: Tensor) -> None:
+    @abstractmethod
+    def __call__(self, x: Tensor) -> Tensor:
         """Performs a forward pass.
 
         Parameters
@@ -58,23 +62,19 @@ class Module:
         Tensor
             Computed Output.
         """
-        self.x.data = x.data
-
-    def backward(self, y_grad: NumpyArray) -> None:
-        """Performs a backward pass and computes gradients.
-
-        Parameters
-        ----------
-        x : NumpyArray
-            Output gradients.
-
-        Returns
-        ----------
-        NumpyArray
-            Input gradients.
-        """
-        self.y.grad = y_grad
 
     def get_parameter_count(self) -> int:
         """Returns the total number of trainable parameters of the module."""
         return 0
+
+    def set_x(self, x: Tensor) -> None:
+        self.x.data = x.data
+
+    def set_x_grad(self, x_grad: NumpyArray) -> None:
+        self.x.grad = x_grad
+
+    def set_y(self, y: Tensor) -> None:
+        self.y.data = y.data
+
+    def set_y_grad(self, y_grad: NumpyArray) -> None:
+        self.y.grad = y_grad

@@ -27,7 +27,7 @@ def sigmoid(x: Tensor) -> Tensor:
 
 
 def softmax(x: Tensor) -> Tensor:
-    """Applies the softmax function.
+    """Applies the softmax function over the last axis.
 
     Parameters
     ----------

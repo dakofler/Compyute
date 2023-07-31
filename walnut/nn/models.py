@@ -33,7 +33,7 @@ class Model(ABC):
     output_shape: ShapeLike = ()
 
     @abstractmethod
-    def __call__(self, x: Tensor) -> None:
+    def __call__(self, x: Tensor) -> Tensor:
         """Calls the model."""
 
     @abstractmethod
@@ -232,11 +232,11 @@ class Sequential(Model):
             predictions = self(x_train)
 
             # compute loss
-            train_loss = self.loss_fn(predictions, y_train)
+            train_loss = self.loss_fn(predictions, y_train).item()
             train_loss_history.append(train_loss)
 
             # backward pass
-            y_grad = self.loss_fn.backward().data
+            y_grad = self.loss_fn.backward()
             layers_reversed = self.layers.copy()
             layers_reversed.reverse()
             for layer in layers_reversed:
@@ -250,7 +250,7 @@ class Sequential(Model):
             if val_data is not None:
                 x_val, y_val = val_data
                 val_predictions = self(x_val)
-                val_loss = self.loss_fn(val_predictions, y_val)
+                val_loss = self.loss_fn(val_predictions, y_val).item()
                 val_loss_history.append(val_loss)
 
             end = time.time()
@@ -290,7 +290,7 @@ class Sequential(Model):
         tu.check_dims(x, len(self.input_shape))
         tu.check_dims(y, len(self.output_shape))
         predictions = self(x)
-        loss = self.loss_fn(predictions, y)
+        loss = self.loss_fn(predictions, y).item()
         score = self.metric(predictions, y)
         return loss, score
 

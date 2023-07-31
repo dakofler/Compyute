@@ -27,10 +27,10 @@ Models can be built using a variety of modules, including trainable modules such
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.layers.Linear(16, input_shape=(4,), act="tanh", init="random"),
-    nn.layers.Linear(16, act="tanh", init="random"),
-    nn.layers.Linear(16, act="tanh", init="random"),
-    nn.layers.Linear(3, act="softmax", init="random")
+    nn.layers.Linear(16, input_shape=(4,), act="tanh", init="normal"),
+    nn.layers.Linear(16, act="tanh", init="normal"),
+    nn.layers.Linear(16, act="tanh", init="normal"),
+    nn.layers.Linear(3, act="softmax", init="normal")
 ])
 ```
 
@@ -38,11 +38,11 @@ model = nn.Sequential(layers=[
 import walnut.nn as nn
 
 model = nn.Sequential(layers=[
-    nn.layers.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch"),
-    nn.layers.MaxPooling(p_window=(2, 2)),
+    nn.layers.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch", use_bias=False),
+    nn.layers.MaxPooling2d(kernel_size=(2, 2)),
     nn.layers.Reshape(),
-    nn.layers.Linear(64, act="relu", norm="batch"),
-    nn.layers.Linear(10, act="softmax", norm="batch")
+    nn.layers.Linear(64, act="relu", norm="batch", use_bias=False),
+    nn.layers.Linear(10, act="softmax")
 ])
 ```
 
@@ -95,16 +95,16 @@ All modules can also be used individually without a model and their parameters c
 ```python
 import walnut
 
-X = walnut.randint(0, 10, (1, 1, 5, 5))
-W = walnut.randn((1, 1, 3, 3))
-B = walnut.zeros((1,))
+X = walnut.randint(shape=(1, 1, 5, 5), low=0, high=10)
+W = walnut.randn(shape=(1, 1, 3, 3))
+B = walnut.zeros(shape=(1,))
 ```
 
 ```python
 import walnut.nn as nn
 
 conv = nn.layers.Convolution2d(out_channels=2)
-
+conv.training = True # tells the layer to define a backward function
 conv.w = W
 conv.b = B
 

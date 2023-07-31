@@ -156,30 +156,37 @@ class Linear(Parameter):
             self.b_tpl = tuple(d for d in range(dims - 1))
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = (self.x @ self.w).data  # (b, [c], c_out)
+        y = x @ self.w  # (b, [c], c_out)
         if self.use_bias:
-            self.y.data += self.b.data
-        return self.y
+            y += self.b
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        # input grads (b, c_in)
-        self.x.grad = self.y.grad @ self.w.T
+        if self.training:
 
-        # weight grads (c_in, c_out)
-        self.w.grad = self.x.transpose(self.w_tpl).data @ self.y.grad
-        if self.x.ndim > 2:
-            self.w.grad = np.sum(self.w.grad, axis=self.w_s_tpl)
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                # input grads (b, c_in)
+                x_grad = y_grad @ self.w.T
 
-        # bias grads (c_out,)
-        if self.use_bias:
-            self.b.grad = np.sum(self.y.grad, axis=self.b_tpl)
+                # weight grads (c_in, c_out)
+                self.w.grad = x.transpose(self.w_tpl).data @ y_grad
+                if x.ndim > 2:
+                    self.w.grad = np.sum(self.w.grad, axis=self.w_s_tpl)
 
-        if self.optimizer:
-            self.optimize()
+                # bias grads (c_out,)
+                if self.use_bias:
+                    self.b.grad = np.sum(y_grad, axis=self.b_tpl)
 
-        return self.x.grad
+                if self.optimizer:
+                    self.optimize()
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -259,63 +266,69 @@ class Convolution1d(Parameter):
             self.parameters.append(self.b)
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
         # rotate weights for cross correlation
         w_rot = self.w.flip(-1)
 
         # convolve (b, _, c_in, x) * (_, c_out, c_in, x)
-        x_ext = tu.expand_dims(self.x, 1)
+        x_ext = tu.expand_dims(x, 1)
         w_rot_ext = tu.expand_dims(w_rot, 0)
         x_conv_w = convolve1d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
 
         # sum over input channels
-        self.y.data = x_conv_w.sum(axis=2).data
+        y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            # broadcast bias over batches (b, c_out)
-            bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
-            # reshape to fit output (b, c_out, 1, 1)
-            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
+            y += tu.match_dims(x=self.b, dims=y.ndim)
 
-        return self.y
+        if self.training:
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        x3 = self.x.shape[-1]
-        w3 = self.w.shape[-1]
-        dy1, dy2, dy3 = self.y.grad.shape
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x3 = x.shape[-1]
+                w3 = self.w.shape[-1]
+                dy1, dy2, dy3 = y_grad.shape
 
-        # undo strides by filling with zeros
-        y_grad_p = np.zeros((dy1, dy2, self.stride * dy3))
-        y_grad_p[:, :, :: self.stride] = self.y.grad
-        out = 1 + (x3 - w3) if self.pad == "valid" else x3
-        y_grad_p = Tensor(y_grad_p[:, :, :out])
+                # undo strides by filling with zeros
+                y_grad_p = np.zeros((dy1, dy2, self.stride * dy3))
+                y_grad_p[:, :, :: self.stride] = y_grad
+                out = 1 + (x3 - w3) if self.pad == "valid" else x3
+                y_grad_p = Tensor(y_grad_p[:, :, :out])
 
-        # input grads (b, c_in, x)
-        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
-        w_ext = tu.expand_dims(self.w, 0)
-        # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
-        mode = "full" if self.pad == "valid" else "same"
-        dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
-        # sum over output channels
-        self.x.grad = dy_conv_w.sum(axis=1).data
+                # input grads (b, c_in, x)
+                y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+                w_ext = tu.expand_dims(self.w, 0)
+                # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
+                mode = "full" if self.pad == "valid" else "same"
+                dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
+                # sum over output channels
+                x_grad = dy_conv_w.sum(axis=1).data
 
-        # weight grads (c_out, c_in, x)
-        x_ext = tu.expand_dims(self.x, 1)
-        y_grad_p_ext = y_grad_p_ext.flip(-1)
-        # convolve (b, _, c_in, x) * (b, c_out, _, x)
-        pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
-        x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[:, :, :, -w3 * self.dil :]
-        # sum over batches
-        self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
+                # weight grads (c_out, c_in, x)
+                x_ext = tu.expand_dims(x, 1)
+                y_grad_p_ext = y_grad_p_ext.flip(-1)
+                # convolve (b, _, c_in, x) * (b, c_out, _, x)
+                pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
+                x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[
+                    :, :, :, -w3 * self.dil :
+                ]
+                # sum over batches
+                self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
 
-        # bias grads (c_out,)
-        if self.use_bias:
-            self.b.grad = np.sum(self.y.grad, axis=(0, 2))  # sum over b and x
+                # bias grads (c_out,)
+                if self.use_bias:
+                    self.b.grad = np.sum(y_grad, axis=(0, 2))  # sum over b and x
 
-        if self.optimizer:
-            self.optimize()
-        return self.x.grad
+                if self.optimizer:
+                    self.optimize()
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -395,67 +408,71 @@ class Convolution2d(Parameter):
             self.parameters.append(self.b)
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
         # rotate weights for cross correlation
         w_rot = self.w.flip((-2, -1))
 
         # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
-        x_ext = tu.expand_dims(self.x, 1)  # add fake c_out dim
+        x_ext = tu.expand_dims(x, 1)  # add fake c_out dim
         w_rot_ext = tu.expand_dims(w_rot, 0)  # add fake b dim
         x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
 
         # sum over input channels
-        self.y.data = x_conv_w.sum(axis=2).data
+        y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            # broadcast bias over batches (b, c_out)
-            bias = self.b * tu.ones(shape=(self.x.shape[0], 1))
-            # reshape to fit output (b, c_out, 1, 1)
-            self.y.data += tu.match_dims(x=bias, dims=self.y.ndim).data
+            y += tu.match_dims(x=self.b, dims=y.ndim - 1)
 
-        return self.y
+        if self.training:
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        w3, w4 = self.w.shape[-2:]
-        x3, x4 = self.x.shape[-2:]
-        dy1, dy2, dy3, dy4 = self.y.grad.shape
-        s1, s2 = self.stride
-        d1, d2 = self.dil
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                w3, w4 = self.w.shape[-2:]
+                x3, x4 = x.shape[-2:]
+                dy1, dy2, dy3, dy4 = y_grad.shape
+                s1, s2 = self.stride
+                d1, d2 = self.dil
 
-        # fill elements skipped by strides with zeros
-        y_grad_p = np.zeros((dy1, dy2, s1 * dy3, s2 * dy4))
-        y_grad_p[:, :, ::s1, ::s2] = self.y.grad
-        out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
-        out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
-        y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x])
+                # fill elements skipped by strides with zeros
+                y_grad_p = np.zeros((dy1, dy2, s1 * dy3, s2 * dy4))
+                y_grad_p[:, :, ::s1, ::s2] = y_grad
+                out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
+                out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
+                y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x])
 
-        # input grads (b, c_in, y, x)
-        y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
-        w_ext = tu.expand_dims(self.w, 0)
-        # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
-        pad = "full" if self.pad == "valid" else "same"
-        dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
-        self.x.grad = dy_conv_w.sum(axis=1).data  # sum over output channels
+                # input grads (b, c_in, y, x)
+                y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+                w_ext = tu.expand_dims(self.w, 0)
+                # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
+                pad = "full" if self.pad == "valid" else "same"
+                dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
+                x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
-        # weight grads (c_out, c_in, y, x)
-        x_ext = tu.expand_dims(self.x, 1)
-        y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
-        # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
-        pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
-        x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
-            :, :, :, -w3 * d1 :, -w4 * d2 :
-        ]
-        # sum over batches
-        self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
+                # weight grads (c_out, c_in, y, x)
+                x_ext = tu.expand_dims(x, 1)
+                y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
+                # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
+                pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
+                x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
+                    :, :, :, -w3 * d1 :, -w4 * d2 :
+                ]
+                # sum over batches
+                self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
 
-        # bias grads (c_out,)
-        if self.use_bias:
-            self.b.grad = np.sum(self.y.grad, axis=(0, 2, 3))  # sum over b, y and x
+                # bias grads (c_out,)
+                if self.use_bias:
+                    self.b.grad = np.sum(y_grad, axis=(0, 2, 3))  # sum over b, y and x
 
-        if self.optimizer:
-            self.optimize()
-        return self.x.grad
+                if self.optimizer:
+                    self.optimize()
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -501,11 +518,23 @@ class Embedding(Parameter):
         self.parameters.append(self.w)
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = (self.x @ self.w).data
-        return self.y
+        y = x @ self.w
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.w.grad = np.sum(self.x.transpose((0, 2, 1)).data @ self.y.grad, axis=0)
-        return self.x.grad
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = y_grad @ self.w.T
+                self.w.grad = np.sum(x.transpose((0, 2, 1)).data @ y_grad, axis=0)
+
+                if self.optimizer:
+                    self.optimize()
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y

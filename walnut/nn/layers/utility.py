@@ -6,79 +6,67 @@ from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike, AxisLike
+from walnut.tensor import Tensor, NumpyArray, ShapeLike
 from walnut.nn.module import Module
 
 
-__all__ = ["MaxPooling", "Reshape", "Moveaxis", "Dropout"]
+__all__ = ["MaxPooling2d", "Reshape", "Moveaxis", "Dropout"]
 
 
 @dataclass(init=False, repr=False)
-class MaxPooling(Module):
+class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
     def __init__(
         self,
-        p_window: tuple[int, int] = (2, 2),
+        kernel_size: tuple[int, int] = (2, 2),
         input_shape: ShapeLike | None = None,
     ) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
-        p_window : tuple[int, int], optional
+        kernel_size : tuple[int, int], optional
              Shape of the pooling window used for the pooling operation, by default (2, 2)
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None
         """
         super().__init__(input_shape=input_shape)
-        self.p_window = p_window
-        self.p_map: NumpyArray = np.empty(0, dtype="float32")
+        self.kernel_size = kernel_size
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
         # cut off values to fit the pooling window
-        y_fit = self.x.shape[2] // self.p_window[0] * self.p_window[0]
-        x_fit = self.x.shape[3] // self.p_window[1] * self.p_window[1]
-        x_crop = self.x[:, :, :y_fit, :x_fit]
+        y_fit = x.shape[-2] // self.kernel_size[0] * self.kernel_size[0]
+        x_fit = x.shape[-1] // self.kernel_size[1] * self.kernel_size[1]
+        x_crop = x[:, :, :y_fit, :x_fit]
 
-        # init output as zeros (b, c, y, k)
-        p_y, p_x = self.p_window
-        x_b, x_c, _, _ = self.x.shape
-        self.y.data = tu.zeros(
-            (x_b, x_c, x_crop.shape[2] // p_y, x_crop.shape[3] // p_x)
-        ).data
-        self.p_map = tu.zeros_like(x_crop).data
-        for yi in range(self.y.shape[2]):
-            for xi in range(self.y.shape[3]):
-                chunk = self.x.data[
-                    :, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x
-                ]
-                self.y.data[:, :, yi, xi] = np.max(chunk, axis=(2, 3))
-        y_s = self.__stretch(self.y.data, self.p_window, (2, 3), x_crop.shape)
-        self.p_map = (x_crop.data == y_s) * 1.0
-        return self.y
+        p_y, p_x = self.kernel_size
+        x_b, x_c, _, _ = x.shape
+        y = tu.zeros((x_b, x_c, x_crop.shape[-2] // p_y, x_crop.shape[-1] // p_x))
+        for yi in range(y.shape[-2]):
+            for xi in range(y.shape[-1]):
+                cnk = x.data[:, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x]
+                y[:, :, yi, xi] = cnk.max(axis=(-2, -1))
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        dy_s = self.__stretch(self.y.grad, self.p_window, (2, 3), self.p_map.shape)
-        # use p_map as mask for grads
-        self.x.grad = np.resize((dy_s * self.p_map), self.x.shape)
-        return self.x.grad
+        y_s = tu.stretch(y, self.kernel_size, x_crop.shape)
+        p_map = (x_crop == y_s) * 1.0
 
-    def __stretch(
-        self,
-        x: NumpyArray,
-        streching: tuple[int, int],
-        axis: tuple[int, int],
-        target_shape: ShapeLike,
-    ) -> NumpyArray:
-        fa1, fa2 = streching
-        ax1, ax2 = axis
-        x_stretched = np.repeat(x, fa1, axis=ax1)
-        x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
-        # resize to fit target shape by filling with zeros
-        return np.resize(x_stretched, target_shape)
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                dy_s = tu.stretch(Tensor(y_grad), self.kernel_size, p_map.shape)
+                # use p_map as mask for grads
+                x_grad = np.resize((dy_s * p_map).data, x.shape)
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -101,14 +89,22 @@ class Reshape(Module):
         self.output_shape = output_shape
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = self.x.data.reshape((self.x.shape[0], *self.output_shape))
-        return self.y
+        y = x.reshape((x.shape[0], *self.output_shape))
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.x.grad = self.y.grad.reshape(self.x.shape)
-        return self.x.grad
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = y_grad.reshape(x.shape)
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -117,34 +113,42 @@ class Moveaxis(Module):
 
     def __init__(
         self,
-        axis_from: AxisLike,
-        axis_to: AxisLike,
+        from_axis: int,
+        to_axis: int,
         input_shape: ShapeLike | None = None,
     ) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
         ----------
-        axis_from : AxisLike
-            What axis to move.
-        axis_to : AxisLike
-            Where to move the axis.
+        from_axis : int
+            Original positions of the axes to move. These must be unique.
+        to_axis : int
+            Destination positions for each of the original axes. These must also be unique.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(input_shape=input_shape)
-        self.axis_from = axis_from
-        self.axis_to = axis_to
+        self.from_axis = from_axis
+        self.to_axis = to_axis
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = np.moveaxis(self.x.data, self.axis_from, self.axis_to)
-        return self.y
+        y = x.moveaxis(self.from_axis, self.to_axis)
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.x.grad = np.moveaxis(self.y.grad, self.axis_to, self.axis_from)
-        return self.x.grad
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y
 
 
 @dataclass(init=False, repr=False)
@@ -163,21 +167,24 @@ class Dropout(Module):
         """
         super().__init__(input_shape=input_shape)
         self.p = p
-        self.d_map: NumpyArray = np.empty(0, dtype="float32")
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
         if not self.training:
-            self.y.data = self.x.data
+            y = x
         else:
-            self.d_map = np.random.choice(
-                [0.0, 1.0], self.x.shape, p=[self.p, 1.0 - self.p]
-            )
-            self.y.data = self.x.data * self.d_map / (1.0 - self.p)
-        return self.y
+            d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
+            y = x * d_map / (1.0 - self.p)
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        # use d_map as mask for grads
-        self.x.grad = self.y.grad * self.d_map / (1.0 - self.p)
-        return self.x.grad
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                # use d_map as mask for grads
+                x_grad = y_grad * d_map.data / (1.0 - self.p)
+
+                self.set_y_grad(y_grad)
+                self.set_x_grad(x_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_x(x)
+        self.set_y(y)
+        return y

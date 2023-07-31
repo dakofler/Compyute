@@ -124,7 +124,7 @@ class Tensor:
         other = self.__tensorify(other)
         return Tensor(self.data // other.data)
 
-    def __pow__(self, other: int) -> Tensor:
+    def __pow__(self, other: int | float) -> Tensor:
         return Tensor(self.data**other)
 
     def __mod__(self, other: int) -> Tensor:
@@ -367,6 +367,16 @@ class Tensor:
         """
         return Tensor(np.log10(self.data))
 
+    def log2(self) -> Tensor:
+        """Logarithm with base 2 of tensor elements.
+
+        Returns
+        -------
+            Tensor
+                Tensor containing the value of log2(x) for each element.
+        """
+        return Tensor(np.log2(self.data))
+
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
 
@@ -522,3 +532,20 @@ class Tensor:
             Tensor containing flipped values.
         """
         return Tensor(np.flip(self.data, axis=axis))
+
+    def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
+        """Move axes of an array to new positions. Other axes remain in their original order.
+
+        Parameters
+        ----------
+        from_axis : int
+            Original positions of the axes to move. These must be unique.
+        to_axis : int
+            Destination positions for each of the original axes. These must also be unique.
+
+        Returns
+        -------
+        Tensor
+            Tensor with moved axes.
+        """
+        return Tensor(np.moveaxis(self.data, from_axis, to_axis))

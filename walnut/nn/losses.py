@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from typing import Callable
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
@@ -10,27 +11,21 @@ from walnut.tensor import Tensor, NumpyArray
 __all__ = ["MSE", "Crossentropy"]
 
 
-@dataclass(init=False)
+@dataclass
 class Loss(ABC):
     """Loss base class."""
 
-    def __init__(self) -> None:
-        self.y: NumpyArray = np.empty(0, dtype="float32")
-        self.t: NumpyArray = np.empty(0, dtype="float32")
+    backward: Callable[[], NumpyArray] | None = None
 
     @abstractmethod
-    def __call__(self, y: Tensor, t: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         ...
-
-    @abstractmethod
-    def backward(self) -> Tensor:
-        """Performs a backward pass and computes gradients."""
 
 
 class MSE(Loss):
     """Computes the mean squared error loss."""
 
-    def __call__(self, y: Tensor, t: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         """Computes the mean squared error loss.
 
         Parameters
@@ -45,19 +40,21 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        self.y = y.data + 1e-7
-        self.t = t.data + 1e-7
-        return np.mean(0.5 * np.sum((self.t - self.y) ** 2, axis=1)).item()
+        dif = y - t
 
-    def backward(self) -> Tensor:
-        """Performs a backward pass."""
-        return Tensor((self.y - self.t) / self.y.shape[0])
+        def backward() -> NumpyArray:
+            """Performs a backward pass."""
+            return (dif * 2.0 / np.prod(y.shape).item()).data
+
+        self.backward = backward
+
+        return (dif**2).mean()
 
 
 class Crossentropy(Loss):
     """Computes the crossentropy loss."""
 
-    def __call__(self, y: Tensor, t: Tensor) -> float:
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         """Computes the crossentropy loss.
 
         Parameters
@@ -72,10 +69,12 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        self.y = y.data + 1e-7
-        self.t = t.data + 1e-7
-        return -np.mean(np.log(self.y) * self.t).item()
+        y += 1e-7
 
-    def backward(self) -> Tensor:
-        """Performs a backward pass."""
-        return Tensor(-1.0 * self.t / (self.y * self.t.size))
+        def backward() -> NumpyArray:
+            """Performs a backward pass."""
+            return (-t / (y * y.shape[0])).data
+
+        self.backward = backward
+
+        return (-(y.log() * t).sum(axis=-1)).mean()

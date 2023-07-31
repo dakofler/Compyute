@@ -29,7 +29,7 @@ def log_training_progress(
     validation_loss : float
         _description_
     """
-    line = f"epoch {epoch:5d}/{epochs:5d} | time/epoch {time_step:.2f} ms | loss {training_loss:.6f}"
+    line = f"epoch {epoch:5d}/{epochs:5d} | time/epoch {time_step:8.2f} ms | loss {training_loss:3.6f}"
     if validation_loss is not None:
         line += f" | val_loss {validation_loss:.6f}"
 
