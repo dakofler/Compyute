@@ -28,11 +28,9 @@ class Model(ABC):
 
     def __init__(self, layers: list[Module]) -> None:
         self.layers = layers
-
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Metric | None = None
-
         self.compiled: bool = False
         self.input_shape: ShapeLike = ()
         self.output_shape: ShapeLike = ()
@@ -106,7 +104,7 @@ class Model(ABC):
         score = self.metric(predictions, y)
         return loss, score
 
-    def training(self, on: bool = False) -> None:
+    def set_training(self, on: bool = False) -> None:
         """Sets the mode for all model layers."""
         for module in self.layers:
             module.training = on
@@ -270,7 +268,7 @@ class Sequential(Model):
         for epoch in range(0, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
-            self.training(True)
+            self.set_training(True)
 
             # forward pass
             predictions = self(x_train)
@@ -287,7 +285,7 @@ class Sequential(Model):
                 y_grad = layer.backward(y_grad)
 
             self.optimizer.step()
-            self.training()
+            self.set_training(False)
 
             # validation
             val_loss = None

@@ -25,13 +25,13 @@ class Tensor:
     """Tensor object."""
 
     data: NumpyArray
-    grad: NumpyArray
+    grad: NumpyArray | None
     params: dict[str, NumpyArray]
-    iterator: int
+    iterator: int = 0
 
     def __init__(
         self,
-        values: NumpyArray | list[Any] | float | int | np.float32,
+        data: NumpyArray | list[Any] | float | int | np.float32,
         dtype: str = "float32",
     ) -> None:
         """Tensor object.
@@ -43,15 +43,15 @@ class Tensor:
         dtype: str, optional
             Datatype of the tensor data, by default float32.
         """
-        if isinstance(values, np.ndarray):
-            self.data = values.astype(dtype, copy=values.dtype != dtype)
-        elif isinstance(values, (list, float, int, numpyType)):
-            self.data = np.array(values).astype(dtype)
+        if isinstance(data, np.ndarray):
+            self.data = data.astype(dtype, copy=data.dtype != dtype)
+        elif isinstance(data, (list, float, int, numpyType)):
+            self.data = np.array(data).astype(dtype)
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
 
-        self.grad: NumpyArray = np.empty(0, dtype="float32")
-        self.params: dict[str, NumpyArray] = {}
+        self.grad = None
+        self.params = {}
         self.iterator = 0
 
     @property

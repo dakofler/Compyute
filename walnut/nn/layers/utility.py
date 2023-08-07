@@ -1,8 +1,6 @@
 """utility layers layer"""
 
-
 from __future__ import annotations
-from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
@@ -13,7 +11,6 @@ from walnut.nn.module import Module
 __all__ = ["MaxPooling2d", "Reshape", "Moveaxis", "Dropout"]
 
 
-@dataclass(init=False, repr=False)
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
@@ -69,7 +66,6 @@ class MaxPooling2d(Module):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Reshape(Module):
     """Flatten layer used to reshape tensors to shape (b, c_out)."""
 
@@ -107,7 +103,6 @@ class Reshape(Module):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Moveaxis(Module):
     """Moveaxis layer used to swap tensor dimensions."""
 
@@ -151,7 +146,6 @@ class Moveaxis(Module):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Dropout(Module):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 

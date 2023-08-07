@@ -1,6 +1,5 @@
 """Loss functions module"""
 
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Callable
 import numpy as np
@@ -11,18 +10,17 @@ from walnut.tensor import Tensor, NumpyArray
 __all__ = ["MSE", "Crossentropy"]
 
 
-@dataclass(slots=True)
 class Loss(ABC):
     """Loss base class."""
 
-    backward: Callable[[], NumpyArray] | None = None
+    def __init__(self):
+        self.backward: Callable[[], NumpyArray] | None = None
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         ...
 
 
-@dataclass(slots=True)
 class MSE(Loss):
     """Computes the mean squared error loss."""
 
@@ -52,7 +50,6 @@ class MSE(Loss):
         return (dif**2).mean()
 
 
-@dataclass(slots=True)
 class Crossentropy(Loss):
     """Computes the crossentropy loss."""
 

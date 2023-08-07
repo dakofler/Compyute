@@ -1,6 +1,5 @@
 """Normalization layers module"""
 
-from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
@@ -11,7 +10,6 @@ from walnut.nn.layers.parameter import Parameter
 __all__ = ["Batchnorm", "Layernorm"]
 
 
-@dataclass(init=False, repr=False)
 class Batchnorm(Parameter):
     """Batch Normalization."""
 
@@ -96,7 +94,6 @@ class Batchnorm(Parameter):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Layernorm(Parameter):
     """Normalizes values per sample."""
 

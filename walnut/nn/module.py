@@ -2,7 +2,6 @@
 
 
 from __future__ import annotations
-from dataclasses import dataclass
 from typing import Callable
 from abc import ABC, abstractmethod
 
@@ -17,7 +16,6 @@ class ModuleCompilationError(Exception):
     """Error with the compiling of the module."""
 
 
-@dataclass(repr=False, init=False)
 class Module(ABC):
     """Module base class."""
 

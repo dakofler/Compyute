@@ -1,6 +1,5 @@
 """Parameter optimizers module"""
 
-from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 import numpy as np
 
@@ -11,34 +10,38 @@ from walnut.tensor import Tensor
 __all__ = ["SGD", "Adam"]
 
 
-@dataclass(slots=True)
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    parameters: list[Tensor] = field(default_factory=list)
-    l_r: float = 1e-3
+    def __init__(self) -> None:
+        self.parameters: list[Tensor] = []
 
     @abstractmethod
     def step(self) -> None:
         """Updates parameters using their gradients."""
 
 
-@dataclass(slots=True)
 class SGD(Optimizer):
-    """Updates parameters using stochastic gradient descent.
+    """Updates parameters using stochastic gradient descent."""
 
-    Parameters
-    ----------
-    l_r : float, optional
-        Learning rate, by default 1e-3.
-    momentum : float, optional
-        Momentum factor, by default 0.
-    nesterov : bool, optional
-        Whether to use the neterov momentum algorithm, by default False.
-    """
+    def __init__(
+        self, l_r: float = 1e-2, momentum: float = 0, nesterov: bool = False
+    ) -> None:
+        """Updates parameters using stochastic gradient descent.
 
-    momentum: float = 0
-    nesterov: bool = False
+        Parameters
+        ----------
+        l_r : float, optional
+            Learning rate, by default 1e-2.
+        momentum : float, optional
+            Momentum factor, by default 0.
+        nesterov : bool, optional
+            Whether to use the neterov momentum algorithm, by default False.
+        """
+        super().__init__()
+        self.l_r = l_r
+        self.momentum = momentum
+        self.nesterov = nesterov
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
@@ -54,28 +57,38 @@ class SGD(Optimizer):
             p.params["delta"] = delta
 
 
-@dataclass(slots=True)
 class Adam(Optimizer):
-    """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014.
+    """Updates parameters following the adam learning algorithm
+    as described by Kingma et al., 2014."""
 
-    Parameters
-    ----------
-    l_r : float, optional
-        Learning rate, by default 1e-3.
-    beta1 : float, optional
-        Exponential decay rate for the 1st momentum estimates, by default 0.9.
-    beta2 : float, optional
-        Exponential decay rate for the 2nd momentum estimates, by default 0.999.
-    eps : float, optional
-        Constant for numerical stability, by default 1e-07
-    """
+    def __init__(
+        self,
+        l_r: float = 1e-3,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        eps: float = 1e-07,
+    ) -> None:
+        """Updates parameters following the adam learning algorithm
+        as described by Kingma et al., 2014.
 
-    beta1: float = 0.9
-    beta2: float = 0.999
-    eps: float = 1e-07
+        Parameters
+        ----------
+        l_r : float, optional
+            Learning rate, by default 1e-3.
+        beta1 : float, optional
+            Exponential decay rate for the 1st momentum estimates, by default 0.9.
+        beta2 : float, optional
+            Exponential decay rate for the 2nd momentum estimates, by default 0.999.
+        eps : float, optional
+            Constant for numerical stability, by default 1e-07
+        """
+        super().__init__()
+        self.l_r = l_r
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
 
     def step(self):
-        """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014."""
         for p in self.parameters:
             # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
             mom_prev = p.params.get("adam_mom", tu.zeros(p.data.shape).data)

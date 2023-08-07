@@ -1,7 +1,6 @@
 """parameter layers layer"""
 
 from __future__ import annotations
-from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
@@ -15,7 +14,6 @@ from walnut.nn.module import Module
 __all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
 
 
-@dataclass(repr=False, init=False)
 class Parameter(Module):
     """Trainable layer base class."""
 
@@ -60,7 +58,6 @@ class Parameter(Module):
         return sum(p.data.size for p in self.parameters)
 
 
-@dataclass(init=False, repr=False)
 class Linear(Parameter):
     """Fully connected layer."""
 
@@ -158,7 +155,6 @@ class Linear(Parameter):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Convolution1d(Parameter):
     """Layer used for spacial information and feature extraction."""
 
@@ -297,7 +293,6 @@ class Convolution1d(Parameter):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Convolution2d(Parameter):
     """Layer used for spacial information and feature extraction."""
 
@@ -438,7 +433,6 @@ class Convolution2d(Parameter):
         return y
 
 
-@dataclass(init=False, repr=False)
 class Embedding(Parameter):
     """Layer used for token embedding."""
 

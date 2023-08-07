@@ -47,18 +47,17 @@ class InitParams:
     act_fn: str = ""
 
 
-@dataclass(slots=True)
 class Init(ABC):
     """Padding base class."""
 
-    params: InitParams
+    def __init__(self, params: InitParams):
+        self.params = params
 
     @abstractmethod
     def __call__(self, shape: ShapeLike) -> Tensor:
         ...
 
 
-@dataclass(slots=True)
 class Uniform(Init):
     """Creates a tensor with values following a uniform distribution."""
 
@@ -78,7 +77,6 @@ class Uniform(Init):
         return tu.randu(shape, -1, 1)
 
 
-@dataclass(slots=True)
 class Normal(Init):
     """Creates a tensor with values following a normal distribution."""
 
@@ -98,7 +96,6 @@ class Normal(Init):
         return tu.randn(shape)
 
 
-@dataclass(slots=True)
 class XavierUniform(Init):
     """Creates a tensor with random values as described by Glorot, X. & Bengio, Y. (2010)
     following a uniform distribution."""
@@ -124,7 +121,6 @@ class XavierUniform(Init):
         return tu.randu(shape, -bound, bound)
 
 
-@dataclass(slots=True)
 class XavierNormal(Init):
     """Creates a tensor with random values as described by Glorot, X. & Bengio, Y. (2010)
     following a normal distribution."""
@@ -150,7 +146,6 @@ class XavierNormal(Init):
         return tu.randn(shape, std=std)
 
 
-@dataclass(slots=True)
 class KaimingUniform(Init):
     """Creates a tensor with random values as described by He, K. et al. (2015)
     following a uniform distribution."""
@@ -175,7 +170,6 @@ class KaimingUniform(Init):
         return tu.randu(shape, -bound, bound)
 
 
-@dataclass(slots=True)
 class KaimingNormal(Init):
     """Creates a tensor with random values as described by He, K. et al. (2015)
     following a normal distribution."""
