@@ -11,7 +11,7 @@ from walnut.tensor import Tensor, NumpyArray
 __all__ = ["MSE", "Crossentropy"]
 
 
-@dataclass
+@dataclass(slots=True)
 class Loss(ABC):
     """Loss base class."""
 
@@ -22,6 +22,7 @@ class Loss(ABC):
         ...
 
 
+@dataclass(slots=True)
 class MSE(Loss):
     """Computes the mean squared error loss."""
 
@@ -51,6 +52,7 @@ class MSE(Loss):
         return (dif**2).mean()
 
 
+@dataclass(slots=True)
 class Crossentropy(Loss):
     """Computes the crossentropy loss."""
 

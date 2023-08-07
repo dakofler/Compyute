@@ -26,11 +26,16 @@ class ModelCompilationError(Exception):
 class Model(ABC):
     """Neural network model base class."""
 
-    loss_fn: Loss | None = None
-    metric: Metric | None = None
-    compiled: bool = False
-    input_shape: ShapeLike = ()
-    output_shape: ShapeLike = ()
+    def __init__(self, layers: list[Module]) -> None:
+        self.layers = layers
+
+        self.optimizer: Optimizer | None = None
+        self.loss_fn: Loss | None = None
+        self.metric: Metric | None = None
+
+        self.compiled: bool = False
+        self.input_shape: ShapeLike = ()
+        self.output_shape: ShapeLike = ()
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
@@ -40,16 +45,19 @@ class Model(ABC):
     def __repr__(self) -> str:
         """Returns a string representation of the model."""
 
-    def compile(self, loss_fn: Loss, metric: Metric) -> None:
+    def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
         """Compiles the model.
 
         Parameters
         ----------
+        optimizer : Optimizer
+            Optimizer algorithm to be used to update parameters.
         loss_fn : Loss
             Loss function to be used to compute losses and gradients.
         metric : Metric
             Metric to be used to evaluate the model.
         """
+        self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.metric = metric
         self.compiled = True
@@ -67,25 +75,63 @@ class Model(ABC):
     ) -> list[float]:
         """Trains the model."""
 
-    @abstractmethod
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float | None, float | None]:
-        """Evaluates the model."""
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
+        """Evaluates the model using a defined metric.
+
+        Parameters
+        ----------
+        x : Tensor
+            Tensor of input values (features).
+        y : Tensor
+            Tensor of target values.
+
+        Returns
+        ----------
+        float
+            Loss value.
+        float
+            Metric score.
+
+        Raises
+        ----------
+        ModelCompilationError
+            If the model has not been compiled yet.
+        """
+        if self.metric is None or self.loss_fn is None:
+            raise ModelCompilationError("Model not compiled yet.")
+        tu.check_dims(x, len(self.input_shape))
+        tu.check_dims(y, len(self.output_shape))
+        predictions = self(x)
+        loss = self.loss_fn(predictions, y).item()
+        score = self.metric(predictions, y)
+        return loss, score
+
+    def training(self, on: bool = False) -> None:
+        """Sets the mode for all model layers."""
+        for module in self.layers:
+            module.training = on
+
+    def parameters(self) -> list[Tensor]:
+        """Returns trainable parameters of a models layers."""
+        parameters = []
+        for module in self.layers:
+            parameters += module.parameters
+        return parameters
+
+    def reset_params(self) -> None:
+        """Resets a models parameters to reduce memory usage."""
+        for layer in self.layers:
+            layer.x.reset_params(reset_data=True)
+            layer.y.reset_params(reset_data=True)
+            if not layer.parameters:
+                continue
+            for parameter in layer.parameters:
+                parameter.reset_params()
 
 
 @dataclass(init=False, repr=False)
 class Sequential(Model):
     """Feed forward neural network model."""
-
-    def __init__(self, layers: list[Module]) -> None:
-        """Feed forward neural network model.
-
-        Parameters
-        ----------
-        layers : list[Module]
-            List of modules that make up the model.
-        """
-        super().__init__()
-        self.layers = layers
 
     def __call__(self, x: Tensor) -> Tensor:
         """Computes a prediction.
@@ -145,15 +191,15 @@ class Sequential(Model):
             raise ModelCompilationError(
                 "Model is already compiled. Initialize new model."
             )
-        super().compile(loss_fn, metric)
+        super().compile(optimizer, loss_fn, metric)
 
         x = tu.ones((1, *self.layers[0].input_shape))
 
         for i, layer in enumerate(self.layers):
             layer.x = x
-            if isinstance(layer, Parameter):
-                layer.compile(optimizer)
+            layer.compile()
 
+            if isinstance(layer, Parameter):
                 # Normalization functions
                 if layer.norm_name is not None:
                     norm = normalizations.NORMALIZATIONS[layer.norm_name]
@@ -164,12 +210,12 @@ class Sequential(Model):
                     act_fn = activations.ACTIVATIONS[layer.act_fn_name]
                     index = 1 if layer.norm_name is None else 2
                     self.layers.insert(i + index, act_fn())
-            else:
-                layer.compile()
+
             x = layer(x)
 
         self.input_shape = self.layers[0].x.shape
         self.output_shape = self.layers[-1].y.shape
+        self.optimizer.parameters = self.parameters()
         self.compiled = True
 
     def train(
@@ -224,9 +270,7 @@ class Sequential(Model):
         for epoch in range(0, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
-
-            for layer in self.layers:
-                layer.training = True
+            self.training(True)
 
             # forward pass
             predictions = self(x_train)
@@ -242,8 +286,8 @@ class Sequential(Model):
             for layer in layers_reversed:
                 y_grad = layer.backward(y_grad)
 
-            for layer in self.layers:
-                layer.training = False
+            self.optimizer.step()
+            self.training()
 
             # validation
             val_loss = None
@@ -259,46 +303,6 @@ class Sequential(Model):
 
         # reset parameters to improve memory efficiency
         if reset_params:
-            self.__reset_params()
+            self.reset_params()
 
         return train_loss_history, val_loss_history
-
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
-        """Evaluates the model using a defined metric.
-
-        Parameters
-        ----------
-        x : Tensor
-            Tensor of input values (features).
-        y : Tensor
-            Tensor of target values.
-
-        Returns
-        ----------
-        float
-            Loss value.
-        float
-            Metric score.
-
-        Raises
-        ----------
-        ModelCompilationError
-            If the model has not been compiled yet.
-        """
-        if self.metric is None or self.loss_fn is None:
-            raise ModelCompilationError("Model not compiled yet.")
-        tu.check_dims(x, len(self.input_shape))
-        tu.check_dims(y, len(self.output_shape))
-        predictions = self(x)
-        loss = self.loss_fn(predictions, y).item()
-        score = self.metric(predictions, y)
-        return loss, score
-
-    def __reset_params(self):
-        for layer in self.layers:
-            layer.x.reset_params(reset_data=True)
-            layer.y.reset_params(reset_data=True)
-            if not layer.parameters:
-                continue
-            for parameter in layer.parameters:
-                parameter.reset_params()

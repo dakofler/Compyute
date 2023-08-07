@@ -5,7 +5,6 @@ import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray, AxisLike
-from walnut.nn.optimizers import Optimizer
 from walnut.nn.layers.parameter import Parameter
 
 
@@ -40,8 +39,8 @@ class Batchnorm(Parameter):
         self.rvar: Tensor | None = None
         self._ax: AxisLike | None = None
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         self.w = tu.ones((self.x.shape[1],))
         self.b = tu.zeros_like(self.w)
         self.parameters = [self.w, self.b]
@@ -86,9 +85,6 @@ class Batchnorm(Parameter):
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=self._ax)
 
-                if self.optimizer:
-                    self.optimize()
-
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)
                 return x_grad
@@ -118,8 +114,8 @@ class Layernorm(Parameter):
         self.eps = eps
         self._ax: AxisLike | None = None
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         self.w = tu.ones(self.x.shape[1:])
         self.b = tu.zeros_like(self.w)
         self.parameters = [self.w, self.b]
@@ -147,9 +143,6 @@ class Layernorm(Parameter):
 
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=0)
-
-                if self.optimizer:
-                    self.optimize()
 
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)

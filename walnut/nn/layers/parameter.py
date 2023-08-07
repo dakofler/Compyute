@@ -8,7 +8,6 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray
 from walnut.nn import inits
 from walnut.nn.inits import Init
-from walnut.nn.optimizers import Optimizer
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 
@@ -25,7 +24,6 @@ class Parameter(Module):
         act_fn_name: str | None = None,
         norm_name: str | None = None,
         init_fn_name: str = "xavier_uniform",
-        optimizer: Optimizer | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -33,7 +31,6 @@ class Parameter(Module):
         self.act_fn_name = act_fn_name
         self.norm_name = norm_name
         self.init_fn_name = init_fn_name
-        self.optimizer = optimizer
         self.use_bias = use_bias
 
         self.w: Tensor = tu.empty()
@@ -51,31 +48,6 @@ class Parameter(Module):
             f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "
             + f"{b_shape:15s} | {y_shape:15s} | {params:15s}"
         )
-
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        """Connects layers within a model.
-
-        Parameters
-        ----------
-        optimizer : Optimizer | None, optional
-            Optimizer used to update layer parameters when training, by default None.
-        """
-        super().compile()
-        self.optimizer = optimizer
-
-    def optimize(self) -> None:
-        """Updates layer parameters using an optimizer.
-
-        Raises
-        ------
-        AttributeError
-            If no optimizer is defined for the layer.
-        """
-        if self.optimizer:
-            for parameter in self.parameters:
-                self.optimizer(param=parameter)
-        else:
-            raise AttributeError("Optimizer not set.")
 
     def get_parameter_count(self) -> int:
         """Returns the total number of trainable parameters of the layer.
@@ -131,8 +103,8 @@ class Linear(Parameter):
         self.b_tpl: tuple[int, ...] | None = None
         self.w_s_tpl: tuple[int, ...] | None = None
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         in_channels = self.x.shape[-1]
 
         # set initializer
@@ -174,9 +146,6 @@ class Linear(Parameter):
                 # bias grads (c_out,)
                 if self.use_bias:
                     self.b.grad = np.sum(y_grad, axis=self.b_tpl)
-
-                if self.optimizer:
-                    self.optimize()
 
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)
@@ -246,8 +215,8 @@ class Convolution1d(Parameter):
         self.stride = stride
         self.dil = dil
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         in_channels = self.x.shape[1]
 
         # set initializer
@@ -317,9 +286,6 @@ class Convolution1d(Parameter):
                 if self.use_bias:
                     self.b.grad = np.sum(y_grad, axis=(0, 2))  # sum over b and x
 
-                if self.optimizer:
-                    self.optimize()
-
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)
                 return x_grad
@@ -388,8 +354,8 @@ class Convolution2d(Parameter):
         self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         in_channels = self.x.shape[1]
 
         # set initializer
@@ -461,9 +427,6 @@ class Convolution2d(Parameter):
                 if self.use_bias:
                     self.b.grad = np.sum(y_grad, axis=(0, 2, 3))  # sum over b, y and x
 
-                if self.optimizer:
-                    self.optimize()
-
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)
                 return x_grad
@@ -503,8 +466,8 @@ class Embedding(Parameter):
         self.out_channels = out_channels  # embedding dimensions
         self.init_fn: Init | None = None
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
+    def compile(self) -> None:
+        super().compile()
         vocab_size = self.x.shape[-1]
 
         # set initializer
@@ -525,9 +488,6 @@ class Embedding(Parameter):
             def backward(y_grad: NumpyArray) -> NumpyArray:
                 x_grad = y_grad @ self.w.T
                 self.w.grad = np.sum(x.transpose((0, 2, 1)).data @ y_grad, axis=0)
-
-                if self.optimizer:
-                    self.optimize()
 
                 self.set_y_grad(y_grad)
                 self.set_x_grad(x_grad)

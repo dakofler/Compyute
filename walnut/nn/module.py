@@ -35,7 +35,7 @@ class Module(ABC):
         if not self.compiled:
             return name
         x_shape = str(self.x.shape[1:])
-        w_shape = b_shape = "(,)"
+        w_shape = b_shape = "(0,)"
         y_shape = str(self.y.shape[1:])
         return (
             f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "

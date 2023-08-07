@@ -1,6 +1,6 @@
 """Parameter optimizers module"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 import numpy as np
 
@@ -15,9 +15,12 @@ __all__ = ["SGD", "Adam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
+    parameters: list[Tensor] = field(default_factory=list)
+    l_r: float = 1e-3
+
     @abstractmethod
-    def __call__(self, param: Tensor):
-        ...
+    def step(self) -> None:
+        """Updates parameters using their gradients."""
 
 
 @dataclass(slots=True)
@@ -27,34 +30,28 @@ class SGD(Optimizer):
     Parameters
     ----------
     l_r : float, optional
-        Learning rate, by default 1e-2.
+        Learning rate, by default 1e-3.
     momentum : float, optional
         Momentum factor, by default 0.
     nesterov : bool, optional
         Whether to use the neterov momentum algorithm, by default False.
     """
 
-    l_r: float = 1e-2
     momentum: float = 0
     nesterov: bool = False
 
-    def __call__(self, param: Tensor) -> None:
-        """Updates parameters using stochastic gradient descent.
+    def step(self) -> None:
+        """Updates parameters using stochastic gradient descent."""
+        for p in self.parameters:
+            # get delta of previous updating cycle. If not availlable, initlaize with zeros.
+            delta_prev = p.params.get("delta", tu.zeros(p.data.shape).data)
+            delta = -self.l_r * p.grad + self.momentum * delta_prev
 
-        Parameters
-        ----------
-        param : Tensor
-            Tensor whose data is to be updated.
-        """
-        # get delta of previous updating cycle. If not availlable, initlaize with zeros.
-        delta_prev = param.params.get("delta", tu.zeros(param.data.shape).data)
-        delta = -self.l_r * param.grad + self.momentum * delta_prev
+            if self.nesterov:
+                delta = self.momentum * delta - self.l_r * p.grad
 
-        if self.nesterov:
-            delta = self.momentum * delta - self.l_r * param.grad
-
-        param.data += delta
-        param.params["delta"] = delta
+            p.data += delta
+            p.params["delta"] = delta
 
 
 @dataclass(slots=True)
@@ -73,31 +70,25 @@ class Adam(Optimizer):
         Constant for numerical stability, by default 1e-07
     """
 
-    l_r: float = 1e-3
     beta1: float = 0.9
     beta2: float = 0.999
     eps: float = 1e-07
 
-    def __call__(self, param: Tensor):
-        """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014.
+    def step(self):
+        """Updates parameters following the adam learning algorithm as described by Kingma et al., 2014."""
+        for p in self.parameters:
+            # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
+            mom_prev = p.params.get("adam_mom", tu.zeros(p.data.shape).data)
+            mom = self.beta1 * mom_prev + (1 - self.beta1) * p.grad
+            m_bc = mom / (1 - self.beta1)
+            p.params["adam_mom"] = mom
 
-        Parameters
-        ----------
-        param : Tensor
-            Tensor whose data is to be updated.
-        """
-        # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
-        mom_prev = param.params.get("adam_mom", tu.zeros(param.data.shape).data)
-        mom = self.beta1 * mom_prev + (1 - self.beta1) * param.grad
-        m_bc = mom / (1 - self.beta1)
-        param.params["adam_mom"] = mom
+            # get velocity of previous updating cycle. If not availlable, initlaize with zeros.
+            velo_prev = p.params.get("adam_velo", tu.zeros(p.data.shape).data)
+            velo = self.beta2 * velo_prev + (1 - self.beta2) * p.grad**2
+            v_bc = velo / (1 - self.beta2)
+            p.params["adam_velo"] = velo
 
-        # get velocity of previous updating cycle. If not availlable, initlaize with zeros.
-        velo_prev = param.params.get("adam_velo", tu.zeros(param.data.shape).data)
-        velo = self.beta2 * velo_prev + (1 - self.beta2) * param.grad**2
-        v_bc = velo / (1 - self.beta2)
-        param.params["adam_velo"] = velo
-
-        delta = -m_bc * (self.l_r / (np.sqrt(v_bc) + self.eps))
-        param.data += delta
-        param.params["delta"] = delta
+            delta = -m_bc * (self.l_r / (np.sqrt(v_bc) + self.eps))
+            p.data += delta
+            p.params["delta"] = delta
