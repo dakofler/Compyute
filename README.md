@@ -25,24 +25,26 @@ Models can be built using a variety of modules, including trainable modules such
 
 ```python
 import walnut.nn as nn
+from walnut.nn.layers import *
 
 model = nn.Sequential([
-    nn.layers.Linear(16, input_shape=(4,), act="tanh", init="normal"),
-    nn.layers.Linear(16, act="tanh", init="normal"),
-    nn.layers.Linear(16, act="tanh", init="normal"),
-    nn.layers.Linear(3, act="softmax", init="normal")
+    Linear(16, input_shape=(4,)), Tanh(),
+    Linear(16), Tanh()
+    Linear(16), Tanh()
+    Linear(3), Softmax()
 ])
 ```
 
 ```python
 import walnut.nn as nn
+from walnut.nn.layers import *
 
 model = nn.Sequential([
-    nn.layers.Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), act="relu", norm="batch", use_bias=False),
-    nn.layers.MaxPooling2d(kernel_size=(2, 2)),
-    nn.layers.Reshape(),
-    nn.layers.Linear(64, act="relu", norm="batch", use_bias=False),
-    nn.layers.Linear(10, act="softmax")
+    Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), use_bias=False), Batchnorm(), Relu(),
+    MaxPooling2d(kernel_size=(2, 2)),
+    Reshape(),
+    Linear(64, use_bias=False), Batchnorm(), Relu(),
+    Linear(10), Softmax()
 ])
 ```
 

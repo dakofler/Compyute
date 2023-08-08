@@ -25,6 +25,7 @@ class Module(ABC):
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
         self.backward: Callable[[NumpyArray], NumpyArray] | None = None
+        self.num_params = 0
         self.compiled: bool = False
         self.training: bool = False
 
@@ -60,10 +61,6 @@ class Module(ABC):
         Tensor
             Computed Output.
         """
-
-    def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the module."""
-        return 0
 
     def set_x(self, x: Tensor) -> None:
         self.x.data = x.data

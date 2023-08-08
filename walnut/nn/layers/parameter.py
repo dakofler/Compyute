@@ -5,8 +5,6 @@ import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ShapeLike, NumpyArray
-from walnut.nn import inits
-from walnut.nn.inits import Init
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 
@@ -19,18 +17,13 @@ class Parameter(Module):
 
     def __init__(
         self,
-        act_fn_name: str | None = None,
-        norm_name: str | None = None,
-        init_fn_name: str = "xavier_uniform",
+        weights: Tensor | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
         super().__init__(input_shape=input_shape)
-        self.act_fn_name = act_fn_name
-        self.norm_name = norm_name
-        self.init_fn_name = init_fn_name
         self.use_bias = use_bias
-
+        self.weights = weights
         self.w: Tensor = tu.empty()
         self.b: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
@@ -47,16 +40,6 @@ class Parameter(Module):
             + f"{b_shape:15s} | {y_shape:15s} | {params:15s}"
         )
 
-    def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the layer.
-
-        Returns
-        -------
-        int
-            Number of trainable parameters.
-        """
-        return sum(p.data.size for p in self.parameters)
-
 
 class Linear(Parameter):
     """Fully connected layer."""
@@ -64,9 +47,7 @@ class Linear(Parameter):
     def __init__(
         self,
         out_channels: int,
-        act: str | None = None,
-        norm: str | None = None,
-        init: str = "xavier_uniform",
+        weights: Tensor | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -76,26 +57,19 @@ class Linear(Parameter):
         ----------
         out_channels : int
             Number of output channels (neurons) of the layer.
-        act : str | None, optional
-            Activation function applied to the layers outputs, by default None.
-        norm : str | None, optional
-            Normalization function applied to the layers outputs, by default None.
-        init : str, optional
-            Initialization function for weights, by default "kaiming_he".
+        weights : Tensor | None, optional
+            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
-            act_fn_name=act,
-            norm_name=norm,
-            init_fn_name=init,
+            weights=weights,
             use_bias=use_bias,
             input_shape=input_shape,
         )
         self.out_channels = out_channels
-        self.init_fn: Init | None = None
         self.w_tpl: tuple[int, ...] | None = None
         self.b_tpl: tuple[int, ...] | None = None
         self.w_s_tpl: tuple[int, ...] | None = None
@@ -104,14 +78,12 @@ class Linear(Parameter):
         super().compile()
         in_channels = self.x.shape[-1]
 
-        # set initializer
-        initializer_params = inits.InitParams(
-            in_channels, self.out_channels, self.act_fn_name
-        )
-        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
-
         # init weights (c_in, c_out)
-        self.w = self.init_fn((in_channels, self.out_channels))
+        if self.weights is None:
+            k = in_channels**-0.5
+            self.w = tu.randu((in_channels, self.out_channels), -k, k)
+        else:
+            self.w = self.weights
         self.parameters.append(self.w)
         dims = self.x.ndim
         self.w_tpl = tuple(d if d < dims - 2 else 2 * dims - d - 3 for d in range(dims))
@@ -162,12 +134,10 @@ class Convolution1d(Parameter):
         self,
         out_channels: int,
         kernel_size: int,
-        act: str | None = None,
-        norm: str | None = None,
-        init: str = "xavier_uniform",
         pad: str = "valid",
         stride: int = 1,
         dil: int = 1,
+        weights: Tensor | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -179,12 +149,6 @@ class Convolution1d(Parameter):
             Number of output channels (neurons) of the layer.
         kernel_size : int
             Shape of each kernel.
-        act : str | None, optional
-            Activation function applied to the layers outputs, by default None.
-        norm : str | None, optional
-            Normalization function applied to the layers outputs, by default None.
-        init : str, optional
-            Initialization function for weights, by default "kaiming_he".
         pad: str, optional
             Padding applied before convolution.
             Options are "valid" and "same", by default "valid".
@@ -192,21 +156,20 @@ class Convolution1d(Parameter):
             Stride used for the convolution operation, by default 1.
         dil : int, optional
             Dilation used for each axis of the filter, by default 1.
+        weights : Tensor | None, optional
+            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__(
-            act_fn_name=act,
-            norm_name=norm,
-            init_fn_name=init,
+            weights=weights,
             use_bias=use_bias,
             input_shape=input_shape,
         )
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.init_fn: Init | None = None
         self.pad = pad
         self.stride = stride
         self.dil = dil
@@ -215,14 +178,12 @@ class Convolution1d(Parameter):
         super().compile()
         in_channels = self.x.shape[1]
 
-        # set initializer
-        fan_in = int(in_channels * np.prod(self.kernel_size))
-        fan_out = int(self.out_channels * np.prod(self.kernel_size))
-        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
-        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
-
-        # init weights (c_out, c_in, y, x)
-        self.w = self.init_fn((self.out_channels, in_channels, self.kernel_size))
+        # init weights (c_out, c_in, x)
+        if self.weights is None:
+            k = int(in_channels * np.prod(self.kernel_size)) ** -0.5
+            self.w = tu.randu((self.out_channels, in_channels, self.kernel_size), -k, k)
+        else:
+            self.w = self.weights
         self.parameters.append(self.w)
 
         # init bias (c_out,)
@@ -300,12 +261,10 @@ class Convolution2d(Parameter):
         self,
         out_channels: int,
         kernel_size: tuple[int, int] = (3, 3),
-        act: str | None = None,
-        norm: str | None = None,
-        init: str = "xavier_uniform",
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
+        weights: Tensor | None = None,
         use_bias: bool = True,
         input_shape: ShapeLike | None = None,
     ) -> None:
@@ -317,12 +276,6 @@ class Convolution2d(Parameter):
             Number of output channels (neurons) of the layer.
         kernel_size : ShapeLike, optional
             Shape of each kernel, by default (3, 3).
-        act : str | None, optional
-            Activation function applied to the layers outputs, by default None.
-        norm : str | None, optional
-            Normalization function applied to the layers outputs, by default None.
-        init : str, optional
-            Initialization function for weights, by default "kaiming_he".
         pad: str, optional
             Padding applied before convolution.
             Options are "valid" and "same", by default "valid".
@@ -330,21 +283,16 @@ class Convolution2d(Parameter):
             Strides used for the convolution operation, by default 1.
         dil : int | tuple [int, int], optional
             Dilations used for each axis of the filter, by default 1.
+        weights : Tensor | None, optional
+            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(
-            act_fn_name=act,
-            norm_name=norm,
-            init_fn_name=init,
-            use_bias=use_bias,
-            input_shape=input_shape,
-        )
+        super().__init__(weights=weights, use_bias=use_bias, input_shape=input_shape)
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.init_fn: Init | None = None
         self.pad = pad
         self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
@@ -353,14 +301,14 @@ class Convolution2d(Parameter):
         super().compile()
         in_channels = self.x.shape[1]
 
-        # set initializer
-        fan_in = int(in_channels * np.prod(self.kernel_size))
-        fan_out = int(self.out_channels * np.prod(self.kernel_size))
-        initializer_params = inits.InitParams(fan_in, fan_out, self.act_fn_name)
-        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
-
         # init weights (c_out, c_in, y, x)
-        self.w = self.init_fn((self.out_channels, in_channels, *self.kernel_size))
+        if self.weights is None:
+            k = int(in_channels * np.prod(self.kernel_size)) ** -0.5
+            self.w = tu.randu(
+                (self.out_channels, in_channels, *self.kernel_size), -k, k
+            )
+        else:
+            self.w = self.weights
         self.parameters.append(self.w)
 
         # init bias (c_out,)
@@ -439,7 +387,7 @@ class Embedding(Parameter):
     def __init__(
         self,
         out_channels: int,
-        init: str = "xavier_uniform",
+        weights: Tensor | None = None,
         input_shape: ShapeLike | None = None,
     ) -> None:
         """Embedding layer used for token embedding.
@@ -448,30 +396,24 @@ class Embedding(Parameter):
         ----------
         out_channels : int
             Number of output channels (embedding dimensions) of the layer.
-        init : str, optional
-            Initialization function for weights, by default "kaiming_he".
+        weights : Tensor | None, optional
+            Weights of the layer, by default None. If None, weights are initialized randomly.
         input_shape : ShapeLike | None, optional
             Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(
-            init_fn_name=init,
-            input_shape=input_shape,
-        )
+        super().__init__(weights=weights, input_shape=input_shape)
         self.out_channels = out_channels  # embedding dimensions
-        self.init_fn: Init | None = None
 
     def compile(self) -> None:
         super().compile()
         vocab_size = self.x.shape[-1]
 
-        # set initializer
-        initializer_params = inits.InitParams(
-            vocab_size, self.out_channels, self.act_fn_name
-        )
-        self.init_fn = inits.INITS[self.init_fn_name](initializer_params)
-
         # init weights (vocab_size, c_out)
-        self.w = self.init_fn((vocab_size, self.out_channels))
+        if self.weights is None:
+            k = vocab_size**-0.5
+            self.w = tu.randu((vocab_size, self.out_channels), -k, k)
+        else:
+            self.w = self.weights
         self.parameters.append(self.w)
 
     def __call__(self, x: Tensor) -> Tensor:

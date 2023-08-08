@@ -10,9 +10,7 @@ from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers import activations
-from walnut.nn.layers import normalizations
-from walnut.nn.layers.parameter import Module, Parameter
+from walnut.nn.layers.parameter import Module
 
 
 __all__ = ["Sequential"]
@@ -106,14 +104,14 @@ class Model(ABC):
 
     def set_training(self, on: bool = False) -> None:
         """Sets the mode for all model layers."""
-        for module in self.layers:
-            module.training = on
+        for layer in self.layers:
+            layer.training = on
 
     def parameters(self) -> list[Tensor]:
         """Returns trainable parameters of a models layers."""
         parameters = []
-        for module in self.layers:
-            parameters += module.parameters
+        for layer in self.layers:
+            parameters += layer.parameters
         return parameters
 
     def reset_params(self) -> None:
@@ -156,10 +154,9 @@ class Sequential(Model):
             f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
             + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
         )
-        sum_params = 0
         for layer in self.layers:
             string += layer.__repr__() + "\n"
-            sum_params += layer.get_parameter_count()
+        sum_params = sum(p.data.size for p in self.parameters())
         string += f"\ntotal trainable parameters {sum_params}"
         return string
 
@@ -193,22 +190,9 @@ class Sequential(Model):
 
         x = tu.ones((1, *self.layers[0].input_shape))
 
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             layer.x = x
             layer.compile()
-
-            if isinstance(layer, Parameter):
-                # Normalization functions
-                if layer.norm_name is not None:
-                    norm = normalizations.NORMALIZATIONS[layer.norm_name]
-                    self.layers.insert(i + 1, norm())
-
-                # Activation functions
-                if layer.act_fn_name is not None:
-                    act_fn = activations.ACTIVATIONS[layer.act_fn_name]
-                    index = 1 if layer.norm_name is None else 2
-                    self.layers.insert(i + index, act_fn())
-
             x = layer(x)
 
         self.input_shape = self.layers[0].x.shape

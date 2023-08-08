@@ -66,7 +66,7 @@ class Adam(Optimizer):
         l_r: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
-        eps: float = 1e-07,
+        eps: float = 1e-08,
     ) -> None:
         """Updates parameters following the adam learning algorithm
         as described by Kingma et al., 2014.
@@ -87,21 +87,25 @@ class Adam(Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
+        self.t: int = 1
 
     def step(self):
         for p in self.parameters:
-            # get momentum of previous updating cycle. If not availlable, initlaize with zeros.
-            mom_prev = p.params.get("adam_mom", tu.zeros(p.data.shape).data)
-            mom = self.beta1 * mom_prev + (1 - self.beta1) * p.grad
-            m_bc = mom / (1 - self.beta1)
-            p.params["adam_mom"] = mom
+            if p.grad is None:
+                continue
+            m_prev = p.params.get("adam_m", np.zeros(p.data.shape))
+            v_prev = p.params.get("adam_v", np.zeros(p.data.shape))
 
-            # get velocity of previous updating cycle. If not availlable, initlaize with zeros.
-            velo_prev = p.params.get("adam_velo", tu.zeros(p.data.shape).data)
-            velo = self.beta2 * velo_prev + (1 - self.beta2) * p.grad**2
-            v_bc = velo / (1 - self.beta2)
-            p.params["adam_velo"] = velo
+            m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
+            p.params["adam_m"] = m
+            v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
+            p.params["adam_v"] = v
 
-            delta = -m_bc * (self.l_r / (np.sqrt(v_bc) + self.eps))
+            m_hat = m / (1.0 - self.beta1**self.t)
+            v_hat = v / (1.0 - self.beta2**self.t)
+
+            delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.data += delta
             p.params["delta"] = delta
+
+        self.t += 1  # increase t for next step
