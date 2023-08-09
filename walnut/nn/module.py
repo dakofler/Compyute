@@ -43,8 +43,6 @@ class Module(ABC):
 
     def compile(self) -> None:
         """Connects modules within a model."""
-        if self.input_shape is not None:
-            self.x = tu.ones((1, *self.input_shape))
         self.compiled = True
 
     @abstractmethod

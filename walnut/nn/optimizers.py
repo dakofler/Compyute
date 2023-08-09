@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from walnut import tensor_utils as tu
 from walnut.tensor import Tensor
 
 
@@ -25,7 +24,11 @@ class SGD(Optimizer):
     """Updates parameters using stochastic gradient descent."""
 
     def __init__(
-        self, l_r: float = 1e-2, momentum: float = 0, nesterov: bool = False
+        self,
+        l_r: float = 1e-2,
+        momentum: float = 0.0,
+        nesterov: bool = False,
+        weight_decay: float = 0.0,
     ) -> None:
         """Updates parameters using stochastic gradient descent.
 
@@ -42,19 +45,38 @@ class SGD(Optimizer):
         self.l_r = l_r
         self.momentum = momentum
         self.nesterov = nesterov
+        self.weight_decay = weight_decay
+        self.t: int = 1
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
         for p in self.parameters:
-            # get delta of previous updating cycle. If not availlable, initlaize with zeros.
-            delta_prev = p.params.get("delta", tu.zeros(p.data.shape).data)
-            delta = -self.l_r * p.grad + self.momentum * delta_prev
+            if p.grad is None:
+                continue
 
-            if self.nesterov:
-                delta = self.momentum * delta - self.l_r * p.grad
+            if self.weight_decay > 0.0:
+                p.grad += self.weight_decay * p.data
+
+            if self.momentum > 0.0:
+                if self.t > 1:
+                    b_prev = p.params.get("sgd_b", np.zeros(p.data.shape))
+                    b = self.momentum * b_prev + p.grad
+                else:
+                    b = p.grad
+
+                p.params["sgd_b"] = b
+
+                if self.nesterov:
+                    p.grad += self.momentum * b
+                else:
+                    p.grad = b
+
+            delta = -self.l_r * p.grad
+            p.params["delta"] = delta  # for analysis
 
             p.data += delta
-            p.params["delta"] = delta
+
+        self.t += 1  # increase t for next step
 
 
 class Adam(Optimizer):
@@ -66,7 +88,7 @@ class Adam(Optimizer):
         l_r: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
-        eps: float = 1e-08,
+        eps: float = 1e-8,
     ) -> None:
         """Updates parameters following the adam learning algorithm
         as described by Kingma et al., 2014.
@@ -105,7 +127,8 @@ class Adam(Optimizer):
             v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
+            p.params["delta"] = delta  # for analysis
+
             p.data += delta
-            p.params["delta"] = delta
 
         self.t += 1  # increase t for next step
