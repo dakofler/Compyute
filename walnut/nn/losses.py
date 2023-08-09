@@ -14,7 +14,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self):
-        self.backward: Callable[[], NumpyArray] | None = None
+        self.backward: Callable[[], NumpyArray | None] = lambda: None
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
@@ -68,7 +68,7 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        y += 1e-7
+        y += 1e-7  # for improved numerical stability
 
         def backward() -> NumpyArray:
             """Performs a backward pass."""

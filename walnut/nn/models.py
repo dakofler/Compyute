@@ -1,45 +1,41 @@
 """Neural network models module"""
 
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import time
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, ShapeLike
+from walnut.tensor import Tensor, NumpyArray
 from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
+from walnut.nn.module import Module, ModuleCompilationError
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers.parameter import Module
 
 
 __all__ = ["Sequential"]
 
 
-class ModelCompilationError(Exception):
-    """Error with the compiling of the model."""
-
-
-@dataclass(repr=False)
-class Model(ABC):
+class Model(Module):
     """Neural network model base class."""
 
     def __init__(self, layers: list[Module]) -> None:
+        super().__init__()
         self.layers = layers
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Metric | None = None
-        self.compiled: bool = False
-        self.input_shape: ShapeLike = ()
-        self.output_shape: ShapeLike = ()
 
-    @abstractmethod
-    def __call__(self, x: Tensor) -> Tensor:
-        """Calls the model."""
-
-    @abstractmethod
     def __repr__(self) -> str:
-        """Returns a string representation of the model."""
+        if not self.compiled:
+            return "Sequential. Compile model for more information about its layers."
+        string = (
+            f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
+            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
+        )
+        for layer in self.layers:
+            string += layer.__repr__() + "\n"
+        sum_params = sum(p.data.size for p in self.get_parameters())
+        string += f"\ntotal trainable parameters {sum_params}"
+        return string
 
     def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
         """Compiles the model.
@@ -53,152 +49,11 @@ class Model(ABC):
         metric : Metric
             Metric to be used to evaluate the model.
         """
+        super().compile()
+
         self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.metric = metric
-        self.compiled = True
-
-    @abstractmethod
-    def train(
-        self,
-        x: Tensor,
-        y: Tensor,
-        epochs: int = 100,
-        batch_size: int | None = None,
-        verbose: str = "reduced",
-        val_data: tuple[Tensor, Tensor] | None = None,
-        reset_params: bool = True,
-    ) -> list[float]:
-        """Trains the model."""
-
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
-        """Evaluates the model using a defined metric.
-
-        Parameters
-        ----------
-        x : Tensor
-            Tensor of input values (features).
-        y : Tensor
-            Tensor of target values.
-
-        Returns
-        ----------
-        float
-            Loss value.
-        float
-            Metric score.
-
-        Raises
-        ----------
-        ModelCompilationError
-            If the model has not been compiled yet.
-        """
-        if self.metric is None or self.loss_fn is None:
-            raise ModelCompilationError("Model not compiled yet.")
-        tu.check_dims(x, len(self.input_shape))
-        tu.check_dims(y, len(self.output_shape))
-        predictions = self(x)
-        loss = self.loss_fn(predictions, y).item()
-        score = self.metric(predictions, y)
-        return loss, score
-
-    def set_training(self, on: bool = False) -> None:
-        """Sets the mode for all model layers."""
-        for layer in self.layers:
-            layer.training = on
-
-    def parameters(self) -> list[Tensor]:
-        """Returns trainable parameters of a models layers."""
-        parameters = []
-        for layer in self.layers:
-            parameters += layer.parameters
-        return parameters
-
-    def reset_params(self) -> None:
-        """Resets a models parameters to reduce memory usage."""
-        for layer in self.layers:
-            layer.x.reset_params(reset_data=True)
-            layer.y.reset_params(reset_data=True)
-            if not layer.parameters:
-                continue
-            for parameter in layer.parameters:
-                parameter.reset_params()
-
-
-@dataclass(init=False, repr=False)
-class Sequential(Model):
-    """Feed forward neural network model."""
-
-    def __call__(self, x: Tensor) -> Tensor:
-        """Computes a prediction.
-
-        Parameters
-        ----------
-        x : Tensor
-            Tensor of input values (features).
-
-        Returns
-        -------
-        Tensor
-            Tensor of predicted values.
-        """
-        tu.check_dims(x, len(self.input_shape))
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
-    def __repr__(self) -> str:
-        if not self.compiled:
-            return "Sequential. Compile model for more information about its layers."
-        string = (
-            f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
-            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
-        )
-        for layer in self.layers:
-            string += layer.__repr__() + "\n"
-        sum_params = sum(p.data.size for p in self.parameters())
-        string += f"\ntotal trainable parameters {sum_params}"
-        return string
-
-    def compile(
-        self,
-        optimizer: Optimizer,
-        loss_fn: Loss,
-        metric: Metric,
-    ) -> None:
-        """Compiles the model.
-
-        Parameters
-        ----------
-        optimizer : Optimizer
-            Optimizer algorithm to be used to update parameters.
-        loss_fn : Loss
-            Loss function to be used to compute losses and gradients.
-        metric : Metric
-            Metric to be used to evaluate the model.
-
-        Raises
-        ------
-        ModelCompilationError
-            If the model has already been compiled.
-        """
-        if self.compiled:
-            raise ModelCompilationError(
-                "Model is already compiled. Initialize new model."
-            )
-        super().compile(optimizer, loss_fn, metric)
-
-        x = tu.ones((1, *self.layers[0].input_shape))
-
-        for layer in self.layers:
-            layer.x = x
-            layer.compile()
-            x = layer(x)
-
-        self.input_shape = self.layers[0].x.shape
-        self.output_shape = self.layers[-1].y.shape
-        self.optimizer.parameters = self.parameters()
-        self.compiled = True
 
     def train(
         self,
@@ -243,9 +98,8 @@ class Sequential(Model):
             If the model has not been compiled yet.
         """
         if not self.compiled or not self.loss_fn:
-            raise ModelCompilationError("Model not compiled yet.")
-        tu.check_dims(x, len(self.input_shape))
-        tu.check_dims(y, len(self.output_shape))
+            raise ModuleCompilationError("Model is not compiled yet.")
+
         train_loss_history = []
         val_loss_history = []
 
@@ -263,10 +117,7 @@ class Sequential(Model):
 
             # backward pass
             y_grad = self.loss_fn.backward()
-            layers_reversed = self.layers.copy()
-            layers_reversed.reverse()
-            for layer in layers_reversed:
-                y_grad = layer.backward(y_grad)
+            self.backward(y_grad)
 
             self.optimizer.step()
             self.set_training(False)
@@ -285,6 +136,107 @@ class Sequential(Model):
 
         # reset parameters to improve memory efficiency
         if reset_params:
-            self.reset_params()
+            self.reset_grads()
 
         return train_loss_history, val_loss_history
+
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
+        """Evaluates the model using a defined metric.
+
+        Parameters
+        ----------
+        x : Tensor
+            Tensor of input values (features).
+        y : Tensor
+            Tensor of target values.
+
+        Returns
+        ----------
+        float
+            Loss value.
+        float
+            Metric score.
+
+        Raises
+        ----------
+        ModelCompilationError
+            If the model has not been compiled yet.
+        """
+        if self.metric is None or self.loss_fn is None:
+            raise ModuleCompilationError("Model not compiled yet.")
+
+        predictions = self(x)
+        loss = self.loss_fn(predictions, y).item()
+        score = self.metric(predictions, y)
+        return loss, score
+
+    def set_training(self, on: bool = False) -> None:
+        """Sets the mode for all model layers."""
+        for layer in self.layers:
+            layer.training = on
+
+    def get_parameters(self) -> list[Tensor]:
+        """Returns trainable parameters of a models layers."""
+        parameters = []
+        for layer in self.layers:
+            parameters += layer.parameters
+        return parameters
+
+    def reset_grads(self) -> None:
+        """Resets gradients to reduce memory usage."""
+        for layer in self.layers:
+            layer.reset_grads()
+
+
+class Sequential(Model):
+    """Feed forward neural network model."""
+
+    def __init__(self, layers: list[Module]) -> None:
+        super().__init__(layers)
+
+        def backward(y_grad: NumpyArray) -> NumpyArray:
+            layers_reversed = self.layers.copy()
+            layers_reversed.reverse()
+
+            for layer in layers_reversed:
+                y_grad = layer.backward(y_grad)
+            return y_grad
+
+        self.backward = backward
+
+    def __call__(self, x: Tensor) -> Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+    def compile(
+        self,
+        optimizer: Optimizer,
+        loss_fn: Loss,
+        metric: Metric,
+    ) -> None:
+        """Compiles the model.
+
+        Parameters
+        ----------
+        optimizer : Optimizer
+            Optimizer algorithm to be used to update parameters.
+        loss_fn : Loss
+            Loss function to be used to compute losses and gradients.
+        metric : Metric
+            Metric to be used to evaluate the model.
+
+        Raises
+        ------
+        ModelCompilationError
+            If the model has already been compiled.
+        """
+        super().compile(optimizer, loss_fn, metric)
+        x = tu.ones((1, *self.layers[0].input_shape))
+
+        for layer in self.layers:
+            layer.x = x
+            layer.compile()
+            x = layer(x)
+
+        optimizer.parameters = self.get_parameters()

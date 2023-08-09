@@ -24,8 +24,7 @@ class Module(ABC):
         self.x: Tensor = tu.empty()
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
-        self.backward: Callable[[NumpyArray], NumpyArray] | None = None
-        self.num_params = 0
+        self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
         self.compiled: bool = False
         self.training: bool = False
 
@@ -43,6 +42,8 @@ class Module(ABC):
 
     def compile(self) -> None:
         """Connects modules within a model."""
+        if self.compiled:
+            raise ModuleCompilationError("Model is already compiled.")
         self.compiled = True
 
     @abstractmethod
@@ -59,6 +60,13 @@ class Module(ABC):
         Tensor
             Computed Output.
         """
+
+    def reset_grads(self):
+        """Resets parameter grads to improve memory usage."""
+        for p in self.parameters:
+            p.reset_grads()
+        self.x.reset_grads()
+        self.y.reset_grads()
 
     def set_x(self, x: Tensor) -> None:
         self.x.data = x.data
