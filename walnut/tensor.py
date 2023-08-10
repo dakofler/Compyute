@@ -541,3 +541,7 @@ class Tensor:
             Tensor with moved axes.
         """
         return Tensor(np.moveaxis(self.data, from_axis, to_axis))
+
+    def squeeze(self) -> Tensor:
+        """Removes axis with length one from the tensor."""
+        return Tensor(self.data.squeeze())

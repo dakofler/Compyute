@@ -22,12 +22,10 @@ class Relu(Module):
             def backward(y_grad: NumpyArray) -> NumpyArray:
                 x_grad = (y.data > 0) * y_grad
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -43,12 +41,10 @@ class Tanh(Module):
             def backward(y_grad: NumpyArray) -> NumpyArray:
                 x_grad = (-y.data**2 + 1.0) * y_grad
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -64,12 +60,10 @@ class Sigmoid(Module):
             def backward(y_grad: NumpyArray) -> NumpyArray:
                 x_grad = y.data * (-y.data + 1.0) * y_grad
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -89,12 +83,10 @@ class Softmax(Module):
                 x2 = np.einsum("ij,jk->ijk", y.data, np.eye(channels, channels))
                 x_grad = np.einsum("ijk,ik->ij", x2 - x1, y_grad)
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 

@@ -14,21 +14,15 @@ __all__ = ["MaxPooling2d", "Reshape", "Moveaxis", "Dropout"]
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    def __init__(
-        self,
-        kernel_size: tuple[int, int] = (2, 2),
-        input_shape: ShapeLike | None = None,
-    ) -> None:
+    def __init__(self, kernel_size: tuple[int, int] = (2, 2)) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         kernel_size : tuple[int, int], optional
-             Shape of the pooling window used for the pooling operation, by default (2, 2)
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None
+             Shape of the pooling window used for the pooling operation, by default (2, 2).
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.kernel_size = kernel_size
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -56,12 +50,10 @@ class MaxPooling2d(Module):
                 x_grad = np.resize((dy_s * p_map).data, x.shape)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -69,19 +61,15 @@ class MaxPooling2d(Module):
 class Reshape(Module):
     """Flatten layer used to reshape tensors to shape (b, c_out)."""
 
-    def __init__(
-        self, output_shape: ShapeLike = (-1,), input_shape: ShapeLike | None = None
-    ) -> None:
+    def __init__(self, output_shape: ShapeLike = (-1,)) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
         ----------
         output_shape : ShapeLike, optional
             The output's target shape, by default (-1,).
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.output_shape = output_shape
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -93,12 +81,10 @@ class Reshape(Module):
                 x_grad = y_grad.reshape(x.shape)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -106,12 +92,7 @@ class Reshape(Module):
 class Moveaxis(Module):
     """Moveaxis layer used to swap tensor dimensions."""
 
-    def __init__(
-        self,
-        from_axis: int,
-        to_axis: int,
-        input_shape: ShapeLike | None = None,
-    ) -> None:
+    def __init__(self, from_axis: int, to_axis: int) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
@@ -120,10 +101,8 @@ class Moveaxis(Module):
             Original positions of the axes to move. These must be unique.
         to_axis : int
             Destination positions for each of the original axes. These must also be unique.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.from_axis = from_axis
         self.to_axis = to_axis
 
@@ -136,12 +115,10 @@ class Moveaxis(Module):
                 x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
@@ -149,23 +126,19 @@ class Moveaxis(Module):
 class Dropout(Module):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 
-    def __init__(self, p: float = 0.5, input_shape: ShapeLike | None = None) -> None:
+    def __init__(self, p: float = 0.5) -> None:
         """Dropout layer used to randomly reduce information and avoid overfitting.
 
         Parameters
         ----------
         p : float, optional
             Probability of values being set to zero, by default 0.5.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.p = p
 
     def __call__(self, x: Tensor) -> Tensor:
-        if not self.training:
-            y = x
-        else:
+        if self.training:
             d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
             y = x * d_map / (1.0 - self.p)
 
@@ -174,11 +147,12 @@ class Dropout(Module):
                 x_grad = y_grad * d_map.data / (1.0 - self.p)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
+        else:
+            y = x
+
         self.set_y(y)
         return y

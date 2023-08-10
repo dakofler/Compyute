@@ -6,7 +6,7 @@ from typing import Callable
 from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NumpyArray
 
 
 __all__ = ["Module"]
@@ -19,32 +19,19 @@ class ModuleCompilationError(Exception):
 class Module(ABC):
     """Module base class."""
 
-    def __init__(self, input_shape: ShapeLike | None = None) -> None:
-        self.input_shape = input_shape
-        self.x: Tensor = tu.empty()
+    def __init__(self) -> None:
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
         self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
-        self.compiled: bool = False
         self.training: bool = False
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
-        if not self.compiled:
-            return name
-        x_shape = str(self.x.shape[1:])
-        w_shape = b_shape = "(0,)"
-        y_shape = str(self.y.shape[1:])
         return (
-            f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "
-            + f"{b_shape:15s} | {y_shape:15s} | 0"
+            self.__class__.__name__
+            + " (Params: "
+            + str(sum([p.data.size for p in self.parameters]))
+            + ")"
         )
-
-    def compile(self) -> None:
-        """Connects modules within a model."""
-        if self.compiled:
-            raise ModuleCompilationError("Model is already compiled.")
-        self.compiled = True
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
@@ -65,14 +52,7 @@ class Module(ABC):
         """Resets parameter grads to improve memory usage."""
         for p in self.parameters:
             p.reset_grads()
-        self.x.reset_grads()
         self.y.reset_grads()
-
-    def set_x(self, x: Tensor) -> None:
-        self.x.data = x.data
-
-    def set_x_grad(self, x_grad: NumpyArray) -> None:
-        self.x.grad = x_grad
 
     def set_y(self, y: Tensor) -> None:
         self.y.data = y.data

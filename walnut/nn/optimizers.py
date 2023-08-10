@@ -26,7 +26,7 @@ class SGD(Optimizer):
     def __init__(
         self,
         l_r: float = 1e-2,
-        momentum: float = 0.0,
+        m: float = 0.0,
         nesterov: bool = False,
         weight_decay: float = 0.0,
     ) -> None:
@@ -36,14 +36,14 @@ class SGD(Optimizer):
         ----------
         l_r : float, optional
             Learning rate, by default 1e-2.
-        momentum : float, optional
+        m : float, optional
             Momentum factor, by default 0.
         nesterov : bool, optional
             Whether to use the neterov momentum algorithm, by default False.
         """
         super().__init__()
         self.l_r = l_r
-        self.momentum = momentum
+        self.m = m
         self.nesterov = nesterov
         self.weight_decay = weight_decay
         self.t: int = 1
@@ -57,17 +57,17 @@ class SGD(Optimizer):
             if self.weight_decay > 0.0:
                 p.grad += self.weight_decay * p.data
 
-            if self.momentum > 0.0:
+            if self.m > 0.0:
                 if self.t > 1:
                     b_prev = p.params.get("sgd_b", np.zeros(p.data.shape))
-                    b = self.momentum * b_prev + p.grad
+                    b = self.m * b_prev + p.grad
                 else:
                     b = p.grad
 
                 p.params["sgd_b"] = b
 
                 if self.nesterov:
-                    p.grad += self.momentum * b
+                    p.grad += self.m * b
                 else:
                     p.grad = b
 

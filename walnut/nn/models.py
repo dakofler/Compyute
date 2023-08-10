@@ -25,12 +25,7 @@ class Model(Module):
         self.metric: Metric | None = None
 
     def __repr__(self) -> str:
-        if not self.compiled:
-            return "Sequential. Compile model for more information about its layers."
-        string = (
-            f'{"layer_type":15s} | {"input_shape":15s} | {"weight_shape":15s} | '
-            + f'{"bias_shape":15s} | {"output_shape":15s} | {"parameters":15s}\n\n'
-        )
+        string = self.__class__.__name__ + "\n\n"
         for layer in self.layers:
             string += layer.__repr__() + "\n"
         sum_params = sum(p.data.size for p in self.get_parameters())
@@ -49,9 +44,8 @@ class Model(Module):
         metric : Metric
             Metric to be used to evaluate the model.
         """
-        super().compile()
-
         self.optimizer = optimizer
+        optimizer.parameters = self.get_parameters()
         self.loss_fn = loss_fn
         self.metric = metric
 
@@ -97,7 +91,7 @@ class Model(Module):
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if not self.compiled or not self.loss_fn:
+        if not self.loss_fn:
             raise ModuleCompilationError("Model is not compiled yet.")
 
         train_loss_history = []
@@ -208,35 +202,3 @@ class Sequential(Model):
         for layer in self.layers:
             x = layer(x)
         return x
-
-    def compile(
-        self,
-        optimizer: Optimizer,
-        loss_fn: Loss,
-        metric: Metric,
-    ) -> None:
-        """Compiles the model.
-
-        Parameters
-        ----------
-        optimizer : Optimizer
-            Optimizer algorithm to be used to update parameters.
-        loss_fn : Loss
-            Loss function to be used to compute losses and gradients.
-        metric : Metric
-            Metric to be used to evaluate the model.
-
-        Raises
-        ------
-        ModelCompilationError
-            If the model has already been compiled.
-        """
-        super().compile(optimizer, loss_fn, metric)
-        x = tu.ones((1, *self.layers[0].input_shape))
-
-        for layer in self.layers:
-            layer.x = x
-            layer.compile()
-            x = layer(x)
-
-        optimizer.parameters = self.get_parameters()

@@ -28,10 +28,10 @@ import walnut.nn as nn
 from walnut.nn.layers import *
 
 model = nn.Sequential([
-    Linear(16, input_shape=(4,)), Tanh(),
-    Linear(16), Tanh()
-    Linear(16), Tanh()
-    Linear(3), Softmax()
+    Linear(4, 16), Tanh(),
+    Linear(16, 16), Tanh()
+    Linear(16, 16), Tanh()
+    Linear(16, 3), Softmax()
 ])
 ```
 
@@ -40,11 +40,11 @@ import walnut.nn as nn
 from walnut.nn.layers import *
 
 model = nn.Sequential([
-    Convolution2d(8, input_shape=(1, 28, 28), kernel_size=(3, 3), use_bias=False), Batchnorm(), Relu(),
+    Convolution2d(3, 8, kernel_size=(3, 3), use_bias=False), Batchnorm(8), Relu(),
     MaxPooling2d(kernel_size=(2, 2)),
     Reshape(),
-    Linear(64, use_bias=False), Batchnorm(), Relu(),
-    Linear(10), Softmax()
+    Linear(13*13*8, 100, use_bias=False), Batchnorm(100), Relu(),
+    Linear(100, 10), Softmax()
 ])
 ```
 
@@ -97,15 +97,15 @@ All modules can also be used individually without a model and their parameters c
 ```python
 import walnut
 
-X = walnut.randint(shape=(1, 1, 5, 5), low=0, high=10)
-W = walnut.randn(shape=(1, 1, 3, 3))
-B = walnut.zeros(shape=(1,))
+X = walnut.randint(shape=(1, 3, 5, 5), low=0, high=10)
+W = walnut.randn(shape=(3, 16, 3, 3))
+B = walnut.zeros(shape=(16,))
 ```
 
 ```python
 import walnut.nn as nn
 
-conv = nn.layers.Convolution2d(out_channels=2)
+conv = nn.layers.Convolution2d(in_channels=3, out_channels=16)
 conv.training = True # tells the layer to define a backward function
 conv.w = W
 conv.b = B

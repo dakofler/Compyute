@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, ShapeLike, NumpyArray
+from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 
@@ -12,89 +12,44 @@ from walnut.nn.module import Module
 __all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
 
 
-class Parameter(Module):
-    """Trainable layer base class."""
-
-    def __init__(
-        self,
-        weights: Tensor | None = None,
-        use_bias: bool = True,
-        input_shape: ShapeLike | None = None,
-    ) -> None:
-        super().__init__(input_shape=input_shape)
-        self.use_bias = use_bias
-        self.weights = weights
-        self.w: Tensor = tu.empty()
-        self.b: Tensor = tu.empty()
-        self.parameters: list[Tensor] = []
-
-    def __repr__(self) -> str:
-        name = self.__class__.__name__
-        x_shape = str(self.x.shape[1:])
-        w_shape = str(self.w.shape)
-        b_shape = str(self.b.shape)
-        y_shape = str(self.y.shape[1:])
-        params = str(sum(p.data.size for p in self.parameters))
-        return (
-            f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "
-            + f"{b_shape:15s} | {y_shape:15s} | {params:15s}"
-        )
-
-
-class Linear(Parameter):
+class Linear(Module):
     """Fully connected layer."""
 
     def __init__(
         self,
+        in_channels: int,
         out_channels: int,
         weights: Tensor | None = None,
         use_bias: bool = True,
-        input_shape: ShapeLike | None = None,
     ) -> None:
         """Fully connected layer.
 
         Parameters
         ----------
+        in_channels : int
+            Number of input channels of the layer.
         out_channels : int
             Number of output channels (neurons) of the layer.
         weights : Tensor | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(
-            weights=weights,
-            use_bias=use_bias,
-            input_shape=input_shape,
-        )
-        self.out_channels = out_channels
-        self.w_tpl: tuple[int, ...] | None = None
-        self.b_tpl: tuple[int, ...] | None = None
-        self.w_s_tpl: tuple[int, ...] | None = None
-
-    def compile(self) -> None:
-        super().compile()
-        in_channels = self.x.shape[-1]
+        super().__init__()
+        self.use_bias = use_bias
 
         # init weights (c_in, c_out)
-        if self.weights is None:
+        if weights is None:
             k = in_channels**-0.5
-            self.w = tu.randu((in_channels, self.out_channels), -k, k)
+            self.w = tu.randu((in_channels, out_channels), -k, k)
         else:
-            self.w = self.weights
+            self.w = weights
         self.parameters.append(self.w)
-        dims = self.x.ndim
-        self.w_tpl = tuple(d if d < dims - 2 else 2 * dims - d - 3 for d in range(dims))
-        if dims > 2:
-            self.w_s_tpl = tuple(d for d in range(dims - 2))
 
         # init bias (c_out,)
-        if self.use_bias:
-            self.b = tu.zeros((self.out_channels,))
+        if use_bias:
+            self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
-            self.b_tpl = tuple(d for d in range(dims - 1))
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x @ self.w  # (b, [c], c_out)
@@ -104,34 +59,37 @@ class Linear(Parameter):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
+                dim = x.ndim
                 # input grads (b, c_in)
                 x_grad = y_grad @ self.w.T
 
                 # weight grads (c_in, c_out)
-                self.w.grad = x.transpose(self.w_tpl).data @ y_grad
-                if x.ndim > 2:
-                    self.w.grad = np.sum(self.w.grad, axis=self.w_s_tpl)
+                w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
+                self.w.grad = x.transpose(w_ax).data @ y_grad
+                if dim > 2:
+                    wsum_axis = tuple(np.arange(dim)[:-2])
+                    self.w.grad = np.sum(self.w.grad, axis=wsum_axis)
 
                 # bias grads (c_out,)
                 if self.use_bias:
-                    self.b.grad = np.sum(y_grad, axis=self.b_tpl)
+                    b_tpl = tuple(d for d in range(dim - 1))
+                    self.b.grad = np.sum(y_grad, axis=b_tpl)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
 
-class Convolution1d(Parameter):
+class Convolution1d(Module):
     """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
+        in_channels: int,
         out_channels: int,
         kernel_size: int,
         pad: str = "valid",
@@ -139,14 +97,15 @@ class Convolution1d(Parameter):
         dil: int = 1,
         weights: Tensor | None = None,
         use_bias: bool = True,
-        input_shape: ShapeLike | None = None,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
 
         Parameters
         ----------
+        in_channels : int
+            Number of input channels of the layer.
         out_channels : int
-            Number of output channels (neurons) of the layer.
+            Number of output channels of the layer.
         kernel_size : int
             Shape of each kernel.
         pad: str, optional
@@ -160,42 +119,31 @@ class Convolution1d(Parameter):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(
-            weights=weights,
-            use_bias=use_bias,
-            input_shape=input_shape,
-        )
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
+        super().__init__()
         self.pad = pad
         self.stride = stride
         self.dil = dil
-
-    def compile(self) -> None:
-        super().compile()
-        in_channels = self.x.shape[1]
+        self.use_bias = use_bias
 
         # init weights (c_out, c_in, x)
-        if self.weights is None:
-            k = int(in_channels * np.prod(self.kernel_size)) ** -0.5
-            self.w = tu.randu((self.out_channels, in_channels, self.kernel_size), -k, k)
+        if weights is None:
+            k = int(in_channels * np.prod(kernel_size)) ** -0.5
+            self.w = tu.randu((out_channels, in_channels, kernel_size), -k, k)
         else:
-            self.w = self.weights
+            self.w = weights
         self.parameters.append(self.w)
 
         # init bias (c_out,)
-        if self.use_bias:
-            self.b = tu.zeros((self.out_channels,))
+        if use_bias:
+            self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
         w_rot = self.w.flip(-1)
 
-        # convolve (b, _, c_in, x) * (_, c_out, c_in, x)
+        # convolve (b, 1, c_in, x) * (1, c_out, c_in, x)
         x_ext = tu.expand_dims(x, 1)
         w_rot_ext = tu.expand_dims(w_rot, 0)
         x_conv_w = convolve1d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
@@ -204,7 +152,7 @@ class Convolution1d(Parameter):
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y += tu.match_dims(x=self.b, dims=y.ndim)
+            y += tu.match_dims(x=self.b, dims=y.ndim - 1)
 
         if self.training:
 
@@ -222,7 +170,7 @@ class Convolution1d(Parameter):
                 # input grads (b, c_in, x)
                 y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
-                # convolve (b, c_out, _, x) * (_, c_out, c_in, x)
+                # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
                 mode = "full" if self.pad == "valid" else "same"
                 dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
                 # sum over output channels
@@ -231,7 +179,7 @@ class Convolution1d(Parameter):
                 # weight grads (c_out, c_in, x)
                 x_ext = tu.expand_dims(x, 1)
                 y_grad_p_ext = y_grad_p_ext.flip(-1)
-                # convolve (b, _, c_in, x) * (b, c_out, _, x)
+                # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
                 pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
                 x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[
                     :, :, :, -w3 * self.dil :
@@ -244,21 +192,20 @@ class Convolution1d(Parameter):
                     self.b.grad = np.sum(y_grad, axis=(0, 2))  # sum over b and x
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
 
-class Convolution2d(Parameter):
+class Convolution2d(Module):
     """Layer used for spacial information and feature extraction."""
 
     def __init__(
         self,
+        in_channels: int,
         out_channels: int,
         kernel_size: tuple[int, int] = (3, 3),
         pad: str = "valid",
@@ -266,12 +213,13 @@ class Convolution2d(Parameter):
         dil: int | tuple[int, int] = 1,
         weights: Tensor | None = None,
         use_bias: bool = True,
-        input_shape: ShapeLike | None = None,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
 
         Parameters
         ----------
+        in_channels : int
+            Number of input channels of the layer.
         out_channels : int
             Number of output channels (neurons) of the layer.
         kernel_size : ShapeLike, optional
@@ -287,40 +235,31 @@ class Convolution2d(Parameter):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(weights=weights, use_bias=use_bias, input_shape=input_shape)
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
+        super().__init__()
         self.pad = pad
         self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
-
-    def compile(self) -> None:
-        super().compile()
-        in_channels = self.x.shape[1]
+        self.use_bias = use_bias
 
         # init weights (c_out, c_in, y, x)
-        if self.weights is None:
-            k = int(in_channels * np.prod(self.kernel_size)) ** -0.5
-            self.w = tu.randu(
-                (self.out_channels, in_channels, *self.kernel_size), -k, k
-            )
+        if weights is None:
+            k = int(in_channels * np.prod(kernel_size)) ** -0.5
+            self.w = tu.randu((out_channels, in_channels, *kernel_size), -k, k)
         else:
-            self.w = self.weights
+            self.w = weights
         self.parameters.append(self.w)
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tu.zeros((self.out_channels,))
+            self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
         w_rot = self.w.flip((-2, -1))
 
-        # convolve (b, _, c_in, y, x) * (_, c_out, c_in, y, x)
+        # convolve (b, 1, c_in, y, x) * (1, c_out, c_in, y, x)
         x_ext = tu.expand_dims(x, 1)  # add fake c_out dim
         w_rot_ext = tu.expand_dims(w_rot, 0)  # add fake b dim
         x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
@@ -350,7 +289,7 @@ class Convolution2d(Parameter):
                 # input grads (b, c_in, y, x)
                 y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
-                # convolve (b, c_out, _, y, x) * (_, c_out, c_in, y, x)
+                # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 pad = "full" if self.pad == "valid" else "same"
                 dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
                 x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
@@ -358,7 +297,7 @@ class Convolution2d(Parameter):
                 # weight grads (c_out, c_in, y, x)
                 x_ext = tu.expand_dims(x, 1)
                 y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
-                # convolve (b, _, c_in, y, x) * (b, c_out, _, y, x)
+                # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
                 pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
                 x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
                     :, :, :, -w3 * d1 :, -w4 * d2 :
@@ -371,49 +310,38 @@ class Convolution2d(Parameter):
                     self.b.grad = np.sum(y_grad, axis=(0, 2, 3))  # sum over b, y and x
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
 
 
-class Embedding(Parameter):
+class Embedding(Module):
     """Layer used for token embedding."""
 
     def __init__(
-        self,
-        out_channels: int,
-        weights: Tensor | None = None,
-        input_shape: ShapeLike | None = None,
+        self, in_channels: int, out_channels: int, weights: Tensor | None = None
     ) -> None:
         """Embedding layer used for token embedding.
 
         Parameters
         ----------
+        in_channels : int
+            Number of input channels (vocabulary size) of the layer.
         out_channels : int
             Number of output channels (embedding dimensions) of the layer.
         weights : Tensor | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(weights=weights, input_shape=input_shape)
-        self.out_channels = out_channels  # embedding dimensions
-
-    def compile(self) -> None:
-        super().compile()
-        vocab_size = self.x.shape[-1]
-
-        # init weights (vocab_size, c_out)
-        if self.weights is None:
-            k = vocab_size**-0.5
-            self.w = tu.randu((vocab_size, self.out_channels), -k, k)
+        super().__init__()
+        # init weights (c_in, c_out)
+        if weights is None:
+            k = in_channels**-0.5
+            self.w = tu.randu((in_channels, out_channels), -k, k)
         else:
-            self.w = self.weights
+            self.w = weights
         self.parameters.append(self.w)
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -426,11 +354,9 @@ class Embedding(Parameter):
                 self.w.grad = np.sum(x.transpose((0, 2, 1)).data @ y_grad, axis=0)
 
                 self.set_y_grad(y_grad)
-                self.set_x_grad(x_grad)
                 return x_grad
 
             self.backward = backward
 
-        self.set_x(x)
         self.set_y(y)
         return y
