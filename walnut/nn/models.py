@@ -7,29 +7,39 @@ from walnut.tensor import Tensor, NumpyArray
 from walnut.logger import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
-from walnut.nn.module import Module, ModuleCompilationError
+from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
 
 
 __all__ = ["Sequential"]
 
 
+class ModelCompilationError(Exception):
+    """Error if the model has not been compiled yet."""
+
+
+class MissingLayersError(Exception):
+    """Error when the list of layers is empty."""
+
+
 class Model(Module):
     """Neural network model base class."""
 
-    def __init__(self, layers: list[Module]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.layers = layers
+        self.layers: list[Module] = []
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Metric | None = None
 
     def __repr__(self) -> str:
-        string = self.__class__.__name__ + "\n\n"
-        for layer in self.layers:
-            string += layer.__repr__() + "\n"
-        sum_params = sum(p.data.size for p in self.get_parameters())
-        string += f"\ntotal trainable parameters {sum_params}"
+        string = self.__class__.__name__
+        if len(self.layers) > 0:
+            string += "\n\n"
+            for layer in self.layers:
+                string += layer.__repr__() + "\n"
+            sum_params = sum(p.data.size for p in self.get_parameters())
+            string += f"\ntotal trainable parameters {sum_params}"
         return string
 
     def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
@@ -43,7 +53,15 @@ class Model(Module):
             Loss function to be used to compute losses and gradients.
         metric : Metric
             Metric to be used to evaluate the model.
+
+        Raises
+        ------
+        MissingLayersError
+            If the model does not contain any layers.
         """
+        if len(self.layers) == 0:
+            raise MissingLayersError("Module does not contain any layers.")
+
         self.optimizer = optimizer
         optimizer.parameters = self.get_parameters()
         self.loss_fn = loss_fn
@@ -57,7 +75,7 @@ class Model(Module):
         batch_size: int | None = None,
         verbose: str = "reduced",
         val_data: tuple[Tensor, Tensor] | None = None,
-        reset_params: bool = True,
+        reset_grads: bool = True,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -76,7 +94,7 @@ class Model(Module):
             Whether to print out intermediate results while training, by default "reduced".
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
-        reset_params : bool, optional
+        reset_grads : bool, optional
             Whether to reset grads after training. Improves memory usage, by default True.
 
         Returns
@@ -91,11 +109,10 @@ class Model(Module):
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if not self.loss_fn:
-            raise ModuleCompilationError("Model is not compiled yet.")
+        if not self.loss_fn or not self.optimizer:
+            raise ModelCompilationError("Model is not compiled yet.")
 
-        train_loss_history = []
-        val_loss_history = []
+        train_loss_history, val_loss_history = [], []
 
         for epoch in range(0, epochs + 1):
             start = time.time()
@@ -113,7 +130,9 @@ class Model(Module):
             y_grad = self.loss_fn.backward()
             self.backward(y_grad)
 
+            # update parameters
             self.optimizer.step()
+
             self.set_training(False)
 
             # validation
@@ -129,7 +148,7 @@ class Model(Module):
             log_training_progress(verbose, epoch, epochs, step, train_loss, val_loss)
 
         # reset parameters to improve memory efficiency
-        if reset_params:
+        if reset_grads:
             self.reset_grads()
 
         return train_loss_history, val_loss_history
@@ -156,8 +175,8 @@ class Model(Module):
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if self.metric is None or self.loss_fn is None:
-            raise ModuleCompilationError("Model not compiled yet.")
+        if not self.metric or not self.loss_fn:
+            raise ModelCompilationError("Model not compiled yet.")
 
         predictions = self(x)
         loss = self.loss_fn(predictions, y).item()
@@ -165,19 +184,47 @@ class Model(Module):
         return loss, score
 
     def set_training(self, on: bool = False) -> None:
-        """Sets the mode for all model layers."""
+        """Sets the mode for all model layers.
+
+        Raises
+        ------
+        MissingLayersError
+            If the model does not contain any layers.
+        """
+        if len(self.layers) == 0:
+            raise MissingLayersError("Module does not contain any layers.")
+
+        self.training = on
         for layer in self.layers:
             layer.training = on
 
     def get_parameters(self) -> list[Tensor]:
-        """Returns trainable parameters of a models layers."""
+        """Returns trainable parameters of a models layers.
+
+        Raises
+        ------
+        MissingLayersError
+            If the model does not contain any layers.
+        """
+        if len(self.layers) == 0:
+            raise MissingLayersError("Module does not contain any layers.")
+
         parameters = []
         for layer in self.layers:
             parameters += layer.parameters
         return parameters
 
     def reset_grads(self) -> None:
-        """Resets gradients to reduce memory usage."""
+        """Resets gradients to reduce memory usage.
+
+        Raises
+        ------
+        MissingLayersError
+            If the model does not contain any layers.
+        """
+        if len(self.layers) == 0:
+            raise MissingLayersError("Module does not contain any layers.")
+
         for layer in self.layers:
             layer.reset_grads()
 
@@ -186,19 +233,30 @@ class Sequential(Model):
     """Feed forward neural network model."""
 
     def __init__(self, layers: list[Module]) -> None:
-        super().__init__(layers)
+        """Feed forward neural network model.
 
-        def backward(y_grad: NumpyArray) -> NumpyArray:
-            layers_reversed = self.layers.copy()
-            layers_reversed.reverse()
-
-            for layer in layers_reversed:
-                y_grad = layer.backward(y_grad)
-            return y_grad
-
-        self.backward = backward
+        Parameters
+        ----------
+        layers : list[Module]
+            List of layers used in the model. These layers are processed sequentially.
+        """
+        super().__init__()
+        self.layers = layers
 
     def __call__(self, x: Tensor) -> Tensor:
         for layer in self.layers:
             x = layer(x)
+
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                layers_reversed = self.layers.copy()
+                layers_reversed.reverse()
+
+                for layer in layers_reversed:
+                    y_grad = layer.backward(y_grad)
+                return y_grad
+
+            self.backward = backward
+
         return x

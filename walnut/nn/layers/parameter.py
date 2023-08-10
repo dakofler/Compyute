@@ -171,8 +171,8 @@ class Convolution1d(Module):
                 y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
                 # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
-                mode = "full" if self.pad == "valid" else "same"
-                dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, mode=mode)
+                pad = "full" if self.pad == "valid" else "same"
+                dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, pad=pad)
                 # sum over output channels
                 x_grad = dy_conv_w.sum(axis=1).data
 
@@ -181,7 +181,7 @@ class Convolution1d(Module):
                 y_grad_p_ext = y_grad_p_ext.flip(-1)
                 # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
                 pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
-                x_conv_dy = convolve1d(x_ext, y_grad_p_ext, mode=pad)[
+                x_conv_dy = convolve1d(x_ext, y_grad_p_ext, pad=pad)[
                     :, :, :, -w3 * self.dil :
                 ]
                 # sum over batches
@@ -291,7 +291,7 @@ class Convolution2d(Module):
                 w_ext = tu.expand_dims(self.w, 0)
                 # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 pad = "full" if self.pad == "valid" else "same"
-                dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, mode=pad)
+                dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, pad=pad)
                 x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, y, x)
@@ -299,7 +299,7 @@ class Convolution2d(Module):
                 y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
                 # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
                 pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
-                x_conv_dy = convolve2d(x_ext, y_grad_p_ext, mode=pad)[
+                x_conv_dy = convolve2d(x_ext, y_grad_p_ext, pad=pad)[
                     :, :, :, -w3 * d1 :, -w4 * d2 :
                 ]
                 # sum over batches

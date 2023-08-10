@@ -86,23 +86,20 @@ class Batchnorm(Module):
 class Layernorm(Module):
     """Normalizes values per sample."""
 
-    def __init__(self, shape: ShapeLike, eps: float = 1e-5) -> None:
+    def __init__(self, normalized_shape: ShapeLike, eps: float = 1e-5) -> None:
         """Implements layer normalization.
 
         Parameters
         ----------
-        shape : ShapeLike
-            Shape of the input tensor ignoring the batch dimension.
+        normalized_shape : ShapeLike
+            Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
         super().__init__()
-        self.shape = shape
         self.eps = eps
-        self.w = tu.ones(shape)
-        self.b = tu.zeros(shape)
+        self.w = tu.ones(normalized_shape)
+        self.b = tu.zeros(normalized_shape)
         self.parameters = [self.w, self.b]
 
     def __call__(self, x: Tensor) -> Tensor:

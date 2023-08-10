@@ -48,7 +48,7 @@ def convolve1d(
     f: Tensor,
     stride: int = 1,
     dil: int = 1,
-    mode: str | int = "same",
+    pad: str | int = "same",
 ) -> Tensor:
     """Convolves two tensors along their trailing dim.
 
@@ -62,7 +62,7 @@ def convolve1d(
         Stride used in the convolution operation, by default 1.
     dil : int, optional
         Dilation used in the filter, by default 1.
-    mode : str | int, optional
+    pad : str | int, optional
         Padding applied before convolution.
         Options are "valid", "same" and "full" or the padding width as int, by default "same".
 
@@ -82,17 +82,17 @@ def convolve1d(
         raise ShapeError("Expected 3D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if mode == "same" and f.shape[-1] % 2 == 0 and dil == 1:
+    if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation
     f_dil = dilate1d(f, dil)
 
     # padding
-    if isinstance(mode, int):
-        p = mode
+    if isinstance(pad, int):
+        p = pad
     else:
-        match mode:
+        match pad:
             case "full":
                 p = f_dil.shape[-1] - 1
             case "same":
@@ -101,11 +101,11 @@ def convolve1d(
                 p = 0
     dim = x.ndim
     tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
-    x_pad = Tensor(np.pad(x.data, tpl))
+    x_pad = np.pad(x.data, tpl)
 
     # convolution
     conv_shape = x_pad.shape[-1]
-    x_fft = npfft.fft(x_pad.data, n=conv_shape).astype("complex64")
+    x_fft = npfft.fft(x_pad, n=conv_shape).astype("complex64")
     f_fft = npfft.fft(f_dil.data, n=conv_shape).astype("complex64")
     ifft = Tensor(np.real(npfft.ifft(x_fft * f_fft)))
 
@@ -127,7 +127,7 @@ def convolve2d(
     f: Tensor,
     stride: int | tuple[int, int] = 1,
     dil: int | tuple[int, int] = 1,
-    mode: str | tuple[int, int] = "valid",
+    pad: str | tuple[int, int] = "valid",
 ) -> Tensor:
     """Convolves two tensors along their last two trailing dims.
 
@@ -141,7 +141,7 @@ def convolve2d(
         Strides used for each axis in the convolution operation, by default 1.
     dil : int | tuple [int, int], optional
         Dilations used for each axis of the filter, by default 1.
-    mode : str | tuple[int, int], optional
+    pad : str | tuple[int, int], optional
         Padding applied before convolution.
         Options are "valid", "same" and "full" or a tuple of padding widths, by default "valid".
 
@@ -161,17 +161,17 @@ def convolve2d(
         raise ShapeError("Expected 4D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if mode == "same" and f.shape[-1] % 2 == 0 and dil == 1:
+    if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     # dilation
     f_dil = dilate2d(f, dil)
 
     # padding
-    if isinstance(mode, tuple):
-        p = mode
+    if isinstance(pad, tuple):
+        p = pad
     else:
-        match mode:
+        match pad:
             case "full":
                 p = (f_dil.shape[-2] - 1, f_dil.shape[-1] - 1)
             case "same":
@@ -182,19 +182,19 @@ def convolve2d(
     tpl = tuple(
         (p[-dim + d], p[-dim + d]) if d >= dim - 2 else (0, 0) for d in range(dim)
     )
-    x = Tensor(np.pad(x.data, tpl))
+    x_pad = np.pad(x.data, tpl)
 
     # convolution
-    conv_shape = x.shape[-2:]
-    x_fft = npfft.fft2(x.data, s=conv_shape).astype("complex64")
+    conv_shape = x_pad.shape[-2:]
+    x_fft = npfft.fft2(x_pad, s=conv_shape).astype("complex64")
     f_fft = npfft.fft2(f_dil.data, s=conv_shape).astype("complex64")
     ifft = Tensor(np.real(npfft.ifft2(x_fft * f_fft)))
 
     # slicing
-    out_y = 1 + (x.shape[-2] - f_dil.shape[-2])
-    out_x = 1 + (x.shape[-1] - f_dil.shape[-1])
+    out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
+    out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
     s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
-    match x.ndim:
+    match x_pad.ndim:
         case 4:
             return ifft[:, :, -out_y:, -out_x:][:, :, ::s_y, ::s_x]
         case 5:

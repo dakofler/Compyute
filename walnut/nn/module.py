@@ -12,14 +12,11 @@ from walnut.tensor import Tensor, NumpyArray
 __all__ = ["Module"]
 
 
-class ModuleCompilationError(Exception):
-    """Error with the compiling of the module."""
-
-
 class Module(ABC):
     """Module base class."""
 
     def __init__(self) -> None:
+        """Module base class."""
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
         self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
@@ -35,7 +32,7 @@ class Module(ABC):
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
-        """Performs a forward pass.
+        """Performs a forward pass through the module.
 
         Parameters
         ----------
@@ -55,7 +52,21 @@ class Module(ABC):
         self.y.reset_grads()
 
     def set_y(self, y: Tensor) -> None:
+        """Saves the module output to y tensor.
+
+        Parameters
+        ----------
+        y : Tensor
+            Module output tensor.
+        """
         self.y.data = y.data
 
     def set_y_grad(self, y_grad: NumpyArray) -> None:
+        """Saves the module output gradients to y tensor.
+
+        Parameters
+        ----------
+        y_grad : NumpyArray
+            Module output tensor gradients.
+        """
         self.y.grad = y_grad
