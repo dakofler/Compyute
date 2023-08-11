@@ -1,154 +1,135 @@
 """Normalization layers module"""
 
-from dataclasses import dataclass
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, ShapeLike, NumpyArray, AxisLike
-from walnut.nn.optimizers import Optimizer
-from walnut.nn.layers.parameter import Parameter
+from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.nn.module import Module
 
 
 __all__ = ["Batchnorm", "Layernorm"]
 
 
-@dataclass(init=False, repr=False)
-class Batchnorm(Parameter):
+class Batchnorm(Module):
     """Batch Normalization."""
 
-    def __init__(
-        self,
-        eps: float = 1e-5,
-        momentum: float = 0.1,
-        input_shape: ShapeLike | None = None,
-    ) -> None:
+    def __init__(self, in_channels: int, eps: float = 1e-5, m: float = 0.1) -> None:
         """Implements Batch Normalization.
 
         Parameters
         ----------
+        in_channels : int
+            Number of input channels of the layer.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
-        momentum : float, optional
+        m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.eps = eps
-        self.momentum = momentum
-        self._vari: NumpyArray | None = None
-        self._xh: NumpyArray | None = None
-        self._rmean: NumpyArray | None = None
-        self._rvar: NumpyArray | None = None
-        self._ax: AxisLike | None = None
+        self.m = m
 
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
-        self.w = tu.ones((self.x.shape[1],))  # gain
-        self.parameters.append(self.w)
-        self.b = tu.zeros_like(self.w)
-        self.parameters.append(self.b)
-        self._ax = (0,) + tuple(i + 2 for i in range(self.x.ndim - 2))
-        self._rmean = tu.ones(self.x.shape[1:]).data
-        self._rvar = tu.ones(self.x.shape[1:]).data
+        self.w = tu.ones((in_channels,))
+        self.b = tu.zeros((in_channels,))
+        self.parameters = [self.w, self.b]
+
+        self.rmean = tu.zeros((in_channels,))
+        self.rvar = tu.ones((in_channels,))
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
+        axis = (0,) + tuple(np.arange(x.ndim))[2:]
         if self.training:
-            mean = np.mean(self.x.data, axis=self._ax, keepdims=True)
-            var = np.var(self.x.data, axis=self._ax, keepdims=True)
-            # compute a running mean
-            if self._rmean is None or self._rvar is None or self._rmean.mean() == 1:
-                self._rmean = mean
-                self._rvar = var
-            else:
-                self._rmean = (1.0 - self.momentum) * self._rmean + self.momentum * mean
-                self._rvar = (1.0 - self.momentum) * self._rvar + self.momentum * var
+            mean = x.mean(axis=axis, keepdims=True)
+            var = x.var(axis=axis, keepdims=True)
+            var_h = (var + self.eps) ** -0.5
+            x_h = (x - mean) * var_h
 
-        self._vari = (self._rvar + self.eps) ** -0.5
-        self._xh = (self.x.data - self._rmean) * self._vari
+            # keep running stats
+            self.rmean = self.rmean * (1.0 - self.m) + mean.squeeze() * self.m
+            _var = x.var(axis=axis, keepdims=True, ddof=1)  # torch uses ddof=1 here??
+            self.rvar = self.rvar * (1.0 - self.m) + _var.squeeze() * self.m
+        else:
+            _rvar = tu.match_dims(self.rvar, x.ndim - 1)
+            _rmean = tu.match_dims(self.rmean, x.ndim - 1)
+            var_h = (_rvar + self.eps) ** -0.5
+            x_h = (x - _rmean) * var_h
 
-        weights = tu.match_dims(self.w, dims=self.x.ndim - 1).data
-        bias = tu.match_dims(self.b, dims=self.x.ndim - 1).data
-        self.y.data = weights * self._xh + bias
-        return self.y
+        weights = tu.match_dims(self.w, dims=x.ndim - 1)
+        bias = tu.match_dims(self.b, dims=x.ndim - 1)
+        y = weights * x_h + bias
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        n = np.prod(self.x.shape) / self.x.shape[1]
+        if self.training:
 
-        # gamma grads
-        self.w.grad = np.sum(self._xh * self.y.grad, axis=self._ax)
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                # input grads
+                n = float(np.prod(x.shape) / x.shape[1])
+                tmp1 = n * y_grad
+                tmp2 = np.sum(y_grad, axis=axis, keepdims=True)
+                tmp3 = np.sum(y_grad * x_h.data, axis=axis, keepdims=True)
+                x_grad = weights.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
-        # beta grads
-        self.b.grad = np.sum(self.y.grad, axis=self._ax)
+                # gamma grads
+                self.w.grad = np.sum(x_h.data * y_grad, axis=axis)
 
-        # input grads
-        temp1 = n * self.y.grad
-        temp2 = np.sum(self.y.grad, axis=self._ax, keepdims=True)
-        temp3 = np.sum(self.y.grad * self._xh, axis=self._ax, keepdims=True)
-        weights = tu.match_dims(self.w, dims=self.x.ndim - 1).data
-        self.x.grad = weights * self._vari / n * (temp1 - temp2 - self._xh * temp3)
+                # beta grads
+                self.b.grad = np.sum(y_grad, axis=axis)
 
-        if self.optimizer:
-            self.optimize()
-        return self.x.grad
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
 
 
-@dataclass(init=False, repr=False)
-class Layernorm(Parameter):
+class Layernorm(Module):
     """Normalizes values per sample."""
 
-    def __init__(self, eps: float = 1e-5, input_shape: ShapeLike | None = None) -> None:
+    def __init__(self, normalized_shape: ShapeLike, eps: float = 1e-5) -> None:
         """Implements layer normalization.
 
         Parameters
         ----------
+        normalized_shape : ShapeLike
+            Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
-        input_shape : ShapeLike | None, optional
-            Shape of a sample. Required if the layer is used as input, by default None.
         """
-        super().__init__(input_shape=input_shape)
+        super().__init__()
         self.eps = eps
-        self._vari: NumpyArray | None = None
-        self._xh: NumpyArray | None = None
-        self._ax: AxisLike | None = None
-
-    def compile(self, optimizer: Optimizer | None = None) -> None:
-        super().compile(optimizer)
-        self.w = tu.ones(self.x.shape[1:])  # gain
-        self.parameters.append(self.w)
-        self.b = tu.zeros_like(self.w)
-        self.parameters.append(self.b)
-        self._ax = tuple(i + 1 for i in range(self.x.ndim - 1))
+        self.w = tu.ones(normalized_shape)
+        self.b = tu.zeros(normalized_shape)
+        self.parameters = [self.w, self.b]
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        mean = np.mean(self.x.data, axis=self._ax, keepdims=True)
-        var = np.var(self.x.data, axis=self._ax, keepdims=True)
-        self._vari = (var + self.eps) ** -0.5
-        self._xh = (self.x.data - mean) * self._vari
-        self.y.data = self.w.data * self._xh + self.b.data
-        return self.y
+        axis = tuple(np.arange(x.ndim)[1:])
+        mean = x.mean(axis=axis, keepdims=True)
+        var = x.var(axis=axis, keepdims=True)
+        var_h = (var + self.eps) ** -0.5
+        x_h = (x - mean) * var_h
+        y = self.w * x_h + self.b
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        # input grads
-        n = self.x.data[0].size
-        temp1 = n * self.y.grad
-        temp2 = np.sum(self.y.grad, self._ax, keepdims=True)
-        temp3 = np.sum(self.y.grad * self._xh, self._ax, keepdims=True)
-        self.x.grad = self.w.data * self._vari / n * (temp1 - temp2 - self._xh * temp3)
-        # gamma grads
-        self.w.grad = np.sum(self._xh * self.y.grad, axis=0)
+        if self.training:
 
-        # beta grads
-        self.b.grad = np.sum(self.y.grad, axis=0)
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                # input grads
+                n = x.data[0].size
+                tmp1 = n * y_grad
+                tmp2 = np.sum(y_grad, axis, keepdims=True)
+                tmp3 = np.sum(y_grad * x_h.data, axis, keepdims=True)
+                x_grad = self.w.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
-        if self.optimizer:
-            self.optimize()
-        return self.x.grad
+                # gamma grads
+                self.w.grad = np.sum(x_h.data * y_grad, axis=0)
 
+                # beta grads
+                self.b.grad = np.sum(y_grad, axis=0)
 
-NORMALIZATIONS = {"layer": Layernorm, "batch": Batchnorm}
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y

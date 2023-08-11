@@ -1,6 +1,5 @@
 """Evaluation metrics module"""
 
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 from walnut.tensor import Tensor
@@ -9,7 +8,6 @@ from walnut.tensor import Tensor
 __all__ = ["Accuracy"]
 
 
-@dataclass(slots=True)
 class Metric(ABC):
     """Metric base class."""
 
@@ -18,7 +16,6 @@ class Metric(ABC):
         ...
 
 
-@dataclass(slots=True)
 class Accuracy(Metric):
     """Computes the percentage of correctly predicted classes."""
 

@@ -1,7 +1,6 @@
 """text preprocessing module"""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 from walnut.tensor import Tensor
@@ -33,11 +32,12 @@ def remove_punctuation(data: str):
     return data_clean
 
 
-@dataclass(slots=True)
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    tokens: dict[str, int] = field(default_factory=dict)
+    def __init__(self) -> None:
+        self.tokens: dict[str, int] = {}
+        self.oov_token: str = ""
 
     @property
     def vocab_size(self) -> int:
@@ -57,11 +57,12 @@ class Tokenizer(ABC):
         """Decodes tokens."""
 
 
-@dataclass(slots=True)
 class CharacterTokenizer(Tokenizer):
     """Creates character tokens."""
 
-    oov_token: str = "|"
+    def __init__(self) -> None:
+        super().__init__()
+        self.oov_token = "|"
 
     def fit(self, data: str, max_tokens: int = 100) -> None:
         """Fits the tokenizer to data.
@@ -112,11 +113,12 @@ class CharacterTokenizer(Tokenizer):
         )
 
 
-@dataclass(slots=True)
 class WordTokenizer(Tokenizer):
     """Creates word tokens."""
 
-    oov_token: str = "<OOV>"
+    def __init__(self) -> None:
+        super().__init__()
+        self.oov_token = "<OOV>"
 
     def fit(self, data: str, max_tokens: int = 100) -> None:
         """Fits the tokenizer to data.

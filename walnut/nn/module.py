@@ -2,51 +2,37 @@
 
 
 from __future__ import annotations
-from dataclasses import dataclass
+from typing import Callable
+from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NumpyArray, ShapeError
 
 
 __all__ = ["Module"]
 
 
-class ModuleCompilationError(Exception):
-    """Error with the compiling of the module."""
-
-
-@dataclass(repr=False, init=False)
-class Module:
+class Module(ABC):
     """Module base class."""
 
-    def __init__(self, input_shape: ShapeLike | None = None) -> None:
-        self.input_shape = input_shape
-        self.x: Tensor = tu.empty()
+    def __init__(self) -> None:
+        """Module base class."""
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
-        self.compiled: bool = False
+        self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
         self.training: bool = False
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
-        if not self.compiled:
-            return name
-        x_shape = str(self.x.shape[1:])
-        w_shape = b_shape = "(,)"
-        y_shape = str(self.y.shape[1:])
         return (
-            f"{name:15s} | {x_shape:15s} | {w_shape:15s} | "
-            + f"{b_shape:15s} | {y_shape:15s} | 0"
+            self.__class__.__name__
+            + " (Params: "
+            + str(sum([p.data.size for p in self.parameters]))
+            + ")"
         )
 
-    def compile(self) -> None:
-        """Connects modules within a model."""
-        if self.input_shape is not None:
-            self.x = tu.ones((1, *self.input_shape))
-        self.compiled = True
-
-    def __call__(self, x: Tensor) -> None:
-        """Performs a forward pass.
+    @abstractmethod
+    def __call__(self, x: Tensor) -> Tensor:
+        """Performs a forward pass through the module.
 
         Parameters
         ----------
@@ -58,23 +44,33 @@ class Module:
         Tensor
             Computed Output.
         """
-        self.x.data = x.data
 
-    def backward(self, y_grad: NumpyArray) -> None:
-        """Performs a backward pass and computes gradients.
+    def reset_grads(self):
+        """Resets parameter grads to improve memory usage."""
+        for p in self.parameters:
+            p.reset_grads()
+        self.y.reset_grads()
+
+    def set_y(self, y: Tensor) -> None:
+        """Saves the module output to y tensor.
 
         Parameters
         ----------
-        x : NumpyArray
-            Output gradients.
-
-        Returns
-        ----------
-        NumpyArray
-            Input gradients.
+        y : Tensor
+            Module output tensor.
         """
-        self.y.grad = y_grad
+        self.y.data = y.data
 
-    def get_parameter_count(self) -> int:
-        """Returns the total number of trainable parameters of the module."""
-        return 0
+    def set_y_grad(self, y_grad: NumpyArray) -> None:
+        """Saves the module output gradients to y tensor.
+
+        Parameters
+        ----------
+        y_grad : NumpyArray
+            Module output tensor gradients.
+        """
+        if y_grad.shape != self.y.shape:
+            raise ShapeError(
+                f"Grad shape {y_grad.shape} does not match y shape {self.y.shape}"
+            )
+        self.y.grad = y_grad

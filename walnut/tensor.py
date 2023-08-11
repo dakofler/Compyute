@@ -25,13 +25,13 @@ class Tensor:
     """Tensor object."""
 
     data: NumpyArray
-    grad: NumpyArray
+    grad: NumpyArray | None
     params: dict[str, NumpyArray]
-    iterator: int
+    iterator: int = 0
 
     def __init__(
         self,
-        values: NumpyArray | list[Any] | float | int | np.float32,
+        data: NumpyArray | list[Any] | float | int | np.float32,
         dtype: str = "float32",
     ) -> None:
         """Tensor object.
@@ -43,15 +43,15 @@ class Tensor:
         dtype: str, optional
             Datatype of the tensor data, by default float32.
         """
-        if isinstance(values, np.ndarray):
-            self.data = values.astype(dtype, copy=values.dtype != dtype)
-        elif isinstance(values, (list, float, int, numpyType)):
-            self.data = np.array(values).astype(dtype)
+        if isinstance(data, np.ndarray):
+            self.data = data.astype(dtype, copy=data.dtype != dtype)
+        elif isinstance(data, (list, float, int, numpyType)):
+            self.data = np.array(data).astype(dtype)
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
 
-        self.grad: NumpyArray = np.empty(0, dtype="float32")
-        self.params: dict[str, NumpyArray] = {}
+        self.grad = None
+        self.params = {}
         self.iterator = 0
 
     @property
@@ -91,7 +91,10 @@ class Tensor:
         return Tensor(self.data[key], dtype=self.dtype)
 
     def __setitem__(self, key, value) -> None:
-        self.data[key] = value
+        if isinstance(value, Tensor):
+            self.data[key] = value.data
+        else:
+            self.data[key] = value
 
     def __iter__(self):
         self.iterator = 0
@@ -124,7 +127,7 @@ class Tensor:
         other = self.__tensorify(other)
         return Tensor(self.data // other.data)
 
-    def __pow__(self, other: int) -> Tensor:
+    def __pow__(self, other: int | float) -> Tensor:
         return Tensor(self.data**other)
 
     def __mod__(self, other: int) -> Tensor:
@@ -367,6 +370,16 @@ class Tensor:
         """
         return Tensor(np.log10(self.data))
 
+    def log2(self) -> Tensor:
+        """Logarithm with base 2 of tensor elements.
+
+        Returns
+        -------
+            Tensor
+                Tensor containing the value of log2(x) for each element.
+        """
+        return Tensor(np.log2(self.data))
+
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
 
@@ -438,18 +451,10 @@ class Tensor:
         paddings = tuple((w, w) for w in widths)
         return Tensor(np.pad(self.data, paddings))
 
-    def reset_params(self, reset_data: bool = False):
-        """Resets additional parameters to improve memory usage.
-
-        Parameters
-        ----------
-        reset_data : bool, optional
-            Whether to also reset the tensor data, by default False.
-        """
-        if reset_data:
-            self.data = np.empty(0, dtype=self.dtype)
-        self.grad = np.empty(0, dtype="float32")
-        self.params: dict[str, NumpyArray] = {}
+    def reset_grads(self):
+        """Resets grads to improve memory usage."""
+        self.grad = None
+        self.params = {}
 
     def flatten(self) -> Tensor:
         """Returns a flattened, one-dimensional tensor.
@@ -522,3 +527,24 @@ class Tensor:
             Tensor containing flipped values.
         """
         return Tensor(np.flip(self.data, axis=axis))
+
+    def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
+        """Move axes of an array to new positions. Other axes remain in their original order.
+
+        Parameters
+        ----------
+        from_axis : int
+            Original positions of the axes to move. These must be unique.
+        to_axis : int
+            Destination positions for each of the original axes. These must also be unique.
+
+        Returns
+        -------
+        Tensor
+            Tensor with moved axes.
+        """
+        return Tensor(np.moveaxis(self.data, from_axis, to_axis))
+
+    def squeeze(self) -> Tensor:
+        """Removes axis with length one from the tensor."""
+        return Tensor(self.data.squeeze())

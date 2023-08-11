@@ -10,5 +10,5 @@ from walnut.nn import (
     optimizers,
     funcional,
 )
-from walnut.nn.models import Sequential
-from walnut.nn.module import Module
+from walnut.nn.models import *
+from walnut.nn.module import *

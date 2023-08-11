@@ -290,3 +290,56 @@ def empty(dtype: str = "float32") -> Tensor:
         Empty tensor.
     """
     return Tensor(np.empty(0, dtype=dtype))
+
+
+def maximum(a: Tensor | float | int, b: Tensor | float | int) -> Tensor:
+    """Element-wise maximum of two tensors.
+
+    Parameters
+    ----------
+    a : Tensor | float | int
+        First tensor.
+    b : Tensor | float | int
+        Second value.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise maximum of either tensor.
+    """
+    _a = a.data if isinstance(a, Tensor) else a
+    _b = b.data if isinstance(b, Tensor) else b
+    return Tensor(np.maximum(_a, _b))
+
+
+def stretch(
+    x: Tensor,
+    streching: tuple[int, int],
+    target_shape: ShapeLike,
+    axis: tuple[int, int] = (-2, -1),
+) -> Tensor:
+    """Strtches a tensor by repeating it's elements over given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor to be stretched out.
+    streching : tuple[int, int]
+        Number of repeating values along each axis.
+    target_shape : ShapeLike
+        Shape of the target tensor. If the shape does not match after stretching,
+        remaining values are filled with zeroes.
+    axis : tuple[int, int], optional
+        Axis along which to stretch the tensor, by default (-2, -1).
+
+    Returns
+    -------
+    Tensor
+        Stretched out tensor.
+    """
+    fa1, fa2 = streching
+    ax1, ax2 = axis
+    x_stretched = np.repeat(x.data, fa1, axis=ax1)
+    x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
+    # resize to fit target shape by filling with zeros
+    return Tensor(np.resize(x_stretched, target_shape))

@@ -3,6 +3,7 @@
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
+import walnut.tensor_utils as tu
 from walnut.nn.funcional import sigmoid, softmax
 from walnut.nn.module import Module
 
@@ -14,65 +15,85 @@ class Relu(Module):
     """Implements the ReLu activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = np.maximum(0, self.x.data)
-        return self.y
+        y = tu.maximum(x, 0)
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.x.grad = (self.y.data > 0) * self.y.grad
-        return self.x.grad
+        if self.training:
 
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = (y.data > 0) * y_grad
+                self.set_y_grad(y_grad)
+                return x_grad
 
-class Sigmoid(Module):
-    """Implements the Sigmoid activation function."""
+            self.backward = backward
 
-    def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = sigmoid(self.x).data
-        return self.y
-
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.x.grad = self.y.data * (1.0 - self.y.data) * self.y.grad
-        return self.x.grad
+        self.set_y(y)
+        return y
 
 
 class Tanh(Module):
     """Implements the Tanh activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = np.tanh(self.x.data)
-        return self.y
+        y = x.tanh()
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        self.x.grad = (1.0 - self.y.data**2) * self.y.grad
-        return self.x.grad
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = (-y.data**2 + 1.0) * y_grad
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
+
+
+class Sigmoid(Module):
+    """Implements the Sigmoid activation function."""
+
+    def __call__(self, x: Tensor) -> Tensor:
+        y = sigmoid(x)
+
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = y.data * (-y.data + 1.0) * y_grad
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
 
 
 class Softmax(Module):
     """Implements the Softmax activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        super().__call__(x)
-        self.y.data = softmax(self.x).data
-        return self.y
+        y = softmax(x)
 
-    def backward(self, y_grad: NumpyArray) -> NumpyArray:
-        super().backward(y_grad)
-        _, channels = self.x.shape
-        # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
-        x1 = np.einsum("ij,ik->ijk", self.y.data, self.y.data)
-        x2 = np.einsum("ij,jk->ijk", self.y.data, np.eye(channels, channels))
-        self.x.grad = np.einsum("ijk,ik->ij", x2 - x1, self.y.grad)
-        return self.x.grad
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                channels = x.shape[-1]
+                # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
+                x1 = np.einsum("ij,ik->ijk", y.data, y.data)
+                x2 = np.einsum("ij,jk->ijk", y.data, np.eye(channels, channels))
+                x_grad = np.einsum("ijk,ik->ij", x2 - x1, y_grad)
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
 
 
 ACTIVATIONS = {
     "relu": Relu,
-    "sigmoid": Sigmoid,
     "tanh": Tanh,
+    "sigmoid": Sigmoid,
     "softmax": Softmax,
 }
