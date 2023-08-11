@@ -6,7 +6,7 @@ from typing import Callable
 from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NumpyArray, ShapeError
 
 
 __all__ = ["Module"]
@@ -69,4 +69,8 @@ class Module(ABC):
         y_grad : NumpyArray
             Module output tensor gradients.
         """
+        if y_grad.shape != self.y.shape:
+            raise ShapeError(
+                f"Grad shape {y_grad.shape} does not match y shape {self.y.shape}"
+            )
         self.y.grad = y_grad

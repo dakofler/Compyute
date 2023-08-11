@@ -91,7 +91,10 @@ class Tensor:
         return Tensor(self.data[key], dtype=self.dtype)
 
     def __setitem__(self, key, value) -> None:
-        self.data[key] = value
+        if isinstance(value, Tensor):
+            self.data[key] = value.data
+        else:
+            self.data[key] = value
 
     def __iter__(self):
         self.iterator = 0

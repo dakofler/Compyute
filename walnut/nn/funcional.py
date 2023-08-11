@@ -4,6 +4,7 @@ import numpy as np
 import numpy.fft as npfft
 
 from walnut.tensor import Tensor, ShapeError
+import walnut.tensor_utils as tu
 
 
 __all__ = ["sigmoid", "softmax", "convolve1d", "convolve2d", "dilate1d", "dilate2d"]
@@ -111,15 +112,11 @@ def convolve1d(
 
     # slicing
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
-    match x_pad.ndim:
-        case 3:
-            return ifft[:, :, -out:][:, :, ::stride]
-        case 4:
-            return ifft[:, :, :, -out:][:, :, :, ::stride]
-        case 5:
-            return ifft[:, :, :, :, -out:][:, :, :, :, ::stride]
-        case _:
-            return ifft
+    slc_out = [slice(None)] * ifft.ndim
+    slc_out[ifft.ndim - 1] = slice(-out, None)
+    slc_stride = [slice(None)] * ifft.ndim
+    slc_stride[ifft.ndim - 1] = slice(None, None, stride)
+    return ifft[*slc_out][*slc_stride]
 
 
 def convolve2d(
@@ -194,13 +191,11 @@ def convolve2d(
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
     out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
     s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
-    match x_pad.ndim:
-        case 4:
-            return ifft[:, :, -out_y:, -out_x:][:, :, ::s_y, ::s_x]
-        case 5:
-            return ifft[:, :, :, -out_y:, -out_x:][:, :, :, ::s_y, ::s_x]
-        case _:
-            return ifft
+    slc_out = [slice(None)] * ifft.ndim
+    slc_out[ifft.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
+    slc_stride = [slice(None)] * ifft.ndim
+    slc_stride[ifft.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
+    return ifft[*slc_out][*slc_stride]
 
 
 def dilate1d(f: Tensor, dil: int) -> Tensor:
@@ -218,17 +213,18 @@ def dilate1d(f: Tensor, dil: int) -> Tensor:
     Tensor
         Dilated tensor.
     """
+    if dil == 1:
+        return f
+
     dim = f.ndim
     tpl = tuple(
         ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
     )
-    f_dil = np.zeros(tpl)
-    match f.ndim:
-        case 3:
-            f_dil[:, :, ::dil] = f.data
-        case 4:
-            f_dil[:, :, :, ::dil] = f.data
-    return Tensor(f_dil)
+    f_dil = tu.zeros(tpl)
+    slc_dil = [slice(None)] * dim
+    slc_dil[dim - 1] = slice(None, None, dil)
+    f_dil[*slc_dil] = f
+    return f_dil
 
 
 def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
@@ -246,20 +242,17 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
     Tensor
         Dilated tensor.
     """
-    dim = f.ndim
     dil = (dil, dil) if isinstance(dil, int) else dil
+    if dil == (1, 1):
+        return f
+
+    dim = f.ndim
     tpl = tuple(
         ((f.shape[d] - 1) * dil[-dim + d] + 1) if d >= dim - 2 else f.shape[d]
         for d in range(dim)
     )
-    f_dil = np.zeros(tpl)
-    match f.ndim:
-        case 2:
-            f_dil[:: dil[0], :: dil[1]] = f.data
-        case 3:
-            f_dil[:, :: dil[0], :: dil[1]] = f.data
-        case 4:
-            f_dil[:, :, :: dil[0], :: dil[1]] = f.data
-        case 5:
-            f_dil[:, :, :, :: dil[0], :: dil[1]] = f.data
-    return Tensor(f_dil)
+    f_dil = tu.zeros(tpl)
+    slc_dil = [slice(None)] * dim
+    slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
+    f_dil[*slc_dil] = f
+    return f_dil

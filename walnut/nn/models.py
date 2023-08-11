@@ -11,7 +11,7 @@ from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
 
 
-__all__ = ["Sequential"]
+__all__ = ["Model", "Sequential"]
 
 
 class ModelCompilationError(Exception):
