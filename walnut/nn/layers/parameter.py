@@ -7,6 +7,7 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
+from walnut.preprocessing.encoding import one_hot_encode
 
 
 __all__ = ["Linear", "Convolution1d", "Convolution2d", "Embedding"]
@@ -345,16 +346,14 @@ class Embedding(Module):
         self.parameters.append(self.w)
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = x @ self.w
+        x_enc = one_hot_encode(x, self.w.shape[0])
+        y = x_enc @ self.w
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y_grad @ self.w.T
-                self.w.grad = np.sum(x.transpose((0, 2, 1)).data @ y_grad, axis=0)
-
+            def backward(y_grad: NumpyArray) -> None:
+                self.w.grad = np.sum(x_enc.transpose((0, 2, 1)).data @ y_grad, axis=0)
                 self.set_y_grad(y_grad)
-                return x_grad
 
             self.backward = backward
 

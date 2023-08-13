@@ -73,7 +73,7 @@ class Model(Module):
         y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
-        verbose: str = "reduced",
+        verbose: float = 0.1,
         val_data: tuple[Tensor, Tensor] | None = None,
         reset_grads: bool = True,
     ) -> tuple[list[float], list[float]]:
@@ -90,8 +90,9 @@ class Model(Module):
         batch_size : int | None, optional
             Number of training samples used per epoch, by default None.
             If None, all samples are used.
-        verbose : str, optional
-            Whether to print out intermediate results while training, by default "reduced".
+        verbose : int, optional
+            When to report intermediate results as a fraction of epochs
+            (e.b. 0.1 -> report after every epochs*0.1 epoch).
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
         reset_grads : bool, optional
@@ -145,7 +146,9 @@ class Model(Module):
 
             end = time.time()
             step = round((end - start) * 1000.0, 2)
-            log_training_progress(verbose, epoch, epochs, step, train_loss, val_loss)
+
+            if epoch % int(epochs * verbose) == 0:
+                log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
         # reset parameters to improve memory efficiency
         if reset_grads:

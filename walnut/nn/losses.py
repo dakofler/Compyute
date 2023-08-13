@@ -5,6 +5,8 @@ from typing import Callable
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
+from walnut.nn.funcional import softmax
+from walnut.preprocessing.encoding import one_hot_encode
 
 
 __all__ = ["MSE", "Crossentropy"]
@@ -59,21 +61,23 @@ class Crossentropy(Loss):
         Parameters
         ----------
         y : Tensor
-            A model's predictions.
+            A model's logits.
         t : Tensor
-            Target values.
+            Target class labels.
 
         Returns
         -------
         Tensor
             Crossentropy loss.
         """
-        y += 1e-7  # for improved numerical stability
+        t = one_hot_encode(t, y.shape[-1])
+        probs = softmax(y)
+        # probs += 1e-7  # for improved numerical stability
 
         def backward() -> NumpyArray:
             """Performs a backward pass."""
-            return (-t / (y * y.shape[0])).data
+            return ((probs - t) / y.shape[0]).data
 
         self.backward = backward
 
-        return (-(y.log() * t).sum(axis=-1)).mean()
+        return (-(probs.log() * t).sum(axis=-1)).mean()
