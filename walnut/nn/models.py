@@ -4,7 +4,7 @@ import time
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray
-from walnut.nn.verbose import log_training_progress
+from walnut.nn.logging import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.module import Module

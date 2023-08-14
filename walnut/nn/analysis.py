@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
+from walnut.nn.models import Model
 
 __all__ = [
     "plot_curve",
@@ -176,3 +177,38 @@ def plot_probabilities(x: Tensor, figsize: ShapeLike) -> None:
     plt.bar(np.arange(0, classes), preds.reshape((classes,)).data)
     plt.xlabel("class")
     plt.ylabel("probability")
+
+
+def model_summary(
+    model: Model, input_shape: ShapeLike, input_dtype: str = "float"
+) -> None:
+    """Prints information about a model.
+
+    Parameters
+    ----------
+    model : Model
+        Neural network model.
+    input_shape : ShapeLike
+        Shape of the model input ignoring the batch dimension.
+    input_dtype : str, optional
+        Input data type, by default "float".
+    """
+    n = 57
+    string = "-" * n
+    string += f"\n{'Layer (type)':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
+    string += "=" * n
+    string += "\n"
+    tot_parameters = 0
+
+    x = tu.ones((1,) + input_shape).astype(input_dtype)
+    _ = model(x)
+
+    for layer in model.layers:
+        name = layer.__class__.__name__
+        output_shape = str((-1,) + layer.y.shape[1:])
+        num_parameters = sum(p.data.size for p in layer.parameters)
+        tot_parameters += num_parameters
+        string += f"{name:20s} {output_shape:20s} {num_parameters:15d}\n"
+
+    string += "=" * n
+    print(f"{string}\n\nTotal parameters: {tot_parameters}")
