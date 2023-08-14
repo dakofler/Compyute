@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from walnut.tensor import Tensor
+from walnut.nn.funcional import softmax
 
 
 __all__ = ["Accuracy"]
@@ -25,7 +26,7 @@ class Accuracy(Metric):
         Parameters
         ----------
         x : Tensor
-            A model's predictions.
+            A model's logits.
         y : Tensor
             Target values.
 
@@ -34,10 +35,5 @@ class Accuracy(Metric):
         float
             Accuracy value.
         """
-
-        # create tensor with ones where highest probabilities occur
-        predicitons = (x / x.max(axis=1, keepdims=True) == 1.0) * 1.0
-
-        # count number of correct samples
-        num_correct_preds = (predicitons * y).sum().item()
-        return num_correct_preds / predicitons.shape[0]
+        preds = softmax(x).argmax(-1)
+        return (preds == y).sum().item() / y.len

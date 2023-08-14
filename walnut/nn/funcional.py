@@ -86,8 +86,8 @@ def convolve1d(
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    # dilation
-    f_dil = dilate1d(f, dil)
+    # dilate filter
+    f_dil = dilate1d(f, dil).data
 
     # padding
     if isinstance(pad, int):
@@ -101,14 +101,13 @@ def convolve1d(
             case _:
                 p = 0
     dim = x.ndim
-    tpl = tuple((p, p) if d == dim - 1 else (0, 0) for d in range(dim))
+    tpl = tuple([(0, 0)] * (dim - 1) + [(p, p)])
     x_pad = np.pad(x.data, tpl)
 
     # convolution
-    conv_shape = x_pad.shape[-1]
-    x_fft = npfft.fft(x_pad, n=conv_shape).astype("complex64")
-    f_fft = npfft.fft(f_dil.data, n=conv_shape).astype("complex64")
-    ifft = Tensor(np.real(npfft.ifft(x_fft * f_fft)))
+    x_fft = npfft.rfft(x_pad).astype("complex64")
+    f_fft = npfft.rfft(f_dil, n=x_pad.shape[-1]).astype("complex64")
+    ifft = npfft.irfft(x_fft * f_fft).astype("float32")
 
     # slicing
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -116,7 +115,7 @@ def convolve1d(
     slc_out[ifft.ndim - 1] = slice(-out, None)
     slc_stride = [slice(None)] * ifft.ndim
     slc_stride[ifft.ndim - 1] = slice(None, None, stride)
-    return ifft[*slc_out][*slc_stride]
+    return Tensor(ifft[*slc_out][*slc_stride])
 
 
 def convolve2d(
@@ -161,8 +160,8 @@ def convolve2d(
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    # dilation
-    f_dil = dilate2d(f, dil)
+    # dilate filter
+    f_dil = dilate2d(f, dil).data
 
     # padding
     if isinstance(pad, tuple):
@@ -176,16 +175,13 @@ def convolve2d(
             case _:
                 p = (0, 0)
     dim = x.ndim
-    tpl = tuple(
-        (p[-dim + d], p[-dim + d]) if d >= dim - 2 else (0, 0) for d in range(dim)
-    )
+    tpl = tuple([(0, 0)] * (dim - 2) + [(p[0], p[0]), (p[1], p[1])])
     x_pad = np.pad(x.data, tpl)
 
     # convolution
-    conv_shape = x_pad.shape[-2:]
-    x_fft = npfft.fft2(x_pad, s=conv_shape).astype("complex64")
-    f_fft = npfft.fft2(f_dil.data, s=conv_shape).astype("complex64")
-    ifft = Tensor(np.real(npfft.ifft2(x_fft * f_fft)))
+    x_fft = npfft.rfft2(x_pad).astype("complex64")
+    f_fft = npfft.rfft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
+    ifft = npfft.irfft2(x_fft * f_fft).astype("float32")
 
     # slicing
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
@@ -195,7 +191,7 @@ def convolve2d(
     slc_out[ifft.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
     slc_stride = [slice(None)] * ifft.ndim
     slc_stride[ifft.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
-    return ifft[*slc_out][*slc_stride]
+    return Tensor(ifft[*slc_out][*slc_stride])
 
 
 def dilate1d(f: Tensor, dil: int) -> Tensor:

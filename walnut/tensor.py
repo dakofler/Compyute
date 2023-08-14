@@ -88,10 +88,16 @@ class Tensor:
         return self.data
 
     def __getitem__(self, key) -> Tensor:
+        if isinstance(key, Tensor):
+            return Tensor(self.data[key.data], dtype=self.dtype)
         return Tensor(self.data[key], dtype=self.dtype)
 
     def __setitem__(self, key, value) -> None:
-        if isinstance(value, Tensor):
+        if isinstance(key, Tensor) and isinstance(value, Tensor):
+            self.data[key.data] = value.data
+        elif isinstance(key, Tensor):
+            self.data[key.data] = value
+        elif isinstance(value, Tensor):
             self.data[key] = value.data
         else:
             self.data[key] = value
@@ -266,7 +272,9 @@ class Tensor:
         Tensor
             Tensor containing the variance of elements.
         """
-        return Tensor(np.var(self.data, axis=axis, ddof=ddof, keepdims=keepdims))
+        return Tensor(
+            np.var(self.data, axis=axis, ddof=ddof, keepdims=keepdims), dtype=self.dtype
+        )
 
     def std(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
@@ -304,7 +312,7 @@ class Tensor:
         Tensor
             Tensor containing the minimum of elements.
         """
-        return Tensor(self.data.min(axis=axis, keepdims=keepdims))
+        return Tensor(self.data.min(axis=axis, keepdims=keepdims), dtype=self.dtype)
 
     def max(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
@@ -323,7 +331,7 @@ class Tensor:
         Tensor
             Tensor containing the maximum of elements.
         """
-        return Tensor(self.data.max(axis=axis, keepdims=keepdims))
+        return Tensor(self.data.max(axis=axis, keepdims=keepdims), dtype=self.dtype)
 
     def round(self, decimals: int) -> Tensor:
         """Rounds the value of tensor elements.
@@ -348,7 +356,7 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        return Tensor(np.exp(self.data))
+        return Tensor(np.exp(self.data), dtype=self.dtype)
 
     def log(self) -> Tensor:
         """Natural logarithm of tensor elements.
@@ -358,7 +366,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        return Tensor(np.log(self.data))
+        return Tensor(np.log(self.data), dtype=self.dtype)
 
     def log10(self) -> Tensor:
         """Logarithm with base 10 of tensor elements.
@@ -368,7 +376,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log10(x) for each element.
         """
-        return Tensor(np.log10(self.data))
+        return Tensor(np.log10(self.data), dtype=self.dtype)
 
     def log2(self) -> Tensor:
         """Logarithm with base 2 of tensor elements.
@@ -378,7 +386,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log2(x) for each element.
         """
-        return Tensor(np.log2(self.data))
+        return Tensor(np.log2(self.data), dtype=self.dtype)
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
@@ -388,7 +396,7 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        return Tensor(np.tanh(self.data))
+        return Tensor(np.tanh(self.data), dtype=self.dtype)
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements.
@@ -398,7 +406,7 @@ class Tensor:
             Tensor
             Tensor containing the absolute value for each element.
         """
-        return Tensor(np.abs(self.data))
+        return Tensor(np.abs(self.data), dtype=self.dtype)
 
     def sqrt(self) -> Tensor:
         """Square root of tensor elements.
@@ -408,7 +416,7 @@ class Tensor:
             Tensor
             Tensor containing the square root value for each element.
         """
-        return Tensor(np.sqrt(self.data))
+        return Tensor(np.sqrt(self.data), dtype=self.dtype)
 
     def item(self, *args) -> float:
         """Returns the scalar value of the tensor data.
@@ -433,7 +441,7 @@ class Tensor:
         Tensor
             Reshapded tensor.
         """
-        return Tensor(self.data.reshape(*shape))
+        return Tensor(self.data.reshape(*shape), dtype=self.dtype)
 
     def pad(self, widths: tuple[int, ...]) -> Tensor:
         """Returns a padded tensor using zero padding.
@@ -449,7 +457,7 @@ class Tensor:
             Padded tensor.
         """
         paddings = tuple((w, w) for w in widths)
-        return Tensor(np.pad(self.data, paddings))
+        return Tensor(np.pad(self.data, paddings), dtype=self.dtype)
 
     def reset_grads(self):
         """Resets grads to improve memory usage."""
@@ -464,7 +472,7 @@ class Tensor:
         Tensor
             Flattened, one-dimensional version of the tensor.
         """
-        return Tensor(self.data.reshape((-1,)))
+        return Tensor(self.data.reshape((-1,)), dtype=self.dtype)
 
     def transpose(self, axis: AxisLike | None = None) -> Tensor:
         """Transposes a tensor along given axes.
@@ -479,7 +487,7 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        return Tensor(np.transpose(self.data, axes=axis))
+        return Tensor(np.transpose(self.data, axes=axis), dtype=self.dtype)
 
     def astype(self, dtype: str) -> Tensor:
         """Returns a copy of the tensor with parsed values.
@@ -511,7 +519,7 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        return Tensor(np.append(self.data, values.data, axis=axis))
+        return Tensor(np.append(self.data, values.data, axis=axis), dtype=self.dtype)
 
     def flip(self, axis: AxisLike) -> Tensor:
         """Returns a tensor with flipped elements along given axis.
@@ -526,7 +534,7 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        return Tensor(np.flip(self.data, axis=axis))
+        return Tensor(np.flip(self.data, axis=axis), dtype=self.dtype)
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
@@ -543,8 +551,23 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        return Tensor(np.moveaxis(self.data, from_axis, to_axis))
+        return Tensor(np.moveaxis(self.data, from_axis, to_axis), dtype=self.dtype)
 
     def squeeze(self) -> Tensor:
         """Removes axis with length one from the tensor."""
-        return Tensor(self.data.squeeze())
+        return Tensor(self.data.squeeze(), dtype=self.dtype)
+
+    def argmax(self, axis: int | None = None) -> Tensor:
+        """Returns the indices of maximum values along a given axis.
+
+        Parameters
+        ----------
+        axis : int | None = None
+            Axis, along which the maximum value is located, by default None.
+
+        Returns
+        -------
+        int | tuple [int, ...]
+            Index tensor.
+        """
+        return Tensor(np.argmax(self.data, axis=axis), dtype="int")

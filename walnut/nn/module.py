@@ -23,12 +23,7 @@ class Module(ABC):
         self.training: bool = False
 
     def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + " (Params: "
-            + str(sum([p.data.size for p in self.parameters]))
-            + ")"
-        )
+        return self.__class__.__name__
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:

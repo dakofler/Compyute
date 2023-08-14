@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from walnut.tensor import Tensor, NumpyArray, ShapeLike
+import walnut.tensor_utils as tu
+from walnut.nn.funcional import softmax
 
 __all__ = [
     "plot_curve",
@@ -142,23 +144,18 @@ def plot_confusion_matrix(
         Colormap used for the plot, by default "Blues".
     """
 
-    # create tensor with ones where highest probabilities occur
-    predicitons = (x / x.max(axis=1, keepdims=True) == 1.0) * 1.0
-
-    # get indeces of correct labels from y
-    y_index = np.argmax(y.data, axis=1)
-
-    classes = y.shape[1]
-    matrix = np.zeros((classes, classes))
-    for i, pred in enumerate(predicitons.data):
-        matrix[y_index[i]] += pred
+    classes = int(y.max().item() + 1)
+    preds = x.argmax(-1)
+    matrix = tu.zeros((classes, classes))
+    for i in range(preds.len):
+        matrix[y[i].item(), preds[i].item()] += 1
 
     plt.figure(figsize=figsize)
     plt.tick_params(left=False, bottom=False, labelbottom=False, labeltop=True)
     plt.xticks(ticks=np.arange(0, classes, 1), labels=np.arange(0, classes, 1))
     plt.yticks(ticks=np.arange(0, classes, 1), labels=np.arange(0, classes, 1))
-    plt.imshow(matrix, cmap=cmap)
-    for (j, i), label in np.ndenumerate(matrix):
+    plt.imshow(matrix.data, cmap=cmap)
+    for (j, i), label in np.ndenumerate(matrix.data):
         plt.text(i, j, str(int(label)), ha="center", va="center")
 
 
@@ -168,13 +165,14 @@ def plot_probabilities(x: Tensor, figsize: ShapeLike) -> None:
     Parameters
     ----------
     x : Tensor
-        A model's predictions.
+        A model's logits.
     figsize : ShapeLike
         Size of the plot.
     """
     classes = x.shape[1]
+    preds = softmax(x)
     plt.figure(figsize=figsize)
     plt.xticks(ticks=np.arange(0, classes, 1), labels=np.arange(0, classes, 1))
-    plt.bar(np.arange(0, 10), x.reshape((10,)).data)
+    plt.bar(np.arange(0, classes), preds.reshape((classes,)).data)
     plt.xlabel("class")
     plt.ylabel("probability")

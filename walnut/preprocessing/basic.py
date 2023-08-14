@@ -38,26 +38,6 @@ def split_train_val_test(
     return Tensor(train), Tensor(val), Tensor(test)
 
 
-def split_features_labels(x: Tensor, num_x_cols: int) -> tuple[Tensor, Tensor]:
-    """Splits a tensor along axis 1 into two seperate tensors.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be split.
-    num_x_cols : int
-        Number of feature-colums of the input tensor.
-
-    Returns
-    -------
-    tuple[Tensor, Tensor]
-        First tensor containing features, second tensor containing labels.
-    """
-    features = Tensor(x.data[:, :num_x_cols])
-    labels = Tensor(x.data[:, num_x_cols:])
-    return features, labels
-
-
 def normalize(
     x: Tensor,
     axis: AxisLike | None = None,
