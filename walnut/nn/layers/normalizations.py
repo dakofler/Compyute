@@ -26,6 +26,7 @@ class Batchnorm(Module):
             Momentum used for running mean and variance computation, by default 0.1.
         """
         super().__init__()
+        self.in_channels = in_channels
         self.eps = eps
         self.m = m
 
@@ -35,6 +36,13 @@ class Batchnorm(Module):
 
         self.rmean = tu.zeros((in_channels,))
         self.rvar = tu.ones((in_channels,))
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        eps = self.eps
+        m = self.m
+        return f"{name} ({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = (0,) + tuple(np.arange(x.ndim))[2:]
@@ -97,10 +105,17 @@ class Layernorm(Module):
             Constant for numerical stability, by default 1e-5.
         """
         super().__init__()
+        self.normalized_shape = normalized_shape
         self.eps = eps
         self.w = tu.ones(normalized_shape)
         self.b = tu.zeros(normalized_shape)
         self.parameters = [self.w, self.b]
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        normalized_shape = self.normalized_shape
+        eps = self.eps
+        return f"{name} ({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = tuple(np.arange(x.ndim)[1:])

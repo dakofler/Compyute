@@ -4,7 +4,7 @@ import time
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray
-from walnut.logger import log_training_progress
+from walnut.nn.verbose import log_training_progress
 from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.module import Module
@@ -33,13 +33,11 @@ class Model(Module):
         self.metric: Metric | None = None
 
     def __repr__(self) -> str:
-        string = self.__class__.__name__
-        if len(self.layers) > 0:
-            string += "\n\n"
-            for layer in self.layers:
-                string += layer.__repr__() + "\n"
-            sum_params = sum(p.data.size for p in self.get_parameters())
-            string += f"\ntotal trainable parameters {sum_params}"
+        string = self.__class__.__name__ + "\n\n"
+
+        for layer in self.layers:
+            string += layer.__repr__() + "\n"
+
         return string
 
     def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:

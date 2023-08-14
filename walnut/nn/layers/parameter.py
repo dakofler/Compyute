@@ -37,6 +37,8 @@ class Linear(Module):
             Whether to use bias values, by default True.
         """
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         self.use_bias = use_bias
 
         # init weights (c_in, c_out)
@@ -51,6 +53,13 @@ class Linear(Module):
         if use_bias:
             self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        out_channels = self.out_channels
+        use_bias = self.use_bias
+        return f"{name} ({in_channels=}, {out_channels=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x @ self.w  # (b, [c], c_out)
@@ -122,6 +131,9 @@ class Convolution1d(Module):
             Whether to use bias values, by default True.
         """
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
         self.pad = pad
         self.stride = stride
         self.dil = dil
@@ -139,6 +151,17 @@ class Convolution1d(Module):
         if use_bias:
             self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        out_channels = self.out_channels
+        kernel_size = self.kernel_size
+        pad = self.pad
+        stride = self.stride
+        dil = self.dil
+        use_bias = self.use_bias
+        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -238,6 +261,9 @@ class Convolution2d(Module):
             Whether to use bias values, by default True.
         """
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
         self.pad = pad
         self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
@@ -255,6 +281,17 @@ class Convolution2d(Module):
         if self.use_bias:
             self.b = tu.zeros((out_channels,))
             self.parameters.append(self.b)
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        out_channels = self.out_channels
+        kernel_size = self.kernel_size
+        pad = self.pad
+        stride = self.stride
+        dil = self.dil
+        use_bias = self.use_bias
+        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -337,6 +374,9 @@ class Embedding(Module):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         """
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
         # init weights (c_in, c_out)
         if weights is None:
             k = in_channels**-0.5
@@ -344,6 +384,12 @@ class Embedding(Module):
         else:
             self.w = weights
         self.parameters.append(self.w)
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        out_channels = self.out_channels
+        return f"{name} ({in_channels=}, {out_channels=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         x_enc = one_hot_encode(x, self.w.shape[0])
