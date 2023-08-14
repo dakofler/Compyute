@@ -71,7 +71,7 @@ class Model(Module):
         y: Tensor,
         epochs: int = 100,
         batch_size: int | None = None,
-        verbose: float = 0.1,
+        verbose: int | None = 10,
         val_data: tuple[Tensor, Tensor] | None = None,
         reset_grads: bool = True,
     ) -> tuple[list[float], list[float]]:
@@ -88,9 +88,9 @@ class Model(Module):
         batch_size : int | None, optional
             Number of training samples used per epoch, by default None.
             If None, all samples are used.
-        verbose : float, optional
-            When to report intermediate results as a fraction of epochs
-            (e.b. 0.1 -> report after every epochs*0.1 epoch).
+        verbose : int | None, optional
+            How often to report intermediate results.
+            If None, no results are reported. If 0 all results are reported, by default 10.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
         reset_grads : bool, optional
@@ -113,7 +113,7 @@ class Model(Module):
 
         train_loss_history, val_loss_history = [], []
 
-        for epoch in range(0, epochs + 1):
+        for epoch in range(1, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
             self.set_training(True)
@@ -144,7 +144,9 @@ class Model(Module):
 
             end = time.time()
 
-            if verbose > 0 and epoch % int(epochs * verbose) == 0:
+            if verbose is not None and (
+                verbose == 0 or epoch == 1 or epoch % (epochs // verbose) == 0
+            ):
                 step = round((end - start) * 1000.0, 2)
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
