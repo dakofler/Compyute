@@ -26,7 +26,7 @@ class Accuracy(Metric):
         Parameters
         ----------
         x : Tensor
-            A model's predictions.
+            A model's logits.
         y : Tensor
             Target values.
 
@@ -36,6 +36,4 @@ class Accuracy(Metric):
             Accuracy value.
         """
         preds = softmax(x).argmax(-1)
-
-        # count number of correct samples
         return (preds == y).sum().item() / y.len

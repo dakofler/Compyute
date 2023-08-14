@@ -90,7 +90,7 @@ class Model(Module):
         batch_size : int | None, optional
             Number of training samples used per epoch, by default None.
             If None, all samples are used.
-        verbose : int, optional
+        verbose : float, optional
             When to report intermediate results as a fraction of epochs
             (e.b. 0.1 -> report after every epochs*0.1 epoch).
         val_data : tuple[Tensor, Tensor] | None, optional
@@ -145,9 +145,9 @@ class Model(Module):
                 val_loss_history.append(val_loss)
 
             end = time.time()
-            step = round((end - start) * 1000.0, 2)
 
-            if epoch % int(epochs * verbose) == 0:
+            if verbose > 0 and epoch % int(epochs * verbose) == 0:
+                step = round((end - start) * 1000.0, 2)
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
         # reset parameters to improve memory efficiency

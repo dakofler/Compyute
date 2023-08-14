@@ -72,7 +72,6 @@ class Crossentropy(Loss):
         """
         t = one_hot_encode(t, y.shape[-1])
         probs = softmax(y)
-        # probs += 1e-7  # for improved numerical stability
 
         def backward() -> NumpyArray:
             """Performs a backward pass."""
