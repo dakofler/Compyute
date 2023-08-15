@@ -102,7 +102,7 @@ class Convolution1d(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        pad: str = "valid",
+        pad: str = "causal",
         stride: int = 1,
         dil: int = 1,
         weights: Tensor | None = None,
@@ -120,7 +120,7 @@ class Convolution1d(Module):
             Shape of each kernel.
         pad: str, optional
             Padding applied before convolution.
-            Options are "valid" and "same", by default "valid".
+            Options are "causal", "valid" or "same", by default "causal".
         stride : int, optional
             Stride used for the convolution operation, by default 1.
         dil : int, optional
@@ -195,16 +195,27 @@ class Convolution1d(Module):
                 y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
                 # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
-                pad = "full" if self.pad == "valid" else "same"
+                pad = (
+                    "full"
+                    if self.pad == "valid"
+                    else "causal"
+                    if self.pad == "causal"
+                    else "same"
+                )
                 dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, pad=pad)
                 # sum over output channels
                 x_grad = dy_conv_w.sum(axis=1).data
 
                 # weight grads (c_out, c_in, x)
-                x_ext = tu.expand_dims(x, 1)
                 y_grad_p_ext = y_grad_p_ext.flip(-1)
                 # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
-                pad = w3 // 2 * self.dil if self.pad == "same" else "valid"
+                pad = (
+                    w3 // 2 * self.dil
+                    if self.pad == "same"
+                    else (w3 // 2 * self.dil * 2, 0)
+                    if self.pad == "causal"
+                    else "valid"
+                )
                 x_conv_dy = convolve1d(x_ext, y_grad_p_ext, pad=pad)[
                     :, :, :, -w3 * self.dil :
                 ]
@@ -333,7 +344,6 @@ class Convolution2d(Module):
                 x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, y, x)
-                x_ext = tu.expand_dims(x, 1)
                 y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
                 # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
                 pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"

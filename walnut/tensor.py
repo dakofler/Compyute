@@ -82,7 +82,11 @@ class Tensor:
     # function overloading
 
     def __repr__(self) -> str:
-        return self.data.__repr__().replace("array", "tnsor")
+        return (
+            self.data.__repr__()
+            .replace("array", "tnsor")
+            .replace(", dtype=float32", "")
+        )
 
     def __call__(self) -> NumpyArray:
         return self.data
