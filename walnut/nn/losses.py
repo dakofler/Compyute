@@ -75,7 +75,7 @@ class Crossentropy(Loss):
 
         def backward() -> NumpyArray:
             """Performs a backward pass."""
-            return ((probs - t) / y.shape[0]).data
+            return ((probs - t) / int(np.prod(y.shape[:-1]))).data
 
         self.backward = backward
 
