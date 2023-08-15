@@ -8,7 +8,7 @@ from walnut.tensor import Tensor, NumpyArray, ShapeLike
 from walnut.nn.module import Module
 
 
-__all__ = ["MaxPooling2d", "Reshape", "Moveaxis", "Dropout"]
+__all__ = ["MaxPooling2d", "Reshape", "Flatten", "Moveaxis", "Dropout"]
 
 
 class MaxPooling2d(Module):
@@ -64,15 +64,15 @@ class MaxPooling2d(Module):
 
 
 class Reshape(Module):
-    """Flatten layer used to reshape tensors to shape (b, c_out)."""
+    """Flatten layer used to reshape tensors to any shape."""
 
-    def __init__(self, output_shape: ShapeLike = (-1,)) -> None:
+    def __init__(self, output_shape: ShapeLike) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
         ----------
-        output_shape : ShapeLike, optional
-            The output's target shape, by default (-1,).
+        output_shape : ShapeLike
+            The output's target shape..
         """
         super().__init__()
         self.output_shape = output_shape
@@ -83,7 +83,27 @@ class Reshape(Module):
         return f"{name} ({output_shape=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = x.reshape((x.shape[0], *self.output_shape))
+        y = x.reshape(self.output_shape)
+
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                x_grad = y_grad.reshape(x.shape)
+
+                self.set_y_grad(y_grad)
+                return x_grad
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
+
+
+class Flatten(Module):
+    """Flatten layer used to reshape tensors to shape (b, -1)."""
+
+    def __call__(self, x: Tensor) -> Tensor:
+        y = x.reshape((x.shape[0], -1))
 
         if self.training:
 
