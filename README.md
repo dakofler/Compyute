@@ -1,16 +1,17 @@
 # Walnut
-This is a framework for working with tensors and building, training and analyzing neural networks. This framework was developed using NumPy only. I have provided some example-notebook that explain how to use the framework and it's tensors.
+
+`Walnut` is a toolbox for building, training and analyzing neural networks. This framework was developed using `NumPy` only. There are example-notebook that explain how to use the framework and it's `Tensor` objects.
 
 ## Tensors
-Similar to PyTorch I introduced a `Tensor`-object as the central building block that keeps track of its data, gradients and more. However, this framework does not support autograd like pytorch does. Gradients used for neural networks are computed within a network's layer. Tensors support most operations also known from Pytorch tensors or Numpy arrays.
+Similar to `PyTorch` a `Tensor`-object was introduced as the central block that keeps track of data, gradients and more. Unlike `PyTorch`, this framework does not support autograd. Gradients used for training neural networks are computed within the network's layers. The tensors ogject supporst most operations also known from `PyTorch`'s tensors or `NumPy` arrays.
 
 ## Neural Networks
 
-### Data preprocessing
-The framework offers some utility functions, such as `split_train_val_test()` to preprocess data before using it for training.
+### Data preprocessing, Encoding
+The framework offers some utility functions to preprocess and encode data before using it for training.
 
 ### Designing a model
-Models can be built using predefined model-templates (e.g. a sequential model), but can also be built from scratch. Models are generally composed of one or more modules (e.g. layers in a sequential model.). The framework provides a variety of layers such as activation, normalization, linear and convolutional layers.
+Models can be built using predefined model-templates (e.g. a `Sequential`), but can also be built from scratch. They are generally composed of one or more modules (e.g. layers in a `Sequential` model.). The framework provides a variety of layers such as activation, normalization, linear and convolutional layers with more to come.
 
 ### Training a model
 The model can be trained using common optimizer algorithmes, such as SGD or Adam.
