@@ -193,9 +193,11 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 57
+    n = 61
     string = "-" * n
-    string += f"\n{'Layer (type)':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
+    string += (
+        f"\n{'':3s} {'Layer (type)':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
+    )
     string += "=" * n
     string += "\n"
     tot_parameters = 0
@@ -203,12 +205,12 @@ def model_summary(
     x = tu.ones((1,) + input_shape).astype(input_dtype)
     _ = model(x)
 
-    for layer in model.layers:
+    for i, layer in enumerate(model.layers):
         name = layer.__class__.__name__
         output_shape = str((-1,) + layer.y.shape[1:])
         num_parameters = sum(p.data.size for p in layer.parameters)
         tot_parameters += num_parameters
-        string += f"{name:20s} {output_shape:20s} {num_parameters:15d}\n"
+        string += f"{i:3d} {name:20s} {output_shape:20s} {num_parameters:15d}\n"
 
     string += "=" * n
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

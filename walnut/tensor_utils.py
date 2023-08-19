@@ -9,16 +9,20 @@ __all__ = [
     "pd_to_tensor",
     "expand_dims",
     "match_dims",
+    "arange",
+    "linspace",
     "zeros",
     "ones",
     "zeros_like",
     "ones_like",
     "randn",
+    "randu",
     "randint",
     "shuffle",
     "check_dims",
     "choice",
     "empty",
+    "maximum",
 ]
 
 
@@ -75,6 +79,48 @@ def match_dims(x: Tensor, dims: int) -> Tensor:
         x = expand_dims(x, axis=(-1,))
 
     return x
+
+
+def arange(stop: int, start: int = 0, step: int | float = 1) -> Tensor:
+    """Returns a 1d tensor with evenly spaced values samples,
+    calculated over the interval [start, stop).
+
+    Parameters
+    ----------
+    start : float
+        Start value.
+    stop : float
+        Stop value.
+    step : int | float, optional
+        Spacing between values, by default 1.
+
+    Returns
+    -------
+    Tensor
+        1d tensor of evenly spaced samples.
+    """
+    x = np.arange(start, stop, step)
+    return Tensor(x, dtype=str(x.dtype))
+
+
+def linspace(start: float, stop: float, num: int) -> Tensor:
+    """Returns a 1d tensor num evenly spaced samples, calculated over the interval [start, stop].
+
+    Parameters
+    ----------
+    start : float
+        Start value.
+    stop : float
+        Stop value.
+    num : int
+        Number of samples.
+
+    Returns
+    -------
+    Tensor
+        1d tensor of evenly spaced samples.
+    """
+    return Tensor(np.linspace(start, stop, num))
 
 
 def zeros(shape: ShapeLike) -> Tensor:
