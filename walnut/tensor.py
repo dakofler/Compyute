@@ -25,7 +25,7 @@ class Tensor:
     """Tensor object."""
 
     data: NumpyArray
-    grad: NumpyArray | None
+    _grad: NumpyArray | None
     params: dict[str, NumpyArray]
     iterator: int = 0
 
@@ -50,9 +50,33 @@ class Tensor:
         else:
             raise ValueError("values must be NumpyArray, list, int or float")
 
-        self.grad = None
+        self._grad = None
         self.params = {}
         self.iterator = 0
+
+    # ----------------------------------------------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------------------------------------------
+
+    @property
+    def grad(self) -> NumpyArray | None:
+        """Tensor gradient."""
+        return self._grad
+
+    @grad.setter
+    def grad(self, value: NumpyArray | None) -> None:
+        if value is not None and value.shape != self.shape:
+            raise ShapeError(
+                f"Grad shape {value.shape} does not match data shape {self.shape}"
+            )
+        if self.grad is None or value is None:
+            self._grad = value  # set gradients
+        else:
+            self._grad += value  # accumulate gradients
+
+    def reset_grads(self):
+        """Resets gradients."""
+        self.grad = None
 
     @property
     def shape(self) -> ShapeLike:
@@ -79,7 +103,9 @@ class Tensor:
         """Tensor data datatype."""
         return str(self.data.dtype)
 
-    # function overloading
+    # ----------------------------------------------------------------------------------------------
+    # OVERLOADS
+    # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
         return (
@@ -214,7 +240,9 @@ class Tensor:
             return Tensor(other)
         return other
 
-    # functions
+    # ----------------------------------------------------------------------------------------------
+    # FUNCTIONS
+    # ----------------------------------------------------------------------------------------------
 
     def sum(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
@@ -462,11 +490,6 @@ class Tensor:
         """
         paddings = tuple((w, w) for w in widths)
         return Tensor(np.pad(self.data, paddings), dtype=self.dtype)
-
-    def reset_grads(self):
-        """Resets grads to improve memory usage."""
-        self.grad = None
-        self.params = {}
 
     def flatten(self) -> Tensor:
         """Returns a flattened, one-dimensional tensor.

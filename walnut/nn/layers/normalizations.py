@@ -69,6 +69,8 @@ class Batchnorm(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
+                self.set_y_grad(y_grad)
+
                 # input grads
                 n = float(np.prod(x.shape) / x.shape[1])
                 tmp1 = n * y_grad
@@ -82,7 +84,6 @@ class Batchnorm(Module):
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=axis)
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward
@@ -128,6 +129,8 @@ class Layernorm(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
+                self.set_y_grad(y_grad)
+
                 # input grads
                 n = x.data[0].size
                 tmp1 = n * y_grad
@@ -141,7 +144,6 @@ class Layernorm(Module):
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=0)
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward

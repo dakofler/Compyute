@@ -9,9 +9,10 @@ from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.layers import Linear, Tanh, Recurrent
 
 
-__all__ = ["Model", "Sequential"]
+__all__ = ["Model", "Sequential", "RNN"]
 
 
 class ModelCompilationError(Exception):
@@ -27,18 +28,9 @@ class Model(Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.layers: list[Module] = []
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Metric | None = None
-
-    def __repr__(self) -> str:
-        string = self.__class__.__name__ + "\n\n"
-
-        for layer in self.layers:
-            string += layer.__repr__() + "\n"
-
-        return string
 
     def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
         """Compiles the model.
@@ -116,7 +108,7 @@ class Model(Module):
         for epoch in range(1, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
-            self.set_training(True)
+            self.training_mode()
 
             # forward pass
             predictions = self(x_train)
@@ -126,13 +118,14 @@ class Model(Module):
             train_loss_history.append(train_loss)
 
             # backward pass
+            self.reset_grads()
             y_grad = self.loss_fn.backward()
             self.backward(y_grad)
 
             # update parameters
             self.optimizer.step()
 
-            self.set_training(False)
+            self.eval_mode()
 
             # validation
             val_loss = None
@@ -186,51 +179,6 @@ class Model(Module):
         score = self.metric(predictions, y)
         return loss, score
 
-    def set_training(self, on: bool = False) -> None:
-        """Sets the mode for all model layers.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        self.training = on
-        for layer in self.layers:
-            layer.training = on
-
-    def get_parameters(self) -> list[Tensor]:
-        """Returns trainable parameters of a models layers.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        parameters = []
-        for layer in self.layers:
-            parameters += layer.parameters
-        return parameters
-
-    def reset_grads(self) -> None:
-        """Resets gradients to reduce memory usage.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        for layer in self.layers:
-            layer.reset_grads()
-
 
 class Sequential(Model):
     """Feed forward neural network model."""
@@ -263,3 +211,56 @@ class Sequential(Model):
             self.backward = backward
 
         return x
+
+
+class RNN(Model):
+    """Recurrent neural network model."""
+
+    def __init__(
+        self,
+        in_channels: int,
+        hidden_channels: int,
+        activation: Module = Tanh(),
+        num_layers: int = 1,
+    ) -> None:
+        """Recurrent neural network model.
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input features.
+        hidden_channels: int
+            Number of hidden features.
+        activation: Module, optional
+            Activation function to be used in the hidden layer, by default Tanh().
+        num_layers: int, optional
+            Number of recurrent layers in the model, by default 1.
+        """
+        super().__init__()
+        self.input = Linear(in_channels, hidden_channels)
+        self.rec_layers = [
+            Recurrent(hidden_channels, activation) for _ in range(num_layers)
+        ]
+        self.layers = [self.input] + self.rec_layers
+
+    def __call__(self, x: Tensor) -> Tensor:
+        y = self.input(x)
+        for rec_layer in self.rec_layers:
+            y = rec_layer(y)
+
+        if self.training:
+
+            def backward(y_grad: NumpyArray) -> NumpyArray:
+                rec_layers_reversed = self.rec_layers.copy()
+                rec_layers_reversed.reverse()
+
+                for rec_layer in rec_layers_reversed:
+                    y_grad = rec_layer.backward(y_grad)
+
+                y_grad = self.input.backward(y_grad)
+
+                return y_grad
+
+            self.backward = backward
+
+        return y

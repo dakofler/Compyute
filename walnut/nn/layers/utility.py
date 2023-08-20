@@ -50,12 +50,11 @@ class MaxPooling2d(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
+                self.set_y_grad(y_grad)
+
                 dy_s = tu.stretch(Tensor(y_grad), self.kernel_size, p_map.shape)
                 # use p_map as mask for grads
-                x_grad = np.resize((dy_s * p_map).data, x.shape)
-
-                self.set_y_grad(y_grad)
-                return x_grad
+                return np.resize((dy_s * p_map).data, x.shape)
 
             self.backward = backward
 
@@ -88,10 +87,8 @@ class Reshape(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y_grad.reshape(x.shape)
-
                 self.set_y_grad(y_grad)
-                return x_grad
+                return y_grad.reshape(x.shape)
 
             self.backward = backward
 
@@ -108,10 +105,8 @@ class Flatten(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y_grad.reshape(x.shape)
-
                 self.set_y_grad(y_grad)
-                return x_grad
+                return y_grad.reshape(x.shape)
 
             self.backward = backward
 
@@ -148,10 +143,8 @@ class Moveaxis(Module):
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
-
                 self.set_y_grad(y_grad)
-                return x_grad
+                return np.moveaxis(y_grad, self.to_axis, self.from_axis)
 
             self.backward = backward
 
@@ -184,11 +177,9 @@ class Dropout(Module):
             y = x * d_map / (1.0 - self.p)
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
-                # use d_map as mask for grads
-                x_grad = y_grad * d_map.data / (1.0 - self.p)
-
                 self.set_y_grad(y_grad)
-                return x_grad
+                # use d_map as mask for grads
+                return y_grad * d_map.data / (1.0 - self.p)
 
             self.backward = backward
 

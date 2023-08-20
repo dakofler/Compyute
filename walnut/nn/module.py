@@ -6,7 +6,7 @@ from typing import Callable
 from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeError
+from walnut.tensor import Tensor, NumpyArray
 
 
 __all__ = ["Module"]
@@ -19,11 +19,19 @@ class Module(ABC):
         """Module base class."""
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
+        self.layers: list[Module] = []
         self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
         self.training: bool = False
 
     def __repr__(self) -> str:
-        return self.__class__.__name__
+        string = self.__class__.__name__
+
+        if len(self.layers) > 0:
+            string += "\n"
+            for layer in self.layers:
+                string += "    " + layer.__repr__() + "\n"
+
+        return string
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
@@ -40,11 +48,36 @@ class Module(ABC):
             Computed Output.
         """
 
+    def get_parameters(self):
+        """Returns parameters of the module and it's layers."""
+        parameters = self.parameters
+        for layer in self.layers:
+            parameters += layer.get_parameters()
+        return parameters
+
     def reset_grads(self):
         """Resets parameter grads to improve memory usage."""
-        for p in self.parameters:
-            p.reset_grads()
+        for parameter in self.parameters:
+            parameter.reset_grads()
+        for layer in self.layers:
+            layer.reset_grads()
         self.y.reset_grads()
+
+    def training_mode(self):
+        """Puts the module into training mode. Some modules may have different forward
+        behaviour if in training mode. Backward behaviour is only defined in training mode.
+        """
+        self.training = True
+        for layer in self.layers:
+            layer.training_mode()
+
+    def eval_mode(self):
+        """Puts the module into evaluation mode. Some modules may have different forward
+        behaviour if in training mode. Backward behaviour is only defined in training mode.
+        """
+        self.training = False
+        for layer in self.layers:
+            layer.eval_mode()
 
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.
@@ -64,8 +97,4 @@ class Module(ABC):
         y_grad : NumpyArray
             Module output tensor gradients.
         """
-        if y_grad.shape != self.y.shape:
-            raise ShapeError(
-                f"Grad shape {y_grad.shape} does not match y shape {self.y.shape}"
-            )
         self.y.grad = y_grad
