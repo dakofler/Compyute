@@ -19,6 +19,22 @@ __all__ = [
 ]
 
 
+def relu(x: Tensor) -> Tensor:
+    """Applies the ReLU function.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    return tu.maximum(x, 0)
+
+
 def sigmoid(x: Tensor) -> Tensor:
     """Applies the sigmoid function.
 

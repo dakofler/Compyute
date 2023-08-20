@@ -220,8 +220,9 @@ class RNN(Model):
         self,
         in_channels: int,
         hidden_channels: int,
-        activation: Module = Tanh(),
+        activation: str = "tanh",
         num_layers: int = 1,
+        use_bias: bool = True,
     ) -> None:
         """Recurrent neural network model.
 
@@ -235,32 +236,37 @@ class RNN(Model):
             Activation function to be used in the hidden layer, by default Tanh().
         num_layers: int, optional
             Number of recurrent layers in the model, by default 1.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
         """
         super().__init__()
-        self.input = Linear(in_channels, hidden_channels)
-        self.rec_layers = [
-            Recurrent(hidden_channels, activation) for _ in range(num_layers)
-        ]
-        self.layers = [self.input] + self.rec_layers
+        for i in range(num_layers):
+            if i == 0:
+                self.layers.append(
+                    Linear(in_channels, hidden_channels, use_bias=use_bias)
+                )
+            else:
+                self.layers.append(
+                    Linear(hidden_channels, hidden_channels, use_bias=use_bias)
+                )
+            self.layers.append(
+                Recurrent(hidden_channels, activation, use_bias=use_bias)
+            )
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = self.input(x)
-        for rec_layer in self.rec_layers:
-            y = rec_layer(y)
+        for layer in self.layers:
+            x = layer(x)
 
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
-                rec_layers_reversed = self.rec_layers.copy()
-                rec_layers_reversed.reverse()
+                layers_reversed = self.layers.copy()
+                layers_reversed.reverse()
 
-                for rec_layer in rec_layers_reversed:
-                    y_grad = rec_layer.backward(y_grad)
-
-                y_grad = self.input.backward(y_grad)
-
+                for layer in layers_reversed:
+                    y_grad = layer.backward(y_grad)
                 return y_grad
 
             self.backward = backward
 
-        return y
+        return x

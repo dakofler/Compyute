@@ -3,8 +3,7 @@
 import numpy as np
 
 from walnut.tensor import Tensor, NumpyArray
-import walnut.tensor_utils as tu
-from walnut.nn.funcional import sigmoid, softmax
+from walnut.nn.funcional import sigmoid, softmax, relu
 from walnut.nn.module import Module
 
 
@@ -15,7 +14,7 @@ class Relu(Module):
     """Implements the ReLu activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = tu.maximum(x, 0)
+        y = relu(x)
 
         if self.training:
 

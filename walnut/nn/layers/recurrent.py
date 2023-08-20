@@ -6,7 +6,7 @@ import numpy as np
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.module import Module
-from walnut.nn.layers import Linear
+from walnut.nn.funcional import relu
 
 
 __all__ = ["Recurrent"]
@@ -15,46 +15,93 @@ __all__ = ["Recurrent"]
 class Recurrent(Module):
     """Recurrent layer."""
 
-    def __init__(self, hidden_channels: int, activation: Module) -> None:
+    def __init__(
+        self,
+        hidden_channels: int,
+        activation: str = "tanh",
+        weights: Tensor | None = None,
+        use_bias: bool = True,
+    ) -> None:
+        """Recurrent layer.
+
+        Parameters
+        ----------
+        hidden_channels : int
+            Number of hidden channels of the layer.
+        activation : str, optional
+            Activation function used in the recurrent layer, by default "tanh".
+        weights : Tensor | None, optional
+            Weights of the layer, by default None. If None, weights are initialized randomly.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
+        """
         super().__init__()
         self.hidden_channels = hidden_channels
-        self.hidden = Linear(hidden_channels, hidden_channels)
         self.activation = activation
-        self.layers = [self.hidden, self.activation]
+        self.use_bias = use_bias
+
+        # init weights (c_hidden, c_hidden)
+        if weights is None:
+            k = hidden_channels**-0.5
+            self.w = tu.randu((hidden_channels, hidden_channels), -k, k)
+        else:
+            self.w = weights
+        self.parameters.append(self.w)
+
+        # init bias (c_out,)
+        if use_bias:
+            self.b = tu.zeros((hidden_channels,))
+            self.parameters.append(self.b)
 
     def __repr__(self):
         name = self.__class__.__name__
         hidden_channels = self.hidden_channels
-        activation = self.activation.__repr__()
-        return f"{name} ({hidden_channels=}, {activation=})"
+        activation = self.activation
+        use_bias = self.use_bias
+        return f"{name} ({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = tu.zeros_like(x)  # (B, T, H)
         h = tu.zeros_like(x)  # (B, T, H)
 
         for i in range(x.shape[1]):
-            h[:, i] = self.hidden(y[:, i - 1])  # (B, t, H) @ (H, H)
-            y[:, i] = self.activation(x[:, i] + h[:, i])  # (B, t, H)
+            # hidden states
+            h[:, i] = y[:, i - 1] @ self.w  # (B, t, H)
+            if self.use_bias:
+                h[:, i] += self.b
+
+            # activation
+            if self.activation == "tanh":
+                y[:, i] = (x[:, i] + h[:, i]).tanh()
+            else:
+                y[:, i] = relu(x[:, i] + h[:, i])
 
         if self.training:
 
             def backward(y_grad: NumpyArray) -> NumpyArray:
                 self.set_y_grad(y_grad)
-
                 x_grad = np.zeros_like(x.data)
-                h_grad = np.zeros_like(h.data)
-
-                # Problem: cannot backward multiple times or different inputs,
-                # because backward is defined during call and therefore data
-                # of the last forward pass is used for x, y, etc.
 
                 for i in range(x.shape[1] - 1, -1, -1):
+                    # add hidden state gradient of next layer, if not last sequence element
                     if i == x.shape[1] - 1:
-                        x_grad[:, i] = self.activation.backward(y_grad[:, i])
+                        grad = y_grad[:, i]
                     else:
-                        grad = y_grad[:, i] + h_grad[:, i + 1]
-                        x_grad[:, i] = self.activation.backward(grad)
-                        h_grad[:, i] = self.hidden.backward(x_grad[:, i])
+                        grad = y_grad[:, i] + x_grad[:, i + 1] @ self.w.T
+
+                    # activation gradient
+                    if self.activation == "tanh":
+                        act_grad = -y.data[:, i] ** 2 + 1.0
+                    else:
+                        act_grad = y.data[:, i] > 0
+                    x_grad[:, i] = act_grad * grad
+
+                    # weight grads
+                    if i > 0:
+                        self.w.grad = y[:, i - 1].T @ x_grad[:, i]
+
+                # bias grads
+                self.b.grad = x_grad.sum((0, 1))
 
                 return x_grad
 
