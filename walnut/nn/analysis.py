@@ -208,7 +208,7 @@ def model_summary(
     for i, layer in enumerate(model.layers):
         name = layer.__class__.__name__
         output_shape = str((-1,) + layer.y.shape[1:])
-        num_parameters = sum(p.data.size for p in layer.parameters)
+        num_parameters = sum(p.data.size for p in layer.get_parameters())
         tot_parameters += num_parameters
         string += f"{i:3d} {name:20s} {output_shape:20s} {num_parameters:15d}\n"
 

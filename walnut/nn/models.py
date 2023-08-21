@@ -9,6 +9,7 @@ from walnut.nn.losses import Loss
 from walnut.nn.metrics import Metric
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.containers import SequentialContainer
 
 
 __all__ = ["Model", "Sequential"]
@@ -22,11 +23,11 @@ class MissingLayersError(Exception):
     """Error when the list of layers is empty."""
 
 
-class Model(Module):
+class Model(SequentialContainer):
     """Neural network model base class."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, layers: list[Module]) -> None:
+        super().__init__(layers)
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Metric | None = None
@@ -48,9 +49,6 @@ class Model(Module):
         MissingLayersError
             If the model does not contain any layers.
         """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
         self.optimizer = optimizer
         optimizer.parameters = self.get_parameters()
         self.loss_fn = loss_fn
@@ -181,32 +179,3 @@ class Model(Module):
 
 class Sequential(Model):
     """Feed forward neural network model."""
-
-    def __init__(self, layers: list[Module]) -> None:
-        """Feed forward neural network model.
-
-        Parameters
-        ----------
-        layers : list[Module]
-            List of layers used in the model. These layers are processed sequentially.
-        """
-        super().__init__()
-        self.layers = layers
-
-    def __call__(self, x: Tensor) -> Tensor:
-        for layer in self.layers:
-            x = layer(x)
-
-        if self.training:
-
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                layers_reversed = self.layers.copy()
-                layers_reversed.reverse()
-
-                for layer in layers_reversed:
-                    y_grad = layer.backward(y_grad)
-                return y_grad
-
-            self.backward = backward
-
-        return x

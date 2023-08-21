@@ -1,16 +1,14 @@
 """recurrent layers layer"""
 
-
 import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NumpyArray
 from walnut.nn.module import Module
 from walnut.nn.funcional import relu
-from walnut.nn.layers import Linear
 
 
-__all__ = ["Recurrent", "RNN"]
+__all__ = ["Recurrent"]
 
 
 class Recurrent(Module):
@@ -62,20 +60,20 @@ class Recurrent(Module):
         return f"{name} ({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = tu.zeros_like(x)  # (B, T, H)
-        h = tu.zeros_like(x)  # (B, T, H)
+        y = tu.zeros_like(x)
 
+        # iterate over sequence elements
         for i in range(x.shape[1]):
             # hidden states
-            h[:, i] = y[:, i - 1] @ self.w  # (B, t, H)
+            h = y[:, i - 1] @ self.w
             if self.use_bias:
-                h[:, i] += self.b
+                h += self.b
 
             # activation
             if self.activation == "tanh":
-                y[:, i] = (x[:, i] + h[:, i]).tanh()
+                y[:, i] = (x[:, i] + h).tanh()
             else:
-                y[:, i] = relu(x[:, i] + h[:, i])
+                y[:, i] = relu(x[:, i] + h)
 
         if self.training:
 
@@ -86,16 +84,16 @@ class Recurrent(Module):
                 for i in range(x.shape[1] - 1, -1, -1):
                     # add hidden state gradient of next layer, if not last sequence element
                     if i == x.shape[1] - 1:
-                        grad = y_grad[:, i]
+                        out_grad = y_grad[:, i]
                     else:
-                        grad = y_grad[:, i] + x_grad[:, i + 1] @ self.w.T
+                        out_grad = y_grad[:, i] + x_grad[:, i + 1] @ self.w.T
 
                     # activation gradient
                     if self.activation == "tanh":
                         act_grad = -y.data[:, i] ** 2 + 1.0
                     else:
                         act_grad = y.data[:, i] > 0
-                    x_grad[:, i] = act_grad * grad
+                    x_grad[:, i] = act_grad * out_grad
 
                     # weight grads
                     if i > 0:
@@ -110,62 +108,3 @@ class Recurrent(Module):
 
         self.set_y(y)
         return y
-
-
-class RNN(Module):
-    """Recurrent neural network model."""
-
-    def __init__(
-        self,
-        in_channels: int,
-        hidden_channels: int,
-        activation: str = "tanh",
-        num_layers: int = 1,
-        use_bias: bool = True,
-    ) -> None:
-        """Recurrent neural network model.
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input features.
-        hidden_channels: int
-            Number of hidden features.
-        activation: Module, optional
-            Activation function to be used in the hidden layer, by default Tanh().
-        num_layers: int, optional
-            Number of recurrent layers in the model, by default 1.
-        use_bias : bool, optional
-            Whether to use bias values, by default True.
-        """
-        super().__init__()
-        for i in range(num_layers):
-            if i == 0:
-                self.layers.append(
-                    Linear(in_channels, hidden_channels, use_bias=use_bias)
-                )
-            else:
-                self.layers.append(
-                    Linear(hidden_channels, hidden_channels, use_bias=use_bias)
-                )
-            self.layers.append(
-                Recurrent(hidden_channels, activation, use_bias=use_bias)
-            )
-
-    def __call__(self, x: Tensor) -> Tensor:
-        for layer in self.layers:
-            x = layer(x)
-
-        if self.training:
-
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                layers_reversed = self.layers.copy()
-                layers_reversed.reverse()
-
-                for layer in layers_reversed:
-                    y_grad = layer.backward(y_grad)
-                return y_grad
-
-            self.backward = backward
-
-        return x
