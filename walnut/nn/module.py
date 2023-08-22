@@ -1,6 +1,5 @@
 """module base module"""
 
-
 from __future__ import annotations
 from typing import Callable
 from abc import ABC, abstractmethod

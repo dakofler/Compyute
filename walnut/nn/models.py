@@ -1,12 +1,11 @@
 """Neural network models module"""
 
 import time
+from typing import Callable
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
-from walnut.nn.logging import log_training_progress
+from walnut.tensor import Tensor
 from walnut.nn.losses import Loss
-from walnut.nn.metrics import Metric
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
 from walnut.nn.containers import SequentialContainer
@@ -23,6 +22,20 @@ class MissingLayersError(Exception):
     """Error when the list of layers is empty."""
 
 
+def log_training_progress(
+    epoch: int,
+    epochs: int,
+    time_step: float,
+    training_loss: float,
+    validation_loss: float | None,
+) -> None:
+    """Prints out information about intermediate model training results."""
+    line = f"epoch {epoch:5d}/{epochs:5d} | step {time_step:8.2f} ms | loss {training_loss:3.6f}"
+    if validation_loss is not None:
+        line += f" | val_loss {validation_loss:.6f}"
+    print(line)
+
+
 class Model(SequentialContainer):
     """Neural network model base class."""
 
@@ -30,9 +43,14 @@ class Model(SequentialContainer):
         super().__init__(layers)
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
-        self.metric: Metric | None = None
+        self.metric: Callable[[Tensor, Tensor], float | None] = lambda x, y: None
 
-    def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
+    def compile(
+        self,
+        optimizer: Optimizer,
+        loss_fn: Loss,
+        metric: Callable[[Tensor, Tensor], float],
+    ) -> None:
         """Compiles the model.
 
         Parameters
@@ -41,7 +59,7 @@ class Model(SequentialContainer):
             Optimizer algorithm to be used to update parameters.
         loss_fn : Loss
             Loss function to be used to compute losses and gradients.
-        metric : Metric
+        metric : Callable[[Tensor, Tensor], float]
             Metric to be used to evaluate the model.
 
         Raises
@@ -120,7 +138,7 @@ class Model(SequentialContainer):
             self.backward(y_grad)
 
             # update parameters
-            self.optimizer.step()
+            self.optimizer.step(epoch)
 
             self.eval_mode()
 
@@ -146,7 +164,7 @@ class Model(SequentialContainer):
 
         return train_loss_history, val_loss_history
 
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float | None]:
         """Evaluates the model using a defined metric.
 
         Parameters

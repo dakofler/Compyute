@@ -23,7 +23,7 @@ class Container(Module):
         self.layers = layers
 
     def __repr__(self) -> str:
-        string = self.__class__.__name__
+        string = super().__repr__()
 
         if len(self.layers) > 0:
             for layer in self.layers:
@@ -33,22 +33,22 @@ class Container(Module):
 
     def get_parameters(self):
         """Returns parameters of the cointainer's layers."""
-        parameters = []
+        parameters = super().get_parameters()
         for layer in self.layers:
             parameters += layer.get_parameters()
         return parameters
 
     def reset_grads(self):
         """Resets parameter grads to improve memory usage."""
+        super().reset_grads()
         for layer in self.layers:
             layer.reset_grads()
-        self.y.reset_grads()
 
     def training_mode(self):
         """Puts the module into training mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
-        self.training = True
+        super().training_mode()
         for layer in self.layers:
             layer.training_mode()
 
@@ -56,7 +56,7 @@ class Container(Module):
         """Puts the module into evaluation mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
-        self.training = False
+        super().eval_mode()
         for layer in self.layers:
             layer.eval_mode()
 

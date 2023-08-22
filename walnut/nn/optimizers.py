@@ -16,8 +16,14 @@ class Optimizer(ABC):
         self.parameters: list[Tensor] = []
 
     @abstractmethod
-    def step(self) -> None:
-        """Updates parameters using their gradients."""
+    def step(self, t: int = 1) -> None:
+        """Updates parameters using their gradients.
+
+        Parameters
+        ----------
+        t : int, optional
+            Time step, by default 1.
+        """
 
 
 class SGD(Optimizer):
@@ -48,9 +54,8 @@ class SGD(Optimizer):
         self.m = m
         self.nesterov = nesterov
         self.weight_decay = weight_decay
-        self.t: int = 1
 
-    def step(self) -> None:
+    def step(self, t: int = 1) -> None:
         """Updates parameters using stochastic gradient descent."""
         for p in self.parameters:
             if p.grad is None:
@@ -60,7 +65,7 @@ class SGD(Optimizer):
                 p.grad += self.weight_decay * p.data
 
             if self.m > 0.0:
-                if self.t > 1:
+                if t > 1:
                     b_prev = p.params.get("sgd_b", np.zeros(p.data.shape))
                     b = self.m * b_prev + p.grad
                 else:
@@ -76,8 +81,6 @@ class SGD(Optimizer):
             delta = -self.l_r * p.grad
             p.params["delta"] = delta  # for analysis
             p.data += delta
-
-        self.t += 1
 
 
 class Adam(Optimizer):
@@ -114,9 +117,8 @@ class Adam(Optimizer):
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
-        self.t: int = 1
 
-    def step(self):
+    def step(self, t: int = 1):
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -132,14 +134,12 @@ class Adam(Optimizer):
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
             p.params["adam_v"] = v
 
-            m_hat = m / (1.0 - self.beta1**self.t)
-            v_hat = v / (1.0 - self.beta2**self.t)
+            m_hat = m / (1.0 - self.beta1**t)
+            v_hat = v / (1.0 - self.beta2**t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.params["delta"] = delta  # for analysis
             p.data += delta
-
-        self.t += 1
 
 
 class AdamW(Optimizer):
@@ -174,9 +174,8 @@ class AdamW(Optimizer):
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
-        self.t: int = 1
 
-    def step(self):
+    def step(self, t: int = 1):
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -192,11 +191,9 @@ class AdamW(Optimizer):
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
             p.params["adam_v"] = v
 
-            m_hat = m / (1.0 - self.beta1**self.t)
-            v_hat = v / (1.0 - self.beta2**self.t)
+            m_hat = m / (1.0 - self.beta1**t)
+            v_hat = v / (1.0 - self.beta2**t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.params["delta"] = delta  # for analysis
             p.data += delta
-
-        self.t += 1

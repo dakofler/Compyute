@@ -7,10 +7,10 @@ from walnut.nn.funcional import sigmoid, softmax, relu
 from walnut.nn.module import Module
 
 
-__all__ = ["Relu", "Sigmoid", "Tanh", "Softmax"]
+__all__ = ["ReLU", "Sigmoid", "Tanh", "Softmax"]
 
 
-class Relu(Module):
+class ReLU(Module):
     """Implements the ReLu activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -84,11 +84,3 @@ class Softmax(Module):
 
         self.set_y(y)
         return y
-
-
-ACTIVATIONS = {
-    "relu": Relu,
-    "tanh": Tanh,
-    "sigmoid": Sigmoid,
-    "softmax": Softmax,
-}

@@ -276,9 +276,8 @@ def shuffle(
         raise ShapeError("Tensors must have equal lengths along axis 0")
 
     length = x1.len
-    shuffle_index = np.arange(length)
     batch_size = batch_size if batch_size else length
-    np.random.shuffle(shuffle_index)
+    shuffle_index = np.random.permutation(length)
     y1 = x1[shuffle_index]
     y2 = x2[shuffle_index]
     return y1[:batch_size], y2[:batch_size]
