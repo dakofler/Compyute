@@ -5,7 +5,7 @@ from typing import Callable
 from abc import ABC, abstractmethod
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 
 
 __all__ = ["Module"]
@@ -18,7 +18,7 @@ class Module(ABC):
         """Module base class."""
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
-        self.backward: Callable[[NumpyArray], NumpyArray | None] = lambda x: None
+        self.backward: Callable[[NpArrayLike], NpArrayLike | None] = lambda x: None
         self.training: bool = False
 
     def __repr__(self) -> str:
@@ -71,7 +71,7 @@ class Module(ABC):
         """
         self.y.data = y.data.copy()
 
-    def set_y_grad(self, y_grad: NumpyArray) -> None:
+    def set_y_grad(self, y_grad: NpArrayLike) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters

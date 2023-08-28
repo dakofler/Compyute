@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 import numpy as np
 
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.funcional import softmax
 from walnut.preprocessing.encoding import one_hot_encode
 
@@ -16,7 +16,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self):
-        self.backward: Callable[[], NumpyArray | None] = lambda: None
+        self.backward: Callable[[], NpArrayLike | None] = lambda: None
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
@@ -43,7 +43,7 @@ class MSE(Loss):
         """
         dif = y - t
 
-        def backward() -> NumpyArray:
+        def backward() -> NpArrayLike:
             """Performs a backward pass."""
             return (dif * 2.0 / np.prod(y.shape).item()).data
 
@@ -73,7 +73,7 @@ class Crossentropy(Loss):
         t = one_hot_encode(t, y.shape[-1])
         probs = softmax(y)
 
-        def backward() -> NumpyArray:
+        def backward() -> NpArrayLike:
             """Performs a backward pass."""
             return ((probs - t) / int(np.prod(y.shape[:-1]))).data
 

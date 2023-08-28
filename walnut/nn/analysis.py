@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
 from walnut.nn.models import Model
@@ -53,7 +53,7 @@ def plot_curve(
 
 
 def plot_distrbution(
-    data: dict[str, NumpyArray],
+    data: dict[str, NpArrayLike],
     figsize: ShapeLike,
     title: str = "distribution",
     bins: int = 100,
@@ -77,7 +77,7 @@ def plot_distrbution(
         values = data[label]
         mean = np.mean(values)
         std = np.std(values)
-        print(f"{label:10s} | mean {mean:.4f} | std {std:.4f}")
+        print(f"{label:10s} | mean {mean:9.4f} | std {std:9.4f}")
         y_vals, x_vals = np.histogram(values, bins=bins)
         x_vals = np.delete(x_vals, -1)
         plt.plot(x_vals, y_vals)
@@ -90,7 +90,7 @@ def plot_distrbution(
 
 
 def plot_images(
-    data: dict[str, NumpyArray],
+    data: dict[str, NpArrayLike],
     figsize: ShapeLike,
     cmap: str = "gray",
     plot_axis: bool = False,

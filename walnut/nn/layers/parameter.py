@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 from walnut.preprocessing.encoding import one_hot_encode
@@ -68,7 +68,7 @@ class Linear(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads (b, c_in)
@@ -182,7 +182,7 @@ class Convolution1d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 x3 = x.shape[-1]
@@ -324,7 +324,7 @@ class Convolution2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 w3, w4 = self.w.shape[-2:]
@@ -411,7 +411,7 @@ class Embedding(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> None:
+            def backward(y_grad: NpArrayLike) -> None:
                 self.set_y_grad(y_grad)
                 self.w.grad = np.sum(x_enc.transpose((0, 2, 1)).data @ y_grad, axis=0)
 

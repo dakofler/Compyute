@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any
 import numpy as np
-import numpy.typing as npt
 
 
 __all__ = ["Tensor"]
@@ -12,8 +10,9 @@ __all__ = ["Tensor"]
 
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
-NumpyArray = npt.NDArray[Any]
-numpyType = np.float32 | np.float64 | np.int32 | np.int64
+NpArrayLike = np.ndarray
+NpTypeLike = np.float32 | np.float64 | np.int32 | np.int64
+PyTypeLike = list | float | int
 
 
 class ShapeError(Exception):
@@ -24,14 +23,14 @@ class ShapeError(Exception):
 class Tensor:
     """Tensor object."""
 
-    data: NumpyArray
-    _grad: NumpyArray | None
-    params: dict[str, NumpyArray]
-    iterator: int = 0
+    data: NpArrayLike
+    _grad: NpArrayLike | None
+    params: dict[str, NpArrayLike]
+    _iterator: int = 0
 
     def __init__(
         self,
-        data: NumpyArray | list[Any] | float | int | np.float32,
+        data: NpArrayLike | NpTypeLike | PyTypeLike,
         dtype: str = "float32",
     ) -> None:
         """Tensor object.
@@ -43,28 +42,29 @@ class Tensor:
         dtype: str, optional
             Datatype of the tensor data, by default float32.
         """
-        if isinstance(data, np.ndarray):
+
+        if isinstance(data, NpArrayLike):
             self.data = data.astype(dtype, copy=data.dtype != dtype)
-        elif isinstance(data, (list, float, int, numpyType)):
+        elif isinstance(data, (NpTypeLike, PyTypeLike)):
             self.data = np.array(data).astype(dtype)
         else:
-            raise ValueError("values must be NumpyArray, list, int or float")
+            raise ValueError("Invalid data type.")
 
         self._grad = None
         self.params = {}
-        self.iterator = 0
+        self._iterator = 0
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def grad(self) -> NumpyArray | None:
+    def grad(self) -> NpArrayLike | None:
         """Tensor gradient."""
         return self._grad
 
     @grad.setter
-    def grad(self, value: NumpyArray | None) -> None:
+    def grad(self, value: NpArrayLike | None) -> None:
         if value is not None and value.shape != self.shape:
             raise ShapeError(
                 f"Grad shape {value.shape} does not match data shape {self.shape}"
@@ -94,7 +94,7 @@ class Tensor:
         return len(self.data) if self.data.ndim > 0 else 0
 
     @property
-    def T(self) -> NumpyArray:
+    def T(self) -> NpArrayLike:
         """Tensor data transposed."""
         return self.data.T
 
@@ -114,7 +114,7 @@ class Tensor:
             .replace(", dtype=float32", "")
         )
 
-    def __call__(self) -> NumpyArray:
+    def __call__(self) -> NpArrayLike:
         return self.data
 
     def __getitem__(self, key) -> Tensor:
@@ -133,13 +133,13 @@ class Tensor:
             self.data[key] = value
 
     def __iter__(self):
-        self.iterator = 0
+        self._iterator = 0
         return self
 
     def __next__(self):
-        if self.iterator < self.len:
-            ret = Tensor(self.data[self.iterator], dtype=self.dtype)
-            self.iterator += 1
+        if self._iterator < self.len:
+            ret = Tensor(self.data[self._iterator], dtype=self.dtype)
+            self._iterator += 1
             return ret
         raise StopIteration
 

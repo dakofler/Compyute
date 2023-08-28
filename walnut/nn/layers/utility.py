@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -49,7 +49,7 @@ class MaxPooling2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 dy_s = tu.stretch(Tensor(y_grad), self.kernel_size, p_map.shape)
@@ -86,7 +86,7 @@ class Reshape(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return y_grad.reshape(x.shape)
 
@@ -104,7 +104,7 @@ class Flatten(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return y_grad.reshape(x.shape)
 
@@ -142,7 +142,7 @@ class Moveaxis(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return np.moveaxis(y_grad, self.to_axis, self.from_axis)
 
@@ -176,7 +176,7 @@ class Dropout(Module):
             d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
             y = x * d_map / (1.0 - self.p)
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 # use d_map as mask for grads
                 return y_grad * d_map.data / (1.0 - self.p)

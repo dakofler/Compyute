@@ -3,7 +3,7 @@
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.module import Module
 from walnut.nn.funcional import relu
 
@@ -77,7 +77,7 @@ class Recurrent(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 x_grad = np.zeros_like(x.data)
 

@@ -1,6 +1,6 @@
 """Neural network containers module"""
 
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.module import Module
 from walnut.nn.layers import Linear, Recurrent
 
@@ -70,7 +70,7 @@ class SequentialContainer(Container):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 layers_reversed = self.layers.copy()

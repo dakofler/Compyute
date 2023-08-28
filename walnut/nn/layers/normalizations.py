@@ -3,7 +3,7 @@
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -68,7 +68,7 @@ class Batchnorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads
@@ -128,7 +128,7 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads

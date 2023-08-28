@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.funcional import sigmoid, softmax, relu
 from walnut.nn.module import Module
 
@@ -18,7 +18,7 @@ class ReLU(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return (y.data > 0) * y_grad
 
@@ -36,7 +36,7 @@ class Tanh(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return (-y.data**2 + 1.0) * y_grad
 
@@ -54,7 +54,7 @@ class Sigmoid(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 return y.data * (-y.data + 1.0) * y_grad
 
@@ -72,7 +72,7 @@ class Softmax(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 channels = x.shape[-1]
                 # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
