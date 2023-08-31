@@ -18,7 +18,7 @@ class Module(ABC):
         """Module base class."""
         self.y: Tensor = tu.empty()
         self.parameters: list[Tensor] = []
-        self.backward: Callable[[NpArrayLike], NpArrayLike | None] = lambda x: None
+        self.backward: Callable[[NpArrayLike], NpArrayLike] = lambda y_grad: y_grad
         self.training: bool = False
 
     def __repr__(self) -> str:
@@ -46,8 +46,8 @@ class Module(ABC):
     def reset_grads(self):
         """Resets parameter grads to improve memory usage."""
         for parameter in self.parameters:
-            parameter.reset_grads()
-        self.y.reset_grads()
+            parameter.grad = None
+        self.y.grad = None
 
     def training_mode(self):
         """Puts the module into training mode. Some modules may have different forward

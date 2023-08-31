@@ -16,7 +16,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self):
-        self.backward: Callable[[], NpArrayLike | None] = lambda: None
+        self.backward: Callable[[], NpArrayLike] = lambda: np.empty(0)
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:

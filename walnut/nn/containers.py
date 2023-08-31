@@ -17,7 +17,7 @@ class Container(Module):
         Parameters
         ----------
         layers : list[Module]
-            List of layers. These layers are processed sequentially.
+            List of layers.
         """
         super().__init__()
         self.layers = layers
@@ -73,10 +73,7 @@ class SequentialContainer(Container):
             def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
-                layers_reversed = self.layers.copy()
-                layers_reversed.reverse()
-
-                for layer in layers_reversed:
+                for layer in reversed(self.layers):
                     y_grad = layer.backward(y_grad)
                 return y_grad
 
@@ -90,10 +87,7 @@ class ParallelContainer(Container):
     """Parallel container."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        # TODO
-
-        self.set_y(x)
-        return x
+        raise NotImplementedError()
 
 
 class RNN(SequentialContainer):

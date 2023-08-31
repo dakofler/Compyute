@@ -1,7 +1,7 @@
 """Tensor module"""
 
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 
 
@@ -25,8 +25,8 @@ class Tensor:
 
     data: NpArrayLike
     _grad: NpArrayLike | None
-    params: dict[str, NpArrayLike]
-    _iterator: int = 0
+    params: dict[str, NpArrayLike]  # move to optim?
+    _iterator: int
 
     def __init__(
         self,
@@ -73,10 +73,6 @@ class Tensor:
             self._grad = value  # set gradients
         else:
             self._grad += value  # accumulate gradients
-
-    def reset_grads(self):
-        """Resets gradients."""
-        self.grad = None
 
     @property
     def shape(self) -> ShapeLike:

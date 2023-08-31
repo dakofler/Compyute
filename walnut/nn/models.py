@@ -4,11 +4,11 @@ import time
 from typing import Callable
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.losses import Loss
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.containers import SequentialContainer
+from walnut.nn.containers import Container, SequentialContainer
 
 
 __all__ = ["Model", "Sequential"]
@@ -39,11 +39,18 @@ def log_training_progress(
 class Model(SequentialContainer):
     """Neural network model base class."""
 
-    def __init__(self, layers: list[Module]) -> None:
+    def __init__(self, layers: list[Module] = ...) -> None:
+        """Neural network model base class.
+
+        Parameters
+        ----------
+        layers : list[Module], optional
+            List of layers.
+        """
         super().__init__(layers)
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
-        self.metric: Callable[[Tensor, Tensor], float | None] = lambda x, y: None
+        self.metric: Callable[[Tensor, Tensor], float] = lambda x, y: 0.0
 
     def compile(
         self,
@@ -80,7 +87,6 @@ class Model(SequentialContainer):
         batch_size: int | None = None,
         verbose: int | None = 10,
         val_data: tuple[Tensor, Tensor] | None = None,
-        reset_grads: bool = True,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -158,10 +164,6 @@ class Model(SequentialContainer):
                 step = round((end - start) * 1000.0, 2)
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
-        # reset parameters to improve memory efficiency
-        if reset_grads:
-            self.reset_grads()
-
         return train_loss_history, val_loss_history
 
     def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float | None]:
@@ -197,3 +199,13 @@ class Model(SequentialContainer):
 
 class Sequential(Model):
     """Feed forward neural network model."""
+
+    def __init__(self, layers: list[Module]) -> None:
+        """Feed forward neural network model.
+
+        Parameters
+        ----------
+        layers : list[Module]
+            List of layers.
+        """
+        super().__init__(layers)
