@@ -1,14 +1,14 @@
 """Neural network models module"""
 
 import time
+from typing import Callable
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
-from walnut.nn.logging import log_training_progress
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.losses import Loss
-from walnut.nn.metrics import Metric
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.containers import Container, SequentialContainer
 
 
 __all__ = ["Model", "Sequential"]
@@ -22,25 +22,42 @@ class MissingLayersError(Exception):
     """Error when the list of layers is empty."""
 
 
-class Model(Module):
+def log_training_progress(
+    epoch: int,
+    epochs: int,
+    time_step: float,
+    training_loss: float,
+    validation_loss: float | None,
+) -> None:
+    """Prints out information about intermediate model training results."""
+    line = f"epoch {epoch:5d}/{epochs:5d} | step {time_step:9.2f} ms | loss {training_loss:8.4f}"
+    if validation_loss is not None:
+        line += f" | val_loss {validation_loss:8.4f}"
+    print(line)
+
+
+class Model(Container):
     """Neural network model base class."""
 
     def __init__(self) -> None:
+        """Neural network model base class.
+
+        Parameters
+        ----------
+        layers : list[Module], optional
+            List of layers.
+        """
         super().__init__()
-        self.layers: list[Module] = []
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
-        self.metric: Metric | None = None
+        self.metric: Callable[[Tensor, Tensor], float] = lambda x, y: 0.0
 
-    def __repr__(self) -> str:
-        string = self.__class__.__name__ + "\n\n"
-
-        for layer in self.layers:
-            string += layer.__repr__() + "\n"
-
-        return string
-
-    def compile(self, optimizer: Optimizer, loss_fn: Loss, metric: Metric) -> None:
+    def compile(
+        self,
+        optimizer: Optimizer,
+        loss_fn: Loss,
+        metric: Callable[[Tensor, Tensor], float],
+    ) -> None:
         """Compiles the model.
 
         Parameters
@@ -49,7 +66,7 @@ class Model(Module):
             Optimizer algorithm to be used to update parameters.
         loss_fn : Loss
             Loss function to be used to compute losses and gradients.
-        metric : Metric
+        metric : Callable[[Tensor, Tensor], float]
             Metric to be used to evaluate the model.
 
         Raises
@@ -57,9 +74,6 @@ class Model(Module):
         MissingLayersError
             If the model does not contain any layers.
         """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
         self.optimizer = optimizer
         optimizer.parameters = self.get_parameters()
         self.loss_fn = loss_fn
@@ -73,7 +87,6 @@ class Model(Module):
         batch_size: int | None = None,
         verbose: int | None = 10,
         val_data: tuple[Tensor, Tensor] | None = None,
-        reset_grads: bool = True,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -116,7 +129,7 @@ class Model(Module):
         for epoch in range(1, epochs + 1):
             start = time.time()
             x_train, y_train = tu.shuffle(x, y, batch_size)
-            self.set_training(True)
+            self.training_mode()
 
             # forward pass
             predictions = self(x_train)
@@ -126,13 +139,14 @@ class Model(Module):
             train_loss_history.append(train_loss)
 
             # backward pass
+            self.reset_grads()
             y_grad = self.loss_fn.backward()
             self.backward(y_grad)
 
             # update parameters
-            self.optimizer.step()
+            self.optimizer.step(epoch)
 
-            self.set_training(False)
+            self.eval_mode()
 
             # validation
             val_loss = None
@@ -150,13 +164,9 @@ class Model(Module):
                 step = round((end - start) * 1000.0, 2)
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
-        # reset parameters to improve memory efficiency
-        if reset_grads:
-            self.reset_grads()
-
         return train_loss_history, val_loss_history
 
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float | None]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -186,51 +196,6 @@ class Model(Module):
         score = self.metric(predictions, y)
         return loss, score
 
-    def set_training(self, on: bool = False) -> None:
-        """Sets the mode for all model layers.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        self.training = on
-        for layer in self.layers:
-            layer.training = on
-
-    def get_parameters(self) -> list[Tensor]:
-        """Returns trainable parameters of a models layers.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        parameters = []
-        for layer in self.layers:
-            parameters += layer.parameters
-        return parameters
-
-    def reset_grads(self) -> None:
-        """Resets gradients to reduce memory usage.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
-        """
-        if len(self.layers) == 0:
-            raise MissingLayersError("Module does not contain any layers.")
-
-        for layer in self.layers:
-            layer.reset_grads()
-
 
 class Sequential(Model):
     """Feed forward neural network model."""
@@ -241,25 +206,21 @@ class Sequential(Model):
         Parameters
         ----------
         layers : list[Module]
-            List of layers used in the model. These layers are processed sequentially.
+            List of layers.
         """
         super().__init__()
-        self.layers = layers
+        self.layers = [SequentialContainer(layers)]
 
     def __call__(self, x: Tensor) -> Tensor:
-        for layer in self.layers:
-            x = layer(x)
+        y = self.layers[0](x)
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                layers_reversed = self.layers.copy()
-                layers_reversed.reverse()
-
-                for layer in layers_reversed:
-                    y_grad = layer.backward(y_grad)
-                return y_grad
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+                return self.layers[0].backward(y_grad)
 
             self.backward = backward
 
-        return x
+        self.set_y(y)
+        return y

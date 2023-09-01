@@ -35,5 +35,5 @@ def memlog(func):
 def set_numpy_format():
     """Sets numpy's float output to show 4 decimal places."""
     np.set_printoptions(
-        precision=4, formatter={"float": "{: 8.4f}".format}, linewidth=100
+        precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
     )

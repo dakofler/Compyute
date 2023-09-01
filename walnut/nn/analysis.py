@@ -3,10 +3,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
 from walnut.nn.models import Model
+from walnut.nn.containers import Container
 
 __all__ = [
     "plot_curve",
@@ -53,7 +54,7 @@ def plot_curve(
 
 
 def plot_distrbution(
-    data: dict[str, NumpyArray],
+    data: dict[str, NpArrayLike],
     figsize: ShapeLike,
     title: str = "distribution",
     bins: int = 100,
@@ -77,7 +78,7 @@ def plot_distrbution(
         values = data[label]
         mean = np.mean(values)
         std = np.std(values)
-        print(f"{label:10s} | mean {mean:.4f} | std {std:.4f}")
+        print(f"{label:10s} | mean {mean:9.4f} | std {std:9.4f}")
         y_vals, x_vals = np.histogram(values, bins=bins)
         x_vals = np.delete(x_vals, -1)
         plt.plot(x_vals, y_vals)
@@ -90,7 +91,7 @@ def plot_distrbution(
 
 
 def plot_images(
-    data: dict[str, NumpyArray],
+    data: dict[str, NpArrayLike],
     figsize: ShapeLike,
     cmap: str = "gray",
     plot_axis: bool = False,
@@ -193,9 +194,9 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 57
+    n = 63
     string = "-" * n
-    string += f"\n{'Layer (type)':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
+    string += f"\n{' ':6s}{'Layer':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
     string += "=" * n
     string += "\n"
     tot_parameters = 0
@@ -203,12 +204,21 @@ def model_summary(
     x = tu.ones((1,) + input_shape).astype(input_dtype)
     _ = model(x)
 
-    for layer in model.layers:
+    def get_string(layer, i1, i2=None):
         name = layer.__class__.__name__
         output_shape = str((-1,) + layer.y.shape[1:])
-        num_parameters = sum(p.data.size for p in layer.parameters)
-        tot_parameters += num_parameters
-        string += f"{name:20s} {output_shape:20s} {num_parameters:15d}\n"
+        n_params = sum(p.data.size for p in layer.get_parameters())
+        if i2 is None:
+            return f"{i1:5d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+        return f"{i1:2d}.{i2:2d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+
+    for i, layer in enumerate(model.layers):
+        string += get_string(layer, i)
+        tot_parameters += sum(p.data.size for p in layer.get_parameters())
+
+        if isinstance(layer, Container):
+            for j, layer in enumerate(layer.layers):
+                string += get_string(layer, i, j)
 
     string += "=" * n
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -28,7 +28,7 @@ class MaxPooling2d(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         kernel_size = self.kernel_size
-        return f"{name} ({kernel_size=})"
+        return f"{name}({kernel_size=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # cut off values to fit the pooling window
@@ -49,13 +49,12 @@ class MaxPooling2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 dy_s = tu.stretch(Tensor(y_grad), self.kernel_size, p_map.shape)
                 # use p_map as mask for grads
-                x_grad = np.resize((dy_s * p_map).data, x.shape)
-
-                self.set_y_grad(y_grad)
-                return x_grad
+                return np.resize((dy_s * p_map).data, x.shape)
 
             self.backward = backward
 
@@ -80,18 +79,16 @@ class Reshape(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         output_shape = self.output_shape
-        return f"{name} ({output_shape=})"
+        return f"{name}({output_shape=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x.reshape(self.output_shape)
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y_grad.reshape(x.shape)
-
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return y_grad.reshape(x.shape)
 
             self.backward = backward
 
@@ -107,11 +104,9 @@ class Flatten(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y_grad.reshape(x.shape)
-
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return y_grad.reshape(x.shape)
 
             self.backward = backward
 
@@ -140,18 +135,16 @@ class Moveaxis(Module):
         name = self.__class__.__name__
         from_axis = self.from_axis
         to_axis = self.to_axis
-        return f"{name} ({from_axis=}, {to_axis=})"
+        return f"{name}({from_axis=}, {to_axis=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
-
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return np.moveaxis(y_grad, self.to_axis, self.from_axis)
 
             self.backward = backward
 
@@ -176,19 +169,17 @@ class Dropout(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         p = self.p
-        return f"{name} ({p=})"
+        return f"{name}({p=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         if self.training:
             d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
             y = x * d_map / (1.0 - self.p)
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                # use d_map as mask for grads
-                x_grad = y_grad * d_map.data / (1.0 - self.p)
-
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                # use d_map as mask for grads
+                return y_grad * d_map.data / (1.0 - self.p)
 
             self.backward = backward
 

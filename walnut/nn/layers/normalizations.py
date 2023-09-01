@@ -3,7 +3,7 @@
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray, ShapeLike
+from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -42,7 +42,7 @@ class Batchnorm(Module):
         in_channels = self.in_channels
         eps = self.eps
         m = self.m
-        return f"{name} ({in_channels=}, {eps=}, {m=})"
+        return f"{name}({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = (0,) + tuple(np.arange(x.ndim))[2:]
@@ -68,7 +68,9 @@ class Batchnorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 # input grads
                 n = float(np.prod(x.shape) / x.shape[1])
                 tmp1 = n * y_grad
@@ -82,7 +84,6 @@ class Batchnorm(Module):
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=axis)
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward
@@ -115,7 +116,7 @@ class Layernorm(Module):
         name = self.__class__.__name__
         normalized_shape = self.normalized_shape
         eps = self.eps
-        return f"{name} ({normalized_shape=}, {eps=})"
+        return f"{name}({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = tuple(np.arange(x.ndim)[1:])
@@ -127,7 +128,9 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 # input grads
                 n = x.data[0].size
                 tmp1 = n * y_grad
@@ -141,7 +144,6 @@ class Layernorm(Module):
                 # beta grads
                 self.b.grad = np.sum(y_grad, axis=0)
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward

@@ -19,6 +19,22 @@ __all__ = [
 ]
 
 
+def relu(x: Tensor) -> Tensor:
+    """Applies the ReLU function.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    return tu.maximum(x, 0)
+
+
 def sigmoid(x: Tensor) -> Tensor:
     """Applies the sigmoid function.
 
@@ -91,8 +107,6 @@ def convolve1d(
     NotImplementedError
         If padding is "same" and the kernel shape is even.
     """
-    if x.ndim < 3:
-        raise ShapeError("Expected 3D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
@@ -155,8 +169,6 @@ def convolve2d(
     NotImplementedError
         If padding is "same" and the kernel shape is even.
     """
-    if x.ndim < 4:
-        raise ShapeError("Expected 4D input or higher.")
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:

@@ -2,27 +2,25 @@
 
 import numpy as np
 
-from walnut.tensor import Tensor, NumpyArray
-import walnut.tensor_utils as tu
-from walnut.nn.funcional import sigmoid, softmax
+from walnut.tensor import Tensor, NpArrayLike
+from walnut.nn.funcional import sigmoid, softmax, relu
 from walnut.nn.module import Module
 
 
-__all__ = ["Relu", "Sigmoid", "Tanh", "Softmax"]
+__all__ = ["ReLU", "Sigmoid", "Tanh", "Softmax"]
 
 
-class Relu(Module):
+class ReLU(Module):
     """Implements the ReLu activation function."""
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = tu.maximum(x, 0)
+        y = relu(x)
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = (y.data > 0) * y_grad
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return (y.data > 0) * y_grad
 
             self.backward = backward
 
@@ -38,10 +36,9 @@ class Tanh(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = (-y.data**2 + 1.0) * y_grad
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return (-y.data**2 + 1.0) * y_grad
 
             self.backward = backward
 
@@ -57,10 +54,9 @@ class Sigmoid(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                x_grad = y.data * (-y.data + 1.0) * y_grad
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return x_grad
+                return y.data * (-y.data + 1.0) * y_grad
 
             self.backward = backward
 
@@ -76,24 +72,15 @@ class Softmax(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
                 channels = x.shape[-1]
                 # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
                 x1 = np.einsum("ij,ik->ijk", y.data, y.data)
                 x2 = np.einsum("ij,jk->ijk", y.data, np.eye(channels, channels))
-                x_grad = np.einsum("ijk,ik->ij", x2 - x1, y_grad)
-                self.set_y_grad(y_grad)
-                return x_grad
+                return np.einsum("ijk,ik->ij", x2 - x1, y_grad)
 
             self.backward = backward
 
         self.set_y(y)
         return y
-
-
-ACTIVATIONS = {
-    "relu": Relu,
-    "tanh": Tanh,
-    "sigmoid": Sigmoid,
-    "softmax": Softmax,
-}

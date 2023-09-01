@@ -3,6 +3,7 @@
 from walnut.nn import (
     layers,
     analysis,
+    containers,
     inits,
     losses,
     metrics,
@@ -12,3 +13,4 @@ from walnut.nn import (
 )
 from walnut.nn.models import *
 from walnut.nn.module import *
+from walnut.nn.containers import RNN

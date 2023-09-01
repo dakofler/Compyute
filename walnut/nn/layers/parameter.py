@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NumpyArray
+from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 from walnut.preprocessing.encoding import one_hot_encode
@@ -59,7 +59,7 @@ class Linear(Module):
         in_channels = self.in_channels
         out_channels = self.out_channels
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x @ self.w  # (b, [c], c_out)
@@ -68,24 +68,26 @@ class Linear(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
-                dim = x.ndim
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 # input grads (b, c_in)
                 x_grad = y_grad @ self.w.T
 
                 # weight grads (c_in, c_out)
+                dim = x.ndim
                 w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
-                self.w.grad = x.transpose(w_ax).data @ y_grad
+                w_grad = x.transpose(w_ax).data @ y_grad
                 if dim > 2:
                     wsum_axis = tuple(np.arange(dim)[:-2])
-                    self.w.grad = np.sum(self.w.grad, axis=wsum_axis)
+                    w_grad = np.sum(w_grad, axis=wsum_axis)
+                self.w.grad = w_grad
 
                 # bias grads (c_out,)
                 if self.use_bias:
                     b_tpl = tuple(d for d in range(dim - 1))
                     self.b.grad = np.sum(y_grad, axis=b_tpl)
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward
@@ -161,7 +163,7 @@ class Convolution1d(Module):
         stride = self.stride
         dil = self.dil
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -180,7 +182,9 @@ class Convolution1d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 x3 = x.shape[-1]
                 w3 = self.w.shape[-1]
                 dy1, dy2, dy3 = y_grad.shape
@@ -226,7 +230,6 @@ class Convolution1d(Module):
                 if self.use_bias:
                     self.b.grad = np.sum(y_grad, axis=(0, 2))  # sum over b and x
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward
@@ -302,7 +305,7 @@ class Convolution2d(Module):
         stride = self.stride
         dil = self.dil
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -321,7 +324,9 @@ class Convolution2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> NumpyArray:
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+
                 w3, w4 = self.w.shape[-2:]
                 x3, x4 = x.shape[-2:]
                 dy1, dy2, dy3, dy4 = y_grad.shape
@@ -357,7 +362,6 @@ class Convolution2d(Module):
                 if self.use_bias:
                     self.b.grad = np.sum(y_grad, axis=(0, 2, 3))  # sum over b, y and x
 
-                self.set_y_grad(y_grad)
                 return x_grad
 
             self.backward = backward
@@ -399,7 +403,7 @@ class Embedding(Module):
         name = self.__class__.__name__
         in_channels = self.in_channels
         out_channels = self.out_channels
-        return f"{name} ({in_channels=}, {out_channels=})"
+        return f"{name}({in_channels=}, {out_channels=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         x_enc = one_hot_encode(x, self.w.shape[0])
@@ -407,9 +411,9 @@ class Embedding(Module):
 
         if self.training:
 
-            def backward(y_grad: NumpyArray) -> None:
-                self.w.grad = np.sum(x_enc.transpose((0, 2, 1)).data @ y_grad, axis=0)
+            def backward(y_grad: NpArrayLike) -> None:
                 self.set_y_grad(y_grad)
+                self.w.grad = np.sum(x_enc.transpose((0, 2, 1)).data @ y_grad, axis=0)
 
             self.backward = backward
 

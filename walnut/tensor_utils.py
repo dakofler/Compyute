@@ -6,23 +6,28 @@ from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError
 
 
 __all__ = [
-    "pd_to_tensor",
+    "df_to_tensor",
     "expand_dims",
     "match_dims",
+    "arange",
+    "linspace",
     "zeros",
     "ones",
     "zeros_like",
     "ones_like",
     "randn",
+    "randu",
     "randint",
     "shuffle",
     "check_dims",
     "choice",
     "empty",
+    "maximum",
+    "random_seed",
 ]
 
 
-def pd_to_tensor(df: pd.DataFrame) -> Tensor:
+def df_to_tensor(df: pd.DataFrame) -> Tensor:
     """Converts a Pandas DataFrame into a Tensor.
 
     Parameters
@@ -75,6 +80,48 @@ def match_dims(x: Tensor, dims: int) -> Tensor:
         x = expand_dims(x, axis=(-1,))
 
     return x
+
+
+def arange(stop: int, start: int = 0, step: int | float = 1) -> Tensor:
+    """Returns a 1d tensor with evenly spaced values samples,
+    calculated over the interval [start, stop).
+
+    Parameters
+    ----------
+    start : float
+        Start value.
+    stop : float
+        Stop value.
+    step : int | float, optional
+        Spacing between values, by default 1.
+
+    Returns
+    -------
+    Tensor
+        1d tensor of evenly spaced samples.
+    """
+    x = np.arange(start, stop, step)
+    return Tensor(x, dtype=str(x.dtype))
+
+
+def linspace(start: float, stop: float, num: int) -> Tensor:
+    """Returns a 1d tensor num evenly spaced samples, calculated over the interval [start, stop].
+
+    Parameters
+    ----------
+    start : float
+        Start value.
+    stop : float
+        Stop value.
+    num : int
+        Number of samples.
+
+    Returns
+    -------
+    Tensor
+        1d tensor of evenly spaced samples.
+    """
+    return Tensor(np.linspace(start, stop, num))
 
 
 def zeros(shape: ShapeLike) -> Tensor:
@@ -230,9 +277,8 @@ def shuffle(
         raise ShapeError("Tensors must have equal lengths along axis 0")
 
     length = x1.len
-    shuffle_index = np.arange(length)
     batch_size = batch_size if batch_size else length
-    np.random.shuffle(shuffle_index)
+    shuffle_index = np.random.permutation(length)
     y1 = x1[shuffle_index]
     y2 = x2[shuffle_index]
     return y1[:batch_size], y2[:batch_size]
@@ -343,3 +389,14 @@ def stretch(
     x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
     # resize to fit target shape by filling with zeros
     return Tensor(np.resize(x_stretched, target_shape))
+
+
+def random_seed(seed: int):
+    """Sets the seed for RNG for reproducability.
+
+    Parameters
+    ----------
+    seed : int
+        Seed value.
+    """
+    np.random.seed(seed)
