@@ -42,7 +42,7 @@ class Batchnorm(Module):
         in_channels = self.in_channels
         eps = self.eps
         m = self.m
-        return f"{name} ({in_channels=}, {eps=}, {m=})"
+        return f"{name}({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = (0,) + tuple(np.arange(x.ndim))[2:]
@@ -116,7 +116,7 @@ class Layernorm(Module):
         name = self.__class__.__name__
         normalized_shape = self.normalized_shape
         eps = self.eps
-        return f"{name} ({normalized_shape=}, {eps=})"
+        return f"{name}({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         axis = tuple(np.arange(x.ndim)[1:])

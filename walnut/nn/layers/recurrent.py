@@ -57,7 +57,7 @@ class Recurrent(Module):
         hidden_channels = self.hidden_channels
         activation = self.activation
         use_bias = self.use_bias
-        return f"{name} ({hidden_channels=}, {activation=}, {use_bias=})"
+        return f"{name}({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = tu.zeros_like(x)

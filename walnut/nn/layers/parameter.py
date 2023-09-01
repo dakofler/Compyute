@@ -59,7 +59,7 @@ class Linear(Module):
         in_channels = self.in_channels
         out_channels = self.out_channels
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x @ self.w  # (b, [c], c_out)
@@ -163,7 +163,7 @@ class Convolution1d(Module):
         stride = self.stride
         dil = self.dil
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -305,7 +305,7 @@ class Convolution2d(Module):
         stride = self.stride
         dil = self.dil
         use_bias = self.use_bias
-        return f"{name} ({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # rotate weights for cross correlation
@@ -403,7 +403,7 @@ class Embedding(Module):
         name = self.__class__.__name__
         in_channels = self.in_channels
         out_channels = self.out_channels
-        return f"{name} ({in_channels=}, {out_channels=})"
+        return f"{name}({in_channels=}, {out_channels=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         x_enc = one_hot_encode(x, self.w.shape[0])

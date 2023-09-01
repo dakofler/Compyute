@@ -22,7 +22,8 @@ class Module(ABC):
         self.training: bool = False
 
     def __repr__(self) -> str:
-        return self.__class__.__name__
+        name = self.__class__.__name__
+        return f"{name}()"
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:

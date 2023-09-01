@@ -36,10 +36,10 @@ def log_training_progress(
     print(line)
 
 
-class Model(SequentialContainer):
+class Model(Container):
     """Neural network model base class."""
 
-    def __init__(self, layers: list[Module] = ...) -> None:
+    def __init__(self) -> None:
         """Neural network model base class.
 
         Parameters
@@ -47,7 +47,7 @@ class Model(SequentialContainer):
         layers : list[Module], optional
             List of layers.
         """
-        super().__init__(layers)
+        super().__init__()
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Callable[[Tensor, Tensor], float] = lambda x, y: 0.0
@@ -208,4 +208,19 @@ class Sequential(Model):
         layers : list[Module]
             List of layers.
         """
-        super().__init__(layers)
+        super().__init__()
+        self.layers = [SequentialContainer(layers)]
+
+    def __call__(self, x: Tensor) -> Tensor:
+        y = self.layers[0](x)
+
+        if self.training:
+
+            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+                self.set_y_grad(y_grad)
+                return self.layers[0].backward(y_grad)
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y

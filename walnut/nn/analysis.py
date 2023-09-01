@@ -7,6 +7,7 @@ from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
 from walnut.nn.models import Model
+from walnut.nn.containers import Container
 
 __all__ = [
     "plot_curve",
@@ -193,11 +194,9 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 61
+    n = 63
     string = "-" * n
-    string += (
-        f"\n{'':3s} {'Layer (type)':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
-    )
+    string += f"\n{' ':6s}{'Layer':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
     string += "=" * n
     string += "\n"
     tot_parameters = 0
@@ -206,11 +205,19 @@ def model_summary(
     _ = model(x)
 
     for i, layer in enumerate(model.layers):
-        name = layer.__class__.__name__
-        output_shape = str((-1,) + layer.y.shape[1:])
-        num_parameters = sum(p.data.size for p in layer.get_parameters())
-        tot_parameters += num_parameters
-        string += f"{i:3d} {name:20s} {output_shape:20s} {num_parameters:15d}\n"
+        if isinstance(layer, Container):
+            for j, layer in enumerate(layer.layers):
+                name = layer.__class__.__name__
+                output_shape = str((-1,) + layer.y.shape[1:])
+                num_parameters = sum(p.data.size for p in layer.get_parameters())
+                tot_parameters += num_parameters
+                string += f"{i:2d}.{j:2d} {name:20s} {output_shape:20s} {num_parameters:15d}\n"
+        else:
+            name = layer.__class__.__name__
+            output_shape = str((-1,) + layer.y.shape[1:])
+            num_parameters = sum(p.data.size for p in layer.get_parameters())
+            tot_parameters += num_parameters
+            string += f"{i:2d}. 0 {name:20s} {output_shape:20s} {num_parameters:15d}\n"
 
     string += "=" * n
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

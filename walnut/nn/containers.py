@@ -11,7 +11,7 @@ __all__ = ["SequentialContainer", "ParallelContainer", "RNN"]
 class Container(Module):
     """Container module."""
 
-    def __init__(self, layers: list[Module]) -> None:
+    def __init__(self) -> None:
         """Container.
 
         Parameters
@@ -20,14 +20,14 @@ class Container(Module):
             List of layers.
         """
         super().__init__()
-        self.layers = layers
+        self.layers: list[Module] = []
 
     def __repr__(self) -> str:
         string = super().__repr__()
 
         if len(self.layers) > 0:
             for layer in self.layers:
-                string += "\n    " + layer.__repr__()
+                string += "\n" + layer.__repr__()
 
         return string
 
@@ -64,6 +64,10 @@ class Container(Module):
 class SequentialContainer(Container):
     """Sequential container."""
 
+    def __init__(self, layers: list[Module]) -> None:
+        super().__init__()
+        self.layers = layers
+
     def __call__(self, x: Tensor) -> Tensor:
         for layer in self.layers:
             x = layer(x)
@@ -85,6 +89,10 @@ class SequentialContainer(Container):
 
 class ParallelContainer(Container):
     """Parallel container."""
+
+    def __init__(self, layers: list[Module]) -> None:
+        super().__init__()
+        self.layers = layers
 
     def __call__(self, x: Tensor) -> Tensor:
         raise NotImplementedError()

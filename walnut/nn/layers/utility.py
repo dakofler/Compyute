@@ -28,7 +28,7 @@ class MaxPooling2d(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         kernel_size = self.kernel_size
-        return f"{name} ({kernel_size=})"
+        return f"{name}({kernel_size=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         # cut off values to fit the pooling window
@@ -79,7 +79,7 @@ class Reshape(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         output_shape = self.output_shape
-        return f"{name} ({output_shape=})"
+        return f"{name}({output_shape=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x.reshape(self.output_shape)
@@ -135,7 +135,7 @@ class Moveaxis(Module):
         name = self.__class__.__name__
         from_axis = self.from_axis
         to_axis = self.to_axis
-        return f"{name} ({from_axis=}, {to_axis=})"
+        return f"{name}({from_axis=}, {to_axis=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)
@@ -169,7 +169,7 @@ class Dropout(Module):
     def __repr__(self) -> str:
         name = self.__class__.__name__
         p = self.p
-        return f"{name} ({p=})"
+        return f"{name}({p=})"
 
     def __call__(self, x: Tensor) -> Tensor:
         if self.training:
