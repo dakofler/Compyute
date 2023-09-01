@@ -6,7 +6,7 @@ from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError
 
 
 __all__ = [
-    "pd_to_tensor",
+    "df_to_tensor",
     "expand_dims",
     "match_dims",
     "arange",
@@ -23,10 +23,11 @@ __all__ = [
     "choice",
     "empty",
     "maximum",
+    "random_seed",
 ]
 
 
-def pd_to_tensor(df: pd.DataFrame) -> Tensor:
+def df_to_tensor(df: pd.DataFrame) -> Tensor:
     """Converts a Pandas DataFrame into a Tensor.
 
     Parameters
@@ -388,3 +389,14 @@ def stretch(
     x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
     # resize to fit target shape by filling with zeros
     return Tensor(np.resize(x_stretched, target_shape))
+
+
+def random_seed(seed: int):
+    """Sets the seed for RNG for reproducability.
+
+    Parameters
+    ----------
+    seed : int
+        Seed value.
+    """
+    np.random.seed(seed)

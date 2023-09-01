@@ -42,7 +42,7 @@ class Module(ABC):
 
     def get_parameters(self):
         """Returns parameters of the module and it's layers."""
-        return self.parameters
+        return self.parameters.copy()
 
     def reset_grads(self):
         """Resets parameter grads to improve memory usage."""

@@ -204,20 +204,21 @@ def model_summary(
     x = tu.ones((1,) + input_shape).astype(input_dtype)
     _ = model(x)
 
+    def get_string(layer, i1, i2=None):
+        name = layer.__class__.__name__
+        output_shape = str((-1,) + layer.y.shape[1:])
+        n_params = sum(p.data.size for p in layer.get_parameters())
+        if i2 is None:
+            return f"{i1:5d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+        return f"{i1:2d}.{i2:2d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+
     for i, layer in enumerate(model.layers):
+        string += get_string(layer, i)
+        tot_parameters += sum(p.data.size for p in layer.get_parameters())
+
         if isinstance(layer, Container):
             for j, layer in enumerate(layer.layers):
-                name = layer.__class__.__name__
-                output_shape = str((-1,) + layer.y.shape[1:])
-                num_parameters = sum(p.data.size for p in layer.get_parameters())
-                tot_parameters += num_parameters
-                string += f"{i:2d}.{j:2d} {name:20s} {output_shape:20s} {num_parameters:15d}\n"
-        else:
-            name = layer.__class__.__name__
-            output_shape = str((-1,) + layer.y.shape[1:])
-            num_parameters = sum(p.data.size for p in layer.get_parameters())
-            tot_parameters += num_parameters
-            string += f"{i:2d}. 0 {name:20s} {output_shape:20s} {num_parameters:15d}\n"
+                string += get_string(layer, i, j)
 
     string += "=" * n
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

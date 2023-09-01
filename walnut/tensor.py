@@ -1,11 +1,11 @@
 """Tensor module"""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 
 
-__all__ = ["Tensor"]
+__all__ = ["Tensor", "ShapeError"]
 
 
 ShapeLike = tuple[int, ...]
@@ -23,15 +23,16 @@ class ShapeError(Exception):
 class Tensor:
     """Tensor object."""
 
-    data: NpArrayLike
+    _data: NpArrayLike
     _grad: NpArrayLike | None
-    params: dict[str, NpArrayLike]  # move to optim?
+    params: dict[str, NpArrayLike]  # move to optim? (Problem: resetting y_grads)
     _iterator: int
 
     def __init__(
         self,
         data: NpArrayLike | NpTypeLike | PyTypeLike,
         dtype: str = "float32",
+        copy: bool = False,
     ) -> None:
         """Tensor object.
 
@@ -41,15 +42,11 @@ class Tensor:
             Data to initialize the tensor.
         dtype: str, optional
             Datatype of the tensor data, by default float32.
+        copy: bool, optional
+            If true, the data object is copied (may impact performance), by default False.
         """
 
-        if isinstance(data, NpArrayLike):
-            self.data = data.astype(dtype, copy=data.dtype != dtype)
-        elif isinstance(data, (NpTypeLike, PyTypeLike)):
-            self.data = np.array(data).astype(dtype)
-        else:
-            raise ValueError("Invalid data type.")
-
+        self.data = np.array(data, copy=copy, dtype=dtype)
         self._grad = None
         self.params = {}
         self._iterator = 0
@@ -59,6 +56,17 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     @property
+    def data(self) -> NpArrayLike:
+        """Tensor data."""
+        return self._data
+
+    @data.setter
+    def data(self, value: NpArrayLike) -> None:
+        if not isinstance(value, NpArrayLike):
+            raise ValueError("Invalid dtype.")
+        self._data = value
+
+    @property
     def grad(self) -> NpArrayLike | None:
         """Tensor gradient."""
         return self._grad
@@ -66,9 +74,7 @@ class Tensor:
     @grad.setter
     def grad(self, value: NpArrayLike | None) -> None:
         if value is not None and value.shape != self.shape:
-            raise ShapeError(
-                f"Grad shape {value.shape} does not match data shape {self.shape}"
-            )
+            raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
         if self.grad is None or value is None:
             self._grad = value  # set gradients
         else:
