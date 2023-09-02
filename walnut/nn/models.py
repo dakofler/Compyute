@@ -159,14 +159,14 @@ class Model(Container):
             end = time.time()
 
             if verbose is not None and (
-                verbose == 0 or epoch == 1 or epoch % (epochs // verbose) == 0
+                verbose == 0 or epoch == 1 or epoch % max(1, epochs // verbose) == 0
             ):
                 step = round((end - start) * 1000.0, 2)
                 log_training_progress(epoch, epochs, step, train_loss, val_loss)
 
         return train_loss_history, val_loss_history
 
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float | None]:
+    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
 
         Parameters
