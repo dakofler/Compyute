@@ -18,10 +18,6 @@ class ModelCompilationError(Exception):
     """Error if the model has not been compiled yet."""
 
 
-class MissingLayersError(Exception):
-    """Error when the list of layers is empty."""
-
-
 def log_training_progress(
     epoch: int,
     epochs: int,
@@ -40,13 +36,7 @@ class Model(Container):
     """Neural network model base class."""
 
     def __init__(self) -> None:
-        """Neural network model base class.
-
-        Parameters
-        ----------
-        layers : list[Module], optional
-            List of layers.
-        """
+        """Neural network model base class."""
         super().__init__()
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
@@ -65,14 +55,9 @@ class Model(Container):
         optimizer : Optimizer
             Optimizer algorithm to be used to update parameters.
         loss_fn : Loss
-            Loss function to be used to compute losses and gradients.
+            Loss function used to compute losses and their gradients.
         metric : Callable[[Tensor, Tensor], float]
-            Metric to be used to evaluate the model.
-
-        Raises
-        ------
-        MissingLayersError
-            If the model does not contain any layers.
+            Metric function used to evaluate the model's performance.
         """
         self.optimizer = optimizer
         optimizer.parameters = self.get_parameters()
@@ -106,8 +91,6 @@ class Model(Container):
             If None, no results are reported. If 0 all results are reported, by default 10.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
-        reset_grads : bool, optional
-            Whether to reset grads after training. Improves memory usage, by default True.
 
         Returns
         -------
@@ -206,7 +189,7 @@ class Sequential(Model):
         Parameters
         ----------
         layers : list[Module]
-            List of layers.
+            List of layers used in the model. These layers are processed sequentially.
         """
         super().__init__()
         self.layers = [SequentialContainer(layers)]

@@ -63,7 +63,7 @@ def plot_distrbution(
 
     Parameters
     ----------
-    data : dict[str, NumpyArray]
+    data : dict[str, NpArrayLike]
         Dictionary of labels and arrays.
     figsize : ShapeLike
         Size of the plot.
@@ -100,7 +100,7 @@ def plot_images(
 
     Parameters
     ----------
-    data : dict[str, NumpyArray]
+    data : dict[str, NpArrayLike]
         Dictionary of array names and values.
     figsize : ShapeLike
         Size of the plot.

@@ -25,7 +25,8 @@ class Tensor:
 
     _data: NpArrayLike
     _grad: NpArrayLike | None
-    params: dict[str, NpArrayLike]  # move to optim? (Problem: resetting y_grads)
+    # move to optim? (Problem: resetting y_grads), move to parameter child class?
+    params: dict[str, NpArrayLike]
     _iterator: int
 
     def __init__(
@@ -38,7 +39,7 @@ class Tensor:
 
         Parameters
         ----------
-        values : NumpyArray | list[Any] | float | int
+        values : NpArrayLike | NpTypeLike | PyTypeLike
             Data to initialize the tensor.
         dtype: str, optional
             Datatype of the tensor data, by default float32.
@@ -241,6 +242,9 @@ class Tensor:
         if not isinstance(other, Tensor):
             return Tensor(other)
         return other
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     # ----------------------------------------------------------------------------------------------
     # FUNCTIONS

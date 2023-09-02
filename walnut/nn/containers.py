@@ -12,13 +12,7 @@ class Container(Module):
     """Container module."""
 
     def __init__(self) -> None:
-        """Container.
-
-        Parameters
-        ----------
-        layers : list[Module]
-            List of layers.
-        """
+        """Container module."""
         super().__init__()
         self.layers: list[Module] = []
 
@@ -31,20 +25,20 @@ class Container(Module):
 
         return string
 
-    def get_parameters(self):
+    def get_parameters(self) -> list[Tensor]:
         """Returns parameters of the cointainer's layers."""
         parameters = super().get_parameters()
         for layer in self.layers:
             parameters += layer.get_parameters()
         return parameters
 
-    def reset_grads(self):
+    def reset_grads(self) -> None:
         """Resets parameter grads to improve memory usage."""
         super().reset_grads()
         for layer in self.layers:
             layer.reset_grads()
 
-    def training_mode(self):
+    def training_mode(self) -> None:
         """Puts the module into training mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
@@ -52,7 +46,7 @@ class Container(Module):
         for layer in self.layers:
             layer.training_mode()
 
-    def eval_mode(self):
+    def eval_mode(self) -> None:
         """Puts the module into evaluation mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
@@ -65,6 +59,13 @@ class SequentialContainer(Container):
     """Sequential container."""
 
     def __init__(self, layers: list[Module]) -> None:
+        """Sequential container module.
+
+        Parameters
+        ----------
+        layers : list[Module]
+            List of layers used in the container. These layers are processed sequentially.
+        """
         super().__init__()
         self.layers = layers
 

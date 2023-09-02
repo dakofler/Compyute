@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import Callable
 from abc import ABC, abstractmethod
 
-from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, NpArrayLike
+import walnut.tensor_utils as tu
 
 
 __all__ = ["Module"]
@@ -37,26 +37,26 @@ class Module(ABC):
         Returns
         ----------
         Tensor
-            Computed Output.
+            Computed module output.
         """
 
-    def get_parameters(self):
+    def get_parameters(self) -> list[Tensor]:
         """Returns parameters of the module and it's layers."""
         return self.parameters.copy()
 
-    def reset_grads(self):
+    def reset_grads(self) -> None:
         """Resets parameter grads to improve memory usage."""
         for parameter in self.parameters:
             parameter.grad = None
         self.y.grad = None
 
-    def training_mode(self):
+    def training_mode(self) -> None:
         """Puts the module into training mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
         self.training = True
 
-    def eval_mode(self):
+    def eval_mode(self) -> None:
         """Puts the module into evaluation mode. Some modules may have different forward
         behaviour if in training mode. Backward behaviour is only defined in training mode.
         """
@@ -77,7 +77,7 @@ class Module(ABC):
 
         Parameters
         ----------
-        y_grad : NumpyArray
+        y_grad : NpArrayLike
             Module output tensor gradients.
         """
         self.y.grad = y_grad.copy()
