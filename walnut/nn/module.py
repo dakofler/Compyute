@@ -17,13 +17,61 @@ class Module(ABC):
     def __init__(self) -> None:
         """Module base class."""
         self.y: Tensor = tu.empty()
-        self.parameters: list[Tensor] = []
-        self.backward: Callable[[NpArrayLike], NpArrayLike] = lambda y_grad: y_grad
-        self.training: bool = False
+        self.backward: Callable[[NpArrayLike], NpArrayLike] | None = None
+        self._sub_modules: list[Module] = []
+        self._parameters: list[Tensor] = []
+        self._training: bool = False
+        self._keep_output: bool = False
+
+    @property
+    def sub_modules(self) -> list[Module]:
+        """Trainable module parameters."""
+        return self._sub_modules
+
+    @sub_modules.setter
+    def sub_modules(self, value: list[Module]) -> None:
+        self._sub_modules = value
+
+    @property
+    def parameters(self) -> list[Tensor]:
+        """Trainable module parameters."""
+        p = self._parameters.copy()
+        for module in self.sub_modules:
+            p += module.parameters
+        return p
+
+    @parameters.setter
+    def parameters(self, value: list[Tensor]) -> None:
+        self._parameters = value
+
+    @property
+    def training(self) -> bool:
+        """Puts the module in training mode.
+        The forward behaviour might differ when in training mode."""
+        return self._training
+
+    @training.setter
+    def training(self, value: bool) -> None:
+        self._training = value
+        for module in self.sub_modules:
+            module.training = value
+
+    @property
+    def keep_output(self) -> bool:
+        """Whether to keep output valuesduring forward and gradients during backward passes."""
+        return self._keep_output
+
+    @keep_output.setter
+    def keep_output(self, value: bool) -> None:
+        self._keep_output = value
+        for module in self.sub_modules:
+            module.keep_output = value
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
-        return f"{name}()"
+        string = f"{self.__class__.__name__}()"
+        for module in self.sub_modules:
+            string += "\n" + module.__repr__()
+        return string
 
     @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
@@ -40,28 +88,6 @@ class Module(ABC):
             Computed module output.
         """
 
-    def get_parameters(self) -> list[Tensor]:
-        """Returns parameters of the module and it's layers."""
-        return self.parameters.copy()
-
-    def reset_grads(self) -> None:
-        """Resets parameter grads to improve memory usage."""
-        for parameter in self.parameters:
-            parameter.grad = None
-        self.y.grad = None
-
-    def training_mode(self) -> None:
-        """Puts the module into training mode. Some modules may have different forward
-        behaviour if in training mode. Backward behaviour is only defined in training mode.
-        """
-        self.training = True
-
-    def eval_mode(self) -> None:
-        """Puts the module into evaluation mode. Some modules may have different forward
-        behaviour if in training mode. Backward behaviour is only defined in training mode.
-        """
-        self.training = False
-
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.
 
@@ -70,7 +96,8 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        self.y.data = y.data.copy()
+        if self.keep_output:
+            self.y.data = y.data.copy()
 
     def set_y_grad(self, y_grad: NpArrayLike) -> None:
         """Saves the module output gradients to y tensor.
@@ -80,4 +107,14 @@ class Module(ABC):
         y_grad : NpArrayLike
             Module output tensor gradients.
         """
-        self.y.grad = y_grad.copy()
+        if self.keep_output:
+            self.y.grad = y_grad.copy()
+
+    def clean(self) -> None:
+        """Cleanes up the module by resetting temporary values."""
+        self.y = tu.empty()
+        self.y.grad = None
+        self.backward = None
+
+        for module in self.sub_modules:
+            module.clean()

@@ -45,12 +45,12 @@ class Recurrent(Module):
             self.w = tu.randu((hidden_channels, hidden_channels), -k, k)
         else:
             self.w = weights
-        self.parameters.append(self.w)
+        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
             self.b = tu.zeros((hidden_channels,))
-            self.parameters.append(self.b)
+            self.parameters += [self.b]
 
     def __repr__(self):
         name = self.__class__.__name__

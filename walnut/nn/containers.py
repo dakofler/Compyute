@@ -8,54 +8,7 @@ from walnut.nn.layers import Linear, Recurrent
 __all__ = ["SequentialContainer", "ParallelContainer", "RNN"]
 
 
-class Container(Module):
-    """Container module."""
-
-    def __init__(self) -> None:
-        """Container module."""
-        super().__init__()
-        self.layers: list[Module] = []
-
-    def __repr__(self) -> str:
-        string = super().__repr__()
-
-        if len(self.layers) > 0:
-            for layer in self.layers:
-                string += "\n" + layer.__repr__()
-
-        return string
-
-    def get_parameters(self) -> list[Tensor]:
-        """Returns parameters of the cointainer's layers."""
-        parameters = super().get_parameters()
-        for layer in self.layers:
-            parameters += layer.get_parameters()
-        return parameters
-
-    def reset_grads(self) -> None:
-        """Resets parameter grads to improve memory usage."""
-        super().reset_grads()
-        for layer in self.layers:
-            layer.reset_grads()
-
-    def training_mode(self) -> None:
-        """Puts the module into training mode. Some modules may have different forward
-        behaviour if in training mode. Backward behaviour is only defined in training mode.
-        """
-        super().training_mode()
-        for layer in self.layers:
-            layer.training_mode()
-
-    def eval_mode(self) -> None:
-        """Puts the module into evaluation mode. Some modules may have different forward
-        behaviour if in training mode. Backward behaviour is only defined in training mode.
-        """
-        super().eval_mode()
-        for layer in self.layers:
-            layer.eval_mode()
-
-
-class SequentialContainer(Container):
+class SequentialContainer(Module):
     """Sequential container."""
 
     def __init__(self, layers: list[Module]) -> None:
@@ -67,19 +20,19 @@ class SequentialContainer(Container):
             List of layers used in the container. These layers are processed sequentially.
         """
         super().__init__()
-        self.layers = layers
+        self.sub_modules = layers
 
     def __call__(self, x: Tensor) -> Tensor:
-        for layer in self.layers:
-            x = layer(x)
+        for module in self.sub_modules:
+            x = module(x)
 
         if self.training:
 
             def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
 
-                for layer in reversed(self.layers):
-                    y_grad = layer.backward(y_grad)
+                for module in reversed(self.sub_modules):
+                    y_grad = module.backward(y_grad)
                 return y_grad
 
             self.backward = backward
@@ -88,12 +41,12 @@ class SequentialContainer(Container):
         return x
 
 
-class ParallelContainer(Container):
+class ParallelContainer(Module):
     """Parallel container."""
 
     def __init__(self, layers: list[Module]) -> None:
         super().__init__()
-        self.layers = layers
+        self.sub_modules = layers
 
     def __call__(self, x: Tensor) -> Tensor:
         raise NotImplementedError()
@@ -125,13 +78,13 @@ class RNN(SequentialContainer):
         use_bias : bool, optional
             Whether to use bias values, by default True.
         """
-        layers = []
+        modules = []
         for i in range(num_layers):
             if i == 0:
-                layers.append(Linear(in_channels, hidden_channels, use_bias=use_bias))
+                modules.append(Linear(in_channels, hidden_channels, use_bias=use_bias))
             else:
-                layers.append(
+                modules.append(
                     Linear(hidden_channels, hidden_channels, use_bias=use_bias)
                 )
-            layers.append(Recurrent(hidden_channels, activation, use_bias=use_bias))
-        super().__init__(layers)
+            modules.append(Recurrent(hidden_channels, activation, use_bias=use_bias))
+        super().__init__(modules)

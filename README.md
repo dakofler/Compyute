@@ -10,17 +10,16 @@ Similar to `PyTorch` a `Tensor`-object was introduced as the central block that 
 ### Data preprocessing, Encoding
 The framework offers some utility functions to preprocess and encode data before using it for training.
 
-### Designing a model
-Models can be built using predefined model-templates (e.g. a `Sequential`), but can also be built from scratch. They are generally composed of one or more modules (e.g. layers in a `Sequential` model.). The framework provides a variety of layers such as activation, normalization, linear and convolutional layers with more to come.
-
-### Training a model
-The model can be trained using common optimizer algorithmes, such as SGD or Adam.
+### Building and training models
+Models can be built using predefined model-templates (e.g. a `Sequential`), but can also be built from scratch. They are generally composed of one or more modules (e.g. layers in a `Sequential` model.). The framework provides a variety of modules such as activation, normalization, linear and convolutional layers with more to come. The model can be trained using common optimizer algorithmes, such as SGD or Adam. Models can also be saved and loaded later on.
 
 ### Analysis
 The framework also provides some functions for analyzing a models' parameters and gradients to gain insights (inspired by Andrej Karpathy :) )
 
 ### Experimenting
 All modules (layers) can also be used individually without a model and their parameters can be inspected.
+
+
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.
 The code is not perfect, as I am still learning with every new feature that is added.

@@ -26,7 +26,7 @@ class Tensor:
     _data: NpArrayLike
     _grad: NpArrayLike | None
     # move to optim? (Problem: resetting y_grads), move to parameter child class?
-    params: dict[str, NpArrayLike]
+    temp_params: dict[str, NpArrayLike]
     _iterator: int
 
     def __init__(
@@ -49,7 +49,7 @@ class Tensor:
 
         self.data = np.array(data, copy=copy, dtype=dtype)
         self._grad = None
-        self.params = {}
+        self.temp_params = {}
         self._iterator = 0
 
     # ----------------------------------------------------------------------------------------------

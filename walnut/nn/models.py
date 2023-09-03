@@ -8,7 +8,7 @@ from walnut.tensor import Tensor, NpArrayLike
 from walnut.nn.losses import Loss
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
-from walnut.nn.containers import Container, SequentialContainer
+from walnut.nn.containers import SequentialContainer
 
 
 __all__ = ["Model", "Sequential"]
@@ -18,17 +18,9 @@ class ModelCompilationError(Exception):
     """Error if the model has not been compiled yet."""
 
 
-def log_step(
-    step: int,
-    n_steps: int,
-    step_time: float,
-    step_train_loss: float,
-    step_val_loss: float | None,
-) -> None:
+def log_step(step: int, n_steps: int) -> None:
     """Outputs information each step about intermediate model training results."""
-    line = f"\rStep {step:5d}/{n_steps} | {step_time:8.2f} ms/step | loss {step_train_loss:8.4f}"
-    if step_val_loss is not None:
-        line += f" | val_loss {step_val_loss:8.4f}"
+    line = f"\rStep {step:5d}/{n_steps}"
     print(line, end="")
 
 
@@ -39,7 +31,7 @@ def log_epoch(
     val_loss: float | None,
 ) -> None:
     """Outputs information each epoch about intermediate model training results."""
-    line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | loss {train_loss:8.4f}"
+    line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | train_loss {train_loss:8.4f}"
     if val_loss is not None:
         line += f" | val_loss {val_loss:8.4f}"
     print(line)
@@ -63,14 +55,18 @@ def get_batches(x: Tensor, y: Tensor, batch_size: int | None) -> tuple[Tensor, T
         Batched input and target values.
     """
     x_shuffled, y_shuffled = tu.shuffle(x, y)
-    batch_size = min(x.len, batch_size) if isinstance(batch_size, int) else x.len
+    batch_size = (
+        min(x.len, batch_size)
+        if isinstance(batch_size, int) and batch_size > 1
+        else x.len
+    )
     n = x_shuffled.len // batch_size * batch_size
     x_batches = x_shuffled[:n].reshape((-1, batch_size, *x_shuffled.shape[1:]))
     y_batches = y_shuffled[:n].reshape((-1, batch_size, *y_shuffled.shape[1:]))
     return x_batches, y_batches
 
 
-class Model(Container):
+class Model(Module):
     """Neural network model base class."""
 
     def __init__(self) -> None:
@@ -98,7 +94,7 @@ class Model(Container):
             Metric function used to evaluate the model's performance.
         """
         self.optimizer = optimizer
-        optimizer.parameters = self.get_parameters()
+        optimizer.parameters = self.parameters
         self.loss_fn = loss_fn
         self.metric = metric
 
@@ -110,6 +106,7 @@ class Model(Container):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
+        keep_sub_module_outputs: bool = False,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -128,6 +125,8 @@ class Model(Container):
             Whether the model reports intermediate results during training, by default True.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
+        keep_sub_module_outputs : bool, optional
+            Whether to keep output values and gradients, by default False.
 
         Returns
         -------
@@ -144,19 +143,20 @@ class Model(Container):
         if not self.loss_fn or not self.optimizer:
             raise ModelCompilationError("Model is not compiled yet.")
 
+        self.keep_output = keep_sub_module_outputs
         train_loss_history, val_loss_history = [], []
 
         for epoch in range(1, epochs + 1):
-            epoch_train_loss = avg_step_time = 0.0
-            epoch_val_loss = 0.0 if val_data is not None else None
+            avg_train_loss = avg_step_time = 0.0
 
             if verbose:
                 print(f"Epoch {epoch}/{epochs}")
+
+            self.training = True
             x_batched, y_batched = get_batches(x, y, batch_size)
             n_steps = x_batched.shape[0]
 
             for step in range(n_steps):
-                self.training_mode()
                 start = time.time()
 
                 x_train = x_batched[step]
@@ -167,10 +167,10 @@ class Model(Container):
 
                 # compute loss
                 train_loss = self.loss_fn(preds, y_train).item()
-                epoch_train_loss += train_loss / n_steps
+                avg_train_loss += train_loss / n_steps
 
                 # backward pass
-                self.reset_grads()
+                self.optimizer.reset_grads()
                 y_grad = self.loss_fn.backward()
                 self.backward(y_grad)
 
@@ -181,33 +181,32 @@ class Model(Container):
                 step_time = round((time.time() - start) * 1000.0, 2)
                 avg_step_time += step_time / n_steps
 
-                self.eval_mode()
-
-                # validation
-                val_loss = None
-                if val_data is not None:
-                    x_val_batched, y_val_batched = get_batches(*val_data, batch_size)
-                    val_loss = 0.0
-                    n_val_steps = x_val_batched.shape[0]
-
-                    for v_step in range(n_val_steps):
-                        x_val = x_val_batched[v_step]
-                        y_val = y_val_batched[v_step]
-                        val_preds = self(x_val)
-                        val_loss += self.loss_fn(val_preds, y_val).item() / n_val_steps
-
-                    epoch_val_loss += val_loss / n_steps
-
                 if verbose:
-                    log_step((step + 1), n_steps, step_time, train_loss, val_loss)
+                    log_step((step + 1), n_steps)
+
+            # validation
+            self.training = False
+            val_loss = None
+            if val_data is not None:
+                x_val_batched, y_val_batched = get_batches(*val_data, batch_size)
+                val_loss = 0.0
+                n_val_steps = x_val_batched.shape[0]
+
+                for v_step in range(n_val_steps):
+                    x_val = x_val_batched[v_step]
+                    y_val = y_val_batched[v_step]
+                    val_preds = self(x_val)
+                    val_loss += self.loss_fn(val_preds, y_val).item() / n_val_steps
 
             if verbose:
-                log_epoch(n_steps, avg_step_time, epoch_train_loss, epoch_val_loss)
+                log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
 
-            train_loss_history.append(epoch_train_loss)
+            train_loss_history.append(avg_train_loss)
             if val_data is not None:
-                val_loss_history.append(epoch_val_loss)
+                val_loss_history.append(val_loss)
 
+        self.optimizer.delete_temp_params()
+        self.keep_output = False
         return train_loss_history, val_loss_history
 
     def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
@@ -253,16 +252,16 @@ class Sequential(Model):
             List of layers used in the model. These layers are processed sequentially.
         """
         super().__init__()
-        self.layers = [SequentialContainer(layers)]
+        self.sub_modules = [SequentialContainer(layers)]
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = self.layers[0](x)
+        y = self.sub_modules[0](x)
 
         if self.training:
 
             def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
-                return self.layers[0].backward(y_grad)
+                return self.sub_modules[0].backward(y_grad)
 
             self.backward = backward
 

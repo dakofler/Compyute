@@ -47,12 +47,12 @@ class Linear(Module):
             self.w = tu.randu((in_channels, out_channels), -k, k)
         else:
             self.w = weights
-        self.parameters.append(self.w)
+        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
             self.b = tu.zeros((out_channels,))
-            self.parameters.append(self.b)
+            self.parameters += [self.b]
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -147,12 +147,12 @@ class Convolution1d(Module):
             self.w = tu.randu((out_channels, in_channels, kernel_size), -k, k)
         else:
             self.w = weights
-        self.parameters.append(self.w)
+        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
             self.b = tu.zeros((out_channels,))
-            self.parameters.append(self.b)
+            self.parameters += [self.b]
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -289,12 +289,12 @@ class Convolution2d(Module):
             self.w = tu.randu((out_channels, in_channels, *kernel_size), -k, k)
         else:
             self.w = weights
-        self.parameters.append(self.w)
+        self.parameters = [self.w]
 
         # init bias (c_out,)
         if self.use_bias:
             self.b = tu.zeros((out_channels,))
-            self.parameters.append(self.b)
+            self.parameters += [self.b]
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -397,7 +397,7 @@ class Embedding(Module):
             self.w = tu.randu((in_channels, out_channels), -k, k)
         else:
             self.w = weights
-        self.parameters.append(self.w)
+        self.parameters = [self.w]
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

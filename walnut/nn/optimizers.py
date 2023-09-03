@@ -6,7 +6,7 @@ import numpy as np
 from walnut.tensor import Tensor
 
 
-__all__ = ["SGD", "Adam"]
+__all__ = ["SGD", "Adam", "AdamW"]
 
 
 class Optimizer(ABC):
@@ -24,6 +24,16 @@ class Optimizer(ABC):
         t : int, optional
             Time step, by default 1.
         """
+
+    def reset_grads(self) -> None:
+        """Resets parameter grads."""
+        for parameter in self.parameters:
+            parameter.grad = None
+
+    def delete_temp_params(self) -> None:
+        """Deletes temporary values used in the step method."""
+        for parameter in self.parameters:
+            parameter.temp_params = {}
 
 
 class SGD(Optimizer):
@@ -66,12 +76,12 @@ class SGD(Optimizer):
 
             if self.m > 0.0:
                 if t > 1:
-                    b_prev = p.params.get("sgd_b", np.zeros(p.data.shape))
+                    b_prev = p.temp_params.get("sgd_b", np.zeros(p.data.shape))
                     b = self.m * b_prev + p.grad
                 else:
                     b = p.grad
 
-                p.params["sgd_b"] = b
+                p.temp_params["sgd_b"] = b
 
                 if self.nesterov:
                     p.grad += self.m * b
@@ -79,7 +89,7 @@ class SGD(Optimizer):
                     p.grad = b
 
             delta = -self.l_r * p.grad
-            p.params["delta"] = delta  # for analysis
+            p.temp_params["delta"] = delta  # for analysis
             p.data += delta
 
 
@@ -126,19 +136,19 @@ class Adam(Optimizer):
             if self.weight_decay > 0.0:
                 p.grad += self.weight_decay * p.data
 
-            m_prev = p.params.get("adam_m", np.zeros(p.data.shape))
-            v_prev = p.params.get("adam_v", np.zeros(p.data.shape))
+            m_prev = p.temp_params.get("adam_m", np.zeros(p.data.shape))
+            v_prev = p.temp_params.get("adam_v", np.zeros(p.data.shape))
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
-            p.params["adam_m"] = m
+            p.temp_params["adam_m"] = m
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
-            p.params["adam_v"] = v
+            p.temp_params["adam_v"] = v
 
             m_hat = m / (1.0 - self.beta1**t)
             v_hat = v / (1.0 - self.beta2**t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
-            p.params["delta"] = delta  # for analysis
+            p.temp_params["delta"] = delta  # for analysis
             p.data += delta
 
 
@@ -183,17 +193,17 @@ class AdamW(Optimizer):
             if self.weight_decay > 0.0:
                 p.data -= self.l_r * self.weight_decay * p.data
 
-            m_prev = p.params.get("adam_m", np.zeros(p.data.shape))
-            v_prev = p.params.get("adam_v", np.zeros(p.data.shape))
+            m_prev = p.temp_params.get("adam_m", np.zeros(p.data.shape))
+            v_prev = p.temp_params.get("adam_v", np.zeros(p.data.shape))
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
-            p.params["adam_m"] = m
+            p.temp_params["adam_m"] = m
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
-            p.params["adam_v"] = v
+            p.temp_params["adam_v"] = v
 
             m_hat = m / (1.0 - self.beta1**t)
             v_hat = v / (1.0 - self.beta2**t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
-            p.params["delta"] = delta  # for analysis
+            p.temp_params["delta"] = delta  # for analysis
             p.data += delta
