@@ -18,13 +18,14 @@ class ModelCompilationError(Exception):
     """Error if the model has not been compiled yet."""
 
 
-def log_step(step: int, n_steps: int) -> None:
+def _log_step(step: int, n_steps: int, step_time: float) -> None:
     """Outputs information each step about intermediate model training results."""
-    line = f"\rStep {step:5d}/{n_steps}"
+    eta = (n_steps - step) * step_time / 1000.0
+    line = f"\rStep {step:5d}/{n_steps} | ETA: {eta:6.1f} s"
     print(line, end="")
 
 
-def log_epoch(
+def _log_epoch(
     n_steps: int,
     step_time: float,
     train_loss: float,
@@ -37,23 +38,8 @@ def log_epoch(
     print(line)
 
 
-def get_batches(x: Tensor, y: Tensor, batch_size: int | None) -> tuple[Tensor, Tensor]:
-    """Generates batches for training a model.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor of input values (features).
-    y : Tensor
-        Tensor of target values (labels).
-    batch_size : int | None, optional
-        Batch size. If None, batch_size=1 is used.
-
-    Returns
-    -------
-    tuple[Tensor, Tensor]
-        Batched input and target values.
-    """
+def _get_batches(x: Tensor, y: Tensor, batch_size: int | None) -> tuple[Tensor, Tensor]:
+    """Generates batches for training a model."""
     x_shuffled, y_shuffled = tu.shuffle(x, y)
     batch_size = (
         min(x.len, batch_size)
@@ -147,18 +133,17 @@ class Model(Module):
         train_loss_history, val_loss_history = [], []
 
         for epoch in range(1, epochs + 1):
-            avg_train_loss = avg_step_time = 0.0
+            avg_train_loss = avg_val_loss = avg_step_time = 0.0
 
             if verbose:
                 print(f"Epoch {epoch}/{epochs}")
 
-            self.training = True
-            x_batched, y_batched = get_batches(x, y, batch_size)
+            x_batched, y_batched = _get_batches(x, y, batch_size)
             n_steps = x_batched.shape[0]
 
             for step in range(n_steps):
                 start = time.time()
-
+                self.training = True
                 x_train = x_batched[step]
                 y_train = y_batched[step]
 
@@ -180,30 +165,32 @@ class Model(Module):
 
                 step_time = round((time.time() - start) * 1000.0, 2)
                 avg_step_time += step_time / n_steps
+                self.training = False
 
                 if verbose:
-                    log_step((step + 1), n_steps)
+                    _log_step((step + 1), n_steps, step_time)
 
-            # validation
-            self.training = False
-            val_loss = None
-            if val_data is not None:
-                x_val_batched, y_val_batched = get_batches(*val_data, batch_size)
-                val_loss = 0.0
-                n_val_steps = x_val_batched.shape[0]
+                # validation
+                val_loss = None
+                if val_data is not None:
+                    x_val_batched, y_val_batched = _get_batches(*val_data, batch_size)
+                    val_loss = 0.0
+                    n_val_steps = x_val_batched.shape[0]
 
-                for v_step in range(n_val_steps):
-                    x_val = x_val_batched[v_step]
-                    y_val = y_val_batched[v_step]
-                    val_preds = self(x_val)
-                    val_loss += self.loss_fn(val_preds, y_val).item() / n_val_steps
+                    for v_step in range(n_val_steps):
+                        x_val = x_val_batched[v_step]
+                        y_val = y_val_batched[v_step]
+                        val_preds = self(x_val)
+                        val_loss += self.loss_fn(val_preds, y_val).item() / n_val_steps
+
+                    avg_val_loss += val_loss / n_steps
+
+                train_loss_history.append(train_loss)
+                if val_data is not None:
+                    val_loss_history.append(val_loss)
 
             if verbose:
-                log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
-
-            train_loss_history.append(avg_train_loss)
-            if val_data is not None:
-                val_loss_history.append(val_loss)
+                _log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
 
         self.optimizer.delete_temp_params()
         self.keep_output = False

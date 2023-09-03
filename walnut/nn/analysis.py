@@ -193,7 +193,7 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 63
+    n = 64
     string = "-" * n
     string += f"\n{' ':6s}{'Layer':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
     string += "=" * n

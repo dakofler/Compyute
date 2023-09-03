@@ -119,9 +119,9 @@ def convolve1d(
     x_pad = pad1d(x, f_dil.shape, pad)
 
     # convolution
-    x_fft = npfft.rfft(x_pad.data).astype("complex64")
-    f_fft = npfft.rfft(f_dil, n=x_pad.shape[-1]).astype("complex64")
-    ifft = npfft.irfft(x_fft * f_fft).astype("float32")
+    x_fft = npfft.fft(x_pad.data).astype("complex64")
+    f_fft = npfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
+    ifft = np.real(npfft.ifft(x_fft * f_fft)).astype("float32")
 
     # slicing
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -181,9 +181,9 @@ def convolve2d(
     x_pad = pad2d(x, f_dil.shape, pad)
 
     # convolution
-    x_fft = npfft.rfft2(x_pad.data).astype("complex64")
-    f_fft = npfft.rfft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
-    ifft = npfft.irfft2(x_fft * f_fft).astype("float32")
+    x_fft = npfft.fft2(x_pad.data).astype("complex64")
+    f_fft = npfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
+    ifft = np.real(npfft.ifft2(x_fft * f_fft)).astype("float32")
 
     # slicing
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])

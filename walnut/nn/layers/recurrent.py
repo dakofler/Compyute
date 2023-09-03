@@ -80,6 +80,7 @@ class Recurrent(Module):
             def backward(y_grad: NpArrayLike) -> NpArrayLike:
                 self.set_y_grad(y_grad)
                 x_grad = np.zeros_like(x.data)
+                self.w.grad = np.zeros_like(self.w.data)
 
                 for i in range(x.shape[1] - 1, -1, -1):
                     # add hidden state gradient of next layer, if not last sequence element
@@ -97,7 +98,7 @@ class Recurrent(Module):
 
                     # weight grads
                     if i > 0:
-                        self.w.grad = y[:, i - 1].T @ x_grad[:, i]
+                        self.w.grad += y[:, i - 1].T @ x_grad[:, i]
 
                 # bias grads
                 self.b.grad = x_grad.sum((0, 1))

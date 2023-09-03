@@ -76,10 +76,7 @@ class Tensor:
     def grad(self, value: NpArrayLike | None) -> None:
         if value is not None and value.shape != self.shape:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
-        if self.grad is None or value is None:
-            self._grad = value  # set gradients
-        else:
-            self._grad += value  # accumulate gradients
+        self._grad = value
 
     @property
     def shape(self) -> ShapeLike:
