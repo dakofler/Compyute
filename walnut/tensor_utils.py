@@ -248,20 +248,15 @@ def randint(shape: ShapeLike, low: int, high: int) -> Tensor:
     return Tensor(np.random.randint(low, high, shape), dtype="int")
 
 
-def shuffle(
-    x1: Tensor, x2: Tensor, batch_size: int | None = None
-) -> tuple[Tensor, Tensor]:
+def shuffle(x: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
     """Shuffles two tensors equally along axis 0.
 
     Parameters
     ----------
-    x1 : Tensor
+    x : Tensor
         First tensor to be shuffled.
-    x2 : Tensor
+    y : Tensor
         Second tensor to be shuffled.
-    batch_size : int | None, optional
-        Number of samples to be returned, by default None.
-        If None, all samples are returned.
 
     Returns
     -------
@@ -273,15 +268,11 @@ def shuffle(
     ShapeError
         If tensors are not of equal size along a axis 0
     """
-    if x1.len != x2.len:
+    if x.len != y.len:
         raise ShapeError("Tensors must have equal lengths along axis 0")
 
-    length = x1.len
-    batch_size = batch_size if batch_size else length
-    shuffle_index = np.random.permutation(length)
-    y1 = x1[shuffle_index]
-    y2 = x2[shuffle_index]
-    return y1[:batch_size], y2[:batch_size]
+    shuffle_index = np.random.permutation(x.len)
+    return x[shuffle_index], y[shuffle_index]
 
 
 def check_dims(x: Tensor, target_dim: int) -> None:

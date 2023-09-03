@@ -7,7 +7,6 @@ from walnut.tensor import Tensor, NpArrayLike, ShapeLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
 from walnut.nn.models import Model
-from walnut.nn.containers import Container
 
 __all__ = [
     "plot_curve",
@@ -63,7 +62,7 @@ def plot_distrbution(
 
     Parameters
     ----------
-    data : dict[str, NumpyArray]
+    data : dict[str, NpArrayLike]
         Dictionary of labels and arrays.
     figsize : ShapeLike
         Size of the plot.
@@ -100,7 +99,7 @@ def plot_images(
 
     Parameters
     ----------
-    data : dict[str, NumpyArray]
+    data : dict[str, NpArrayLike]
         Dictionary of array names and values.
     figsize : ShapeLike
         Size of the plot.
@@ -194,31 +193,35 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 63
+    n = 64
     string = "-" * n
     string += f"\n{' ':6s}{'Layer':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
     string += "=" * n
     string += "\n"
-    tot_parameters = 0
 
     x = tu.ones((1,) + input_shape).astype(input_dtype)
+    model.keep_output = True
     _ = model(x)
 
-    def get_string(layer, i1, i2=None):
-        name = layer.__class__.__name__
-        output_shape = str((-1,) + layer.y.shape[1:])
-        n_params = sum(p.data.size for p in layer.get_parameters())
-        if i2 is None:
-            return f"{i1:5d} {name:20s} {output_shape:20s} {n_params:15d}\n"
-        return f"{i1:2d}.{i2:2d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+    def get_string(module, idx1, idx2=None):
+        name = module.__class__.__name__
+        output_shape = str((-1,) + module.y.shape[1:])
+        n_params = sum(p.data.size for p in module.parameters)
+        if idx2 is None:
+            return f"{idx1:5d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+        return f"{idx1:2d}.{idx2:2d} {name:20s} {output_shape:20s} {n_params:15d}\n"
 
-    for i, layer in enumerate(model.layers):
-        string += get_string(layer, i)
-        tot_parameters += sum(p.data.size for p in layer.get_parameters())
+    for i, module in enumerate(model.sub_modules):
+        string += get_string(module, i)
 
-        if isinstance(layer, Container):
-            for j, layer in enumerate(layer.layers):
-                string += get_string(layer, i, j)
+        if len(module.sub_modules) > 0:
+            for j, module in enumerate(module.sub_modules):
+                string += get_string(module, i, j)
 
     string += "=" * n
+    tot_parameters = sum(p.data.size for p in model.parameters)
+
+    model.keep_output = False
+    model.clean()
+
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

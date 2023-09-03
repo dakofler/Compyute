@@ -1,5 +1,6 @@
-__pycache__/
+__pycache__
 experiments
-data/*
+data
+trained_models
 .vscode
-test.ipynb
+x.ipynb

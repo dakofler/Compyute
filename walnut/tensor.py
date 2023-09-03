@@ -25,7 +25,8 @@ class Tensor:
 
     _data: NpArrayLike
     _grad: NpArrayLike | None
-    params: dict[str, NpArrayLike]  # move to optim? (Problem: resetting y_grads)
+    # move to optim? (Problem: resetting y_grads), move to parameter child class?
+    temp_params: dict[str, NpArrayLike]
     _iterator: int
 
     def __init__(
@@ -38,7 +39,7 @@ class Tensor:
 
         Parameters
         ----------
-        values : NumpyArray | list[Any] | float | int
+        values : NpArrayLike | NpTypeLike | PyTypeLike
             Data to initialize the tensor.
         dtype: str, optional
             Datatype of the tensor data, by default float32.
@@ -48,7 +49,7 @@ class Tensor:
 
         self.data = np.array(data, copy=copy, dtype=dtype)
         self._grad = None
-        self.params = {}
+        self.temp_params = {}
         self._iterator = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -75,10 +76,7 @@ class Tensor:
     def grad(self, value: NpArrayLike | None) -> None:
         if value is not None and value.shape != self.shape:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
-        if self.grad is None or value is None:
-            self._grad = value  # set gradients
-        else:
-            self._grad += value  # accumulate gradients
+        self._grad = value
 
     @property
     def shape(self) -> ShapeLike:
@@ -241,6 +239,9 @@ class Tensor:
         if not isinstance(other, Tensor):
             return Tensor(other)
         return other
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     # ----------------------------------------------------------------------------------------------
     # FUNCTIONS
