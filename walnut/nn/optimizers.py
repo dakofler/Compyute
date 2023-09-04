@@ -30,8 +30,8 @@ class Optimizer(ABC):
         for parameter in self.parameters:
             parameter.grad = None
 
-    def delete_temp_params(self) -> None:
-        """Deletes temporary values used in the step method."""
+    def reset_temp_params(self) -> None:
+        """Resets temporary values used in the step method."""
         for parameter in self.parameters:
             parameter.temp_params = {}
 

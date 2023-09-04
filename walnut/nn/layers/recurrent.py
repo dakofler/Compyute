@@ -8,10 +8,10 @@ from walnut.nn.module import Module
 from walnut.nn.funcional import relu
 
 
-__all__ = ["Recurrent"]
+__all__ = ["RecurrentCell"]
 
 
-class Recurrent(Module):
+class RecurrentCell(Module):
     """Recurrent layer."""
 
     def __init__(

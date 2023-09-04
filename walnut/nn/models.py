@@ -92,7 +92,7 @@ class Model(Module):
         batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
-        keep_sub_module_outputs: bool = False,
+        keep_intermediate_outputs: bool = False,
     ) -> tuple[list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -111,8 +111,9 @@ class Model(Module):
             Whether the model reports intermediate results during training, by default True.
         val_data : tuple[Tensor, Tensor] | None, optional
             Data used for validation during training, by default None.
-        keep_sub_module_outputs : bool, optional
-            Whether to keep output values and gradients, by default False.
+        keep_intermediate_outputs : bool, optional
+            Whether to store output values and gradients of sub modules, by default False.
+            Sub module outputs and gradients are kept in as a y-tensor.
 
         Returns
         -------
@@ -129,7 +130,7 @@ class Model(Module):
         if not self.loss_fn or not self.optimizer:
             raise ModelCompilationError("Model is not compiled yet.")
 
-        self.keep_output = keep_sub_module_outputs
+        self.keep_output = keep_intermediate_outputs
         train_loss_history, val_loss_history = [], []
 
         for epoch in range(1, epochs + 1):
@@ -192,7 +193,7 @@ class Model(Module):
             if verbose:
                 _log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
 
-        self.optimizer.delete_temp_params()
+        self.optimizer.reset_temp_params()
         self.keep_output = False
         return train_loss_history, val_loss_history
 

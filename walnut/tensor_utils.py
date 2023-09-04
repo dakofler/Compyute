@@ -23,7 +23,6 @@ __all__ = [
     "choice",
     "empty",
     "maximum",
-    "random_seed",
 ]
 
 
@@ -380,14 +379,3 @@ def stretch(
     x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
     # resize to fit target shape by filling with zeros
     return Tensor(np.resize(x_stretched, target_shape))
-
-
-def random_seed(seed: int):
-    """Sets the seed for RNG for reproducability.
-
-    Parameters
-    ----------
-    seed : int
-        Seed value.
-    """
-    np.random.seed(seed)
