@@ -5,7 +5,7 @@ import psutil
 import numpy as np
 
 
-__all__ = ["stopwatch", "memlog", "set_numpy_format"]
+__all__ = ["stopwatch", "memlog", "set_numpy_format", "random_seed"]
 
 
 def stopwatch(func):
@@ -37,3 +37,14 @@ def set_numpy_format():
     np.set_printoptions(
         precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
     )
+
+
+def random_seed(seed: int):
+    """Sets the seed for RNG for reproducability.
+
+    Parameters
+    ----------
+    seed : int
+        Seed value.
+    """
+    np.random.seed(seed)

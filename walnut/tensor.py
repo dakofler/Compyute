@@ -25,7 +25,6 @@ class Tensor:
 
     _data: NpArrayLike
     _grad: NpArrayLike | None
-    # move to optim? (Problem: resetting y_grads), move to parameter child class?
     temp_params: dict[str, NpArrayLike]
     _iterator: int
 
@@ -42,7 +41,7 @@ class Tensor:
         values : NpArrayLike | NpTypeLike | PyTypeLike
             Data to initialize the tensor.
         dtype: str, optional
-            Datatype of the tensor data, by default float32.
+            Datatype of the tensor data, by default "float32".
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
         """
