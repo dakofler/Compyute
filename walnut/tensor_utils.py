@@ -23,6 +23,7 @@ __all__ = [
     "choice",
     "empty",
     "maximum",
+    "concat",
 ]
 
 
@@ -308,8 +309,8 @@ def choice(x: Tensor, num_samples: int = 1) -> Tensor:
     Tensor
         Chosen samples.
     """
-    arange = np.arange(x.flatten().len)
-    samples = np.random.choice(arange, size=num_samples, p=x.data.flatten())
+    arng = np.arange(x.flatten().len)
+    samples = np.random.choice(arng, size=num_samples, p=x.data.flatten())
     return Tensor(samples, dtype="int")
 
 
@@ -379,3 +380,21 @@ def stretch(
     x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
     # resize to fit target shape by filling with zeros
     return Tensor(np.resize(x_stretched, target_shape))
+
+
+def concat(tensors: list[Tensor], axis: int = -1) -> Tensor:
+    """Joins a sequence of tensors along a given axis.
+
+    Parameters
+    ----------
+    tensors : list[Tensor]
+        List of Tensors to be joined.
+    axis : int, optional
+        Axis along which to join the tensors, by default -1.
+
+    Returns
+    -------
+    Tensor
+        _description_
+    """
+    return Tensor(np.concatenate([t.data for t in tensors], axis=axis))

@@ -3,22 +3,21 @@
 `Walnut` is a toolbox for building, training and analyzing neural networks. This framework was developed using `NumPy` only. There are example-notebook that explain how to use the framework and it's `Tensor` objects.
 
 ## Tensors
-Similar to `PyTorch` a `Tensor`-object was introduced as the central block that keeps track of data, gradients and more. Unlike `PyTorch`, this framework does not support autograd. Gradients used for training neural networks are computed within the network's layers. The tensors ogject supporst most operations also known from `PyTorch`'s tensors or `NumPy` arrays.
+Similar to `PyTorch`, in `Walnut` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's layers (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays.
 
 ## Neural Networks
 
 ### Data preprocessing, Encoding
-The framework offers some utility functions to preprocess and encode data before using it for training.
+The framework offers some utility functions to preprocess and encode data before using it for training (e.g. tokenizers).
 
 ### Building and training models
-Models can be built using predefined model-templates (e.g. a `Sequential`), but can also be built from scratch. They are generally composed of one or more modules (e.g. layers in a `Sequential` model.). The framework provides a variety of modules such as activation, normalization, linear and convolutional layers with more to come. The model can be trained using common optimizer algorithmes, such as SGD or Adam. Models can also be saved and loaded later on.
+Models can be built using predefined model-templates (e.g. `Sequential`), or they can also be built entirely from scratch, where the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more modules (e.g. layers in a `Sequential` model.). `Walnut` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. Defined models can be trained and updated using common optimizer algorithmes, such as SGD or Adam. Models can also be saved and loaded later on.
 
 ### Analysis
-The framework also provides some functions for analyzing a models' parameters and gradients to gain insights (inspired by Andrej Karpathy :) )
+`Walnut` also provides some functions for analyzing a models' paramenters, outputs and gradients to gain insights and help understand the effects of hyperparameters (inspired by Andrej Karpathy :) )
 
 ### Experimenting
-All modules (layers) can also be used individually without a model and their parameters can be inspected.
-
+All modules (layers) can also be used and experimented with individually without a model.
 
 
 This project is still a work in progress, as I am planning to constantly add new features and optimizations.

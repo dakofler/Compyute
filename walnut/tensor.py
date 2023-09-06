@@ -73,7 +73,9 @@ class Tensor:
 
     @grad.setter
     def grad(self, value: NpArrayLike | None) -> None:
-        if value is not None and value.shape != self.shape:
+        if not isinstance(value, NpArrayLike):
+            raise ValueError("Invalid dtype.")
+        if value.shape != self.shape:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
         self._grad = value
 
