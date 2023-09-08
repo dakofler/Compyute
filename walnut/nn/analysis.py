@@ -193,35 +193,30 @@ def model_summary(
     input_dtype : str, optional
         Input data type, by default "float".
     """
-    n = 64
-    string = "-" * n
-    string += f"\n{' ':6s}{'Layer':20s} {'Output Shape':20s} {'# Parameters':>15s}\n"
-    string += "=" * n
-    string += "\n"
+    n = 63
+    summary = ["-" * n]
+    summary.append(f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n")
+    summary.append("=" * n)
+    summary.append("\n")
 
     x = tu.ones((1,) + input_shape).astype(input_dtype)
     model.keep_output = True
     _ = model(x)
 
-    def get_string(module, idx1, idx2=None):
-        name = module.__class__.__name__
+    def build_string(module, summary, depth):
+        name = " " * depth + module.__class__.__name__
         output_shape = str((-1,) + module.y.shape[1:])
         n_params = sum(p.data.size for p in module.parameters)
-        if idx2 is None:
-            return f"{idx1:5d} {name:20s} {output_shape:20s} {n_params:15d}\n"
-        return f"{idx1:2d}.{idx2:2d} {name:20s} {output_shape:20s} {n_params:15d}\n"
+        summary.append(f"{name:25s} {output_shape:20s} {n_params:15d}\n")
 
-    for i, module in enumerate(model.sub_modules):
-        string += get_string(module, i)
+        for sub_module in module.sub_modules:
+            build_string(sub_module, summary, depth + 1)
 
-        if len(module.sub_modules) > 0:
-            for j, module in enumerate(module.sub_modules):
-                string += get_string(module, i, j)
-
-    string += "=" * n
+    build_string(model, summary, 0)
+    summary.append("=" * n)
     tot_parameters = sum(p.data.size for p in model.parameters)
 
     model.keep_output = False
     model.clean()
-
+    string = "".join(summary)
     print(f"{string}\n\nTotal parameters: {tot_parameters}")
