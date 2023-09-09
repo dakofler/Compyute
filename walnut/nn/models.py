@@ -4,7 +4,7 @@ import time
 from typing import Callable
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.losses import Loss
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
@@ -247,7 +247,7 @@ class Sequential(Model):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
                 return self.sub_modules[0].backward(y_grad)
 

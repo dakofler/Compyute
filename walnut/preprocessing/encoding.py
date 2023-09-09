@@ -2,8 +2,10 @@
 
 import pandas as pd
 import numpy as np
+import cupy as cp
 
 from walnut.tensor import Tensor
+import walnut.tensor_utils as tu
 
 
 __all__ = ["pd_one_hot_encode", "one_hot_encode"]
@@ -63,4 +65,4 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     Tensor
         One-hot-encoded tensor.
     """
-    return Tensor(np.eye(num_classes)[x.data], dtype="int")
+    return Tensor((tu.eye(num_classes, x.device)[x]).data, dtype="int", device=x.device)

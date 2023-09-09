@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 import numpy as np
+import cupy as cp
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NpArrayLike, ShapeLike
+from walnut.tensor import Tensor, ArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -39,6 +40,7 @@ class MaxPooling2d(Module):
         p_y, p_x = self.kernel_size
         x_b, x_c, _, _ = x.shape
         y = tu.zeros((x_b, x_c, x_crop.shape[-2] // p_y, x_crop.shape[-1] // p_x))
+        y.to_device(x.device)
         for yi in range(y.shape[-2]):
             for xi in range(y.shape[-1]):
                 cnk = x.data[:, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x]
@@ -49,12 +51,18 @@ class MaxPooling2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
-                dy_s = tu.stretch(Tensor(y_grad), self.kernel_size, p_map.shape)
+                dy_s = tu.stretch(
+                    Tensor(y_grad, device=x.device), self.kernel_size, p_map.shape
+                )
                 # use p_map as mask for grads
-                return np.resize((dy_s * p_map).data, x.shape)
+                if dy_s.device == "cpu":
+                    x_grad = np.resize((dy_s * p_map).data, x.shape)
+                else:
+                    x_grad = cp.resize((dy_s * p_map).data, x.shape)
+                return x_grad
 
             self.backward = backward
 
@@ -86,7 +94,7 @@ class Reshape(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
                 return y_grad.reshape(x.shape)
 
@@ -104,7 +112,7 @@ class Flatten(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
                 return y_grad.reshape(x.shape)
 
@@ -142,9 +150,15 @@ class Moveaxis(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
-                return np.moveaxis(y_grad, self.to_axis, self.from_axis)
+
+                if x.device == "cuda":
+                    x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
+                else:
+                    x_grad = cp.moveaxis(y_grad, self.to_axis, self.from_axis)
+
+                return x_grad
 
             self.backward = backward
 
@@ -173,13 +187,17 @@ class Dropout(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         if self.training:
-            d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
+            if x.device == "cpu":
+                d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
+            else:
+                d_map = cp.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
+
             y = x * d_map / (1.0 - self.p)
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
                 # use d_map as mask for grads
-                return y_grad * d_map.data / (1.0 - self.p)
+                return y_grad * d_map / (1.0 - self.p)
 
             self.backward = backward
 

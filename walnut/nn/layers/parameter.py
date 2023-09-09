@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.funcional import convolve1d, convolve2d
 from walnut.nn.module import Module
 from walnut.preprocessing.encoding import one_hot_encode
@@ -68,7 +68,7 @@ class Linear(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads (b, c_in)
@@ -79,14 +79,15 @@ class Linear(Module):
                 w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
                 w_grad = x.transpose(w_ax).data @ y_grad
                 if dim > 2:
-                    wsum_axis = tuple(np.arange(dim)[:-2])
-                    w_grad = np.sum(w_grad, axis=wsum_axis)
+                    wsum_axis = tuple(np.arange(dim)[:-2])  # cupy?
+                    w_grad = w_grad.sum(axis=wsum_axis)
+
                 self.w.grad = w_grad
 
                 # bias grads (c_out,)
                 if self.use_bias:
                     b_tpl = tuple(d for d in range(dim - 1))
-                    self.b.grad = np.sum(y_grad, axis=b_tpl)
+                    self.b.grad = y_grad.sum(axis=b_tpl)
 
                 return x_grad
 
@@ -143,7 +144,7 @@ class Convolution1d(Module):
 
         # init weights (c_out, c_in, x)
         if weights is None:
-            k = int(in_channels * np.prod(kernel_size)) ** -0.5
+            k = int(in_channels * np.prod(kernel_size)) ** -0.5  # cupy?
             self.w = tu.randu((out_channels, in_channels, kernel_size), -k, k)
         else:
             self.w = weights
@@ -182,7 +183,7 @@ class Convolution1d(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 x3 = x.shape[-1]
@@ -190,7 +191,7 @@ class Convolution1d(Module):
                 dy1, dy2, dy3 = y_grad.shape
 
                 # undo strides by filling with zeros
-                y_grad_p = np.zeros((dy1, dy2, self.stride * dy3))
+                y_grad_p = tu.zeros((dy1, dy2, self.stride * dy3), device=x.device).data
                 y_grad_p[:, :, :: self.stride] = y_grad
                 out = 1 + (x3 - w3) if self.pad == "valid" else x3
                 y_grad_p = Tensor(y_grad_p[:, :, :out])
@@ -228,7 +229,7 @@ class Convolution1d(Module):
 
                 # bias grads (c_out,)
                 if self.use_bias:
-                    self.b.grad = np.sum(y_grad, axis=(0, 2))  # sum over b and x
+                    self.b.grad = y_grad.sum(axis=(0, 2))  # sum over b and x
 
                 return x_grad
 
@@ -285,7 +286,7 @@ class Convolution2d(Module):
 
         # init weights (c_out, c_in, y, x)
         if weights is None:
-            k = int(in_channels * np.prod(kernel_size)) ** -0.5
+            k = int(in_channels * np.prod(kernel_size)) ** -0.5  # cupy?
             self.w = tu.randu((out_channels, in_channels, *kernel_size), -k, k)
         else:
             self.w = weights
@@ -324,7 +325,7 @@ class Convolution2d(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 w3, w4 = self.w.shape[-2:]
@@ -334,11 +335,13 @@ class Convolution2d(Module):
                 d1, d2 = self.dil
 
                 # fill elements skipped by strides with zeros
-                y_grad_p = np.zeros((dy1, dy2, s1 * dy3, s2 * dy4))
+                y_grad_p = tu.zeros(
+                    (dy1, dy2, s1 * dy3, s2 * dy4), device=x.device
+                ).data
                 y_grad_p[:, :, ::s1, ::s2] = y_grad
                 out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
                 out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
-                y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x])
+                y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x], device=x.device)
 
                 # input grads (b, c_in, y, x)
                 y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
@@ -360,7 +363,7 @@ class Convolution2d(Module):
 
                 # bias grads (c_out,)
                 if self.use_bias:
-                    self.b.grad = np.sum(y_grad, axis=(0, 2, 3))  # sum over b, y and x
+                    self.b.grad = y_grad.sum(axis=(0, 2, 3))  # sum over b, y and x
 
                 return x_grad
 
@@ -411,9 +414,9 @@ class Embedding(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> None:
+            def backward(y_grad: ArrayLike) -> None:
                 self.set_y_grad(y_grad)
-                self.w.grad = np.sum(x_enc.transpose((0, 2, 1)).data @ y_grad, axis=0)
+                self.w.grad = (x_enc.transpose((0, 2, 1)).data @ y_grad).sum(axis=0)
 
             self.backward = backward
 

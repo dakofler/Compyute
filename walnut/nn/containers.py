@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
 import walnut.tensor_utils as tu
 
@@ -30,7 +30,7 @@ class SequentialContainer(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 for module in reversed(self.sub_modules):
@@ -64,11 +64,11 @@ class ParallelContainer(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self.sub_modules]
-        y = tu.concat(ys, axis=self.concat_axis)
+        y = tu.concatenate(ys, axis=self.concat_axis)
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
                 x_grad = np.zeros_like(x.data)
                 out_lens = [y.shape[self.concat_axis] for y in ys]

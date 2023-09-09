@@ -3,7 +3,7 @@
 import numpy as np
 
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NpArrayLike, ShapeLike
+from walnut.tensor import Tensor, ArrayLike, ShapeLike
 from walnut.nn.module import Module
 
 
@@ -34,8 +34,8 @@ class Batchnorm(Module):
         self.b = tu.zeros((in_channels,))
         self.parameters = [self.w, self.b]
 
-        self.rmean = tu.zeros((in_channels,))
-        self.rvar = tu.ones((in_channels,))
+        self.rmean = tu.zeros((in_channels,), device=self.device)
+        self.rvar = tu.ones((in_channels,), device=self.device)
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -45,7 +45,7 @@ class Batchnorm(Module):
         return f"{name}({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        axis = (0,) + tuple(np.arange(x.ndim))[2:]
+        axis = (0,) + tuple(tu.arange(x.ndim, device=self.device).data[2:])
         if self.training:
             mean = x.mean(axis=axis, keepdims=True)
             var = x.var(axis=axis, keepdims=True)
@@ -68,21 +68,21 @@ class Batchnorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads
-                n = float(np.prod(x.shape) / x.shape[1])
+                n = float(np.prod(x.shape) / x.shape[1])  # cupy ?
                 tmp1 = n * y_grad
-                tmp2 = np.sum(y_grad, axis=axis, keepdims=True)
-                tmp3 = np.sum(y_grad * x_h.data, axis=axis, keepdims=True)
+                tmp2 = y_grad.sum(axis=axis, keepdims=True)
+                tmp3 = (y_grad * x_h.data).sum(axis=axis, keepdims=True)
                 x_grad = weights.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
-                self.w.grad = np.sum(x_h.data * y_grad, axis=axis)
+                self.w.grad = (x_h.data * y_grad).sum(axis=axis)
 
                 # beta grads
-                self.b.grad = np.sum(y_grad, axis=axis)
+                self.b.grad = y_grad.sum(axis=axis)
 
                 return x_grad
 
@@ -119,7 +119,7 @@ class Layernorm(Module):
         return f"{name}({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        axis = tuple(np.arange(x.ndim)[1:])
+        axis = tuple(tu.arange(x.ndim, device=self.device).data[1:])
         mean = x.mean(axis=axis, keepdims=True)
         var = x.var(axis=axis, keepdims=True)
         var_h = (var + self.eps) ** -0.5
@@ -128,21 +128,21 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
                 # input grads
                 n = x.data[0].size
                 tmp1 = n * y_grad
-                tmp2 = np.sum(y_grad, axis, keepdims=True)
-                tmp3 = np.sum(y_grad * x_h.data, axis, keepdims=True)
+                tmp2 = y_grad.sum(axis, keepdims=True)
+                tmp3 = (y_grad * x_h.data).sum(axis, keepdims=True)
                 x_grad = self.w.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
-                self.w.grad = np.sum(x_h.data * y_grad, axis=0)
+                self.w.grad = (x_h.data * y_grad).sum(axis=0)
 
                 # beta grads
-                self.b.grad = np.sum(y_grad, axis=0)
+                self.b.grad = y_grad.sum(axis=0)
 
                 return x_grad
 

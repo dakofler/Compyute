@@ -1,9 +1,7 @@
 """recurrent layers layer"""
 
-import numpy as np
-
 from walnut import tensor_utils as tu
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
 from walnut.nn.funcional import relu
 
@@ -60,7 +58,7 @@ class RecurrentCell(Module):
         return f"{name}({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = tu.zeros_like(x)
+        y = tu.zeros_like(x, device=x.device)
 
         # iterate over sequence elements
         for i in range(x.shape[1]):
@@ -77,10 +75,10 @@ class RecurrentCell(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
+            def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
-                x_grad = np.zeros_like(x.data)
-                self.w.grad = np.zeros_like(self.w.data)
+                x_grad = tu.zeros_like(x, device=x.device).data
+                self.w.grad = tu.zeros_like(self.w, device=self.w.device).data
 
                 for i in range(x.shape[1] - 1, -1, -1):
                     # add hidden state gradient of next layer, if not last sequence element

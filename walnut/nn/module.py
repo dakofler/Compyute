@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Callable
 from abc import ABC, abstractmethod
 
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.tensor import Tensor, ArrayLike
 import walnut.tensor_utils as tu
 
 
@@ -17,11 +17,12 @@ class Module(ABC):
     def __init__(self) -> None:
         """Module base class."""
         self.y: Tensor = tu.empty()
-        self.backward: Callable[[NpArrayLike], NpArrayLike] | None = None
+        self.backward: Callable[[ArrayLike], ArrayLike] | None = None
         self._sub_modules: list[Module] = []
         self._parameters: list[Tensor] = []
         self._training: bool = False
         self._keep_output: bool = False
+        self._device: str = "cpu"
 
     @property
     def sub_modules(self) -> list[Module]:
@@ -43,6 +44,31 @@ class Module(ABC):
     @parameters.setter
     def parameters(self, value: list[Tensor]) -> None:
         self._parameters = value
+
+    @property
+    def device(self) -> str:
+        """Storage device."""
+        return self._device
+
+    @device.setter
+    def device(self, value: str) -> None:
+        if value not in ("cpu", "cuda"):
+            raise ValueError("Unknown device.")
+        self._device = value
+
+    def to_device(self, device: str) -> None:
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : str
+            Device to move the tensor to. Valid options are "cpu" and "cuda".
+        """
+        self._device = device
+        for p in self.parameters:
+            p.to_device(device)
+        for module in self.sub_modules:
+            module.to_device(device)
 
     @property
     def training(self) -> bool:
@@ -99,7 +125,7 @@ class Module(ABC):
         if self.keep_output:
             self.y.data = y.data.copy()
 
-    def set_y_grad(self, y_grad: NpArrayLike) -> None:
+    def set_y_grad(self, y_grad: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
