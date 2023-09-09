@@ -1,7 +1,6 @@
 """parameter layers layer"""
 
 from __future__ import annotations
-import numpy as np
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
@@ -79,7 +78,7 @@ class Linear(Module):
                 w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
                 w_grad = x.transpose(w_ax).data @ y_grad
                 if dim > 2:
-                    wsum_axis = tuple(np.arange(dim)[:-2])  # cupy?
+                    wsum_axis = tuple(tu.arange(dim).data[:-2])
                     w_grad = w_grad.sum(axis=wsum_axis)
 
                 self.w.grad = w_grad
@@ -144,7 +143,7 @@ class Convolution1d(Module):
 
         # init weights (c_out, c_in, x)
         if weights is None:
-            k = int(in_channels * np.prod(kernel_size)) ** -0.5  # cupy?
+            k = int(in_channels * kernel_size) ** -0.5
             self.w = tu.randu((out_channels, in_channels, kernel_size), -k, k)
         else:
             self.w = weights
@@ -286,7 +285,7 @@ class Convolution2d(Module):
 
         # init weights (c_out, c_in, y, x)
         if weights is None:
-            k = int(in_channels * np.prod(kernel_size)) ** -0.5  # cupy?
+            k = int(in_channels * tu.prod(kernel_size)) ** -0.5
             self.w = tu.randu((out_channels, in_channels, *kernel_size), -k, k)
         else:
             self.w = weights

@@ -40,7 +40,8 @@ def _log_epoch(
 
 def _get_batches(x: Tensor, y: Tensor, batch_size: int | None) -> tuple[Tensor, Tensor]:
     """Generates batches for training a model."""
-    x_shuffled, y_shuffled = tu.shuffle(x, y)
+    x_shuffled, idx = tu.shuffle(x)
+    y_shuffled = y[idx]
     batch_size = (
         min(x.len, batch_size)
         if isinstance(batch_size, int) and batch_size > 1

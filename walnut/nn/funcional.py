@@ -385,3 +385,34 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
         x_pad = cp.pad(x.data, tpl)
 
     return Tensor(x_pad, device=x.device)
+
+
+def stretch2d(
+    x: Tensor,
+    stretches: tuple[int, int],
+    shape: ShapeLike,
+    axis: tuple[int, int] = (-2, -1),
+) -> Tensor:
+    """Stretches a tensor by repeating it's elements over given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor to be stretched out.
+    stretches : tuple[int, int]
+        Number of repeating values along each axis.
+    shape : ShapeLike
+        Shape of the target tensor. If the shape does not match after stretching,
+        remaining values are filled with zeroes.
+    axis : tuple[int, int], optional
+        Axis along which to stretch the tensor, by default (-2, -1).
+
+    Returns
+    -------
+    Tensor
+        Stretched out tensor.
+    """
+    fa1, fa2 = stretches
+    ax1, ax2 = axis
+    x_stretched = x.repeat(fa1, ax1).repeat(fa2, ax2)
+    return x_stretched.resize(shape)

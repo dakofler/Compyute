@@ -7,6 +7,7 @@ import cupy as cp
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike, ShapeLike
 from walnut.nn.module import Module
+from walnut.nn.funcional import stretch2d
 
 
 __all__ = ["MaxPooling2d", "Reshape", "Flatten", "Moveaxis", "Dropout"]
@@ -39,14 +40,17 @@ class MaxPooling2d(Module):
 
         p_y, p_x = self.kernel_size
         x_b, x_c, _, _ = x.shape
-        y = tu.zeros((x_b, x_c, x_crop.shape[-2] // p_y, x_crop.shape[-1] // p_x))
-        y.to_device(x.device)
+        _, _, xc_y, xc_x = x_crop.shape
+        y = tu.zeros(
+            (x_b, x_c, xc_y // p_y, xc_x // p_x),
+            device=self.device,
+        )
         for yi in range(y.shape[-2]):
             for xi in range(y.shape[-1]):
                 cnk = x.data[:, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x]
                 y[:, :, yi, xi] = cnk.max(axis=(-2, -1))
 
-        y_s = tu.stretch(y, self.kernel_size, x_crop.shape)
+        y_s = stretch2d(y, self.kernel_size, x_crop.shape)
         p_map = (x_crop == y_s) * 1.0
 
         if self.training:
@@ -54,15 +58,11 @@ class MaxPooling2d(Module):
             def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
-                dy_s = tu.stretch(
-                    Tensor(y_grad, device=x.device), self.kernel_size, p_map.shape
+                dy_s = stretch2d(
+                    Tensor(y_grad, device=self.device), self.kernel_size, p_map.shape
                 )
                 # use p_map as mask for grads
-                if dy_s.device == "cpu":
-                    x_grad = np.resize((dy_s * p_map).data, x.shape)
-                else:
-                    x_grad = cp.resize((dy_s * p_map).data, x.shape)
-                return x_grad
+                return (dy_s * p_map).resize(x.shape).data
 
             self.backward = backward
 
@@ -153,12 +153,11 @@ class Moveaxis(Module):
             def backward(y_grad: ArrayLike) -> ArrayLike:
                 self.set_y_grad(y_grad)
 
-                if x.device == "cuda":
-                    x_grad = np.moveaxis(y_grad, self.to_axis, self.from_axis)
-                else:
-                    x_grad = cp.moveaxis(y_grad, self.to_axis, self.from_axis)
-
-                return x_grad
+                return (
+                    Tensor(y_grad, device=self.device)
+                    .moveaxis(self.to_axis, self.from_axis)
+                    .data
+                )
 
             self.backward = backward
 
@@ -187,11 +186,9 @@ class Dropout(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         if self.training:
-            if x.device == "cpu":
-                d_map = np.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
-            else:
-                d_map = cp.random.choice([0.0, 1.0], x.shape, p=[self.p, 1.0 - self.p])
-
+            choices = Tensor([0, 1])
+            probs = Tensor([self.p, 1.0 - self.p])
+            d_map = tu.random_choice(choices, probs, x.shape, self.device)
             y = x * d_map / (1.0 - self.p)
 
             def backward(y_grad: ArrayLike) -> ArrayLike:

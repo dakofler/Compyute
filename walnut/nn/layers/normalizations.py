@@ -1,7 +1,5 @@
 """Normalization layers module"""
 
-import numpy as np
-
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike, ShapeLike
 from walnut.nn.module import Module
@@ -45,7 +43,7 @@ class Batchnorm(Module):
         return f"{name}({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        axis = (0,) + tuple(tu.arange(x.ndim, device=self.device).data[2:])
+        axis = (0,) + tuple(tu.arange(x.ndim).data[2:])
         if self.training:
             mean = x.mean(axis=axis, keepdims=True)
             var = x.var(axis=axis, keepdims=True)
@@ -72,7 +70,7 @@ class Batchnorm(Module):
                 self.set_y_grad(y_grad)
 
                 # input grads
-                n = float(np.prod(x.shape) / x.shape[1])  # cupy ?
+                n = float(tu.prod(x.shape) / x.shape[1])  # cupy ?
                 tmp1 = n * y_grad
                 tmp2 = y_grad.sum(axis=axis, keepdims=True)
                 tmp3 = (y_grad * x_h.data).sum(axis=axis, keepdims=True)
@@ -119,7 +117,7 @@ class Layernorm(Module):
         return f"{name}({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        axis = tuple(tu.arange(x.ndim, device=self.device).data[1:])
+        axis = tuple(tu.arange(x.ndim).data[1:])
         mean = x.mean(axis=axis, keepdims=True)
         var = x.var(axis=axis, keepdims=True)
         var_h = (var + self.eps) ** -0.5

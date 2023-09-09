@@ -3,7 +3,7 @@
 `Walnut` is a toolbox for building, training and analyzing neural networks. This framework was developed using `NumPy` only. There are example-notebook that explain how to use the framework and it's `Tensor` objects.
 
 ## Tensors
-Similar to `PyTorch`, in `Walnut` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's layers (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays.
+Similar to `PyTorch`, in `Walnut` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's layers (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays. `Walnut` also supports CUDA.
 
 ## Neural Networks
 

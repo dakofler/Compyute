@@ -666,3 +666,42 @@ class Tensor:
             Index tensor.
         """
         return Tensor(np.argmax(self.data, axis=axis), dtype="int", device=self.device)
+
+    def resize(self, shape: ShapeLike) -> Tensor:
+        """Returns a new tensor with the specified shape.
+        If the new tensor is larger than the original one, it is filled with zeros.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Resized tensor.
+        """
+        if self.device == "cpu":
+            resized = np.resize(self.data, shape)
+        else:
+            resized = cp.resize(self.data, shape)
+        return Tensor(resized, dtype=self.dtype, device=self.device)
+
+    def repeat(self, n_repeats: int, axis: int) -> Tensor:
+        """Repeat elements of a tensor.
+
+        Parameters
+        ----------
+        n_repeats : int
+            Number of repeats.
+        axis : int
+            Axis, along which the values are repeated.
+
+        Returns
+        -------
+        Tensor
+            Tensor with repeated values.
+        """
+        return Tensor(
+            self.data.repeat(n_repeats, axis), dtype=self.dtype, device=self.device
+        )

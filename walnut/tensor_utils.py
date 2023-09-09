@@ -19,12 +19,16 @@ __all__ = [
     "randn",
     "randu",
     "randint",
+    "random_permutation",
     "shuffle",
     "check_dims",
-    "choice",
+    "random_choice",
+    "random_choice_indices",
     "empty",
     "maximum",
     "concatenate",
+    "prod",
+    "eye",
 ]
 
 
@@ -273,35 +277,39 @@ def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tenso
     return Tensor(np.random.randint(low, high, shape), dtype="int", device=device)
 
 
-def shuffle(x: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
-    """Shuffles two tensors equally along axis 0.
+def random_permutation(n: int, device: str = "cpu") -> Tensor:
+    """Returns a permuted range of length n.
+
+    Parameters
+    ----------
+    n : int
+        Length of the permuted range.
+    device: str, optinal
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Permuted range tensor.
+    """
+    return Tensor(np.random.permutation(n), dtype="int", device=device)
+
+
+def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
+    """Shuffles a tensor along axis 0.
 
     Parameters
     ----------
     x : Tensor
         First tensor to be shuffled.
-    y : Tensor
-        Second tensor to be shuffled.
 
     Returns
     -------
     tuple[Tensor, Tensor]
-        Shuffled tensors.
-
-    Raises
-    ------
-    ShapeError
-        If tensors are not of equal size along a axis 0
+        Shuffled tensor and index tensor.
     """
-    if x.len != y.len:
-        raise ShapeError("Tensors must have equal lengths along axis 0")
-
-    if x.device == "cpu":
-        shuffle_index = np.random.permutation(x.len)
-    else:
-        shuffle_index = cp.random.permutation(x.len)
-
-    return x[shuffle_index], y[shuffle_index]
+    shuffle_idx = random_permutation(x.len, x.device)
+    return x[shuffle_idx], shuffle_idx
 
 
 def check_dims(x: Tensor, target_dim: int) -> None:
@@ -323,29 +331,57 @@ def check_dims(x: Tensor, target_dim: int) -> None:
         raise ShapeError("Input dimensions do not match.")
 
 
-def choice(x: Tensor, num_samples: int = 1) -> Tensor:
-    """Returns a random index based on a probability distribution tensor.
+def random_choice_indices(p: Tensor, num_samples: int = 1) -> Tensor:
+    """Returns random indices based on a probability distribution tensor.
 
     Parameters
     ----------
-    x : Tensor
-        Tensor containing a probablitity distribution.
+    p : Tensor
+        Probablitity distribution.
     num_samples : int, optional
-        Number of samples drawn, by default 1.
+        Number of samples to draw, by default 1.
 
     Returns
     -------
     Tensor
         Chosen samples.
     """
-    if x.device == "cpu":
-        arng = np.arange(x.flatten().len)
-        samples = np.random.choice(arng, size=num_samples, p=x.data.flatten())
+    if p.device == "cpu":
+        samples = np.random.choice(p.len, size=num_samples, p=p.data)
     else:
-        arng = cp.arange(x.flatten().len)
-        samples = cp.random.choice(arng, size=num_samples, p=x.data.flatten())
+        samples = cp.random.choice(p.len, size=num_samples, p=p.data)
+    return Tensor(samples, dtype="int", device=p.device)
 
-    return Tensor(samples, dtype="int", device=x.device)
+
+def random_choice(
+    choices: Tensor,
+    p: Tensor,
+    shape: ShapeLike,
+    device: str = "cpu",
+) -> Tensor:
+    """_summary_
+
+    Parameters
+    ----------
+    choices : Tensor
+        Tensor of possible values.
+    p : Tensor
+        Probablitity distribution.
+    shape : ShapeLike
+        Shape of the random tensor.
+    device: str, optinal
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Tensor of random choices.
+    """
+    if device == "cpu":
+        choices = np.random.choice(choices.data, shape, p=p.data)
+    else:
+        choices = cp.random.choice(choices.data, shape, p=p.data)
+    return Tensor(choices, device=device)
 
 
 def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
@@ -397,47 +433,6 @@ def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
 
     m = np.maximum(_a, _b) if device == "cpu" else cp.maximum(_a, _b)
     return Tensor(m, device=device)
-
-
-def stretch(
-    x: Tensor,
-    streching: tuple[int, int],
-    target_shape: ShapeLike,
-    axis: tuple[int, int] = (-2, -1),
-) -> Tensor:
-    """Strtches a tensor by repeating it's elements over given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be stretched out.
-    streching : tuple[int, int]
-        Number of repeating values along each axis.
-    target_shape : ShapeLike
-        Shape of the target tensor. If the shape does not match after stretching,
-        remaining values are filled with zeroes.
-    axis : tuple[int, int], optional
-        Axis along which to stretch the tensor, by default (-2, -1).
-
-    Returns
-    -------
-    Tensor
-        Stretched out tensor.
-    """
-    fa1, fa2 = streching
-    ax1, ax2 = axis
-
-    if x.device == "cpu":
-        x_stretched = np.repeat(x.data, fa1, axis=ax1)
-        x_stretched = np.repeat(x_stretched, fa2, axis=ax2)
-        x_resized = np.resize(x_stretched, target_shape)
-    else:
-        x_stretched = cp.repeat(x.data, fa1, axis=ax1)
-        x_stretched = cp.repeat(x_stretched, fa2, axis=ax2)
-        x_resized = cp.resize(x_stretched, target_shape)
-
-    # resize to fit target shape by filling with zeros
-    return Tensor(x_resized, device=x.device)
 
 
 def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
