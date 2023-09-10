@@ -67,16 +67,16 @@ class Linear(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 # input grads (b, c_in)
-                x_grad = y_grad @ self.w.T
+                x_grad = dy @ self.w.T
 
                 # weight grads (c_in, c_out)
                 dim = x.ndim
                 w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
-                w_grad = x.transpose(w_ax).data @ y_grad
+                w_grad = x.transpose(w_ax).data @ dy
                 if dim > 2:
                     wsum_axis = tuple(tu.arange(dim).data[:-2])
                     w_grad = w_grad.sum(axis=wsum_axis)
@@ -86,7 +86,7 @@ class Linear(Module):
                 # bias grads (c_out,)
                 if self.use_bias:
                     b_tpl = tuple(d for d in range(dim - 1))
-                    self.b.grad = y_grad.sum(axis=b_tpl)
+                    self.b.grad = dy.sum(axis=b_tpl)
 
                 return x_grad
 
@@ -178,25 +178,25 @@ class Convolution1d(Module):
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y += tu.match_dims(x=self.b, dims=y.ndim - 1)
+            y += tu.match_dims(self.b, y.ndim - 1)
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 x3 = x.shape[-1]
                 w3 = self.w.shape[-1]
-                dy1, dy2, dy3 = y_grad.shape
+                dy1, dy2, dy3 = dy.shape
 
                 # undo strides by filling with zeros
-                y_grad_p = tu.zeros((dy1, dy2, self.stride * dy3), device=x.device).data
-                y_grad_p[:, :, :: self.stride] = y_grad
+                dy_p = tu.zeros((dy1, dy2, self.stride * dy3), device=self.device).data
+                dy_p[:, :, :: self.stride] = dy
                 out = 1 + (x3 - w3) if self.pad == "valid" else x3
-                y_grad_p = Tensor(y_grad_p[:, :, :out])
+                dy_p = Tensor(dy_p[:, :, :out], device=self.device)
 
                 # input grads (b, c_in, x)
-                y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+                dy_p_ext = tu.expand_dims(dy_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
                 # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
                 pad = (
@@ -206,12 +206,12 @@ class Convolution1d(Module):
                     if self.pad == "causal"
                     else "same"
                 )
-                dy_conv_w = convolve1d(y_grad_p_ext, w_ext, dil=self.dil, pad=pad)
+                dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 # sum over output channels
                 x_grad = dy_conv_w.sum(axis=1).data
 
                 # weight grads (c_out, c_in, x)
-                y_grad_p_ext = y_grad_p_ext.flip(-1)
+                dy_p_ext = dy_p_ext.flip(-1)
                 # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
                 pad = (
                     w3 // 2 * self.dil
@@ -220,7 +220,7 @@ class Convolution1d(Module):
                     if self.pad == "causal"
                     else "valid"
                 )
-                x_conv_dy = convolve1d(x_ext, y_grad_p_ext, pad=pad)[
+                x_conv_dy = convolve1d(x_ext, dy_p_ext, pad=pad)[
                     :, :, :, -w3 * self.dil :
                 ]
                 # sum over batches
@@ -228,7 +228,7 @@ class Convolution1d(Module):
 
                 # bias grads (c_out,)
                 if self.use_bias:
-                    self.b.grad = y_grad.sum(axis=(0, 2))  # sum over b and x
+                    self.b.grad = dy.sum(axis=(0, 2))  # sum over b and x
 
                 return x_grad
 
@@ -324,37 +324,35 @@ class Convolution2d(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 w3, w4 = self.w.shape[-2:]
                 x3, x4 = x.shape[-2:]
-                dy1, dy2, dy3, dy4 = y_grad.shape
+                dy1, dy2, dy3, dy4 = dy.shape
                 s1, s2 = self.stride
                 d1, d2 = self.dil
 
                 # fill elements skipped by strides with zeros
-                y_grad_p = tu.zeros(
-                    (dy1, dy2, s1 * dy3, s2 * dy4), device=x.device
-                ).data
-                y_grad_p[:, :, ::s1, ::s2] = y_grad
+                dy_p = tu.zeros((dy1, dy2, s1 * dy3, s2 * dy4), device=self.device).data
+                dy_p[:, :, ::s1, ::s2] = dy
                 out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
                 out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
-                y_grad_p = Tensor(y_grad_p[:, :, :out_y, :out_x], device=x.device)
+                dy_p = Tensor(dy_p[:, :, :out_y, :out_x], device=self.device)
 
                 # input grads (b, c_in, y, x)
-                y_grad_p_ext = tu.expand_dims(y_grad_p, 2)
+                dy_p_ext = tu.expand_dims(dy_p, 2)
                 w_ext = tu.expand_dims(self.w, 0)
                 # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 pad = "full" if self.pad == "valid" else "same"
-                dy_conv_w = convolve2d(y_grad_p_ext, w_ext, dil=self.dil, pad=pad)
+                dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, y, x)
-                y_grad_p_ext = y_grad_p_ext.flip((-2, -1))
+                dy_p_ext = dy_p_ext.flip((-2, -1))
                 # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
                 pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
-                x_conv_dy = convolve2d(x_ext, y_grad_p_ext, pad=pad)[
+                x_conv_dy = convolve2d(x_ext, dy_p_ext, pad=pad)[
                     :, :, :, -w3 * d1 :, -w4 * d2 :
                 ]
                 # sum over batches
@@ -362,7 +360,7 @@ class Convolution2d(Module):
 
                 # bias grads (c_out,)
                 if self.use_bias:
-                    self.b.grad = y_grad.sum(axis=(0, 2, 3))  # sum over b, y and x
+                    self.b.grad = dy.sum(axis=(0, 2, 3))  # sum over b, y and x
 
                 return x_grad
 
@@ -413,9 +411,9 @@ class Embedding(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> None:
-                self.set_y_grad(y_grad)
-                self.w.grad = (x_enc.transpose((0, 2, 1)).data @ y_grad).sum(axis=0)
+            def backward(dy: ArrayLike) -> None:
+                self.set_dy(dy)
+                self.w.grad = (x_enc.transpose((0, 2, 1)).data @ dy).sum(axis=0)
 
             self.backward = backward
 

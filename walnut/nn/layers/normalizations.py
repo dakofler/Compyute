@@ -66,21 +66,21 @@ class Batchnorm(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 # input grads
                 n = float(tu.prod(x.shape) / x.shape[1])  # cupy ?
-                tmp1 = n * y_grad
-                tmp2 = y_grad.sum(axis=axis, keepdims=True)
-                tmp3 = (y_grad * x_h.data).sum(axis=axis, keepdims=True)
+                tmp1 = n * dy
+                tmp2 = dy.sum(axis=axis, keepdims=True)
+                tmp3 = (dy * x_h.data).sum(axis=axis, keepdims=True)
                 x_grad = weights.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
-                self.w.grad = (x_h.data * y_grad).sum(axis=axis)
+                self.w.grad = (x_h.data * dy).sum(axis=axis)
 
                 # beta grads
-                self.b.grad = y_grad.sum(axis=axis)
+                self.b.grad = dy.sum(axis=axis)
 
                 return x_grad
 
@@ -126,21 +126,21 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 # input grads
                 n = x.data[0].size
-                tmp1 = n * y_grad
-                tmp2 = y_grad.sum(axis, keepdims=True)
-                tmp3 = (y_grad * x_h.data).sum(axis, keepdims=True)
+                tmp1 = n * dy
+                tmp2 = dy.sum(axis, keepdims=True)
+                tmp3 = (dy * x_h.data).sum(axis, keepdims=True)
                 x_grad = self.w.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
-                self.w.grad = (x_h.data * y_grad).sum(axis=0)
+                self.w.grad = (x_h.data * dy).sum(axis=0)
 
                 # beta grads
-                self.b.grad = y_grad.sum(axis=0)
+                self.b.grad = dy.sum(axis=0)
 
                 return x_grad
 

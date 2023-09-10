@@ -29,6 +29,7 @@ __all__ = [
     "concatenate",
     "prod",
     "eye",
+    "split",
 ]
 
 
@@ -63,7 +64,11 @@ def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
     Tensor
         Tensor with extended dimensions.
     """
-    return Tensor(np.expand_dims(x.data, axis=axis), dtype=x.dtype, device=x.device)
+    if x.device == "cpu":
+        exp = np.expand_dims(x.data, axis=axis)
+    else:
+        exp = cp.expand_dims(x.data, axis=axis)
+    return Tensor(exp, dtype=x.dtype, device=x.device)
 
 
 def match_dims(x: Tensor, dims: int) -> Tensor:
@@ -83,7 +88,6 @@ def match_dims(x: Tensor, dims: int) -> Tensor:
     """
     while x.ndim < dims:
         x = expand_dims(x, axis=(-1,))
-
     return x
 
 
@@ -109,7 +113,10 @@ def arange(
     Tensor
         1d tensor of evenly spaced samples.
     """
-    x = np.arange(start, stop, step)
+    if device == "cpu":
+        x = np.arange(start, stop, step)
+    else:
+        x = cp.arange(start, stop, step)  # only takes ints as step?
     return Tensor(x, dtype=str(x.dtype), device=device)
 
 
@@ -132,7 +139,11 @@ def linspace(start: float, stop: float, num: int, device: str = "cpu") -> Tensor
     Tensor
         1d tensor of evenly spaced samples.
     """
-    return Tensor(np.linspace(start, stop, num), device=device)
+    if device == "cpu":
+        lin = np.linspace(start, stop, num)
+    else:
+        lin = cp.linspace(start, stop, num)
+    return Tensor(lin, device=device)
 
 
 def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
@@ -150,7 +161,8 @@ def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being zero.
     """
-    return Tensor(np.zeros(shape), device=device)
+    z = np.zeros(shape) if device == "cpu" else cp.zeros(shape)
+    return Tensor(z, device=device)
 
 
 def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
@@ -168,7 +180,8 @@ def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being one.
     """
-    return Tensor(np.ones(shape), device=device)
+    o = np.ones(shape) if device == "cpu" else cp.ones(shape)
+    return Tensor(o, device=device)
 
 
 def zeros_like(x: Tensor, device: str = "cpu") -> Tensor:
@@ -228,7 +241,11 @@ def randn(
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.normal(mean, std, shape), device=device)
+    if device == "cpu":
+        rand = np.random.normal(mean, std, shape)
+    else:
+        rand = cp.random.normal(mean, std, shape)
+    return Tensor(rand, device=device)
 
 
 def randu(
@@ -252,7 +269,11 @@ def randu(
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.uniform(low, high, shape), device=device)
+    if device == "cpu":
+        rand = np.random.uniform(low, high, shape)
+    else:
+        rand = cp.random.uniform(low, high, shape)
+    return Tensor(rand, device=device)
 
 
 def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tensor:
@@ -274,7 +295,11 @@ def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tenso
     Tensor
         Tensor with random values.
     """
-    return Tensor(np.random.randint(low, high, shape), dtype="int", device=device)
+    if device == "cpu":
+        rand = np.random.randint(low, high, shape)
+    else:
+        rand = cp.random.randint(low, high, shape)
+    return Tensor(rand, dtype="int", device=device)
 
 
 def random_permutation(n: int, device: str = "cpu") -> Tensor:
@@ -292,7 +317,8 @@ def random_permutation(n: int, device: str = "cpu") -> Tensor:
     Tensor
         Permuted range tensor.
     """
-    return Tensor(np.random.permutation(n), dtype="int", device=device)
+    rand = np.random.permutation(n) if device == "cpu" else cp.random.permutation(n)
+    return Tensor(rand, dtype="int", device=device)
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
@@ -347,14 +373,14 @@ def random_choice_indices(p: Tensor, num_samples: int = 1) -> Tensor:
         Chosen samples.
     """
     if p.device == "cpu":
-        samples = np.random.choice(p.len, size=num_samples, p=p.data)
+        rand = np.random.choice(p.len, size=num_samples, p=p.data)
     else:
-        samples = cp.random.choice(p.len, size=num_samples, p=p.data)
-    return Tensor(samples, dtype="int", device=p.device)
+        rand = cp.random.choice(p.len, size=num_samples, p=p.data)
+    return Tensor(rand, dtype="int", device=p.device)
 
 
 def random_choice(
-    choices: Tensor,
+    x: Tensor,
     p: Tensor,
     shape: ShapeLike,
     device: str = "cpu",
@@ -363,7 +389,7 @@ def random_choice(
 
     Parameters
     ----------
-    choices : Tensor
+    x : Tensor
         Tensor of possible values.
     p : Tensor
         Probablitity distribution.
@@ -378,10 +404,10 @@ def random_choice(
         Tensor of random choices.
     """
     if device == "cpu":
-        choices = np.random.choice(choices.data, shape, p=p.data)
+        rand = np.random.choice(x.data, shape, p=p.data)
     else:
-        choices = cp.random.choice(choices.data, shape, p=p.data)
-    return Tensor(choices, device=device)
+        rand = cp.random.choice(x.data, shape, p=p.data)
+    return Tensor(rand, dtype=x.dtype, device=device)
 
 
 def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
@@ -399,7 +425,9 @@ def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
     Tensor
         Empty tensor.
     """
-    return Tensor(np.empty(0, dtype=dtype), device=device)
+    # does nto accept string?
+    emp = np.empty(0, dtype=dtype) if device == "cpu" else cp.empty(0, dtype=dtype)
+    return Tensor(emp, dtype=emp.dtype, device=device)
 
 
 def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
@@ -456,7 +484,6 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
         cat = np.concatenate([t.data for t in tensors], axis=axis)
     else:
         cat = cp.concatenate([t.data for t in tensors], axis=axis)
-
     return Tensor(cat, device=device)
 
 
@@ -491,4 +518,31 @@ def eye(n: int, device: str = "cpu") -> Tensor:
     Tensor
         Diagonal tensor.
     """
-    return Tensor(np.eye(n), device=device)
+    e = np.eye(n) if device == "cpu" else cp.eye(n)
+    return Tensor(e, device=device)
+
+
+def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
+    """Splits a tensor into a list of sub-tensors.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor to split.
+    splits : int | list[int]
+        If an int is given, the tensor is split into n equally sized tensors.
+        If a list of indices is given, they represent the indices at which to
+        split the tensor along the given axis.
+    axis : int, optional
+        Axis along which to split the tensor, by default -1
+
+    Returns
+    -------
+    Tensor
+        _description_
+    """
+    if x.device == "cpu":
+        split_data = np.split(x.data, splits, axis=axis)
+    else:
+        split_data = cp.split(x.data, splits, axis=axis)
+    return [Tensor(s, dtype=x.dtype, device=x.device) for s in split_data]

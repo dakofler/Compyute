@@ -1,7 +1,5 @@
 """Neural network containers module"""
 
-import numpy as np
-
 from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
 import walnut.tensor_utils as tu
@@ -30,12 +28,12 @@ class SequentialContainer(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 for module in reversed(self.sub_modules):
-                    y_grad = module.backward(y_grad)
-                return y_grad
+                    dy = module.backward(dy)
+                return dy
 
             self.backward = backward
 
@@ -68,15 +66,17 @@ class ParallelContainer(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                x_grad = np.zeros_like(x.data)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
                 out_lens = [y.shape[self.concat_axis] for y in ys]
                 splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
-                chunks = np.split(y_grad, splits, axis=self.concat_axis)
+                chunks = tu.split(
+                    Tensor(dy, device=self.device), splits, axis=self.concat_axis
+                )
 
+                x_grad = tu.zeros_like(x, device=self.device).data
                 for i, chunk in enumerate(chunks):
-                    x_grad += self.sub_modules[i].backward(chunk)
+                    x_grad += self.sub_modules[i].backward(chunk.data)
 
                 return x_grad
 

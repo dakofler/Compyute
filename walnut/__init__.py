@@ -2,7 +2,6 @@
 
 import walnut.nn as nn
 from walnut import cuda, utils, preprocessing
-from walnut.loader import *
 from walnut.tensor import Tensor
 from walnut.tensor_utils import *
 

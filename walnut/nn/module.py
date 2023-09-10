@@ -125,16 +125,16 @@ class Module(ABC):
         if self.keep_output:
             self.y.data = y.data.copy()
 
-    def set_y_grad(self, y_grad: ArrayLike) -> None:
+    def set_dy(self, dy: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
         ----------
-        y_grad : NpArrayLike
+        dy : NpArrayLike
             Module output tensor gradients.
         """
         if self.keep_output:
-            self.y.grad = y_grad.copy()
+            self.y.grad = dy.copy()
 
     def clean(self) -> None:
         """Cleanes up the module by resetting temporary values."""

@@ -55,6 +55,17 @@ class MSE(Loss):
 class Crossentropy(Loss):
     """Computes the crossentropy loss."""
 
+    def __init__(self, eps: float = 1e-7):
+        """Computes the crossentropy loss.
+
+        Parameters
+        ----------
+        eps : float, optional
+            Constant used for numerical stability, by default 1e-7.
+        """
+        super().__init__()
+        self.eps = eps
+
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         """Computes the crossentropy loss.
 
@@ -79,4 +90,4 @@ class Crossentropy(Loss):
 
         self.backward = backward
 
-        return (-(probs.log() * t).sum(axis=-1)).mean()
+        return (-((probs + self.eps).log() * t).sum(axis=-1)).mean()

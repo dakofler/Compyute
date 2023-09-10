@@ -52,9 +52,12 @@ class Tensor:
         """
 
         if device == "cuda":
+            # create cupy array on GPU
             self.data = cp.array(data, copy=copy, dtype=dtype)
         else:
+            # create numpy array on CPU
             self.data = np.array(data, copy=copy, dtype=dtype)
+
         self._grad = None
         self.temp_params = {}
         self._iterator = 0
@@ -86,7 +89,12 @@ class Tensor:
             raise ValueError("Invalid dtype.")
         if value is not None and value.shape != self.shape:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
-        self._grad = value
+        if value is None:
+            self._grad = value
+        elif self.device == "cuda":
+            self._grad = cp.array(value, copy=False, dtype="float32")
+        else:
+            self._grad = np.array(value, copy=False, dtype="float32")
 
     @property
     def shape(self) -> ShapeLike:
@@ -121,7 +129,7 @@ class Tensor:
     @device.setter
     def device(self, value: str) -> None:
         if value not in ("cpu", "cuda"):
-            raise ValueError("Unknown device.")
+            raise AttributeError("Unknown device.")
         self._device = value
 
     def to_device(self, device: str) -> None:
@@ -131,12 +139,27 @@ class Tensor:
         ----------
         device : str
             Device to move the tensor to. Valid options are "cpu" and "cuda".
+
+        Raises
+        ----------
+        AttributeError
+            If device is not "cpu" or "cuda".
+
         """
+        if device not in ("cpu", "cuda"):
+            raise AttributeError("Unknown device.")
+        if self._device == device:
+            return
+
         self._device = device
-        if device == "cuda":
-            self.data = cp.array(self.data)
-        elif device == "cpu":
+        if device == "cpu":
             self.data = cp.asnumpy(self.data)
+            if self.grad is not None:
+                self.grad = cp.asnumpy(self.grad)
+        else:
+            self.data = cp.array(self.data)
+            if self.grad is not None:
+                self.grad = cp.array(self.grad)
 
     # ----------------------------------------------------------------------------------------------
     # OVERLOADS
@@ -301,9 +324,7 @@ class Tensor:
         Tensor
             Tensor containing the sum of elements.
         """
-        return Tensor(
-            np.sum(self.data, axis=axis, keepdims=keepdims), device=self.device
-        )
+        return Tensor(self.data.sum(axis=axis, keepdims=keepdims), device=self.device)
 
     def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
@@ -322,9 +343,7 @@ class Tensor:
         Tensor
             Tensor containing the mean of elements.
         """
-        return Tensor(
-            np.mean(self.data, axis=axis, keepdims=keepdims), device=self.device
-        )
+        return Tensor(self.data.mean(axis=axis, keepdims=keepdims), device=self.device)
 
     def var(
         self, axis: AxisLike | None = None, ddof: int = 0, keepdims: bool = False
@@ -349,8 +368,7 @@ class Tensor:
             Tensor containing the variance of elements.
         """
         return Tensor(
-            np.var(self.data, axis=axis, ddof=ddof, keepdims=keepdims),
-            dtype=self.dtype,
+            self.data.var(axis=axis, ddof=ddof, keepdims=keepdims),
             device=self.device,
         )
 
@@ -371,9 +389,7 @@ class Tensor:
         Tensor
             Tensor containing the standard deviation of elements.
         """
-        return Tensor(
-            np.std(self.data, axis=axis, keepdims=keepdims), device=self.device
-        )
+        return Tensor(self.data.std(axis=axis, keepdims=keepdims), device=self.device)
 
     def min(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
@@ -444,7 +460,8 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        return Tensor(np.exp(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.exp(self.data) if self.device == "cpu" else cp.exp(self.data)
+        return Tensor(tmp, device=self.device)
 
     def log(self) -> Tensor:
         """Natural logarithm of tensor elements.
@@ -454,7 +471,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        return Tensor(np.log(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.log(self.data) if self.device == "cpu" else cp.log(self.data)
+        return Tensor(tmp, device=self.device)
 
     def log10(self) -> Tensor:
         """Logarithm with base 10 of tensor elements.
@@ -464,7 +482,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log10(x) for each element.
         """
-        return Tensor(np.log10(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.log10(self.data) if self.device == "cpu" else cp.log10(self.data)
+        return Tensor(tmp, device=self.device)
 
     def log2(self) -> Tensor:
         """Logarithm with base 2 of tensor elements.
@@ -474,7 +493,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log2(x) for each element.
         """
-        return Tensor(np.log2(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.log2(self.data) if self.device == "cpu" else cp.log2(self.data)
+        return Tensor(tmp, device=self.device)
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
@@ -484,7 +504,8 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        return Tensor(np.tanh(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.tanh(self.data) if self.device == "cpu" else cp.tanh(self.data)
+        return Tensor(tmp, device=self.device)
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements.
@@ -494,7 +515,8 @@ class Tensor:
             Tensor
             Tensor containing the absolute value for each element.
         """
-        return Tensor(np.abs(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.abs(self.data) if self.device == "cpu" else cp.abs(self.data)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def sqrt(self) -> Tensor:
         """Square root of tensor elements.
@@ -504,7 +526,8 @@ class Tensor:
             Tensor
             Tensor containing the square root value for each element.
         """
-        return Tensor(np.sqrt(self.data), dtype=self.dtype, device=self.device)
+        tmp = np.sqrt(self.data) if self.device == "cpu" else cp.sqrt(self.data)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def item(self) -> float:
         """Returns the scalar value of the tensor data.
@@ -531,21 +554,24 @@ class Tensor:
         """
         return Tensor(self.data.reshape(*shape), dtype=self.dtype, device=self.device)
 
-    def pad(self, widths: tuple[int, ...]) -> Tensor:
+    def pad(self, widths: tuple[tuple[int, ...]]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
         ----------
-        widths : tuple[int, ...]
-            Padding width for each dimension of the tensor.
+        widths : tuple[tuple[int, ...]]
+            Padding widths for each dimension of the tensor.
 
         Returns
         -------
         Tensor
             Padded tensor.
         """
-        paddings = tuple((w, w) for w in widths)
-        return Tensor(np.pad(self.data, paddings), dtype=self.dtype, device=self.device)
+        if self.device == "cpu":
+            tmp = np.pad(self.data, widths)
+        else:
+            tmp = cp.pad(self.data, widths)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def flatten(self) -> Tensor:
         """Returns a flattened, one-dimensional tensor.
@@ -570,9 +596,11 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        return Tensor(
-            np.transpose(self.data, axes=axis), dtype=self.dtype, device=self.device
-        )
+        if self.device == "cpu":
+            tmp = np.transpose(self.data, axes=axis)
+        else:
+            tmp = cp.transpose(self.data, axes=axis)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def astype(self, dtype: str) -> Tensor:
         """Returns a copy of the tensor with parsed values.
@@ -604,11 +632,11 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        return Tensor(
-            np.append(self.data, values.data, axis=axis),
-            dtype=self.dtype,
-            device=self.device,
-        )
+        if self.device == "cpu":
+            tmp = np.append(self.data, values.data, axis=axis)
+        else:
+            tmp = cp.append(self.data, values.data, axis=axis)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def flip(self, axis: AxisLike) -> Tensor:
         """Returns a tensor with flipped elements along given axis.
@@ -623,9 +651,11 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        return Tensor(
-            np.flip(self.data, axis=axis), dtype=self.dtype, device=self.device
-        )
+        if self.device == "cpu":
+            tmp = np.flip(self.data, axis=axis)
+        else:
+            tmp = cp.flip(self.data, axis=axis)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
@@ -642,11 +672,11 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        return Tensor(
-            np.moveaxis(self.data, from_axis, to_axis),
-            dtype=self.dtype,
-            device=self.device,
-        )
+        if self.device == "cpu":
+            tmp = np.moveaxis(self.data, from_axis, to_axis)
+        else:
+            tmp = cp.moveaxis(self.data, from_axis, to_axis)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def squeeze(self) -> Tensor:
         """Removes axis with length one from the tensor."""
@@ -665,7 +695,11 @@ class Tensor:
         int | tuple [int, ...]
             Index tensor.
         """
-        return Tensor(np.argmax(self.data, axis=axis), dtype="int", device=self.device)
+        if self.device == "cpu":
+            tmp = np.argmax(self.data, axis=axis)
+        else:
+            tmp = cp.argmax(self.data, axis=axis)
+        return Tensor(tmp, dtype="int", device=self.device)
 
     def resize(self, shape: ShapeLike) -> Tensor:
         """Returns a new tensor with the specified shape.
@@ -682,10 +716,10 @@ class Tensor:
             Resized tensor.
         """
         if self.device == "cpu":
-            resized = np.resize(self.data, shape)
+            tmp = np.resize(self.data, shape)
         else:
-            resized = cp.resize(self.data, shape)
-        return Tensor(resized, dtype=self.dtype, device=self.device)
+            tmp = cp.resize(self.data, shape)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)
 
     def repeat(self, n_repeats: int, axis: int) -> Tensor:
         """Repeat elements of a tensor.
@@ -705,3 +739,24 @@ class Tensor:
         return Tensor(
             self.data.repeat(n_repeats, axis), dtype=self.dtype, device=self.device
         )
+
+    def clip(self, min_value: int | float, max_value: int | float) -> Tensor:
+        """Limits the values of a tensor.
+
+        Parameters
+        ----------
+        min_value : int | float
+            Lower bound of allowed values.
+        max_value : int | float
+            Upper bound of allowed values.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing clipped values.
+        """
+        if self.device == "cpu":
+            tmp = np.clip(self.data, min_value, max_value)
+        else:
+            tmp = cp.clip(self.data, min_value, max_value)
+        return Tensor(tmp, dtype=self.dtype, device=self.device)

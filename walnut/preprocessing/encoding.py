@@ -64,5 +64,12 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     -------
     Tensor
         One-hot-encoded tensor.
+
+    Raises
+    -------
+    ValueError
+        If the tensor dtype is not int.
     """
+    if x.dtype not in ("int", "int32", "int64"):
+        raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
     return Tensor((tu.eye(num_classes, x.device)[x]).data, dtype="int", device=x.device)

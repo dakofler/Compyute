@@ -50,17 +50,7 @@ def sigmoid(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    if x.device == "cpu":
-        x_clip = np.clip(
-            x.data, -100, 100
-        )  # clip to avoid high values when exponentiating
-        sig = 1.0 / (1.0 + np.exp(-x_clip))
-    else:
-        x_clip = cp.clip(
-            x.data, -100, 100
-        )  # clip to avoid high values when exponentiating
-        sig = 1.0 / (1.0 + cp.exp(-x_clip))
-    return Tensor(sig, device=x.device)
+    return ((-x.clip(-100, 100)).exp() + 1.0) ** -1 * 1.0
 
 
 def softmax(x: Tensor) -> Tensor:
@@ -76,14 +66,8 @@ def softmax(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    if x.device == "cpu":
-        expo = np.exp(x.data - np.amax(x.data, axis=-1, keepdims=True))
-        sm = expo / np.sum(expo, axis=-1, keepdims=True)
-    else:
-        expo = cp.exp(x.data - cp.amax(x.data, axis=-1, keepdims=True))
-        sm = expo / cp.sum(expo, axis=-1, keepdims=True)
-
-    return Tensor(sm, device=x.device)
+    expo = (x - x.max(axis=-1, keepdims=True)).exp()
+    return expo / expo.sum(axis=-1, keepdims=True)
 
 
 def convolve1d(
@@ -139,11 +123,11 @@ def convolve1d(
     if x.device == "cpu":
         x_fft = npfft.fft(x_pad.data).astype("complex64")
         f_fft = npfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
-        ifft = np.real(npfft.ifft(x_fft * f_fft)).astype("float32")
+        ifft = np.real(npfft.ifft(x_fft * f_fft))
     else:
         x_fft = cpfft.fft(x_pad.data).astype("complex64")
         f_fft = cpfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
-        ifft = cp.real(cpfft.ifft(x_fft * f_fft)).astype("float32")
+        ifft = cp.real(cpfft.ifft(x_fft * f_fft))
 
     # slicing
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -206,11 +190,11 @@ def convolve2d(
     if x.device == "cpu":
         x_fft = npfft.fft2(x_pad.data).astype("complex64")
         f_fft = npfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
-        ifft = np.real(npfft.ifft2(x_fft * f_fft)).astype("float32")
+        ifft = np.real(npfft.ifft2(x_fft * f_fft))
     else:
         x_fft = cpfft.fft2(x_pad.data).astype("complex64")
         f_fft = cpfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
-        ifft = cp.real(cpfft.ifft2(x_fft * f_fft)).astype("float32")
+        ifft = cp.real(cpfft.ifft2(x_fft * f_fft))
 
     # slicing
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
@@ -245,7 +229,7 @@ def dilate1d(f: Tensor, dil: int) -> Tensor:
     tpl = tuple(
         ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
     )
-    f_dil = tu.zeros(tpl)
+    f_dil = tu.zeros(tpl, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 1] = slice(None, None, dil)
     f_dil[*slc_dil] = f
@@ -276,7 +260,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
         ((f.shape[d] - 1) * dil[-dim + d] + 1) if d >= dim - 2 else f.shape[d]
         for d in range(dim)
     )
-    f_dil = tu.zeros(tpl)
+    f_dil = tu.zeros(tpl, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
     f_dil[*slc_dil] = f
@@ -329,15 +313,8 @@ def pad1d(
                 p = (filter_shape[-1] - 1, 0)
             case _:
                 p = (0, 0)
-    dim = x.ndim
-    tpl = tuple([(0, 0)] * (dim - 1) + [p])
-
-    if x.device == "cpu":
-        x_pad = np.pad(x.data, tpl)
-    else:
-        x_pad = cp.pad(x.data, tpl)
-
-    return Tensor(x_pad, device=x.device)
+    widths = tuple([(0, 0)] * (x.ndim - 1) + [p])
+    return x.pad(widths)
 
 
 def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Tensor:
@@ -376,15 +353,8 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
                 p = (filter_shape[-2] // 2, filter_shape[-1] // 2)
             case _:
                 p = (0, 0)
-    dim = x.ndim
-    tpl = tuple([(0, 0)] * (dim - 2) + [(p[0], p[0]), (p[1], p[1])])
-
-    if x.device == "cpu":
-        x_pad = np.pad(x.data, tpl)
-    else:
-        x_pad = cp.pad(x.data, tpl)
-
-    return Tensor(x_pad, device=x.device)
+    tpl = tuple([(0, 0)] * (x.ndim - 2) + [(p[0], p[0]), (p[1], p[1])])
+    return x.pad(tpl)
 
 
 def stretch2d(

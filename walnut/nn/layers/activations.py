@@ -16,9 +16,9 @@ class ReLU(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return (y.data > 0) * y_grad
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return (y.data > 0) * dy
 
             self.backward = backward
 
@@ -34,9 +34,9 @@ class Tanh(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return (-y.data**2 + 1.0) * y_grad
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return (-y.data**2 + 1.0) * dy
 
             self.backward = backward
 
@@ -52,9 +52,9 @@ class Sigmoid(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return y.data * (1.0 - y.data) * y_grad
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return y.data * (1.0 - y.data) * dy
 
             self.backward = backward
 

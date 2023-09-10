@@ -1,10 +1,9 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-import numpy as np
-import cupy as cp
 
 from walnut.tensor import Tensor
+import walnut.tensor_utils as tu
 
 
 __all__ = ["SGD", "Adam", "AdamW"]
@@ -137,12 +136,8 @@ class Adam(Optimizer):
             if self.weight_decay > 0.0:
                 p.grad += self.weight_decay * p.data
 
-            if p.device == "cpu":
-                m_prev = p.temp_params.get("adam_m", np.zeros(p.data.shape))
-                v_prev = p.temp_params.get("adam_v", np.zeros(p.data.shape))
-            else:
-                m_prev = p.temp_params.get("adam_m", cp.zeros(p.data.shape))
-                v_prev = p.temp_params.get("adam_v", cp.zeros(p.data.shape))
+            m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
+            v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
             p.temp_params["adam_m"] = m
@@ -198,12 +193,8 @@ class AdamW(Optimizer):
             if self.weight_decay > 0.0:
                 p.data -= self.l_r * self.weight_decay * p.data
 
-            if p.device == "cpu":
-                m_prev = p.temp_params.get("adam_m", np.zeros(p.data.shape))
-                v_prev = p.temp_params.get("adam_v", np.zeros(p.data.shape))
-            else:
-                m_prev = p.temp_params.get("adam_m", cp.zeros(p.data.shape))
-                v_prev = p.temp_params.get("adam_v", cp.zeros(p.data.shape))
+            m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
+            v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
             p.temp_params["adam_m"] = m

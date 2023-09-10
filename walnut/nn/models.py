@@ -2,6 +2,7 @@
 
 import time
 from typing import Callable
+import pickle
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
@@ -11,7 +12,7 @@ from walnut.nn.optimizers import Optimizer
 from walnut.nn.containers import SequentialContainer
 
 
-__all__ = ["Model", "Sequential"]
+__all__ = ["Model", "Sequential", "save_model", "load_model"]
 
 
 class ModelCompilationError(Exception):
@@ -62,6 +63,12 @@ class Model(Module):
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
         self.metric: Callable[[Tensor, Tensor], float] = lambda x, y: 0.0
+        self._compiled = False
+
+    @property
+    def compiled(self) -> bool:
+        """Whether the model has been compiled yet."""
+        return self._compiled
 
     def compile(
         self,
@@ -80,6 +87,7 @@ class Model(Module):
         metric : Callable[[Tensor, Tensor], float]
             Metric function used to evaluate the model's performance.
         """
+        self._compiled = True
         self.optimizer = optimizer
         optimizer.parameters = self.parameters
         self.loss_fn = loss_fn
@@ -128,8 +136,8 @@ class Model(Module):
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if not self.loss_fn or not self.optimizer:
-            raise ModelCompilationError("Model is not compiled yet.")
+        if not self.compiled:
+            raise ModelCompilationError("Model has not been compiled yet.")
 
         self.keep_output = keep_intermediate_outputs
         train_loss_history, val_loss_history = [], []
@@ -158,8 +166,8 @@ class Model(Module):
 
                 # backward pass
                 self.optimizer.reset_grads()
-                y_grad = self.loss_fn.backward()
-                self.backward(y_grad)
+                dy = self.loss_fn.backward()
+                self.backward(dy)
 
                 # update parameters
                 t = (epoch - 1) * n_steps + step + 1
@@ -220,8 +228,8 @@ class Model(Module):
         ModelCompilationError
             If the model has not been compiled yet.
         """
-        if not self.metric or not self.loss_fn:
-            raise ModelCompilationError("Model not compiled yet.")
+        if not self.compiled:
+            raise ModelCompilationError("Model has not been compiled yet.")
 
         predictions = self(x)
         loss = self.loss_fn(predictions, y).item()
@@ -248,11 +256,54 @@ class Sequential(Model):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return self.sub_modules[0].backward(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return self.sub_modules[0].backward(dy)
 
             self.backward = backward
 
         self.set_y(y)
         return y
+
+
+def save_model(model: Model, filename: str) -> None:
+    """Saves a model as a binary file.
+
+    Parameters
+    ----------
+    model : Model
+        Model to be saved.
+    filename : str
+        Name of the file.
+    """
+    if not model.compiled:
+        raise ModelCompilationError("Model has not been compiled yet.")
+
+    model.to_device("cpu")
+    model.optimizer.reset_grads()
+    model.optimizer.reset_temp_params()
+    model.loss_fn.backward = None
+    model.clean()
+
+    file = open(filename, "wb")
+    pickle.dump(model, file)
+    file.close()
+
+
+def load_model(filename: str) -> Model:
+    """Load a model from a previously saved binary file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the saved file.
+
+    Returns
+    -------
+    Model
+        Loaded model.
+    """
+    file = open(filename, "rb")
+    obj = pickle.load(file)
+    file.close()
+    return obj

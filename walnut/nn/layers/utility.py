@@ -1,8 +1,6 @@
 """utility layers layer"""
 
 from __future__ import annotations
-import numpy as np
-import cupy as cp
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike, ShapeLike
@@ -55,11 +53,11 @@ class MaxPooling2d(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 dy_s = stretch2d(
-                    Tensor(y_grad, device=self.device), self.kernel_size, p_map.shape
+                    Tensor(dy, device=self.device), self.kernel_size, p_map.shape
                 )
                 # use p_map as mask for grads
                 return (dy_s * p_map).resize(x.shape).data
@@ -94,9 +92,9 @@ class Reshape(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return y_grad.reshape(x.shape)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return dy.reshape(x.shape)
 
             self.backward = backward
 
@@ -112,9 +110,9 @@ class Flatten(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                return y_grad.reshape(x.shape)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return dy.reshape(x.shape)
 
             self.backward = backward
 
@@ -150,11 +148,11 @@ class Moveaxis(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
 
                 return (
-                    Tensor(y_grad, device=self.device)
+                    Tensor(dy, device=self.device)
                     .moveaxis(self.to_axis, self.from_axis)
                     .data
                 )
@@ -191,10 +189,10 @@ class Dropout(Module):
             d_map = tu.random_choice(choices, probs, x.shape, self.device)
             y = x * d_map / (1.0 - self.p)
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
                 # use d_map as mask for grads
-                return y_grad * d_map / (1.0 - self.p)
+                return dy * d_map.data / (1.0 - self.p)
 
             self.backward = backward
 

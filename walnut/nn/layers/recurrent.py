@@ -58,7 +58,7 @@ class RecurrentCell(Module):
         return f"{name}({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        y = tu.zeros_like(x, device=x.device)
+        y = tu.zeros_like(x, device=self.device)
 
         # iterate over sequence elements
         for i in range(x.shape[1]):
@@ -75,17 +75,17 @@ class RecurrentCell(Module):
 
         if self.training:
 
-            def backward(y_grad: ArrayLike) -> ArrayLike:
-                self.set_y_grad(y_grad)
-                x_grad = tu.zeros_like(x, device=x.device).data
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                x_grad = tu.zeros_like(x, device=self.device).data
                 self.w.grad = tu.zeros_like(self.w, device=self.w.device).data
 
                 for i in range(x.shape[1] - 1, -1, -1):
                     # add hidden state gradient of next layer, if not last sequence element
                     if i == x.shape[1] - 1:
-                        out_grad = y_grad[:, i]
+                        out_grad = dy[:, i]
                     else:
-                        out_grad = y_grad[:, i] + x_grad[:, i + 1] @ self.w.T
+                        out_grad = dy[:, i] + x_grad[:, i + 1] @ self.w.T
 
                     # activation gradient
                     if self.activation == "tanh":
