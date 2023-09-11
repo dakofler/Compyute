@@ -75,12 +75,10 @@ class SGD(Optimizer):
                 p.grad += self.weight_decay * p.data
 
             if self.m > 0.0:
-                if t > 1:
-                    b_prev = p.temp_params["sgd_b"]
-                    b = self.m * b_prev + p.grad
-                else:
-                    b = p.grad
-
+                b_prev = p.temp_params.get(
+                    "sgd_b", tu.zeros(p.data.shape, p.device).data
+                )
+                b = self.m * b_prev + p.grad
                 p.temp_params["sgd_b"] = b
 
                 if self.nesterov:

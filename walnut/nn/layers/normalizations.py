@@ -89,6 +89,18 @@ class Batchnorm(Module):
         self.set_y(y)
         return y
 
+    def to_device(self, device: str) -> None:
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : str
+            Device to move the tensor to. Valid options are "cpu" and "cuda".
+        """
+        super().to_device(device)
+        self.rmean.to_device(device)
+        self.rvar.to_device(device)
+
 
 class Layernorm(Module):
     """Normalizes values per sample."""

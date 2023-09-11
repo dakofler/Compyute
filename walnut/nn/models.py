@@ -19,14 +19,14 @@ class ModelCompilationError(Exception):
     """Error if the model has not been compiled yet."""
 
 
-def _log_step(step: int, n_steps: int, step_time: float) -> None:
+def log_step(step: int, n_steps: int, step_time: float) -> None:
     """Outputs information each step about intermediate model training results."""
     eta = (n_steps - step) * step_time / 1000.0
     line = f"\rStep {step:5d}/{n_steps} | ETA: {eta:6.1f} s"
     print(line, end="")
 
 
-def _log_epoch(
+def log_epoch(
     n_steps: int,
     step_time: float,
     train_loss: float,
@@ -39,19 +39,28 @@ def _log_epoch(
     print(line)
 
 
-def _get_batches(x: Tensor, y: Tensor, batch_size: int | None) -> tuple[Tensor, Tensor]:
-    """Generates batches for training a model."""
-    x_shuffled, idx = tu.shuffle(x)
-    y_shuffled = y[idx]
-    batch_size = (
-        min(x.len, batch_size)
-        if isinstance(batch_size, int) and batch_size > 1
-        else x.len
-    )
-    n = x_shuffled.len // batch_size * batch_size
-    x_batches = x_shuffled[:n].reshape((-1, batch_size, *x_shuffled.shape[1:]))
-    y_batches = y_shuffled[:n].reshape((-1, batch_size, *y_shuffled.shape[1:]))
-    return x_batches, y_batches
+def get_batches(
+    x: Tensor,
+    y: Tensor | None = None,
+    batch_size: int | None = None,
+    shuffle: bool = True,
+) -> tuple[Tensor, Tensor | None]:
+    """Generates batches of data."""
+
+    if isinstance(batch_size, int) and (batch_size > x.len or batch_size == 0):
+        raise ValueError(f"Invalid batch_size {batch_size}.")
+
+    if shuffle:
+        x, idx = tu.shuffle(x)
+        y = y[idx]
+
+    batch_size = x.len if batch_size is None else batch_size
+    clip = x.len // batch_size * batch_size
+    x_batches = x[:clip].reshape((-1, batch_size, *x.shape[1:]))
+
+    if y is None:
+        return x_batches, None
+    return x_batches, y[:clip].reshape((-1, batch_size, *y.shape[1:]))
 
 
 class Model(Module):
@@ -148,7 +157,7 @@ class Model(Module):
             if verbose:
                 print(f"Epoch {epoch}/{epochs}")
 
-            x_batched, y_batched = _get_batches(x, y, batch_size)
+            x_batched, y_batched = get_batches(x, y, batch_size)
             n_steps = x_batched.shape[0]
 
             for step in range(n_steps):
@@ -178,12 +187,12 @@ class Model(Module):
                 self.training = False
 
                 if verbose:
-                    _log_step((step + 1), n_steps, step_time)
+                    log_step((step + 1), n_steps, step_time)
 
                 # validation
                 val_loss = None
                 if val_data is not None:
-                    x_val_batched, y_val_batched = _get_batches(*val_data, batch_size)
+                    x_val_batched, y_val_batched = get_batches(*val_data, batch_size)
                     val_loss = 0.0
                     n_val_steps = x_val_batched.shape[0]
 
@@ -200,13 +209,15 @@ class Model(Module):
                     val_loss_history.append(val_loss)
 
             if verbose:
-                _log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
+                log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
 
         self.optimizer.reset_temp_params()
         self.keep_output = False
         return train_loss_history, val_loss_history
 
-    def evaluate(self, x: Tensor, y: Tensor) -> tuple[float, float]:
+    def evaluate(
+        self, x: Tensor, y: Tensor, batch_size: int | None = None
+    ) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -215,6 +226,9 @@ class Model(Module):
             Tensor of input values (features).
         y : Tensor
             Tensor of target values.
+        batch_size : int | None, optional
+            Number of samples used per call, by default None.
+            If None, all samples are used.
 
         Returns
         ----------
@@ -231,10 +245,38 @@ class Model(Module):
         if not self.compiled:
             raise ModelCompilationError("Model has not been compiled yet.")
 
-        predictions = self(x)
+        predictions = self.predict(x, batch_size=batch_size)
         loss = self.loss_fn(predictions, y).item()
         score = self.metric(predictions, y)
         return loss, score
+
+    def predict(self, x: Tensor, batch_size: int | None = None) -> Tensor:
+        """Returns the models predictions for a given input.
+
+        Parameters
+        ----------
+        x : Tensor
+            _description_
+        batch_size : int | None, optional
+            Number of samples used per call, by default None.
+            If None, all samples are used.
+
+        Returns
+        -------
+        Tensor
+            Predictions.
+        """
+        x_batched, _ = get_batches(x, batch_size=batch_size, shuffle=False)
+
+        # get predictions for n * batchsize samples
+        predictions = tu.concatenate([self(x) for x in x_batched], axis=0)
+
+        # get predictions for remaining samples
+        n = tu.prod(x_batched.shape[:2])
+        if n < x.len:
+            predictions = tu.concatenate([predictions, self(x[n:])], axis=0)
+
+        return predictions
 
 
 class Sequential(Model):

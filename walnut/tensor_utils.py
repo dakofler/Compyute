@@ -484,7 +484,7 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
         cat = np.concatenate([t.data for t in tensors], axis=axis)
     else:
         cat = cp.concatenate([t.data for t in tensors], axis=axis)
-    return Tensor(cat, device=device)
+    return Tensor(cat, device=device, dtype=tensors[0].dtype)
 
 
 def prod(x: tuple[int, ...]) -> int | float:

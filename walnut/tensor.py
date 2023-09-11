@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
+
 import numpy as np
 import cupy as cp
 
@@ -91,10 +92,10 @@ class Tensor:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
         if value is None:
             self._grad = value
-        elif self.device == "cuda":
-            self._grad = cp.array(value, copy=False, dtype="float32")
-        else:
+        elif self.device == "cpu":
             self._grad = np.array(value, copy=False, dtype="float32")
+        else:
+            self._grad = cp.array(value, copy=False, dtype="float32")
 
     @property
     def shape(self) -> ShapeLike:
