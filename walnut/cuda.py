@@ -6,16 +6,16 @@ import numpy as np
 import cupy as cp
 
 
-__all__ = ["is_availlable"]
+__all__ = ["is_available"]
 
 
-def is_availlable() -> bool:
-    """Checks if one or more GPUs are availlable.
+def is_available() -> bool:
+    """Checks if one or more GPUs are available.
 
     Returns
     -------
     bool
-        True if one or more GPUs are availlable.
+        True if one or more GPUs are available.
     """
     return cp.is_available()
 
