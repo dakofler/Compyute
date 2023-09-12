@@ -6,10 +6,9 @@ from dataclasses import dataclass
 import numpy as np
 import cupy as cp
 
+from walnut.cuda import get_cpt_pkg, numpy_to_cupy, cupy_to_numpy
 
 __all__ = ["Tensor", "ShapeError"]
-
-
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
 ArrayLike = np.ndarray | cp.ndarray
@@ -52,13 +51,7 @@ class Tensor:
             The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
-        if device == "cuda":
-            # create cupy array on GPU
-            self.data = cp.array(data, copy=copy, dtype=dtype)
-        else:
-            # create numpy array on CPU
-            self.data = np.array(data, copy=copy, dtype=dtype)
-
+        self.data = get_cpt_pkg(device).array(data, copy=copy, dtype=dtype)
         self._grad = None
         self.temp_params = {}
         self._iterator = 0
@@ -92,10 +85,9 @@ class Tensor:
             raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
         if value is None:
             self._grad = value
-        elif self.device == "cpu":
-            self._grad = np.array(value, copy=False, dtype="float32")
         else:
-            self._grad = cp.array(value, copy=False, dtype="float32")
+            cpt_pkg = get_cpt_pkg(self.device)
+            self._grad = cpt_pkg.array(value, copy=False, dtype="float32")
 
     @property
     def shape(self) -> ShapeLike:
@@ -154,13 +146,13 @@ class Tensor:
 
         self._device = device
         if device == "cpu":
-            self.data = cp.asnumpy(self.data)
+            self.data = cupy_to_numpy(self.data)
             if self.grad is not None:
-                self.grad = cp.asnumpy(self.grad)
+                self.grad = cupy_to_numpy(self.grad)
         else:
-            self.data = cp.array(self.data)
+            self.data = numpy_to_cupy(self.data)
             if self.grad is not None:
-                self.grad = cp.array(self.grad)
+                self.grad = numpy_to_cupy(self.grad)
 
     # ----------------------------------------------------------------------------------------------
     # OVERLOADS
@@ -461,8 +453,7 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        tmp = np.exp(self.data) if self.device == "cpu" else cp.exp(self.data)
-        return Tensor(tmp, device=self.device)
+        return Tensor(get_cpt_pkg(self.device).exp(self.data), device=self.device)
 
     def log(self) -> Tensor:
         """Natural logarithm of tensor elements.
@@ -472,8 +463,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        tmp = np.log(self.data) if self.device == "cpu" else cp.log(self.data)
-        return Tensor(tmp, device=self.device)
+        return Tensor(get_cpt_pkg(self.device).log(self.data), device=self.device)
 
     def log10(self) -> Tensor:
         """Logarithm with base 10 of tensor elements.
@@ -483,8 +473,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log10(x) for each element.
         """
-        tmp = np.log10(self.data) if self.device == "cpu" else cp.log10(self.data)
-        return Tensor(tmp, device=self.device)
+        return Tensor(get_cpt_pkg(self.device).log10(self.data), device=self.device)
 
     def log2(self) -> Tensor:
         """Logarithm with base 2 of tensor elements.
@@ -494,8 +483,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log2(x) for each element.
         """
-        tmp = np.log2(self.data) if self.device == "cpu" else cp.log2(self.data)
-        return Tensor(tmp, device=self.device)
+        return Tensor(get_cpt_pkg(self.device).log2(self.data), device=self.device)
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
@@ -505,8 +493,7 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        tmp = np.tanh(self.data) if self.device == "cpu" else cp.tanh(self.data)
-        return Tensor(tmp, device=self.device)
+        return Tensor(get_cpt_pkg(self.device).tanh(self.data), device=self.device)
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements.
@@ -516,8 +503,11 @@ class Tensor:
             Tensor
             Tensor containing the absolute value for each element.
         """
-        tmp = np.abs(self.data) if self.device == "cpu" else cp.abs(self.data)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).abs(self.data),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def sqrt(self) -> Tensor:
         """Square root of tensor elements.
@@ -527,8 +517,11 @@ class Tensor:
             Tensor
             Tensor containing the square root value for each element.
         """
-        tmp = np.sqrt(self.data) if self.device == "cpu" else cp.sqrt(self.data)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).sqrt(self.data),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def item(self) -> float:
         """Returns the scalar value of the tensor data.
@@ -568,11 +561,11 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        if self.device == "cpu":
-            tmp = np.pad(self.data, widths)
-        else:
-            tmp = cp.pad(self.data, widths)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).pad(self.data, widths),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def flatten(self) -> Tensor:
         """Returns a flattened, one-dimensional tensor.
@@ -597,11 +590,11 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        if self.device == "cpu":
-            tmp = np.transpose(self.data, axes=axis)
-        else:
-            tmp = cp.transpose(self.data, axes=axis)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).transpose(self.data, axes=axis),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def astype(self, dtype: str) -> Tensor:
         """Returns a copy of the tensor with parsed values.
@@ -633,11 +626,11 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        if self.device == "cpu":
-            tmp = np.append(self.data, values.data, axis=axis)
-        else:
-            tmp = cp.append(self.data, values.data, axis=axis)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).append(self.data, values.data, axis=axis),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def flip(self, axis: AxisLike) -> Tensor:
         """Returns a tensor with flipped elements along given axis.
@@ -652,11 +645,11 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        if self.device == "cpu":
-            tmp = np.flip(self.data, axis=axis)
-        else:
-            tmp = cp.flip(self.data, axis=axis)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).flip(self.data, axis=axis),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
@@ -673,11 +666,11 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        if self.device == "cpu":
-            tmp = np.moveaxis(self.data, from_axis, to_axis)
-        else:
-            tmp = cp.moveaxis(self.data, from_axis, to_axis)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).moveaxis(self.data, from_axis, to_axis),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def squeeze(self) -> Tensor:
         """Removes axis with length one from the tensor."""
@@ -696,11 +689,11 @@ class Tensor:
         int | tuple [int, ...]
             Index tensor.
         """
-        if self.device == "cpu":
-            tmp = np.argmax(self.data, axis=axis)
-        else:
-            tmp = cp.argmax(self.data, axis=axis)
-        return Tensor(tmp, dtype="int", device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).argmax(self.data, axis=axis),
+            dtype="int",
+            device=self.device,
+        )
 
     def resize(self, shape: ShapeLike) -> Tensor:
         """Returns a new tensor with the specified shape.
@@ -716,11 +709,11 @@ class Tensor:
         Tensor
             Resized tensor.
         """
-        if self.device == "cpu":
-            tmp = np.resize(self.data, shape)
-        else:
-            tmp = cp.resize(self.data, shape)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).resize(self.data, shape),
+            dtype=self.dtype,
+            device=self.device,
+        )
 
     def repeat(self, n_repeats: int, axis: int) -> Tensor:
         """Repeat elements of a tensor.
@@ -756,8 +749,8 @@ class Tensor:
         Tensor
             Tensor containing clipped values.
         """
-        if self.device == "cpu":
-            tmp = np.clip(self.data, min_value, max_value)
-        else:
-            tmp = cp.clip(self.data, min_value, max_value)
-        return Tensor(tmp, dtype=self.dtype, device=self.device)
+        return Tensor(
+            get_cpt_pkg(self.device).clip(self.data, min_value, max_value),
+            dtype=self.dtype,
+            device=self.device,
+        )

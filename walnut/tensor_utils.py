@@ -2,7 +2,7 @@
 
 import pandas as pd
 import numpy as np
-import cupy as cp
+from walnut.cuda import get_cpt_pkg
 from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError, PyTypeLike
 
 
@@ -64,11 +64,10 @@ def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
     Tensor
         Tensor with extended dimensions.
     """
-    if x.device == "cpu":
-        exp = np.expand_dims(x.data, axis=axis)
-    else:
-        exp = cp.expand_dims(x.data, axis=axis)
-    return Tensor(exp, dtype=x.dtype, device=x.device)
+    cpt_pkg = get_cpt_pkg(x.device)
+    return Tensor(
+        cpt_pkg.expand_dims(x.data, axis=axis), dtype=x.dtype, device=x.device
+    )
 
 
 def match_dims(x: Tensor, dims: int) -> Tensor:
@@ -113,10 +112,8 @@ def arange(
     Tensor
         1d tensor of evenly spaced samples.
     """
-    if device == "cpu":
-        x = np.arange(start, stop, step)
-    else:
-        x = cp.arange(start, stop, step)  # only takes ints as step?
+    cpt_pkg = get_cpt_pkg(device)
+    x = cpt_pkg.arange(start, stop, step)
     return Tensor(x, dtype=str(x.dtype), device=device)
 
 
@@ -139,11 +136,8 @@ def linspace(start: float, stop: float, num: int, device: str = "cpu") -> Tensor
     Tensor
         1d tensor of evenly spaced samples.
     """
-    if device == "cpu":
-        lin = np.linspace(start, stop, num)
-    else:
-        lin = cp.linspace(start, stop, num)
-    return Tensor(lin, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.linspace(start, stop, num), device=device)
 
 
 def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
@@ -161,8 +155,8 @@ def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being zero.
     """
-    z = np.zeros(shape) if device == "cpu" else cp.zeros(shape)
-    return Tensor(z, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.zeros(shape), device=device)
 
 
 def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
@@ -180,8 +174,8 @@ def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being one.
     """
-    o = np.ones(shape) if device == "cpu" else cp.ones(shape)
-    return Tensor(o, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.ones(shape), device=device)
 
 
 def zeros_like(x: Tensor, device: str = "cpu") -> Tensor:
@@ -241,11 +235,8 @@ def randn(
     Tensor
         Tensor with random values.
     """
-    if device == "cpu":
-        rand = np.random.normal(mean, std, shape)
-    else:
-        rand = cp.random.normal(mean, std, shape)
-    return Tensor(rand, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.random.normal(mean, std, shape), device=device)
 
 
 def randu(
@@ -269,11 +260,8 @@ def randu(
     Tensor
         Tensor with random values.
     """
-    if device == "cpu":
-        rand = np.random.uniform(low, high, shape)
-    else:
-        rand = cp.random.uniform(low, high, shape)
-    return Tensor(rand, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.random.uniform(low, high, shape), device=device)
 
 
 def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tensor:
@@ -295,11 +283,8 @@ def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tenso
     Tensor
         Tensor with random values.
     """
-    if device == "cpu":
-        rand = np.random.randint(low, high, shape)
-    else:
-        rand = cp.random.randint(low, high, shape)
-    return Tensor(rand, dtype="int", device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.random.randint(low, high, shape), dtype="int", device=device)
 
 
 def random_permutation(n: int, device: str = "cpu") -> Tensor:
@@ -317,8 +302,8 @@ def random_permutation(n: int, device: str = "cpu") -> Tensor:
     Tensor
         Permuted range tensor.
     """
-    rand = np.random.permutation(n) if device == "cpu" else cp.random.permutation(n)
-    return Tensor(rand, dtype="int", device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.random.permutation(n), dtype="int", device=device)
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
@@ -372,11 +357,12 @@ def random_choice_indices(p: Tensor, num_samples: int = 1) -> Tensor:
     Tensor
         Chosen samples.
     """
-    if p.device == "cpu":
-        rand = np.random.choice(p.len, size=num_samples, p=p.data)
-    else:
-        rand = cp.random.choice(p.len, size=num_samples, p=p.data)
-    return Tensor(rand, dtype="int", device=p.device)
+    cpt_pkg = get_cpt_pkg(p.device)
+    return Tensor(
+        cpt_pkg.random.choice(p.len, size=num_samples, p=p.data),
+        dtype="int",
+        device=p.device,
+    )
 
 
 def random_choice(
@@ -403,11 +389,10 @@ def random_choice(
     Tensor
         Tensor of random choices.
     """
-    if device == "cpu":
-        rand = np.random.choice(x.data, shape, p=p.data)
-    else:
-        rand = cp.random.choice(x.data, shape, p=p.data)
-    return Tensor(rand, dtype=x.dtype, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(
+        cpt_pkg.random.choice(x.data, shape, p=p.data), dtype=x.dtype, device=device
+    )
 
 
 def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
@@ -426,7 +411,8 @@ def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
         Empty tensor.
     """
     # does nto accept string?
-    emp = np.empty(0, dtype=dtype) if device == "cpu" else cp.empty(0, dtype=dtype)
+    cpt_pkg = get_cpt_pkg(device)
+    emp = cpt_pkg.empty(0, dtype=dtype)
     return Tensor(emp, dtype=emp.dtype, device=device)
 
 
@@ -459,8 +445,8 @@ def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
     else:
         _b = b
 
-    m = np.maximum(_a, _b) if device == "cpu" else cp.maximum(_a, _b)
-    return Tensor(m, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.maximum(_a, _b), device=device)
 
 
 def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
@@ -480,11 +466,12 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
     """
 
     device = tensors[0].device
-    if device == "cpu":
-        cat = np.concatenate([t.data for t in tensors], axis=axis)
-    else:
-        cat = cp.concatenate([t.data for t in tensors], axis=axis)
-    return Tensor(cat, device=device, dtype=tensors[0].dtype)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(
+        cpt_pkg.concatenate([t.data for t in tensors], axis=axis),
+        device=device,
+        dtype=tensors[0].dtype,
+    )
 
 
 def prod(x: tuple[int, ...]) -> int | float:
@@ -518,8 +505,8 @@ def eye(n: int, device: str = "cpu") -> Tensor:
     Tensor
         Diagonal tensor.
     """
-    e = np.eye(n) if device == "cpu" else cp.eye(n)
-    return Tensor(e, device=device)
+    cpt_pkg = get_cpt_pkg(device)
+    return Tensor(cpt_pkg.eye(n), device=device)
 
 
 def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
@@ -538,11 +525,9 @@ def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
 
     Returns
     -------
-    Tensor
-        _description_
+    list[Tensor]
+        List of tensors containing the split data.
     """
-    if x.device == "cpu":
-        split_data = np.split(x.data, splits, axis=axis)
-    else:
-        split_data = cp.split(x.data, splits, axis=axis)
+    cpt_pkg = get_cpt_pkg(x.device)
+    split_data = cpt_pkg.split(x.data, splits, axis=axis)
     return [Tensor(s, dtype=x.dtype, device=x.device) for s in split_data]
