@@ -77,7 +77,7 @@ class RecurrentCell(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
-                x_grad = tu.zeros_like(x, device=self.device).data
+                dx = tu.zeros_like(x, device=self.device).data
                 self.w.grad = tu.zeros_like(self.w, device=self.w.device).data
 
                 for i in range(x.shape[1] - 1, -1, -1):
@@ -85,23 +85,23 @@ class RecurrentCell(Module):
                     if i == x.shape[1] - 1:
                         out_grad = dy[:, i]
                     else:
-                        out_grad = dy[:, i] + x_grad[:, i + 1] @ self.w.T
+                        out_grad = dy[:, i] + dx[:, i + 1] @ self.w.T
 
                     # activation gradient
                     if self.activation == "tanh":
                         act_grad = -y.data[:, i] ** 2 + 1.0
                     else:
                         act_grad = y.data[:, i] > 0
-                    x_grad[:, i] = act_grad * out_grad
+                    dx[:, i] = act_grad * out_grad
 
                     # weight grads
                     if i > 0:
-                        self.w.grad += y[:, i - 1].T @ x_grad[:, i]
+                        self.w.grad += y[:, i - 1].T @ dx[:, i]
 
                 # bias grads
-                self.b.grad = x_grad.sum((0, 1))
+                self.b.grad = dx.sum((0, 1))
 
-                return x_grad
+                return dx
 
             self.backward = backward
 

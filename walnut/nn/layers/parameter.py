@@ -71,24 +71,24 @@ class Linear(Module):
                 self.set_dy(dy)
 
                 # input grads (b, c_in)
-                x_grad = dy @ self.w.T
+                dx = dy @ self.w.T
 
                 # weight grads (c_in, c_out)
                 dim = x.ndim
                 w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
-                w_grad = x.transpose(w_ax).data @ dy
+                dw = x.transpose(w_ax).data @ dy
                 if dim > 2:
                     wsum_axis = tuple(tu.arange(dim).data[:-2])
-                    w_grad = w_grad.sum(axis=wsum_axis)
+                    dw = dw.sum(axis=wsum_axis)
 
-                self.w.grad = w_grad
+                self.w.grad = dw
 
                 # bias grads (c_out,)
                 if self.use_bias:
                     b_tpl = tuple(d for d in range(dim - 1))
                     self.b.grad = dy.sum(axis=b_tpl)
 
-                return x_grad
+                return dx
 
             self.backward = backward
 
@@ -208,7 +208,7 @@ class Convolution1d(Module):
                 )
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 # sum over output channels
-                x_grad = dy_conv_w.sum(axis=1).data
+                dx = dy_conv_w.sum(axis=1).data
 
                 # weight grads (c_out, c_in, x)
                 dy_p_ext = dy_p_ext.flip(-1)
@@ -230,7 +230,7 @@ class Convolution1d(Module):
                 if self.use_bias:
                     self.b.grad = dy.sum(axis=(0, 2))  # sum over b and x
 
-                return x_grad
+                return dx
 
             self.backward = backward
 
@@ -346,7 +346,7 @@ class Convolution2d(Module):
                 # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 pad = "full" if self.pad == "valid" else "same"
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
-                x_grad = dy_conv_w.sum(axis=1).data  # sum over output channels
+                dx = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, y, x)
                 dy_p_ext = dy_p_ext.flip((-2, -1))
@@ -362,7 +362,7 @@ class Convolution2d(Module):
                 if self.use_bias:
                     self.b.grad = dy.sum(axis=(0, 2, 3))  # sum over b, y and x
 
-                return x_grad
+                return dx
 
             self.backward = backward
 

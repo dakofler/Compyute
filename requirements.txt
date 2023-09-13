@@ -1,4 +1,4 @@
-cupy==12.2.0
+cupy_cuda11x==12.2.0
 matplotlib==3.7.2
 numpy==1.25.0
 pandas==2.0.3

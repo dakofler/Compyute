@@ -70,11 +70,11 @@ class Batchnorm(Module):
                 self.set_dy(dy)
 
                 # input grads
-                n = float(tu.prod(x.shape) / x.shape[1])  # cupy ?
+                n = float(tu.prod(x.shape) / x.shape[1])
                 tmp1 = n * dy
                 tmp2 = dy.sum(axis=axis, keepdims=True)
                 tmp3 = (dy * x_h.data).sum(axis=axis, keepdims=True)
-                x_grad = weights.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
+                dx = weights.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
                 self.w.grad = (x_h.data * dy).sum(axis=axis)
@@ -82,7 +82,7 @@ class Batchnorm(Module):
                 # beta grads
                 self.b.grad = dy.sum(axis=axis)
 
-                return x_grad
+                return dx
 
             self.backward = backward
 
@@ -146,7 +146,7 @@ class Layernorm(Module):
                 tmp1 = n * dy
                 tmp2 = dy.sum(axis, keepdims=True)
                 tmp3 = (dy * x_h.data).sum(axis, keepdims=True)
-                x_grad = self.w.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
+                dx = self.w.data * var_h.data / n * (tmp1 - tmp2 - x_h.data * tmp3)
 
                 # gamma grads
                 self.w.grad = (x_h.data * dy).sum(axis=0)
@@ -154,7 +154,7 @@ class Layernorm(Module):
                 # beta grads
                 self.b.grad = dy.sum(axis=0)
 
-                return x_grad
+                return dx
 
             self.backward = backward
 
