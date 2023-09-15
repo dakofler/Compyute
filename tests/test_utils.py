@@ -20,7 +20,9 @@ def get_vals(
     return walnut_x, torch_x
 
 
-def validate(x1: Tensor | ArrayLike, x2: torch.Tensor, tol: float = 1e-5) -> bool:
+def validate(
+    x1: Tensor | ArrayLike, x2: torch.Tensor | None, tol: float = 1e-5
+) -> bool:
     if isinstance(x1, Tensor):
         x1 = x1.data
     if isinstance(x1, cp.ndarray):
