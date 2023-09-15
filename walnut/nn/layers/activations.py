@@ -36,7 +36,7 @@ class Tanh(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
-                return (-y.data**2 + 1.0) * dy
+                return (-(y.data**2) + 1.0) * dy
 
             self.backward = backward
 
