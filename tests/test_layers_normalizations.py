@@ -1,4 +1,4 @@
-"""Activation layer tests"""
+"""Normalization layer tests"""
 
 import torch
 import walnut

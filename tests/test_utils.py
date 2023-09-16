@@ -20,9 +20,27 @@ def get_vals(
     return walnut_x, torch_x
 
 
+def get_params(
+    shape: ShapeLike, T: bool = False, device: str = "cpu"
+) -> tuple[Tensor, torch.Tensor]:
+    """Returns a walnut tensor and a torch parameter tensor initialized equally."""
+    walnut_x = walnut.randn(shape)
+    if T:
+        torch_x = torch.nn.Parameter(
+            torch.from_numpy(walnut_x.T).float(), requires_grad=True
+        )
+    else:
+        torch_x = torch.nn.Parameter(
+            torch.from_numpy(walnut_x.data).float(), requires_grad=True
+        )
+    walnut_x.to_device(device)
+    return walnut_x, torch_x
+
+
 def validate(
     x1: Tensor | ArrayLike, x2: torch.Tensor | None, tol: float = 1e-5
 ) -> bool:
+    """Checks whether a walnut and torch tensor contain equal values."""
     if isinstance(x1, Tensor):
         x1 = x1.data
     if isinstance(x1, cp.ndarray):

@@ -29,7 +29,7 @@ def test_relu_cpu() -> None:
     assert all(results)
 
 
-def test_relu_y_cuda() -> None:
+def test_relu_cuda() -> None:
     if not walnut.cuda.is_available():
         pass
     results = []
@@ -72,7 +72,7 @@ def test_tanh_cpu() -> None:
     assert all(results)
 
 
-def test_tanh_y_cuda() -> None:
+def test_tanh_cuda() -> None:
     if not walnut.cuda.is_available():
         pass
     results = []
@@ -115,7 +115,7 @@ def test_sigmoid_cpu() -> None:
     assert all(results)
 
 
-def test_sigmoid_y_cuda() -> None:
+def test_sigmoid_cuda() -> None:
     if not walnut.cuda.is_available():
         pass
     results = []
