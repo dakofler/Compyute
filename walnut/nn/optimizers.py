@@ -72,7 +72,7 @@ class SGD(Optimizer):
                 continue
 
             if self.weight_decay > 0.0:
-                p.grad += self.weight_decay * p.data
+                p.grad = p.grad + self.weight_decay * p.data
 
             if self.m > 0.0:
                 b_prev = p.temp_params.get(
@@ -82,13 +82,13 @@ class SGD(Optimizer):
                 p.temp_params["sgd_b"] = b
 
                 if self.nesterov:
-                    p.grad += self.m * b
+                    p.grad = p.grad + self.m * b
                 else:
                     p.grad = b
 
             delta = -self.l_r * p.grad
             p.temp_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data = p.data + delta
 
 
 class Adam(Optimizer):
@@ -132,7 +132,7 @@ class Adam(Optimizer):
                 continue
 
             if self.weight_decay > 0.0:
-                p.grad += self.weight_decay * p.data
+                p.grad = p.grad + self.weight_decay * p.data
 
             m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
             v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
@@ -147,7 +147,7 @@ class Adam(Optimizer):
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data = p.data + delta
 
 
 class AdamW(Optimizer):
@@ -189,7 +189,7 @@ class AdamW(Optimizer):
                 continue
 
             if self.weight_decay > 0.0:
-                p.data -= self.l_r * self.weight_decay * p.data
+                p.data = p.data - self.l_r * self.weight_decay * p.data
 
             m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
             v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
@@ -204,4 +204,4 @@ class AdamW(Optimizer):
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data = p.data + delta

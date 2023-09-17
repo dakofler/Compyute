@@ -79,10 +79,11 @@ class Tensor:
 
     @grad.setter
     def grad(self, value: ArrayLike | None) -> None:
-        if value is not None and not isinstance(value, ArrayLike):
-            raise ValueError("Invalid dtype.")
-        if value is not None and value.shape != self.shape:
-            raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
+        if value is not None:
+            if not isinstance(value, ArrayLike):
+                raise ValueError("Invalid dtype.")
+            elif value.shape != self.shape:
+                raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
         if value is None:
             self._grad = value
         else:

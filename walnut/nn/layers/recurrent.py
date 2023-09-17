@@ -65,7 +65,7 @@ class RecurrentCell(Module):
             # hidden states
             h = y[:, i - 1] @ self.w
             if self.use_bias:
-                h += self.b
+                h = h + self.b
 
             # activation
             if self.activation == "tanh":
@@ -96,7 +96,7 @@ class RecurrentCell(Module):
 
                     # weight grads
                     if i > 0:
-                        self.w.grad += y[:, i - 1].T @ dx[:, i]
+                        self.w.grad = self.w.grad + y[:, i - 1].T @ dx[:, i]
 
                 # bias grads
                 self.b.grad = dx.sum((0, 1))

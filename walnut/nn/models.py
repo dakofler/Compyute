@@ -171,7 +171,7 @@ class Model(Module):
 
                 # compute loss
                 train_loss = self.loss_fn(preds, y_train).item()
-                avg_train_loss += train_loss / n_steps
+                avg_train_loss = avg_train_loss + train_loss / n_steps
 
                 # backward pass
                 self.optimizer.reset_grads()
@@ -183,7 +183,7 @@ class Model(Module):
                 self.optimizer.step(t)
 
                 step_time = round((time.time() - start) * 1000.0, 2)
-                avg_step_time += step_time / n_steps
+                avg_step_time = avg_step_time + step_time / n_steps
                 self.training = False
 
                 if verbose:
@@ -200,9 +200,12 @@ class Model(Module):
                         x_val = x_val_batched[v_step]
                         y_val = y_val_batched[v_step]
                         val_preds = self(x_val)
-                        val_loss += self.loss_fn(val_preds, y_val).item() / n_val_steps
+                        val_loss = (
+                            val_loss
+                            + self.loss_fn(val_preds, y_val).item() / n_val_steps
+                        )
 
-                    avg_val_loss += val_loss / n_steps
+                    avg_val_loss = avg_val_loss + val_loss / n_steps
 
                 train_loss_history.append(train_loss)
                 if val_data is not None:

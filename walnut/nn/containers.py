@@ -76,7 +76,7 @@ class ParallelContainer(Module):
 
                 dx = tu.zeros_like(x, device=self.device).data
                 for i, chunk in enumerate(chunks):
-                    dx += self.sub_modules[i].backward(chunk.data)
+                    dx = dx + self.sub_modules[i].backward(chunk.data)
 
                 return dx
 
