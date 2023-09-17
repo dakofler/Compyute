@@ -36,6 +36,8 @@ def test_batchnorm1d_cpu() -> None:
 
 
 def test_batchnorm1d_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
 
     # forward
@@ -87,6 +89,8 @@ def test_batchnorm2d_cpu() -> None:
 
 
 def test_batchnorm2d_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
 
     # forward
@@ -137,6 +141,8 @@ def test_layernorm_cpu() -> None:
 
 
 def test_layernorm_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
 
     # forward

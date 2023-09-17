@@ -50,6 +50,8 @@ def test_conv1d_cpu() -> None:
 
 
 def test_conv1d_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -135,6 +137,8 @@ def test_conv2d_cpu() -> None:
 
 
 def test_conv2d_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -201,6 +205,8 @@ def test_maxpool2d_cpu() -> None:
 
 
 def test_maxpool2d_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
     shape_x = (B, Cout, Y, X)
 

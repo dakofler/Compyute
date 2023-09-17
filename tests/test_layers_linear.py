@@ -46,6 +46,8 @@ def test_linear_cpu() -> None:
 
 
 def test_linear_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
     shape_x = (B, Cin)
     shape_w = (Cin, Cout)

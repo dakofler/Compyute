@@ -40,6 +40,8 @@ def test_embedding_cpu() -> None:
 
 
 def test_embedding_cuda() -> None:
+    if not walnut.cuda.is_available():
+        pass
     results = []
     shape_w = (Cin, Cout)
 
