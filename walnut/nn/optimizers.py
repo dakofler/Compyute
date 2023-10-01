@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from walnut.tensor import Tensor
+from walnut.nn.parameter import Parameter
 import walnut.tensor_utils as tu
 
 
@@ -13,7 +13,7 @@ class Optimizer(ABC):
     """Optimizer base class"""
 
     def __init__(self) -> None:
-        self.parameters: list[Tensor] = []
+        self.parameters: list[Parameter] = []
 
     @abstractmethod
     def step(self, t: int = 1) -> None:

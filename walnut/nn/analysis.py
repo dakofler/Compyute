@@ -206,7 +206,7 @@ def model_summary(
     def build_string(module, summary, depth):
         name = " " * depth + module.__class__.__name__
         output_shape = str((-1,) + module.y.shape[1:])
-        n_params = sum(p.data.size for p in module.parameters)
+        n_params = sum(p.data.size for p in module.parameters())
         summary.append(f"{name:25s} {output_shape:20s} {n_params:15d}\n")
 
         for sub_module in module.sub_modules:
@@ -214,7 +214,7 @@ def model_summary(
 
     build_string(model, summary, 0)
     summary.append("=" * n)
-    tot_parameters = sum(p.data.size for p in model.parameters)
+    tot_parameters = sum(p.data.size for p in model.parameters())
 
     model.keep_output = False
     model.clean()

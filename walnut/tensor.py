@@ -1,7 +1,6 @@
 """Tensor module"""
 
 from __future__ import annotations
-from dataclasses import dataclass
 
 import numpy as np
 import cupy as cp
@@ -20,15 +19,8 @@ class ShapeError(Exception):
     """Incompatible tensor shapes."""
 
 
-@dataclass(init=False, repr=False, slots=True)
 class Tensor:
     """Tensor object."""
-
-    _data: ArrayLike
-    _grad: ArrayLike | None
-    _iterator: int
-    _device: str
-    temp_params: dict[str, ArrayLike]
 
     def __init__(
         self,
@@ -51,9 +43,8 @@ class Tensor:
             The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
-        self.data = get_cpt_pkg(device).array(data, copy=copy, dtype=dtype)
+        self._data = get_cpt_pkg(device).array(data, copy=copy, dtype=dtype)
         self._grad = None
-        self.temp_params = {}
         self._iterator = 0
         self._device = device
 

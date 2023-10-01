@@ -2,7 +2,7 @@
 
 import torch
 import walnut
-from tests.test_utils import get_vals, validate
+from tests.test_utils import get_vals, get_params, validate
 
 
 SHAPE = (10, 10)
@@ -13,7 +13,7 @@ def test_sgd_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -36,7 +36,7 @@ def test_sgd_cuda() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
+    walnut_x, torch_x = get_params(SHAPE, device="cuda")
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False, device="cuda")
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -57,7 +57,7 @@ def test_sgd_m_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -84,7 +84,7 @@ def test_sgd_mnesterov_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -111,7 +111,7 @@ def test_sgd_wdecay_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -133,7 +133,7 @@ def test_adam_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -168,7 +168,7 @@ def test_adam_cuda() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
+    walnut_x, torch_x = get_params(SHAPE, device="cuda")
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False, device="cuda")
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -201,7 +201,7 @@ def test_adam_wdecay_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -239,7 +239,7 @@ def test_adamw_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -276,7 +276,7 @@ def test_adamw_cuda() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
+    walnut_x, torch_x = get_params(SHAPE, device="cuda")
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False, device="cuda")
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx
@@ -311,7 +311,7 @@ def test_adamw_wdecay_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
+    walnut_x, torch_x = get_params(SHAPE)
     walnut_dx, torch_dx = get_vals(walnut_x.shape, torch_grad=False)
     walnut_x.grad = walnut_dx.data
     torch_x.grad = torch_dx

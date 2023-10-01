@@ -5,6 +5,7 @@ from __future__ import annotations
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
+from walnut.nn.parameter import Parameter
 from walnut.preprocessing.encoding import one_hot_encode
 
 
@@ -15,7 +16,7 @@ class Embedding(Module):
     """Layer used for token embedding."""
 
     def __init__(
-        self, in_channels: int, out_channels: int, weights: Tensor | None = None
+        self, in_channels: int, out_channels: int, weights: Parameter | None = None
     ) -> None:
         """Embedding layer used for token embedding.
 
@@ -25,7 +26,7 @@ class Embedding(Module):
             Number of input channels (vocabulary size) of the layer.
         out_channels : int
             Number of output channels (embedding dimensions) of the layer.
-        weights : Tensor | None, optional
+        weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         """
         super().__init__()
@@ -35,10 +36,9 @@ class Embedding(Module):
         # init weights (c_in, c_out)
         if weights is None:
             k = in_channels**-0.5
-            self.w = tu.randu((in_channels, out_channels), -k, k)
+            self.w = Parameter(tu.randu((in_channels, out_channels), -k, k), label="w")
         else:
             self.w = weights
-        self.parameters = [self.w]
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

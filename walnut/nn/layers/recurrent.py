@@ -2,8 +2,9 @@
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
-from walnut.nn.module import Module
 from walnut.nn.funcional import relu
+from walnut.nn.module import Module
+from walnut.nn.parameter import Parameter
 
 
 __all__ = ["RecurrentCell"]
@@ -16,7 +17,7 @@ class RecurrentCell(Module):
         self,
         hidden_channels: int,
         activation: str = "tanh",
-        weights: Tensor | None = None,
+        weights: Parameter | None = None,
         use_bias: bool = True,
     ) -> None:
         """Recurrent layer.
@@ -27,7 +28,7 @@ class RecurrentCell(Module):
             Number of hidden channels of the layer.
         activation : str, optional
             Activation function used in the recurrent layer, by default "tanh".
-        weights : Tensor | None, optional
+        weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
@@ -40,15 +41,15 @@ class RecurrentCell(Module):
         # init weights (c_hidden, c_hidden)
         if weights is None:
             k = hidden_channels**-0.5
-            self.w = tu.randu((hidden_channels, hidden_channels), -k, k)
+            self.w = Parameter(
+                tu.randu((hidden_channels, hidden_channels), -k, k), label="w"
+            )
         else:
             self.w = weights
-        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
-            self.b = tu.zeros((hidden_channels,))
-            self.parameters += [self.b]
+            self.b = Parameter(tu.zeros((hidden_channels,)), label="w")
 
     def __repr__(self):
         name = self.__class__.__name__

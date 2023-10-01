@@ -3,6 +3,7 @@
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike, ShapeLike
 from walnut.nn.module import Module
+from walnut.nn.parameter import Parameter
 
 
 __all__ = ["Batchnorm", "Layernorm"]
@@ -28,9 +29,8 @@ class Batchnorm(Module):
         self.eps = eps
         self.m = m
 
-        self.w = tu.ones((in_channels,))
-        self.b = tu.zeros((in_channels,))
-        self.parameters = [self.w, self.b]
+        self.w = Parameter(tu.ones((in_channels,)), label="w")
+        self.b = Parameter(tu.zeros((in_channels,)), label="b")
 
         self.rmean = tu.zeros((in_channels,), device=self.device)
         self.rvar = tu.ones((in_channels,), device=self.device)
@@ -118,9 +118,8 @@ class Layernorm(Module):
         super().__init__()
         self.normalized_shape = normalized_shape
         self.eps = eps
-        self.w = tu.ones(normalized_shape)
-        self.b = tu.zeros(normalized_shape)
-        self.parameters = [self.w, self.b]
+        self.w = Parameter(tu.ones(normalized_shape), label="w")
+        self.b = Parameter(tu.zeros(normalized_shape), label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

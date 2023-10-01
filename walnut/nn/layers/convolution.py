@@ -6,6 +6,7 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.funcional import convolve1d, convolve2d, stretch2d
 from walnut.nn.module import Module
+from walnut.nn.parameter import Parameter
 
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d"]
@@ -22,7 +23,7 @@ class Convolution1d(Module):
         pad: str = "causal",
         stride: int = 1,
         dil: int = 1,
-        weights: Tensor | None = None,
+        weights: Parameter | None = None,
         use_bias: bool = True,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
@@ -42,7 +43,7 @@ class Convolution1d(Module):
             Stride used for the convolution operation, by default 1.
         dil : int, optional
             Dilation used for each axis of the filter, by default 1.
-        weights : Tensor | None, optional
+        weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
@@ -59,15 +60,15 @@ class Convolution1d(Module):
         # init weights (c_out, c_in, x)
         if weights is None:
             k = int(in_channels * kernel_size) ** -0.5
-            self.w = tu.randu((out_channels, in_channels, kernel_size), -k, k)
+            self.w = Parameter(
+                tu.randu((out_channels, in_channels, kernel_size), -k, k), label="w"
+            )
         else:
             self.w = weights
-        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
-            self.b = tu.zeros((out_channels,))
-            self.parameters += [self.b]
+            self.b = Parameter(tu.zeros((out_channels,)), label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -164,7 +165,7 @@ class Convolution2d(Module):
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
-        weights: Tensor | None = None,
+        weights: Parameter | None = None,
         use_bias: bool = True,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
@@ -184,7 +185,7 @@ class Convolution2d(Module):
             Strides used for the convolution operation, by default 1.
         dil : int | tuple [int, int], optional
             Dilations used for each axis of the filter, by default 1.
-        weights : Tensor | None, optional
+        weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
@@ -201,15 +202,15 @@ class Convolution2d(Module):
         # init weights (c_out, c_in, y, x)
         if weights is None:
             k = int(in_channels * tu.prod(kernel_size)) ** -0.5
-            self.w = tu.randu((out_channels, in_channels, *kernel_size), -k, k)
+            self.w = Parameter(
+                tu.randu((out_channels, in_channels, *kernel_size), -k, k), label="w"
+            )
         else:
             self.w = weights
-        self.parameters = [self.w]
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = tu.zeros((out_channels,))
-            self.parameters += [self.b]
+            self.b = Parameter(tu.zeros((out_channels,)), label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

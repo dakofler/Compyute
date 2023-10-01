@@ -98,7 +98,7 @@ class Model(Module):
         """
         self._compiled = True
         self.optimizer = optimizer
-        optimizer.parameters = self.parameters
+        optimizer.parameters = self.parameters()
         self.loss_fn = loss_fn
         self.metric = metric
 

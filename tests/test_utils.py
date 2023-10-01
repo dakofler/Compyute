@@ -5,6 +5,7 @@ import cupy as cp
 import torch
 
 import walnut
+from walnut.nn.parameter import Parameter
 from walnut.tensor import Tensor, ShapeLike, ArrayLike
 
 
@@ -22,23 +23,19 @@ def get_vals(
 
 def get_params(
     shape: ShapeLike, T: bool = False, device: str = "cpu"
-) -> tuple[Tensor, torch.Tensor]:
+) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a walnut tensor and a torch parameter tensor initialized equally."""
-    walnut_x = walnut.randn(shape)
+    walnut_x = Parameter(walnut.randn(shape))
     if T:
-        torch_x = torch.nn.Parameter(
-            torch.from_numpy(walnut_x.T).float(), requires_grad=True
-        )
+        torch_x = torch.nn.Parameter(torch.from_numpy(walnut_x.T).float())
     else:
-        torch_x = torch.nn.Parameter(
-            torch.from_numpy(walnut_x.data).float(), requires_grad=True
-        )
+        torch_x = torch.nn.Parameter(torch.from_numpy(walnut_x.data).float())
     walnut_x.to_device(device)
     return walnut_x, torch_x
 
 
 def validate(
-    x1: Tensor | ArrayLike, x2: torch.Tensor | None, tol: float = 1e-5
+    x1: Tensor | Parameter | ArrayLike, x2: torch.Tensor | None, tol: float = 1e-5
 ) -> bool:
     """Checks whether a walnut and torch tensor contain equal values."""
     if isinstance(x1, Tensor):

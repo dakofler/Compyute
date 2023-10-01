@@ -5,6 +5,7 @@ from __future__ import annotations
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
+from walnut.nn.parameter import Parameter
 
 
 __all__ = ["Linear"]
@@ -17,7 +18,7 @@ class Linear(Module):
         self,
         in_channels: int,
         out_channels: int,
-        weights: Tensor | None = None,
+        weights: Parameter | None = None,
         use_bias: bool = True,
     ) -> None:
         """Fully connected layer.
@@ -28,7 +29,7 @@ class Linear(Module):
             Number of input channels of the layer.
         out_channels : int
             Number of output channels (neurons) of the layer.
-        weights : Tensor | None, optional
+        weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
@@ -41,15 +42,13 @@ class Linear(Module):
         # init weights (c_in, c_out)
         if weights is None:
             k = in_channels**-0.5
-            self.w = tu.randu((in_channels, out_channels), -k, k)
+            self.w = Parameter(tu.randu((in_channels, out_channels), -k, k), label="w")
         else:
             self.w = weights
-        self.parameters = [self.w]
 
         # init bias (c_out,)
         if use_bias:
-            self.b = tu.zeros((out_channels,))
-            self.parameters += [self.b]
+            self.b = Parameter(tu.zeros((out_channels,)), label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Callable
 from abc import ABC, abstractmethod
 
+from walnut.nn.parameter import Parameter
 from walnut.tensor import Tensor, ArrayLike
 import walnut.tensor_utils as tu
 
@@ -19,7 +20,6 @@ class Module(ABC):
         self.y: Tensor = tu.empty()
         self.backward: Callable[[ArrayLike], ArrayLike] | None = None
         self._sub_modules: list[Module] = []
-        self._parameters: list[Tensor] = []
         self._training: bool = False
         self._keep_output: bool = False
         self._device: str = "cpu"
@@ -32,18 +32,6 @@ class Module(ABC):
     @sub_modules.setter
     def sub_modules(self, value: list[Module]) -> None:
         self._sub_modules = value
-
-    @property
-    def parameters(self) -> list[Tensor]:
-        """Trainable module parameters."""
-        p = self._parameters.copy()
-        for module in self.sub_modules:
-            p += module.parameters
-        return p
-
-    @parameters.setter
-    def parameters(self, value: list[Tensor]) -> None:
-        self._parameters = value
 
     @property
     def device(self) -> str:
@@ -65,7 +53,7 @@ class Module(ABC):
             Device to move the tensor to. Valid options are "cpu" and "cuda".
         """
         self._device = device
-        for p in self.parameters:
+        for p in self.parameters():
             p.to_device(device)
         for module in self.sub_modules:
             module.to_device(device)
@@ -135,6 +123,19 @@ class Module(ABC):
         """
         if self.keep_output:
             self.y.grad = dy.copy()
+
+    def parameters(self) -> list[Parameter]:
+        """Returns the list of module parameters."""
+        parameters = []
+
+        for prop in self.__dict__.items():
+            if isinstance(prop[1], Parameter):
+                parameters.append(prop[1])
+
+        for module in self.sub_modules:
+            parameters += module.parameters()
+
+        return parameters
 
     def clean(self) -> None:
         """Cleanes up the module by resetting temporary values."""
