@@ -1,16 +1,17 @@
 """numpynn neural network module"""
 
 from walnut.nn import (
-    layers,
     analysis,
-    containers,
     blocks,
+    containers,
+    dataloaders,
+    funcional,
     inits,
+    layers,
     losses,
     metrics,
     models,
     optimizers,
-    funcional,
 )
 from walnut.nn.models import *
 from walnut.nn.module import *

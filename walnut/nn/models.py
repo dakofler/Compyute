@@ -6,6 +6,7 @@ import pickle
 
 from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
+from walnut.nn.dataloaders import DataLoader
 from walnut.nn.losses import Loss
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
@@ -30,37 +31,18 @@ def log_epoch(
     n_steps: int,
     step_time: float,
     train_loss: float,
+    train_score: float,
     val_loss: float | None,
+    val_score: float | None,
 ) -> None:
     """Outputs information each epoch about intermediate model training results."""
-    line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | train_loss {train_loss:8.4f}"
+    line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | "
+    line += f"train_loss {train_loss:8.4f} | train_score {train_score:6.2f}"
+
     if val_loss is not None:
-        line += f" | val_loss {val_loss:8.4f}"
+        line += f" | val_loss {val_loss:8.4f} | val_score {val_score:6.2f}"
+
     print(line)
-
-
-def get_batches(
-    x: Tensor,
-    y: Tensor | None = None,
-    batch_size: int | None = None,
-    shuffle: bool = True,
-) -> tuple[Tensor, Tensor | None]:
-    """Generates batches of data."""
-
-    if isinstance(batch_size, int) and (batch_size > x.len or batch_size == 0):
-        raise ValueError(f"Invalid batch_size {batch_size}.")
-
-    if shuffle:
-        x, idx = tu.shuffle(x)
-        y = y[idx]
-
-    batch_size = x.len if batch_size is None else batch_size
-    clip = x.len // batch_size * batch_size
-    x_batches = x[:clip].reshape((-1, batch_size, *x.shape[1:]))
-
-    if y is None:
-        return x_batches, None
-    return x_batches, y[:clip].reshape((-1, batch_size, *y.shape[1:]))
 
 
 class Model(Module):
@@ -71,7 +53,7 @@ class Model(Module):
         super().__init__()
         self.optimizer: Optimizer | None = None
         self.loss_fn: Loss | None = None
-        self.metric: Callable[[Tensor, Tensor], float] = lambda x, y: 0.0
+        self.metric_fn: Callable[[Tensor, Tensor], Tensor] | None = None
         self._compiled = False
 
     @property
@@ -83,7 +65,7 @@ class Model(Module):
         self,
         optimizer: Optimizer,
         loss_fn: Loss,
-        metric: Callable[[Tensor, Tensor], float],
+        metric_fn: Callable[[Tensor, Tensor], Tensor],
     ) -> None:
         """Compiles the model.
 
@@ -93,42 +75,41 @@ class Model(Module):
             Optimizer algorithm to be used to update parameters.
         loss_fn : Loss
             Loss function used to compute losses and their gradients.
-        metric : Callable[[Tensor, Tensor], float]
+        metric_fn : Callable[[Tensor, Tensor], float]
             Metric function used to evaluate the model's performance.
         """
         self._compiled = True
         self.optimizer = optimizer
         optimizer.parameters = self.parameters()
         self.loss_fn = loss_fn
-        self.metric = metric
+        self.metric_fn = metric_fn
 
     def train(
         self,
         x: Tensor,
         y: Tensor,
         epochs: int = 100,
-        batch_size: int | None = None,
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
+        batch_size: int = 1,
         keep_intermediate_outputs: bool = False,
-    ) -> tuple[list[float], list[float]]:
+    ) -> tuple[list[float], list[float], list[float], list[float]]:
         """Trains the model using samples and targets.
 
         Parameters
         ----------
         x : Tensor
-            Tensor of input values (features).
+            Feature tensor.
         y : Tensor
-            Tensor of target values (labels).
+            Label tensor.
         epochs : int, optional
             Number of training iterations, by default 100.
-        batch_size : int | None, optional
-            Number of training samples used per epoch, by default None.
-            If None, all samples are used.
+        batch_size : int, optional
+            Number of inputs processed in parallel, by default 1.
         verbose : bool, optional
             Whether the model reports intermediate results during training, by default True.
-        val_data : tuple[Tensor, Tensor] | None, optional
-            Data used for validation during training, by default None.
+        val_dataloader : DataLoader, optional
+            Data loader for vaidation data., by default None.
         keep_intermediate_outputs : bool, optional
             Whether to store output values and gradients of sub modules, by default False.
             Sub module outputs and gradients are kept in as a y-tensor.
@@ -136,9 +117,13 @@ class Model(Module):
         Returns
         -------
         list[float]
-            List of loss values for each epoch.
+            Training loss history.
+        list[float]
+            Training score history.
         list[float] | None
-            List of validation loss values for each epoch, if validation data is provided.
+            Validation loss history, if validation data is provided.
+        list[float] | None
+            Validation score history, if validation data is provided.
 
         Raises
         -------
@@ -148,90 +133,102 @@ class Model(Module):
         if not self.compiled:
             raise ModelCompilationError("Model has not been compiled yet.")
 
+        # create dataloaders
+        train_dataloader = DataLoader(x, y, batch_size)
+        val_dataloader = DataLoader(*val_data, batch_size) if val_data else None
+
         self.keep_output = keep_intermediate_outputs
-        train_loss_history, val_loss_history = [], []
+        train_losses, train_scores = [], []
+        val_losses, val_scores = [], []
+        step_times = []
 
         for epoch in range(1, epochs + 1):
-            avg_train_loss = avg_val_loss = avg_step_time = 0.0
-
             if verbose:
                 print(f"Epoch {epoch}/{epochs}")
 
-            x_batched, y_batched = get_batches(x, y, batch_size)
-            n_steps = x_batched.shape[0]
+            # training
+            self.training = True
+            n_train_steps = len(train_dataloader)
 
-            for step in range(n_steps):
+            for step, train_batch in enumerate(train_dataloader()):
                 start = time.time()
-                self.training = True
-                x_train = x_batched[step]
-                y_train = y_batched[step]
+
+                # prepare data
+                x_train_b, y_train_b = train_batch
+                x_train_b.to_device(self.device)
+                y_train_b.to_device(self.device)
 
                 # forward pass
-                preds = self(x_train)
-
-                # compute loss
-                train_loss = self.loss_fn(preds, y_train).item()
-                avg_train_loss = avg_train_loss + train_loss / n_steps
+                train_loss, train_score = self._get_loss_and_score(
+                    self(x_train_b), y_train_b
+                )
+                train_losses.append(train_loss)
+                train_scores.append(train_score)
 
                 # backward pass
                 self.optimizer.reset_grads()
                 dy = self.loss_fn.backward()
                 self.backward(dy)
 
-                # update parameters
-                t = (epoch - 1) * n_steps + step + 1
+                # update model parameters
+                t = (epoch - 1) * n_train_steps + step + 1
                 self.optimizer.step(t)
 
                 step_time = round((time.time() - start) * 1000.0, 2)
-                avg_step_time = avg_step_time + step_time / n_steps
-                self.training = False
-
+                step_times.append(step_time)
                 if verbose:
-                    log_step((step + 1), n_steps, step_time)
+                    log_step((step + 1), n_train_steps, step_time)
 
-                # validation
-                val_loss = None
-                if val_data is not None:
-                    x_val_batched, y_val_batched = get_batches(*val_data, batch_size)
-                    val_loss = 0.0
-                    n_val_steps = x_val_batched.shape[0]
+            avg_train_loss = sum(train_losses[-n_train_steps:]) / n_train_steps
+            avg_train_score = sum(train_scores[-n_train_steps:]) / n_train_steps
+            avg_step_time = sum(step_times[-n_train_steps:]) / n_train_steps
+            self.training = False
 
-                    for v_step in range(n_val_steps):
-                        x_val = x_val_batched[v_step]
-                        y_val = y_val_batched[v_step]
-                        val_preds = self(x_val)
-                        val_loss = (
-                            val_loss
-                            + self.loss_fn(val_preds, y_val).item() / n_val_steps
-                        )
+            # validation
+            avg_val_loss = avg_val_score = None
+            if val_dataloader is not None:
+                n_val_steps = max(1, len(val_dataloader))
 
-                    avg_val_loss = avg_val_loss + val_loss / n_steps
+                for val_batch in val_dataloader(False):
+                    x_val_b, y_val_b = val_batch
+                    x_val_b.to_device(self.device)
+                    y_val_b.to_device(self.device)
 
-                train_loss_history.append(train_loss)
-                if val_data is not None:
-                    val_loss_history.append(val_loss)
+                    val_loss, val_score = self._get_loss_and_score(
+                        self(x_val_b), y_val_b
+                    )
+                    val_losses.append(val_loss)
+                    val_scores.append(val_score)
+                avg_val_loss = sum(val_losses[-n_val_steps:]) / n_val_steps
+                avg_val_score = sum(val_scores[-n_val_steps:]) / n_val_steps
 
             if verbose:
-                log_epoch(n_steps, avg_step_time, avg_train_loss, val_loss)
+                log_epoch(
+                    n_train_steps,
+                    avg_step_time,
+                    avg_train_loss,
+                    avg_train_score,
+                    avg_val_loss,
+                    avg_val_score,
+                )
 
         self.optimizer.reset_temp_params()
         self.keep_output = False
-        return train_loss_history, val_loss_history
+        return train_losses, train_scores, val_losses, val_scores
 
     def evaluate(
-        self, x: Tensor, y: Tensor, batch_size: int | None = None
+        self, x: Tensor, y: Tensor, batch_size: int = 1
     ) -> tuple[float, float]:
         """Evaluates the model using a defined metric.
 
         Parameters
         ----------
         x : Tensor
-            Tensor of input values (features).
+            Feature tensor.
         y : Tensor
-            Tensor of target values.
-        batch_size : int | None, optional
-            Number of samples used per call, by default None.
-            If None, all samples are used.
+            Label tensor.
+        batch_size : int, optional
+            Number of inputs processed in parallel, by default 1.
 
         Returns
         ----------
@@ -248,38 +245,38 @@ class Model(Module):
         if not self.compiled:
             raise ModelCompilationError("Model has not been compiled yet.")
 
-        predictions = self.predict(x, batch_size=batch_size)
-        loss = self.loss_fn(predictions, y).item()
-        score = self.metric(predictions, y)
-        return loss, score
+        y_pred = self.predict(x, batch_size)
+        y.to_device(self.device)
+        return self._get_loss_and_score(y_pred, y)
 
-    def predict(self, x: Tensor, batch_size: int | None = None) -> Tensor:
+    def predict(self, x: Tensor, batch_size: int = 1) -> Tensor:
         """Returns the models predictions for a given input.
 
         Parameters
         ----------
         x : Tensor
-            _description_
-        batch_size : int | None, optional
-            Number of samples used per call, by default None.
-            If None, all samples are used.
+            Feature tensor.
+        batch_size : int, optional
+            Number of inputs processed in parallel, by default 1.
 
         Returns
         -------
         Tensor
             Predictions.
         """
-        x_batched, _ = get_batches(x, batch_size=batch_size, shuffle=False)
 
-        # get predictions for n * batchsize samples
-        predictions = tu.concatenate([self(x) for x in x_batched], axis=0)
+        dataloader = DataLoader(x, None, batch_size)
+        outputs = []
+        for batch in dataloader(False):
+            x, _ = batch
+            x.to_device(self.device)
+            outputs.append(self(x))
+        return tu.concatenate(outputs, axis=0)
 
-        # get predictions for remaining samples
-        n = tu.prod(x_batched.shape[:2])
-        if n < x.len:
-            predictions = tu.concatenate([predictions, self(x[n:])], axis=0)
-
-        return predictions
+    def _get_loss_and_score(self, y_pred, y_true) -> tuple[float, float]:
+        loss = self.loss_fn(y_pred, y_true).item()
+        score = self.metric_fn(y_pred, y_true).item()
+        return loss, score
 
 
 class Sequential(Model):

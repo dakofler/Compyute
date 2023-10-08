@@ -53,6 +53,7 @@ class Module(ABC):
             Device to move the tensor to. Valid options are "cpu" and "cuda".
         """
         self._device = device
+        self.y.to_device(device)
         for p in self.parameters():
             p.to_device(device)
         for module in self.sub_modules:
@@ -139,7 +140,7 @@ class Module(ABC):
 
     def clean(self) -> None:
         """Cleanes up the module by resetting temporary values."""
-        self.y = tu.empty()
+        self.y = tu.empty(device=self.device)
         self.y.grad = None
         self.backward = None
 

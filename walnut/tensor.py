@@ -146,6 +146,22 @@ class Tensor:
             if self.grad is not None:
                 self.grad = numpy_to_cupy(self.grad)
 
+    def cpu(self):
+        """Returns a copy of the tensor on the cpu."""
+        if self.device == "cpu":
+            return self
+        tensor = Tensor(cupy_to_numpy(self.data), self.dtype, device="cpu")
+        tensor.grad = cupy_to_numpy(self.grad) if self.grad is not None else None
+        return tensor
+
+    def cuda(self):
+        """Returns a copy of the tensor on the gpu."""
+        if self.device == "cuda":
+            return self
+        tensor = Tensor(numpy_to_cupy(self.data), self.dtype, device="cuda")
+        tensor.grad = numpy_to_cupy(self.grad) if self.grad is not None else None
+        return tensor
+
     # ----------------------------------------------------------------------------------------------
     # OVERLOADS
     # ----------------------------------------------------------------------------------------------
