@@ -26,13 +26,16 @@ class DataLoader:
         self.y = y
         self.batch_size = batch_size
 
-    def __call__(self, shuffle: bool = True):
+    def __call__(self, shuffle: bool = True, drop_remaining: bool = False):
         """Returns data in a batched form.
 
         Parameters
         ----------
         shuffle : bool, optional
             Whether to shuffle the data each time the dataloader is called, by default True.
+        drop_remaining: bool, optional
+            Whether to drop data, that remains when the number of samples is not divisible by
+            the batch_size.
 
         Yields
         ------
@@ -57,7 +60,7 @@ class DataLoader:
             yield (x, y)
 
         # yield remaining samples, if there are any
-        if n_trunc < n:
+        if not drop_remaining and n_trunc < n:
             x_remain = self.x[n_trunc:]
             y_remain = self.y[n_trunc:] if self.y is not None else None
             yield (x_remain, y_remain)

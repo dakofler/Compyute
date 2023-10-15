@@ -150,7 +150,7 @@ class Model(Module):
             self.training = True
             n_train_steps = len(train_dataloader)
 
-            for step, train_batch in enumerate(train_dataloader()):
+            for step, train_batch in enumerate(train_dataloader(drop_remaining=True)):
                 start = time.time()
 
                 # prepare data
@@ -189,7 +189,7 @@ class Model(Module):
             if val_dataloader is not None:
                 n_val_steps = max(1, len(val_dataloader))
 
-                for val_batch in val_dataloader(False):
+                for val_batch in val_dataloader(shuffle=False, drop_remaining=True):
                     x_val_b, y_val_b = val_batch
                     x_val_b.to_device(self.device)
                     y_val_b.to_device(self.device)
@@ -267,7 +267,7 @@ class Model(Module):
 
         dataloader = DataLoader(x, None, batch_size)
         outputs = []
-        for batch in dataloader(False):
+        for batch in dataloader(shuffle=False):
             x, _ = batch
             x.to_device(self.device)
             outputs.append(self(x))
