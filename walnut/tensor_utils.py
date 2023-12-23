@@ -65,9 +65,8 @@ def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
         Tensor with extended dimensions.
     """
     cpt_pkg = get_cpt_pkg(x.device)
-    return Tensor(
-        cpt_pkg.expand_dims(x.data, axis=axis), dtype=x.dtype, device=x.device
-    )
+    r = cpt_pkg.expand_dims(x.data, axis=axis)
+    return Tensor(r, dtype=r.dtype, device=x.device)
 
 
 def match_dims(x: Tensor, dims: int) -> Tensor:
@@ -91,7 +90,11 @@ def match_dims(x: Tensor, dims: int) -> Tensor:
 
 
 def arange(
-    stop: int, start: int = 0, step: int | float = 1, device: str = "cpu"
+    stop: int,
+    start: int = 0,
+    step: int | float = 1,
+    dtype: str = "int32",
+    device: str = "cpu",
 ) -> Tensor:
     """Returns a 1d tensor with evenly spaced values samples,
     calculated over the interval [start, stop).
@@ -104,6 +107,8 @@ def arange(
         Stop value.
     step : int | float, optional
         Spacing between values, by default 1.
+    dtype: str, optional
+        Datatype of the tensor data, by default "int32".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -113,11 +118,13 @@ def arange(
         1d tensor of evenly spaced samples.
     """
     cpt_pkg = get_cpt_pkg(device)
-    x = cpt_pkg.arange(start, stop, step)
-    return Tensor(x, dtype=str(x.dtype), device=device)
+    r = cpt_pkg.arange(start, stop, step, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def linspace(start: float, stop: float, num: int, device: str = "cpu") -> Tensor:
+def linspace(
+    start: float, stop: float, num: int, dtype: str = "float64", device: str = "cpu"
+) -> Tensor:
     """Returns a 1d tensor num evenly spaced samples, calculated over the interval [start, stop].
 
     Parameters
@@ -128,6 +135,8 @@ def linspace(start: float, stop: float, num: int, device: str = "cpu") -> Tensor
         Stop value.
     num : int
         Number of samples.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -137,16 +146,23 @@ def linspace(start: float, stop: float, num: int, device: str = "cpu") -> Tensor
         1d tensor of evenly spaced samples.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.linspace(start, stop, num), device=device)
+    r = cpt_pkg.linspace(start, stop, num, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
+def zeros(
+    shape: ShapeLike,
+    dtype: str = "float64",
+    device: str = "cpu",
+) -> Tensor:
     """Creates a tensor of a given shape with all values being zero.
 
     Parameters
     ----------
     ShapeLike
         Shape of the new tensor.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -156,16 +172,19 @@ def zeros(shape: ShapeLike, device: str = "cpu") -> Tensor:
         Tensor with all values being zero.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.zeros(shape), device=device)
+    r = cpt_pkg.zeros(shape, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
+def ones(shape: ShapeLike, dtype: str = "float64", device: str = "cpu") -> Tensor:
     """Creates a tensor of a given shape with all values being one.
 
     Parameters
     ----------
     ShapeLike
         Shape of the new tensor.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -175,16 +194,19 @@ def ones(shape: ShapeLike, device: str = "cpu") -> Tensor:
         Tensor with all values being one.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.ones(shape), device=device)
+    r = cpt_pkg.ones(shape, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def zeros_like(x: Tensor, device: str = "cpu") -> Tensor:
+def zeros_like(x: Tensor, dtype: str = "float64", device: str = "cpu") -> Tensor:
     """Creates a tensor based on the shape of a given other tensor with all values being zero.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose shape is used.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -193,16 +215,18 @@ def zeros_like(x: Tensor, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being zero.
     """
-    return zeros(x.shape, device=device)
+    return zeros(x.shape, dtype=dtype, device=device)
 
 
-def ones_like(x: Tensor, device: str = "cpu") -> Tensor:
+def ones_like(x: Tensor, dtype: str = "float64", device: str = "cpu") -> Tensor:
     """Creates a tensor based on the shape of a given other tensor with all values being one.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose shape is used.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -211,11 +235,15 @@ def ones_like(x: Tensor, device: str = "cpu") -> Tensor:
     Tensor
         Tensor with all values being one.
     """
-    return ones(x.shape, device=device)
+    return ones(x.shape, dtype=dtype, device=device)
 
 
 def randn(
-    shape: ShapeLike, mean: float = 0.0, std: float = 1.0, device: str = "cpu"
+    shape: ShapeLike,
+    mean: float = 0.0,
+    std: float = 1.0,
+    dtype: str = "float64",
+    device: str = "cpu",
 ) -> Tensor:
     """Creates a tensor of a given shape with random values following a normal distribution.
 
@@ -227,6 +255,8 @@ def randn(
         Mean of random values, by default 0.
     std : float, optional
         Standard deviation of random values, by default 1.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -236,11 +266,16 @@ def randn(
         Tensor with random values.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.random.normal(mean, std, shape), device=device)
+    r = cpt_pkg.random.normal(mean, std, shape)
+    return Tensor(r, dtype=dtype, device=device)
 
 
 def randu(
-    shape: ShapeLike, low: float = 0.0, high: float = 1.0, device: str = "cpu"
+    shape: ShapeLike,
+    low: float = 0.0,
+    high: float = 1.0,
+    dtype: str = "float64",
+    device: str = "cpu",
 ) -> Tensor:
     """Creates a tensor of a given shape with random values following a uniform distribution.
 
@@ -252,6 +287,8 @@ def randu(
         Lower bound for random values, by default 0.
     high : float, optional
         Upper bound for random values, by default 1.
+    dtype: str, optional
+        Datatype of the tensor data, by default "float64".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -261,10 +298,13 @@ def randu(
         Tensor with random values.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.random.uniform(low, high, shape), device=device)
+    r = cpt_pkg.random.uniform(low, high, shape)
+    return Tensor(r, dtype=dtype, device=device)
 
 
-def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tensor:
+def randint(
+    shape: ShapeLike, low: int, high: int, dtype: str = "int32", device: str = "cpu"
+) -> Tensor:
     """Creates a tensor of a given shape with random integer values.
 
     Parameters
@@ -275,6 +315,8 @@ def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tenso
         Lower bound for random values.
     high : int
         Upper bound for random values.
+    dtype: str, optional
+        Datatype of the tensor data, by default "int32".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -284,16 +326,19 @@ def randint(shape: ShapeLike, low: int, high: int, device: str = "cpu") -> Tenso
         Tensor with random values.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.random.randint(low, high, shape), dtype="int", device=device)
+    r = cpt_pkg.random.randint(low, high, shape)
+    return Tensor(r, dtype=dtype, device=device)
 
 
-def random_permutation(n: int, device: str = "cpu") -> Tensor:
+def random_permutation(n: int, dtype: str = "int32", device: str = "cpu") -> Tensor:
     """Returns a permuted range of length n.
 
     Parameters
     ----------
     n : int
         Length of the permuted range.
+    dtype: str, optional
+        Datatype of the tensor data, by default "int32".
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -303,7 +348,8 @@ def random_permutation(n: int, device: str = "cpu") -> Tensor:
         Permuted range tensor.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.random.permutation(n), dtype="int", device=device)
+    r = cpt_pkg.random.permutation(n)
+    return Tensor(r, dtype=dtype, device=device)
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
@@ -319,7 +365,7 @@ def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
     tuple[Tensor, Tensor]
         Shuffled tensor and index tensor.
     """
-    shuffle_idx = random_permutation(x.len, x.device)
+    shuffle_idx = random_permutation(x.len, device=x.device)
     return x[shuffle_idx], shuffle_idx
 
 
@@ -360,7 +406,7 @@ def random_choice_indices(p: Tensor, num_samples: int = 1) -> Tensor:
     cpt_pkg = get_cpt_pkg(p.device)
     return Tensor(
         cpt_pkg.random.choice(p.len, size=num_samples, p=p.data),
-        dtype="int",
+        dtype="int32",
         device=p.device,
     )
 
@@ -390,18 +436,17 @@ def random_choice(
         Tensor of random choices.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(
-        cpt_pkg.random.choice(x.data, shape, p=p.data), dtype=x.dtype, device=device
-    )
+    r = cpt_pkg.random.choice(x.data, shape, p=p.data)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
+def empty(dtype: str = "float64", device: str = "cpu") -> Tensor:
     """Return an empty tensor.
 
     Parameters
     ----------
     dtype: str, optional
-        Datatype of the tensor data, by default float32.
+        Datatype of the tensor data, by default float64.
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -412,8 +457,8 @@ def empty(dtype: str = "float32", device: str = "cpu") -> Tensor:
     """
     # does nto accept string?
     cpt_pkg = get_cpt_pkg(device)
-    emp = cpt_pkg.empty(0, dtype=dtype)
-    return Tensor(emp, dtype=emp.dtype, device=device)
+    r = cpt_pkg.empty(0, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
 def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
@@ -446,7 +491,8 @@ def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
         _b = b
 
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.maximum(_a, _b), device=device)
+    r = cpt_pkg.maximum(_a, _b)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
 def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
@@ -467,36 +513,35 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
 
     device = tensors[0].device
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(
-        cpt_pkg.concatenate([t.data for t in tensors], axis=axis),
-        device=device,
-        dtype=tensors[0].dtype,
-    )
+    r = cpt_pkg.concatenate([t.data for t in tensors], axis=axis)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
-def prod(x: tuple[int, ...]) -> int | float:
+def prod(x: tuple[int, ...]) -> int:
     """Returns the product of tuple elements.
 
     Parameters
     ----------
     x : tuple[int, ...]
-        _description_
+        Tuple of integers.
 
     Returns
     -------
-    int | float
+    int
         Product of tuple elements.
     """
     return np.prod(x).item()
 
 
-def eye(n: int, device: str = "cpu") -> Tensor:
+def eye(n: int, dtype: str = "float64", device: str = "cpu") -> Tensor:
     """Returns a diagonal tensor of size n x n.
 
     Parameters
     ----------
     size : int
         Size of the tensor
+    dtype: str, optional
+        Datatype of the tensor data, by default float64.
     device: str, optinal
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
@@ -506,7 +551,8 @@ def eye(n: int, device: str = "cpu") -> Tensor:
         Diagonal tensor.
     """
     cpt_pkg = get_cpt_pkg(device)
-    return Tensor(cpt_pkg.eye(n), device=device)
+    r = cpt_pkg.eye(n, dtype=dtype)
+    return Tensor(r, dtype=r.dtype, device=device)
 
 
 def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:

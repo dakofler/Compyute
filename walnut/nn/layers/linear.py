@@ -20,6 +20,7 @@ class Linear(Module):
         out_channels: int,
         weights: Parameter | None = None,
         use_bias: bool = True,
+        dtype: str = "float32",
     ) -> None:
         """Fully connected layer.
 
@@ -33,6 +34,8 @@ class Linear(Module):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.in_channels = in_channels
@@ -42,13 +45,15 @@ class Linear(Module):
         # init weights (c_in, c_out)
         if weights is None:
             k = in_channels**-0.5
-            self.w = Parameter(tu.randu((in_channels, out_channels), -k, k), label="w")
+            self.w = Parameter(
+                tu.randu((in_channels, out_channels), -k, k), dtype=dtype, label="w"
+            )
         else:
             self.w = weights
 
         # init bias (c_out,)
         if use_bias:
-            self.b = Parameter(tu.zeros((out_channels,)), label="b")
+            self.b = Parameter(tu.zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -58,6 +63,7 @@ class Linear(Module):
         return f"{name}({in_channels=}, {out_channels=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
         y = x @ self.w  # (b, [c], c_out)
         if self.use_bias:
             y = y + self.b
@@ -66,6 +72,7 @@ class Linear(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
+                dy = dy.astype(self.w.dtype)
 
                 # input grads (b, c_in)
                 dx = dy @ self.w.T

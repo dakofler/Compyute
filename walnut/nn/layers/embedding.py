@@ -16,7 +16,11 @@ class Embedding(Module):
     """Layer used for token embedding."""
 
     def __init__(
-        self, in_channels: int, out_channels: int, weights: Parameter | None = None
+        self,
+        in_channels: int,
+        out_channels: int,
+        weights: Parameter | None = None,
+        dtype: str = "float32",
     ) -> None:
         """Embedding layer used for token embedding.
 
@@ -28,6 +32,8 @@ class Embedding(Module):
             Number of output channels (embedding dimensions) of the layer.
         weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.in_channels = in_channels
@@ -36,7 +42,9 @@ class Embedding(Module):
         # init weights (c_in, c_out)
         if weights is None:
             k = in_channels**-0.5
-            self.w = Parameter(tu.randu((in_channels, out_channels), -k, k), label="w")
+            self.w = Parameter(
+                tu.randu((in_channels, out_channels), -k, k), dtype=dtype, label="w"
+            )
         else:
             self.w = weights
 
@@ -48,11 +56,13 @@ class Embedding(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         x_enc = one_hot_encode(x, self.w.shape[0])
+        x_enc = x_enc.astype(self.w.dtype)
         y = x_enc @ self.w
 
         if self.training:
 
             def backward(dy: ArrayLike) -> None:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
                 self.w.grad = (x_enc.transpose((0, 2, 1)).data @ dy).sum(axis=0)
 

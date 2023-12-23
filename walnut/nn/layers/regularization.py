@@ -31,8 +31,8 @@ class Dropout(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         if self.training:
-            choices = Tensor([0, 1])
-            probs = Tensor([self.p, 1.0 - self.p])
+            choices = Tensor([0, 1], dtype=x.dtype)
+            probs = Tensor([self.p, 1.0 - self.p], dtype=x.dtype)
             d_map = random_choice(choices, probs, x.shape, self.device)
             y = x * d_map / (1.0 - self.p)
 

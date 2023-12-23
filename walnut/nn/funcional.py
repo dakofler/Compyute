@@ -229,7 +229,7 @@ def dilate1d(f: Tensor, dil: int) -> Tensor:
     tpl = tuple(
         ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
     )
-    f_dil = tu.zeros(tpl, f.device)
+    f_dil = tu.zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 1] = slice(None, None, dil)
     f_dil[*slc_dil] = f
@@ -260,7 +260,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
         ((f.shape[d] - 1) * dil[-dim + d] + 1) if d >= dim - 2 else f.shape[d]
         for d in range(dim)
     )
-    f_dil = tu.zeros(tpl, f.device)
+    f_dil = tu.zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
     f_dil[*slc_dil] = f

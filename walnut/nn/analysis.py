@@ -198,7 +198,7 @@ def model_summary(
     summary.append("=" * n)
     summary.append("\n")
 
-    x = tu.ones((1,) + input_shape).astype(input_dtype)
+    x = tu.ones((1,) + input_shape, dtype=input_dtype)
     x.to_device(model.device)
     model.keep_output = True
     _ = model(x)

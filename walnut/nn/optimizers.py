@@ -76,7 +76,7 @@ class SGD(Optimizer):
 
             if self.m > 0.0:
                 b_prev = p.temp_params.get(
-                    "sgd_b", tu.zeros(p.data.shape, p.device).data
+                    "sgd_b", tu.zeros(p.shape, p.dtype, p.device).data
                 )
                 b = self.m * b_prev + p.grad
                 p.temp_params["sgd_b"] = b
@@ -134,8 +134,12 @@ class Adam(Optimizer):
             if self.weight_decay > 0.0:
                 p.grad = p.grad + self.weight_decay * p.data
 
-            m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
-            v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
+            m_prev = p.temp_params.get(
+                "adam_m", tu.zeros(p.shape, p.dtype, p.device).data
+            )
+            v_prev = p.temp_params.get(
+                "adam_v", tu.zeros(p.shape, p.dtype, p.device).data
+            )
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
             p.temp_params["adam_m"] = m
@@ -191,8 +195,12 @@ class AdamW(Optimizer):
             if self.weight_decay > 0.0:
                 p.data = p.data - self.l_r * self.weight_decay * p.data
 
-            m_prev = p.temp_params.get("adam_m", tu.zeros(p.data.shape, p.device).data)
-            v_prev = p.temp_params.get("adam_v", tu.zeros(p.data.shape, p.device).data)
+            m_prev = p.temp_params.get(
+                "adam_m", tu.zeros(p.shape, p.dtype, p.device).data
+            )
+            v_prev = p.temp_params.get(
+                "adam_v", tu.zeros(p.shape, p.dtype, p.device).data
+            )
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
             p.temp_params["adam_m"] = m

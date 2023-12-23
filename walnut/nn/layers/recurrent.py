@@ -19,6 +19,7 @@ class RecurrentCell(Module):
         activation: str = "tanh",
         weights: Parameter | None = None,
         use_bias: bool = True,
+        dtype: str = "float32",
     ) -> None:
         """Recurrent layer.
 
@@ -32,6 +33,8 @@ class RecurrentCell(Module):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.hidden_channels = hidden_channels
@@ -42,14 +45,16 @@ class RecurrentCell(Module):
         if weights is None:
             k = hidden_channels**-0.5
             self.w = Parameter(
-                tu.randu((hidden_channels, hidden_channels), -k, k), label="w"
+                tu.randu((hidden_channels, hidden_channels), -k, k),
+                dtype=dtype,
+                label="w",
             )
         else:
             self.w = weights
 
         # init bias (c_out,)
         if use_bias:
-            self.b = Parameter(tu.zeros((hidden_channels,)), label="w")
+            self.b = Parameter(tu.zeros((hidden_channels,)), dtype=dtype, label="w")
 
     def __repr__(self):
         name = self.__class__.__name__
@@ -59,6 +64,7 @@ class RecurrentCell(Module):
         return f"{name}({hidden_channels=}, {activation=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
         y = tu.zeros_like(x, device=self.device)
 
         # iterate over sequence elements
@@ -77,6 +83,7 @@ class RecurrentCell(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
                 dx = tu.zeros_like(x, device=self.device).data
                 self.w.grad = tu.zeros_like(self.w, device=self.w.device).data

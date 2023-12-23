@@ -93,7 +93,7 @@ class Moveaxis(Module):
                 self.set_dy(dy)
 
                 return (
-                    Tensor(dy, device=self.device)
+                    Tensor(dy, dtype=dy.dtype, device=self.device)
                     .moveaxis(self.to_axis, self.from_axis)
                     .data
                 )

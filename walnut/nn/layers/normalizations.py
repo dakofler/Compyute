@@ -12,7 +12,13 @@ __all__ = ["Batchnorm", "Layernorm"]
 class Batchnorm(Module):
     """Batch Normalization."""
 
-    def __init__(self, in_channels: int, eps: float = 1e-5, m: float = 0.1) -> None:
+    def __init__(
+        self,
+        in_channels: int,
+        eps: float = 1e-5,
+        m: float = 0.1,
+        dtype: str = "float32",
+    ) -> None:
         """Implements Batch Normalization.
 
         Parameters
@@ -23,17 +29,19 @@ class Batchnorm(Module):
             Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.in_channels = in_channels
         self.eps = eps
         self.m = m
 
-        self.w = Parameter(tu.ones((in_channels,)), label="w")
-        self.b = Parameter(tu.zeros((in_channels,)), label="b")
+        self.w = Parameter(tu.ones((in_channels,)), dtype=dtype, label="w")
+        self.b = Parameter(tu.zeros((in_channels,)), dtype=dtype, label="b")
 
-        self.rmean = tu.zeros((in_channels,), device=self.device)
-        self.rvar = tu.ones((in_channels,), device=self.device)
+        self.rmean = tu.zeros((in_channels,), dtype=dtype, device=self.device)
+        self.rvar = tu.ones((in_channels,), dtype=dtype, device=self.device)
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -43,6 +51,7 @@ class Batchnorm(Module):
         return f"{name}({in_channels=}, {eps=}, {m=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
         axis = (0,) + tuple(tu.arange(x.ndim).data[2:])
         if self.training:
             mean = x.mean(axis=axis, keepdims=True)
@@ -67,6 +76,7 @@ class Batchnorm(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
                 # input grads
@@ -105,7 +115,9 @@ class Batchnorm(Module):
 class Layernorm(Module):
     """Normalizes values per sample."""
 
-    def __init__(self, normalized_shape: ShapeLike, eps: float = 1e-5) -> None:
+    def __init__(
+        self, normalized_shape: ShapeLike, eps: float = 1e-5, dtype: str = "float32"
+    ) -> None:
         """Implements layer normalization.
 
         Parameters
@@ -114,12 +126,14 @@ class Layernorm(Module):
             Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.normalized_shape = normalized_shape
         self.eps = eps
-        self.w = Parameter(tu.ones(normalized_shape), label="w")
-        self.b = Parameter(tu.zeros(normalized_shape), label="b")
+        self.w = Parameter(tu.ones(normalized_shape), dtype=dtype, label="w")
+        self.b = Parameter(tu.zeros(normalized_shape), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -128,6 +142,7 @@ class Layernorm(Module):
         return f"{name}({normalized_shape=}, {eps=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
         axis = tuple(tu.arange(x.ndim).data[1:])
         mean = x.mean(axis=axis, keepdims=True)
         var = x.var(axis=axis, keepdims=True)
@@ -138,6 +153,7 @@ class Layernorm(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
                 # input grads

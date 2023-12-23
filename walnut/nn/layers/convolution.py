@@ -25,6 +25,7 @@ class Convolution1d(Module):
         dil: int = 1,
         weights: Parameter | None = None,
         use_bias: bool = True,
+        dtype: str = "float32",
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
 
@@ -47,6 +48,8 @@ class Convolution1d(Module):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.in_channels = in_channels
@@ -61,14 +64,16 @@ class Convolution1d(Module):
         if weights is None:
             k = int(in_channels * kernel_size) ** -0.5
             self.w = Parameter(
-                tu.randu((out_channels, in_channels, kernel_size), -k, k), label="w"
+                tu.randu((out_channels, in_channels, kernel_size), -k, k),
+                dtype=dtype,
+                label="w",
             )
         else:
             self.w = weights
 
         # init bias (c_out,)
         if use_bias:
-            self.b = Parameter(tu.zeros((out_channels,)), label="b")
+            self.b = Parameter(tu.zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -82,6 +87,8 @@ class Convolution1d(Module):
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
+
         # rotate weights for cross correlation
         w_rot = self.w.flip(-1)
 
@@ -89,6 +96,7 @@ class Convolution1d(Module):
         x_ext = tu.expand_dims(x, 1)
         w_rot_ext = tu.expand_dims(w_rot, 0)
         x_conv_w = convolve1d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
+        x_conv_w = x_conv_w.astype(self.w.dtype)  # conv returns float64
 
         # sum over input channels
         y = x_conv_w.sum(axis=2)
@@ -99,6 +107,7 @@ class Convolution1d(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
                 x3 = x.shape[-1]
@@ -123,6 +132,7 @@ class Convolution1d(Module):
                     else "same"
                 )
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
+                dy_conv_w = dy_conv_w.astype(self.w.dtype)  # conv returns float64
                 # sum over output channels
                 dx = dy_conv_w.sum(axis=1).data
 
@@ -139,6 +149,7 @@ class Convolution1d(Module):
                 x_conv_dy = convolve1d(x_ext, dy_p_ext, pad=pad)[
                     :, :, :, -w3 * self.dil :
                 ]
+                x_conv_dy = x_conv_dy.astype(self.w.dtype)  # conv returns float64
                 # sum over batches
                 self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
 
@@ -167,6 +178,7 @@ class Convolution2d(Module):
         dil: int | tuple[int, int] = 1,
         weights: Parameter | None = None,
         use_bias: bool = True,
+        dtype: str = "float32",
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
 
@@ -189,6 +201,8 @@ class Convolution2d(Module):
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
         """
         super().__init__()
         self.in_channels = in_channels
@@ -203,14 +217,16 @@ class Convolution2d(Module):
         if weights is None:
             k = int(in_channels * tu.prod(kernel_size)) ** -0.5
             self.w = Parameter(
-                tu.randu((out_channels, in_channels, *kernel_size), -k, k), label="w"
+                tu.randu((out_channels, in_channels, *kernel_size), -k, k),
+                dtype=dtype,
+                label="w",
             )
         else:
             self.w = weights
 
         # init bias (c_out,)
         if self.use_bias:
-            self.b = Parameter(tu.zeros((out_channels,)), label="b")
+            self.b = Parameter(tu.zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -224,6 +240,8 @@ class Convolution2d(Module):
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=})"
 
     def __call__(self, x: Tensor) -> Tensor:
+        x = x.astype(self.w.dtype)
+
         # rotate weights for cross correlation
         w_rot = self.w.flip((-2, -1))
 
@@ -231,6 +249,7 @@ class Convolution2d(Module):
         x_ext = tu.expand_dims(x, 1)  # add fake c_out dim
         w_rot_ext = tu.expand_dims(w_rot, 0)  # add fake b dim
         x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
+        x_conv_w = x_conv_w.astype(self.w.dtype)  # conv returns float64
 
         # sum over input channels
         y = x_conv_w.sum(axis=2)
@@ -241,6 +260,7 @@ class Convolution2d(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
+                dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
                 w3, w4 = self.w.shape[-2:]
@@ -262,6 +282,7 @@ class Convolution2d(Module):
                 # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 pad = "full" if self.pad == "valid" else "same"
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
+                dy_conv_w = dy_conv_w.astype(self.w.dtype)  # conv returns float64
                 dx = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, y, x)
@@ -271,6 +292,7 @@ class Convolution2d(Module):
                 x_conv_dy = convolve2d(x_ext, dy_p_ext, pad=pad)[
                     :, :, :, -w3 * d1 :, -w4 * d2 :
                 ]
+                x_conv_dy = x_conv_dy.astype(self.w.dtype)  # conv returns float64
                 # sum over batches
                 self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
 
@@ -314,10 +336,15 @@ class MaxPooling2d(Module):
         p_y, p_x = self.kernel_size
         x_b, x_c, _, _ = x.shape
         _, _, xc_y, xc_x = x_crop.shape
+
+        # initialize with zeros
         y = tu.zeros(
             (x_b, x_c, xc_y // p_y, xc_x // p_x),
-            device=self.device,
+            dtype=x.dtype,
+            device=x.device,
         )
+
+        # iterate over tensor and pick highest value
         for yi in range(y.shape[-2]):
             for xi in range(y.shape[-1]):
                 cnk = x.data[:, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x]
@@ -331,8 +358,11 @@ class MaxPooling2d(Module):
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
 
+                # stretch dy tensor to original shape by duplicating values
                 dy_s = stretch2d(
-                    Tensor(dy, device=self.device), self.kernel_size, p_map.shape
+                    Tensor(dy, dtype=dy.dtype, device=self.device),
+                    self.kernel_size,
+                    p_map.shape,
                 )
                 # use p_map as mask for grads
                 return (dy_s * p_map).resize(x.shape).data
