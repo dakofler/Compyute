@@ -324,7 +324,7 @@ def save_model(model: Model, filename: str) -> None:
     model.optimizer.reset_grads()
     model.optimizer.reset_temp_params()
     model.loss_fn.backward = None
-    model.clean()
+    model.reset()
 
     file = open(filename, "wb")
     pickle.dump(model, file)

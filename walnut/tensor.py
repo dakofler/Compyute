@@ -36,7 +36,7 @@ class Tensor:
         data : NpArrayLike | NpTypeLike | PyTypeLike
             Data to initialize the tensor.
         dtype: str, optional
-            Datatype of the tensor data, by default "float32".
+            Datatype of the tensor data, by default "float64".
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
         device: str, optinal
@@ -80,7 +80,6 @@ class Tensor:
             self._grad = value
         else:
             cpt_pkg = get_cpt_pkg(self.device)
-            # self._grad = cpt_pkg.array(value, copy=False, dtype="float16")
             self._grad = cpt_pkg.array(value, copy=False, dtype=value.dtype)
 
     @property
