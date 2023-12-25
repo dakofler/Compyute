@@ -169,11 +169,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return (
-            self.data.__repr__()
-            .replace("array", "tnsor")
-            .replace(", dtype=float16", "")
-        )
+        return self.data.__repr__().replace("array", "tnsor")
 
     def __call__(self) -> ArrayLike:
         return self.data

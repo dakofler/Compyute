@@ -38,6 +38,7 @@ class Dropout(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
+
                 # use d_map as mask for grads
                 return dy * d_map.data / (1.0 - self.p)
 

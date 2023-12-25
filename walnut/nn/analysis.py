@@ -178,9 +178,7 @@ def plot_probabilities(x: Tensor, figsize: ShapeLike) -> None:
     plt.ylabel("probability")
 
 
-def model_summary(
-    model: Model, input_shape: ShapeLike, input_dtype: str = "float"
-) -> None:
+def model_summary(model: Model, input_shape: ShapeLike) -> None:
     """Prints information about a model.
 
     Parameters
@@ -189,8 +187,6 @@ def model_summary(
         Neural network model.
     input_shape : ShapeLike
         Shape of the model input ignoring the batch dimension.
-    input_dtype : str, optional
-        Input data type, by default "float".
     """
     n = 63
     summary = ["-" * n]
@@ -198,9 +194,9 @@ def model_summary(
     summary.append("=" * n)
     summary.append("\n")
 
-    x = tu.ones((1,) + input_shape, dtype=input_dtype)
+    x = tu.ones((1,) + input_shape)
     x.to_device(model.device)
-    model.keep_output = True
+    model.remember = True
     _ = model(x)
 
     def build_string(module, summary, depth):
@@ -216,7 +212,7 @@ def model_summary(
     summary.append("=" * n)
     tot_parameters = sum(p.data.size for p in model.parameters())
 
-    model.keep_output = False
-    model.clean()
+    model.reset()
+    model.remember = False
     string = "".join(summary)
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

@@ -36,6 +36,7 @@ class Batchnorm(Module):
         self.in_channels = in_channels
         self.eps = eps
         self.m = m
+        self.dtype = dtype
 
         self.w = Parameter(tu.ones((in_channels,)), dtype=dtype, label="w")
         self.b = Parameter(tu.zeros((in_channels,)), dtype=dtype, label="b")
@@ -48,10 +49,11 @@ class Batchnorm(Module):
         in_channels = self.in_channels
         eps = self.eps
         m = self.m
-        return f"{name}({in_channels=}, {eps=}, {m=})"
+        dtype = self.dtype
+        return f"{name}({in_channels=}, {eps=}, {m=}, {dtype=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        x = x.astype(self.w.dtype)
+        x = x.astype(self.dtype)
         axis = (0,) + tuple(tu.arange(x.ndim).data[2:])
         if self.training:
             mean = x.mean(axis=axis, keepdims=True)
@@ -76,7 +78,7 @@ class Batchnorm(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
-                dy = dy.astype(self.w.dtype)
+                dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
@@ -132,6 +134,8 @@ class Layernorm(Module):
         super().__init__()
         self.normalized_shape = normalized_shape
         self.eps = eps
+        self.dtype = dtype
+
         self.w = Parameter(tu.ones(normalized_shape), dtype=dtype, label="w")
         self.b = Parameter(tu.zeros(normalized_shape), dtype=dtype, label="b")
 
@@ -139,10 +143,11 @@ class Layernorm(Module):
         name = self.__class__.__name__
         normalized_shape = self.normalized_shape
         eps = self.eps
-        return f"{name}({normalized_shape=}, {eps=})"
+        dtype = self.dtype
+        return f"{name}({normalized_shape=}, {eps=}, {dtype=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        x = x.astype(self.w.dtype)
+        x = x.astype(self.dtype)
         axis = tuple(tu.arange(x.ndim).data[1:])
         mean = x.mean(axis=axis, keepdims=True)
         var = x.var(axis=axis, keepdims=True)
@@ -153,7 +158,7 @@ class Layernorm(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
-                dy = dy.astype(self.w.dtype)
+                dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads

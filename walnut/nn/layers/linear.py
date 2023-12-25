@@ -41,6 +41,7 @@ class Linear(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.use_bias = use_bias
+        self.dtype = dtype
 
         # init weights (c_in, c_out)
         if weights is None:
@@ -60,10 +61,11 @@ class Linear(Module):
         in_channels = self.in_channels
         out_channels = self.out_channels
         use_bias = self.use_bias
-        return f"{name}({in_channels=}, {out_channels=}, {use_bias=})"
+        dtype = self.dtype
+        return f"{name}({in_channels=}, {out_channels=}, {use_bias=}, {dtype=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        x = x.astype(self.w.dtype)
+        x = x.astype(self.dtype)
         y = x @ self.w  # (b, [c], c_out)
         if self.use_bias:
             y = y + self.b
@@ -72,7 +74,7 @@ class Linear(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
-                dy = dy.astype(self.w.dtype)
+                dy = dy.astype(self.dtype)
 
                 # input grads (b, c_in)
                 dx = dy @ self.w.T

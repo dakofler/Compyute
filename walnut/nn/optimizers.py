@@ -13,17 +13,12 @@ class Optimizer(ABC):
     """Optimizer base class"""
 
     def __init__(self) -> None:
+        self.t: int = 1
         self.parameters: list[Parameter] = []
 
     @abstractmethod
-    def step(self, t: int = 1) -> None:
-        """Updates parameters using their gradients.
-
-        Parameters
-        ----------
-        t : int, optional
-            Time step, by default 1.
-        """
+    def step(self) -> None:
+        """Updates parameters using their gradients."""
 
     def reset_grads(self) -> None:
         """Resets parameter grads."""
@@ -65,7 +60,7 @@ class SGD(Optimizer):
         self.nesterov = nesterov
         self.weight_decay = weight_decay
 
-    def step(self, t: int = 1) -> None:
+    def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
         for p in self.parameters:
             if p.grad is None:
@@ -126,7 +121,7 @@ class Adam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
 
-    def step(self, t: int = 1):
+    def step(self):
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -146,8 +141,8 @@ class Adam(Optimizer):
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
             p.temp_params["adam_v"] = v
 
-            m_hat = m / (1.0 - self.beta1**t)
-            v_hat = v / (1.0 - self.beta2**t)
+            m_hat = m / (1.0 - self.beta1**self.t)
+            v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis
@@ -187,7 +182,7 @@ class AdamW(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
 
-    def step(self, t: int = 1):
+    def step(self):
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -207,8 +202,8 @@ class AdamW(Optimizer):
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
             p.temp_params["adam_v"] = v
 
-            m_hat = m / (1.0 - self.beta1**t)
-            v_hat = v / (1.0 - self.beta2**t)
+            m_hat = m / (1.0 - self.beta1**self.t)
+            v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis

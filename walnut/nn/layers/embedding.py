@@ -38,6 +38,7 @@ class Embedding(Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.dtype = dtype
 
         # init weights (c_in, c_out)
         if weights is None:
@@ -52,17 +53,18 @@ class Embedding(Module):
         name = self.__class__.__name__
         in_channels = self.in_channels
         out_channels = self.out_channels
-        return f"{name}({in_channels=}, {out_channels=})"
+        dtype = self.dtype
+        return f"{name}({in_channels=}, {out_channels=}, {dtype=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        x_enc = one_hot_encode(x, self.w.shape[0])
-        x_enc = x_enc.astype(self.w.dtype)
+        x = x.astype("int32")
+        x_enc = one_hot_encode(x, self.w.shape[0]).astype(self.dtype)
         y = x_enc @ self.w
 
         if self.training:
 
             def backward(dy: ArrayLike) -> None:
-                dy = dy.astype(self.w.dtype)
+                dy = dy.astype(self.dtype)
                 self.set_dy(dy)
                 self.w.grad = (x_enc.transpose((0, 2, 1)).data @ dy).sum(axis=0)
 

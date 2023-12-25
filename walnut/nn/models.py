@@ -92,7 +92,6 @@ class Model(Module):
         verbose: bool = True,
         val_data: tuple[Tensor, Tensor] | None = None,
         batch_size: int = 1,
-        keep_intermediate_outputs: bool = False,
     ) -> tuple[list[float], list[float], list[float], list[float]]:
         """Trains the model using samples and targets.
 
@@ -110,9 +109,6 @@ class Model(Module):
             Whether the model reports intermediate results during training, by default True.
         val_dataloader : DataLoader, optional
             Data loader for vaidation data., by default None.
-        keep_intermediate_outputs : bool, optional
-            Whether to store output values and gradients of sub modules, by default False.
-            Sub module outputs and gradients are kept in as a y-tensor.
 
         Returns
         -------
@@ -137,7 +133,6 @@ class Model(Module):
         train_dataloader = DataLoader(x, y, batch_size)
         val_dataloader = DataLoader(*val_data, batch_size) if val_data else None
 
-        self.keep_output = keep_intermediate_outputs
         train_losses, train_scores = [], []
         val_losses, val_scores = [], []
         step_times = []
@@ -171,8 +166,7 @@ class Model(Module):
                 self.backward(dy)
 
                 # update model parameters
-                t = (epoch - 1) * n_train_steps + step + 1
-                self.optimizer.step(t)
+                self.optimizer.step()
 
                 step_time = round((time.time() - start) * 1000.0, 2)
                 step_times.append(step_time)
@@ -212,8 +206,9 @@ class Model(Module):
                     avg_val_score,
                 )
 
-        self.optimizer.reset_temp_params()
-        self.keep_output = False
+        if not self.remember:
+            self.reset()
+
         return train_losses, train_scores, val_losses, val_scores
 
     def evaluate(
@@ -267,10 +262,14 @@ class Model(Module):
 
         dataloader = DataLoader(x, None, batch_size)
         outputs = []
+
         for batch in dataloader(shuffle=False):
             x, _ = batch
             x.to_device(self.device)
             outputs.append(self(x))
+        if not self.remember:
+            self.reset()
+
         return tu.concatenate(outputs, axis=0)
 
     def _get_loss_and_score(self, y_pred, y_true) -> tuple[float, float]:

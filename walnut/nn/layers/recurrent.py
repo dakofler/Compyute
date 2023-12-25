@@ -40,6 +40,7 @@ class RecurrentCell(Module):
         self.hidden_channels = hidden_channels
         self.activation = activation
         self.use_bias = use_bias
+        self.dtype = dtype
 
         # init weights (c_hidden, c_hidden)
         if weights is None:
@@ -61,10 +62,11 @@ class RecurrentCell(Module):
         hidden_channels = self.hidden_channels
         activation = self.activation
         use_bias = self.use_bias
-        return f"{name}({hidden_channels=}, {activation=}, {use_bias=})"
+        dtype = self.dtype
+        return f"{name}({hidden_channels=}, {activation=}, {use_bias=}, {dtype=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        x = x.astype(self.w.dtype)
+        x = x.astype(self.dtype)
         y = tu.zeros_like(x, device=self.device)
 
         # iterate over sequence elements
@@ -83,7 +85,7 @@ class RecurrentCell(Module):
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
-                dy = dy.astype(self.w.dtype)
+                dy = dy.astype(self.dtype)
                 self.set_dy(dy)
                 dx = tu.zeros_like(x, device=self.device).data
                 self.w.grad = tu.zeros_like(self.w, device=self.w.device).data

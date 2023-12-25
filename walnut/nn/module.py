@@ -17,11 +17,11 @@ class Module(ABC):
 
     def __init__(self) -> None:
         """Module base class."""
-        self.y: Tensor = tu.empty()
         self.backward: Callable[[ArrayLike], ArrayLike] | None = None
         self._sub_modules: list[Module] = []
+        self._remember: bool = False
+        self.y: Tensor = tu.empty("float16")
         self._training: bool = False
-        self._keep_output: bool = False
         self._device: str = "cpu"
 
     @property
@@ -60,6 +60,17 @@ class Module(ABC):
             module.to_device(device)
 
     @property
+    def remember(self) -> bool:
+        """Sets the module to keep its outputs and gradients."""
+        return self._remember
+
+    @remember.setter
+    def remember(self, value: bool) -> None:
+        self._remember = value
+        for module in self.sub_modules:
+            module.remember = value
+
+    @property
     def training(self) -> bool:
         """Puts the module in training mode.
         The forward behaviour might differ when in training mode."""
@@ -70,17 +81,6 @@ class Module(ABC):
         self._training = value
         for module in self.sub_modules:
             module.training = value
-
-    @property
-    def keep_output(self) -> bool:
-        """Whether to keep output valuesduring forward and gradients during backward passes."""
-        return self._keep_output
-
-    @keep_output.setter
-    def keep_output(self, value: bool) -> None:
-        self._keep_output = value
-        for module in self.sub_modules:
-            module.keep_output = value
 
     def __repr__(self) -> str:
         string = f"{self.__class__.__name__}()"
@@ -111,18 +111,19 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.keep_output:
+        if self.remember:
             self.y.data = y.data.copy()
+            self.y.grad = None
 
     def set_dy(self, dy: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
         ----------
-        dy : NpArrayLike
+        dy : ArrayLike
             Module output tensor gradients.
         """
-        if self.keep_output:
+        if self.remember:
             self.y.grad = dy.copy()
 
     def parameters(self) -> list[Parameter]:
@@ -138,11 +139,11 @@ class Module(ABC):
 
         return parameters
 
-    def clean(self) -> None:
-        """Cleanes up the module by resetting temporary values."""
-        self.y = tu.empty(device=self.device)
+    def reset(self) -> None:
+        """Resets temporary values like outputs and gradients."""
+        self.y = tu.empty("float16", self.device)
         self.y.grad = None
         self.backward = None
 
         for module in self.sub_modules:
-            module.clean()
+            module.reset()
