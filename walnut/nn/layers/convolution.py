@@ -112,44 +112,39 @@ class Convolution1d(Module):
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
-                x3 = x.shape[-1]
-                w3 = self.w.shape[-1]
-                dy1, dy2, dy3 = dy.shape
+                w_x = self.w.shape[-1]
+                x_x = x.shape[-1]
+                dy_b, dy_k, dy_x = dy.shape
 
                 # undo strides by filling with zeros
-                dy_p = tu.zeros((dy1, dy2, self.stride * dy3), device=self.device).data
+                dy_p_shape = (dy_b, dy_k, self.stride * dy_x)
+                dy_p = tu.zeros(dy_p_shape, device=self.device).data
                 dy_p[:, :, :: self.stride] = dy
-                out = 1 + (x3 - w3) if self.pad == "valid" else x3
-                dy_p = Tensor(dy_p[:, :, :out], device=self.device)
+                dy_p_x = 1 + (x_x - w_x) if self.pad == "valid" else x_x
+                dy_p = Tensor(dy_p[:, :, :dy_p_x], device=self.device)
 
                 # input grads (b, c_in, x)
-                dy_p_ext = tu.expand_dims(dy_p, 2)
-                w_ext = tu.expand_dims(self.w, 0)
+                dy_p_ext, w_ext = tu.expand_dims(dy_p, 2), tu.expand_dims(self.w, 0)
+                pad = "full" if self.pad == "valid" else self.pad
                 # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
-                pad = (
-                    "full"
-                    if self.pad == "valid"
-                    else "causal"
-                    if self.pad == "causal"
-                    else "same"
-                )
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
-                # sum over output channels
-                dx = dy_conv_w.sum(axis=1).data
+                dx = dy_conv_w.sum(axis=1).data  # sum over output channels
 
                 # weight grads (c_out, c_in, x)
                 dy_p_ext = dy_p_ext.flip(-1)
+
+                match self.pad:
+                    case "same":
+                        pad = w_x // 2 * self.dil
+                    case "causal":
+                        pad = (w_x // 2 * self.dil * 2, 0)
+                    case _:
+                        pad = self.pad
+
                 # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
-                pad = (
-                    w3 // 2 * self.dil
-                    if self.pad == "same"
-                    else (w3 // 2 * self.dil * 2, 0)
-                    if self.pad == "causal"
-                    else "valid"
-                )
                 x_conv_dy = convolve1d(x_ext, dy_p_ext, pad=pad)[
-                    :, :, :, -w3 * self.dil :
+                    :, :, :, -w_x * self.dil :
                 ]
                 x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
                 # sum over batches
@@ -250,8 +245,7 @@ class Convolution2d(Module):
         w_rot = self.w.flip((-2, -1))
 
         # convolve (b, 1, c_in, y, x) * (1, c_out, c_in, y, x)
-        x_ext = tu.expand_dims(x, 1)  # add fake c_out dim
-        w_rot_ext = tu.expand_dims(w_rot, 0)  # add fake b dim
+        x_ext, w_rot_ext = tu.expand_dims(x, 1), tu.expand_dims(w_rot, 0)
         x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
         x_conv_w = x_conv_w.astype(self.dtype)  # conv returns float64
 
@@ -267,38 +261,40 @@ class Convolution2d(Module):
                 dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
-                w3, w4 = self.w.shape[-2:]
-                x3, x4 = x.shape[-2:]
-                dy1, dy2, dy3, dy4 = dy.shape
-                s1, s2 = self.stride
-                d1, d2 = self.dil
+                w_y, w_x = self.w.shape[-2:]
+                x_y, x_x = x.shape[-2:]
+                dy_b, dy_k, dy_y, dy_x = dy.shape
+                s_y, s_x = self.stride
+                d_y, d_x = self.dil
 
                 # fill elements skipped by strides with zeros
-                dy_p = tu.zeros((dy1, dy2, s1 * dy3, s2 * dy4), device=self.device).data
-                dy_p[:, :, ::s1, ::s2] = dy
-                out_y = 1 + (x3 - w3) if self.pad == "valid" else x3
-                out_x = 1 + (x4 - w4) if self.pad == "valid" else x4
-                dy_p = Tensor(dy_p[:, :, :out_y, :out_x], device=self.device)
+                dy_p_shape = (dy_b, dy_k, s_y * dy_y, s_x * dy_x)
+                dy_p = tu.zeros(dy_p_shape, device=self.device).data
+                dy_p[:, :, ::s_y, ::s_x] = dy
+                dy_p_y = 1 + (x_y - w_y) if self.pad == "valid" else x_y
+                dy_p_x = 1 + (x_x - w_x) if self.pad == "valid" else x_x
+                dy_p = Tensor(dy_p[:, :, :dy_p_y, :dy_p_x], device=self.device)
 
                 # input grads (b, c_in, y, x)
-                dy_p_ext = tu.expand_dims(dy_p, 2)
-                w_ext = tu.expand_dims(self.w, 0)
-                # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
+                dy_p_ext, w_ext = tu.expand_dims(dy_p, 2), tu.expand_dims(self.w, 0)
                 pad = "full" if self.pad == "valid" else "same"
+                # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
-                dx = dy_conv_w.sum(axis=1).data  # sum over output channels
+                dx = dy_conv_w.sum(axis=1).data  # sum over c_out
 
                 # weight grads (c_out, c_in, y, x)
                 dy_p_ext = dy_p_ext.flip((-2, -1))
+                pad = (
+                    (w_y // 2 * d_y, w_x // 2 * d_x) if self.pad == "same" else "valid"
+                )
                 # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
-                pad = (w3 // 2 * d1, w4 // 2 * d2) if self.pad == "same" else "valid"
                 x_conv_dy = convolve2d(x_ext, dy_p_ext, pad=pad)[
-                    :, :, :, -w3 * d1 :, -w4 * d2 :
+                    :, :, :, -w_y * d_y :, -w_x * d_x :
                 ]
                 x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
-                # sum over batches
-                self.w.grad = x_conv_dy[:, :, :, ::d1, ::d2].sum(axis=0).data
+                # sum over b
+                self.w.grad = x_conv_dy[:, :, :, ::d_y, ::d_x].sum(axis=0).data
 
                 # bias grads (c_out,)
                 if self.use_bias:
@@ -332,32 +328,28 @@ class MaxPooling2d(Module):
         return f"{name}({kernel_size=})"
 
     def __call__(self, x: Tensor) -> Tensor:
-        # cut off values to fit the pooling window
-        y_fit = x.shape[-2] // self.kernel_size[0] * self.kernel_size[0]
-        x_fit = x.shape[-1] // self.kernel_size[1] * self.kernel_size[1]
-        x_crop = x[:, :, :y_fit, :x_fit]
-
         p_y, p_x = self.kernel_size
-        x_b, x_c, _, _ = x.shape
-        _, _, xc_y, xc_x = x_crop.shape
+        x_b, x_c, x_y, x_x = x.shape
+
+        # crop input to be a multiple of the pooling window size
+        y_y = x_y // p_y * p_y
+        y_x = x_x // p_x * p_x
+        x_crop = x[:, :, :y_y, :y_x]
 
         # initialize with zeros
-        y = tu.zeros(
-            (x_b, x_c, xc_y // p_y, xc_x // p_x),
-            dtype=x.dtype,
-            device=x.device,
-        )
+        y_shape = (x_b, x_c, y_y // p_y, y_x // p_x)
+        y = tu.zeros(y_shape, dtype=x.dtype, device=x.device)
 
-        # iterate over tensor and pick highest value
-        for yi in range(y.shape[-2]):
-            for xi in range(y.shape[-1]):
-                cnk = x.data[:, :, yi * p_y : (yi + 1) * p_y, xi * p_x : (xi + 1) * p_x]
-                y[:, :, yi, xi] = cnk.max(axis=(-2, -1))
-
-        y_s = stretch2d(y, self.kernel_size, x_crop.shape)
-        p_map = (x_crop == y_s) * 1.0
+        # iterate over height and width and pick highest value
+        for i in range(y.shape[-2]):
+            for j in range(y.shape[-1]):
+                c = x.data[:, :, i * p_y : (i + 1) * p_y, j * p_x : (j + 1) * p_x]
+                y[:, :, i, j] = c.max(axis=(-2, -1))
 
         if self.training:
+            # create map of max value occurences for backprop
+            y_stretched = stretch2d(y, self.kernel_size, x_crop.shape)
+            p_map = (x_crop == y_stretched) * 1.0
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
@@ -368,6 +360,7 @@ class MaxPooling2d(Module):
                     self.kernel_size,
                     p_map.shape,
                 )
+
                 # use p_map as mask for grads
                 return (dy_s * p_map).resize(x.shape).data
 

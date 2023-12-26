@@ -84,6 +84,7 @@ class SGD(Optimizer):
             delta = -self.l_r * p.grad
             p.temp_params["delta"] = delta  # for analysis
             p.data = p.data + delta
+        self.t += 1
 
 
 class Adam(Optimizer):
@@ -147,6 +148,7 @@ class Adam(Optimizer):
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis
             p.data = p.data + delta
+        self.t += 1
 
 
 class AdamW(Optimizer):
@@ -208,3 +210,4 @@ class AdamW(Optimizer):
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
             p.temp_params["delta"] = delta  # for analysis
             p.data = p.data + delta
+        self.t += 1

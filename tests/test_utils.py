@@ -13,7 +13,7 @@ def get_vals(
     shape: ShapeLike, torch_grad: bool = True, device: str = "cpu"
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a walnut tensor and a torch tensor initialized equally."""
-    walnut_x = walnut.randn(shape)
+    walnut_x = walnut.randn(shape, dtype="float32")
     torch_x = torch.from_numpy(walnut_x.data)
     if torch_grad:
         torch_x.requires_grad = True
@@ -25,7 +25,7 @@ def get_params(
     shape: ShapeLike, T: bool = False, device: str = "cpu"
 ) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a walnut tensor and a torch parameter tensor initialized equally."""
-    walnut_x = Parameter(walnut.randn(shape))
+    walnut_x = Parameter(walnut.randn(shape), dtype="float32")
     if T:
         torch_x = torch.nn.Parameter(torch.from_numpy(walnut_x.T).float())
     else:
