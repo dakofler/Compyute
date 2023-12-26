@@ -25,10 +25,10 @@ class Optimizer(ABC):
         for parameter in self.parameters:
             parameter.grad = None
 
-    def reset_temp_params(self) -> None:
+    def reset_optimizer_params(self) -> None:
         """Resets temporary values used in the step method."""
         for parameter in self.parameters:
-            parameter.temp_params = {}
+            parameter.optimizer_params = {}
 
 
 class SGD(Optimizer):
@@ -70,11 +70,11 @@ class SGD(Optimizer):
                 p.grad = p.grad + self.weight_decay * p.data
 
             if self.m > 0.0:
-                b_prev = p.temp_params.get(
+                b_prev = p.optimizer_params.get(
                     "sgd_b", tu.zeros(p.shape, p.dtype, p.device).data
                 )
                 b = self.m * b_prev + p.grad
-                p.temp_params["sgd_b"] = b
+                p.optimizer_params["sgd_b"] = b
 
                 if self.nesterov:
                     p.grad = p.grad + self.m * b
@@ -82,7 +82,7 @@ class SGD(Optimizer):
                     p.grad = b
 
             delta = -self.l_r * p.grad
-            p.temp_params["delta"] = delta  # for analysis
+            p.optimizer_params["delta"] = delta  # for analysis
             p.data = p.data + delta
         self.t += 1
 
@@ -130,23 +130,23 @@ class Adam(Optimizer):
             if self.weight_decay > 0.0:
                 p.grad = p.grad + self.weight_decay * p.data
 
-            m_prev = p.temp_params.get(
+            m_prev = p.optimizer_params.get(
                 "adam_m", tu.zeros(p.shape, p.dtype, p.device).data
             )
-            v_prev = p.temp_params.get(
+            v_prev = p.optimizer_params.get(
                 "adam_v", tu.zeros(p.shape, p.dtype, p.device).data
             )
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
-            p.temp_params["adam_m"] = m
+            p.optimizer_params["adam_m"] = m
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
-            p.temp_params["adam_v"] = v
+            p.optimizer_params["adam_v"] = v
 
             m_hat = m / (1.0 - self.beta1**self.t)
             v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
-            p.temp_params["delta"] = delta  # for analysis
+            p.optimizer_params["delta"] = delta  # for analysis
             p.data = p.data + delta
         self.t += 1
 
@@ -192,22 +192,22 @@ class AdamW(Optimizer):
             if self.weight_decay > 0.0:
                 p.data = p.data - self.l_r * self.weight_decay * p.data
 
-            m_prev = p.temp_params.get(
+            m_prev = p.optimizer_params.get(
                 "adam_m", tu.zeros(p.shape, p.dtype, p.device).data
             )
-            v_prev = p.temp_params.get(
+            v_prev = p.optimizer_params.get(
                 "adam_v", tu.zeros(p.shape, p.dtype, p.device).data
             )
 
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
-            p.temp_params["adam_m"] = m
+            p.optimizer_params["adam_m"] = m
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
-            p.temp_params["adam_v"] = v
+            p.optimizer_params["adam_v"] = v
 
             m_hat = m / (1.0 - self.beta1**self.t)
             v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
-            p.temp_params["delta"] = delta  # for analysis
+            p.optimizer_params["delta"] = delta  # for analysis
             p.data = p.data + delta
         self.t += 1

@@ -322,7 +322,6 @@ def save_model(model: Model, filename: str) -> None:
 
     model.to_device("cpu")
     model.optimizer.reset_grads()
-    model.optimizer.reset_temp_params()
     model.loss_fn.backward = None
     model.reset()
 
