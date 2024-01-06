@@ -15,7 +15,7 @@ class Batchnorm(Module):
     def __init__(
         self,
         in_channels: int,
-        eps: float = 1e-5,
+        eps: float = 1e-8,
         m: float = 0.1,
         dtype: str = "float32",
     ) -> None:
@@ -26,7 +26,7 @@ class Batchnorm(Module):
         in_channels : int
             Number of input channels of the layer.
         eps : float, optional
-            Constant for numerical stability, by default 1e-5.
+            Constant for numerical stability, by default 1e-8.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: str, optional
@@ -118,7 +118,7 @@ class Layernorm(Module):
     """Normalizes values per sample."""
 
     def __init__(
-        self, normalized_shape: ShapeLike, eps: float = 1e-5, dtype: str = "float32"
+        self, normalized_shape: ShapeLike, eps: float = 1e-8, dtype: str = "float32"
     ) -> None:
         """Implements layer normalization.
 
@@ -127,7 +127,7 @@ class Layernorm(Module):
         normalized_shape : ShapeLike
             Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
-            Constant for numerical stability, by default 1e-5.
+            Constant for numerical stability, by default 1e-8.
         dtype: str, optional
             Datatype of weights and biases, by default "float32".
         """

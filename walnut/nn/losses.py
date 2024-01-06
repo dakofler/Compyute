@@ -55,7 +55,7 @@ class MSE(Loss):
 class Crossentropy(Loss):
     """Computes the crossentropy loss."""
 
-    def __init__(self, eps: float = 1e-7):
+    def __init__(self, eps: float = 1e-8):
         """Computes the crossentropy loss.
 
         Parameters

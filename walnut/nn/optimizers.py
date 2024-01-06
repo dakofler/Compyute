@@ -12,9 +12,10 @@ __all__ = ["SGD", "Adam", "AdamW"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self) -> None:
+    def __init__(self, l_r: float) -> None:
         self.t: int = 1
         self.parameters: list[Parameter] = []
+        self.l_r = l_r
 
     @abstractmethod
     def step(self) -> None:
@@ -54,8 +55,7 @@ class SGD(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__()
-        self.l_r = l_r
+        super().__init__(l_r)
         self.m = m
         self.nesterov = nesterov
         self.weight_decay = weight_decay
@@ -115,8 +115,7 @@ class Adam(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__()
-        self.l_r = l_r
+        super().__init__(l_r)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -177,8 +176,7 @@ class AdamW(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__()
-        self.l_r = l_r
+        super().__init__(l_r)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps

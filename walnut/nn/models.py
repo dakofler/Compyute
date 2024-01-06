@@ -10,6 +10,7 @@ from walnut.nn.dataloaders import DataLoader
 from walnut.nn.losses import Loss
 from walnut.nn.module import Module
 from walnut.nn.optimizers import Optimizer
+from walnut.nn.lr_schedulers import LrScheduler
 from walnut.nn.containers import SequentialContainer
 
 
@@ -52,6 +53,7 @@ class Model(Module):
         """Neural network model base class."""
         super().__init__()
         self.optimizer: Optimizer | None = None
+        self.lr_scheduler: LrScheduler | None = None
         self.loss_fn: Loss | None = None
         self.metric_fn: Callable[[Tensor, Tensor], Tensor] | None = None
         self._compiled = False
@@ -66,6 +68,7 @@ class Model(Module):
         optimizer: Optimizer,
         loss_fn: Loss,
         metric_fn: Callable[[Tensor, Tensor], Tensor],
+        lr_scheduler: LrScheduler | None = None,
     ) -> None:
         """Compiles the model.
 
@@ -77,10 +80,17 @@ class Model(Module):
             Loss function used to compute losses and their gradients.
         metric_fn : Callable[[Tensor, Tensor], float]
             Metric function used to evaluate the model's performance.
+        lr_scheduler : LrScheduler | None, optional
+            Learning rate scheduler to update the optimizers learning rate, by default None.
         """
         self._compiled = True
         self.optimizer = optimizer
         optimizer.parameters = self.parameters()
+
+        if lr_scheduler:
+            self.lr_scheduler = lr_scheduler
+            lr_scheduler.optimizer = optimizer
+
         self.loss_fn = loss_fn
         self.metric_fn = metric_fn
 
@@ -177,6 +187,10 @@ class Model(Module):
             avg_train_score = sum(train_scores[-n_train_steps:]) / n_train_steps
             avg_step_time = sum(step_times[-n_train_steps:]) / n_train_steps
             self.training = False
+
+            # update learning rate
+            if self.lr_scheduler:
+                self.lr_scheduler.step()
 
             # validation
             avg_val_loss = avg_val_score = None

@@ -39,7 +39,7 @@ def split_train_val_test(
 def normalize(
     x: Tensor,
     axis: AxisLike | None = None,
-    l_bound: int = -1,
+    l_bound: int = 0,
     u_bound: int = 1,
 ) -> Tensor:
     """Normalizes a tensor using min-max feature scaling.
@@ -52,7 +52,7 @@ def normalize(
         Axes over which normalization is applied, by default None.
         If None, the flattended tensor is normalized.
     l_bound : int, optional
-        Lower bound of output values, by default -1.
+        Lower bound of output values, by default 0.
     u_bound : int, optional
         Upper bound of output values, by default 1.
 
@@ -65,3 +65,23 @@ def normalize(
     x_min = x.min(axis=axis)
     x_max = x.max(axis=axis)
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
+
+
+def standardize(x: Tensor, axis: AxisLike | None = None) -> Tensor:
+    """Standardizes a tensor to mean 0 and variance 1.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor to be standardized.
+    axis : AxisLike | None, optional
+        Axes over which standardization is applied, by default None.
+        If None, the flattended tensor is standardized.
+
+    Returns
+    -------
+    Tensor
+        Standardized tensor with mean 0 and variance 1.
+    """
+
+    return x - x.mean(axis=axis) / x.var(axis=axis)

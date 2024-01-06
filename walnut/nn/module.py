@@ -113,7 +113,6 @@ class Module(ABC):
         """
         if self.remember:
             self.y.data = y.data.copy()
-            self.y.grad = None
 
     def set_dy(self, dy: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.

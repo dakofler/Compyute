@@ -72,7 +72,7 @@ def test_sgd_m_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["sgd_b"],
+            walnut_x.optimizer_params["sgd_b"],
             torch_optim.state_dict()["state"][0]["momentum_buffer"],
         )
     )
@@ -99,7 +99,7 @@ def test_sgd_mnesterov_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["sgd_b"],
+            walnut_x.optimizer_params["sgd_b"],
             torch_optim.state_dict()["state"][0]["momentum_buffer"],
         )
     )
@@ -148,13 +148,13 @@ def test_adam_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )
@@ -183,13 +183,13 @@ def test_adam_cuda() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )
@@ -220,13 +220,13 @@ def test_adam_wdecay_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )
@@ -256,13 +256,13 @@ def test_adamw_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )
@@ -293,13 +293,13 @@ def test_adamw_cuda() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )
@@ -330,13 +330,13 @@ def test_adamw_wdecay_cpu() -> None:
     results.append(validate(walnut_x, torch_x))
     results.append(
         validate(
-            walnut_x.temp_params["adam_m"],
+            walnut_x.optimizer_params["adam_m"],
             torch_optim.state_dict()["state"][0]["exp_avg"],
         )
     )
     results.append(
         validate(
-            walnut_x.temp_params["adam_v"],
+            walnut_x.optimizer_params["adam_v"],
             torch_optim.state_dict()["state"][0]["exp_avg_sq"],
         )
     )

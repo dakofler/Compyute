@@ -73,8 +73,6 @@ class Tensor:
         if value is not None:
             if not isinstance(value, ArrayLike):
                 raise ValueError("Invalid dtype.")
-            elif value.shape != self.shape:
-                raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
 
         if value is None:
             self._grad = value

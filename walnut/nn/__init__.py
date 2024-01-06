@@ -9,6 +9,7 @@ from walnut.nn import (
     inits,
     layers,
     losses,
+    lr_schedulers,
     metrics,
     models,
     optimizers,
