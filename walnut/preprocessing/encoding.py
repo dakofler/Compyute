@@ -1,9 +1,9 @@
 """data encoding module"""
 
 import pandas as pd
-import numpy as np
 
 from walnut.tensor import Tensor
+import walnut.tensor_utils as tu
 
 
 __all__ = ["pd_one_hot_encode", "one_hot_encode"]
@@ -62,5 +62,13 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     -------
     Tensor
         One-hot-encoded tensor.
+
+    Raises
+    -------
+    ValueError
+        If the tensor dtype is not int.
     """
-    return Tensor(np.eye(num_classes)[x.data], dtype="int")
+    if x.dtype not in ("int", "int32", "int64"):
+        raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
+    r = (tu.eye(num_classes, "int32", x.device)[x]).data
+    return Tensor(r, dtype=r.dtype, device=x.device)

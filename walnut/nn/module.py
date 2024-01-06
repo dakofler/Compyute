@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import Callable
 from abc import ABC, abstractmethod
 
-from walnut.tensor import Tensor, NpArrayLike
+from walnut.nn.parameter import Parameter
+from walnut.tensor import Tensor, ArrayLike
 import walnut.tensor_utils as tu
 
 
@@ -16,12 +17,12 @@ class Module(ABC):
 
     def __init__(self) -> None:
         """Module base class."""
-        self.y: Tensor = tu.empty()
-        self.backward: Callable[[NpArrayLike], NpArrayLike] | None = None
+        self.backward: Callable[[ArrayLike], ArrayLike] | None = None
         self._sub_modules: list[Module] = []
-        self._parameters: list[Tensor] = []
+        self._remember: bool = False
+        self.y: Tensor = tu.empty("float16")
         self._training: bool = False
-        self._keep_output: bool = False
+        self._device: str = "cpu"
 
     @property
     def sub_modules(self) -> list[Module]:
@@ -33,16 +34,41 @@ class Module(ABC):
         self._sub_modules = value
 
     @property
-    def parameters(self) -> list[Tensor]:
-        """Trainable module parameters."""
-        p = self._parameters.copy()
-        for module in self.sub_modules:
-            p += module.parameters
-        return p
+    def device(self) -> str:
+        """Storage device."""
+        return self._device
 
-    @parameters.setter
-    def parameters(self, value: list[Tensor]) -> None:
-        self._parameters = value
+    @device.setter
+    def device(self, value: str) -> None:
+        if value not in ("cpu", "cuda"):
+            raise ValueError("Unknown device.")
+        self._device = value
+
+    def to_device(self, device: str) -> None:
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : str
+            Device to move the tensor to. Valid options are "cpu" and "cuda".
+        """
+        self._device = device
+        self.y.to_device(device)
+        for p in self.parameters():
+            p.to_device(device)
+        for module in self.sub_modules:
+            module.to_device(device)
+
+    @property
+    def remember(self) -> bool:
+        """Sets the module to keep its outputs and gradients."""
+        return self._remember
+
+    @remember.setter
+    def remember(self, value: bool) -> None:
+        self._remember = value
+        for module in self.sub_modules:
+            module.remember = value
 
     @property
     def training(self) -> bool:
@@ -55,17 +81,6 @@ class Module(ABC):
         self._training = value
         for module in self.sub_modules:
             module.training = value
-
-    @property
-    def keep_output(self) -> bool:
-        """Whether to keep output valuesduring forward and gradients during backward passes."""
-        return self._keep_output
-
-    @keep_output.setter
-    def keep_output(self, value: bool) -> None:
-        self._keep_output = value
-        for module in self.sub_modules:
-            module.keep_output = value
 
     def __repr__(self) -> str:
         string = f"{self.__class__.__name__}()"
@@ -96,25 +111,38 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.keep_output:
+        if self.remember:
             self.y.data = y.data.copy()
 
-    def set_y_grad(self, y_grad: NpArrayLike) -> None:
+    def set_dy(self, dy: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
         ----------
-        y_grad : NpArrayLike
+        dy : ArrayLike
             Module output tensor gradients.
         """
-        if self.keep_output:
-            self.y.grad = y_grad.copy()
+        if self.remember:
+            self.y.grad = dy.copy()
 
-    def clean(self) -> None:
-        """Cleanes up the module by resetting temporary values."""
-        self.y = tu.empty()
+    def parameters(self) -> list[Parameter]:
+        """Returns the list of module parameters."""
+        parameters = []
+
+        for prop in self.__dict__.items():
+            if isinstance(prop[1], Parameter):
+                parameters.append(prop[1])
+
+        for module in self.sub_modules:
+            parameters += module.parameters()
+
+        return parameters
+
+    def reset(self) -> None:
+        """Resets temporary values like outputs and gradients."""
+        self.y = tu.empty("float16", self.device)
         self.y.grad = None
         self.backward = None
 
         for module in self.sub_modules:
-            module.clean()
+            module.reset()

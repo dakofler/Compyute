@@ -1,17 +1,17 @@
 """Tensor module"""
 
 from __future__ import annotations
-from dataclasses import dataclass
-import numpy as np
 
+import numpy as np
+import cupy as cp
+
+from walnut.cuda import get_cpt_pkg, numpy_to_cupy, cupy_to_numpy
 
 __all__ = ["Tensor", "ShapeError"]
-
-
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
-NpArrayLike = np.ndarray
-NpTypeLike = np.float32 | np.float64 | np.int32 | np.int64
+ArrayLike = np.ndarray | cp.ndarray
+NpTypeLike = np.float16 | np.float32 | np.float64 | np.int32 | np.int64
 PyTypeLike = list | float | int
 
 
@@ -19,63 +19,66 @@ class ShapeError(Exception):
     """Incompatible tensor shapes."""
 
 
-@dataclass(init=False, repr=False, slots=True)
 class Tensor:
     """Tensor object."""
 
-    _data: NpArrayLike
-    _grad: NpArrayLike | None
-    temp_params: dict[str, NpArrayLike]
-    _iterator: int
-
     def __init__(
         self,
-        data: NpArrayLike | NpTypeLike | PyTypeLike,
-        dtype: str = "float32",
+        data: ArrayLike | NpTypeLike | PyTypeLike,
+        dtype: str = "float64",
         copy: bool = False,
+        device: str = "cpu",
     ) -> None:
         """Tensor object.
 
         Parameters
         ----------
-        values : NpArrayLike | NpTypeLike | PyTypeLike
+        data : NpArrayLike | NpTypeLike | PyTypeLike
             Data to initialize the tensor.
         dtype: str, optional
-            Datatype of the tensor data, by default "float32".
+            Datatype of the tensor data, by default "float64".
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
+        device: str, optinal
+            The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
-        self.data = np.array(data, copy=copy, dtype=dtype)
+        self._data = get_cpt_pkg(device).array(data, copy=copy, dtype=dtype)
         self._grad = None
-        self.temp_params = {}
         self._iterator = 0
+        self._device = device
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def data(self) -> NpArrayLike:
+    def data(self) -> ArrayLike:
         """Tensor data."""
         return self._data
 
     @data.setter
-    def data(self, value: NpArrayLike) -> None:
-        if not isinstance(value, NpArrayLike):
+    def data(self, value: ArrayLike) -> None:
+        if not isinstance(value, ArrayLike):
             raise ValueError("Invalid dtype.")
         self._data = value
 
     @property
-    def grad(self) -> NpArrayLike | None:
+    def grad(self) -> ArrayLike | None:
         """Tensor gradient."""
         return self._grad
 
     @grad.setter
-    def grad(self, value: NpArrayLike | None) -> None:
-        if value is not None and value.shape != self.shape:
-            raise ShapeError(f"Grad shape {value.shape} != data shape {self.shape}")
-        self._grad = value
+    def grad(self, value: ArrayLike | None) -> None:
+        if value is not None:
+            if not isinstance(value, ArrayLike):
+                raise ValueError("Invalid dtype.")
+
+        if value is None:
+            self._grad = value
+        else:
+            cpt_pkg = get_cpt_pkg(self.device)
+            self._grad = cpt_pkg.array(value, copy=False, dtype=value.dtype)
 
     @property
     def shape(self) -> ShapeLike:
@@ -93,7 +96,7 @@ class Tensor:
         return len(self.data) if self.data.ndim > 0 else 0
 
     @property
-    def T(self) -> NpArrayLike:
+    def T(self) -> ArrayLike:
         """Tensor data transposed."""
         return self.data.T
 
@@ -102,24 +105,76 @@ class Tensor:
         """Tensor data datatype."""
         return str(self.data.dtype)
 
+    @property
+    def device(self) -> str:
+        """Storage device."""
+        return self._device
+
+    @device.setter
+    def device(self, value: str) -> None:
+        if value not in ("cpu", "cuda"):
+            raise AttributeError("Unknown device.")
+        self._device = value
+
+    def to_device(self, device: str) -> None:
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : str
+            Device to move the tensor to. Valid options are "cpu" and "cuda".
+
+        Raises
+        ----------
+        AttributeError
+            If device is not "cpu" or "cuda".
+
+        """
+        if device not in ("cpu", "cuda"):
+            raise AttributeError("Unknown device.")
+        if self._device == device:
+            return
+
+        self._device = device
+        if device == "cpu":
+            self.data = cupy_to_numpy(self.data)
+            if self.grad is not None:
+                self.grad = cupy_to_numpy(self.grad)
+        else:
+            self.data = numpy_to_cupy(self.data)
+            if self.grad is not None:
+                self.grad = numpy_to_cupy(self.grad)
+
+    def cpu(self):
+        """Returns a copy of the tensor on the cpu."""
+        if self.device == "cpu":
+            return self
+        tensor = Tensor(cupy_to_numpy(self.data), self.dtype, device="cpu")
+        tensor.grad = cupy_to_numpy(self.grad) if self.grad is not None else None
+        return tensor
+
+    def cuda(self):
+        """Returns a copy of the tensor on the gpu."""
+        if self.device == "cuda":
+            return self
+        tensor = Tensor(numpy_to_cupy(self.data), self.dtype, device="cuda")
+        tensor.grad = numpy_to_cupy(self.grad) if self.grad is not None else None
+        return tensor
+
     # ----------------------------------------------------------------------------------------------
     # OVERLOADS
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return (
-            self.data.__repr__()
-            .replace("array", "tnsor")
-            .replace(", dtype=float32", "")
-        )
+        return self.data.__repr__().replace("array", "tnsor")
 
-    def __call__(self) -> NpArrayLike:
+    def __call__(self) -> ArrayLike:
         return self.data
 
     def __getitem__(self, key) -> Tensor:
         if isinstance(key, Tensor):
-            return Tensor(self.data[key.data], dtype=self.dtype)
-        return Tensor(self.data[key], dtype=self.dtype)
+            return Tensor(self.data[key.data], dtype=self.dtype, device=self.device)
+        return Tensor(self.data[key], dtype=self.dtype, device=self.device)
 
     def __setitem__(self, key, value) -> None:
         if isinstance(key, Tensor) and isinstance(value, Tensor):
@@ -137,106 +192,124 @@ class Tensor:
 
     def __next__(self):
         if self._iterator < self.len:
-            ret = Tensor(self.data[self._iterator], dtype=self.dtype)
+            ret = Tensor(
+                self.data[self._iterator], dtype=self.dtype, device=self.device
+            )
             self._iterator += 1
             return ret
         raise StopIteration
 
     def __add__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data + other.data)
+        r = self.data + other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __mul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data * other.data)
+        r = self.data * other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __sub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data - other.data)
+        r = self.data - other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __truediv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data / other.data)
+        r = self.data / other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __floordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data // other.data)
+        r = self.data // other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __pow__(self, other: int | float) -> Tensor:
-        return Tensor(self.data**other)
+        r = self.data**other
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __mod__(self, other: int) -> Tensor:
-        return Tensor(self.data % other)
+        r = self.data % other
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __matmul__(self, other: Tensor) -> Tensor:
-        return Tensor(self.data @ other.data)
+        r = self.data @ other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __lt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data < other.data, dtype="int")
+        r = self.data < other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __gt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data > other.data, dtype="int")
+        r = self.data > other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __le__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data <= other.data, dtype="int")
+        r = self.data <= other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __ge__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data >= other.data, dtype="int")
+        r = self.data >= other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __eq__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data == other.data, dtype="int")
+        r = self.data == other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __ne__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        return Tensor(self.data != other.data, dtype="int")
+        r = self.data != other.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __isub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data += other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __iadd__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data += other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __imul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data *= other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __idiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data /= other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __ifloordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data //= other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __imod__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data %= other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __ipow__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data **= other.data
-        return Tensor(self.data)
+        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
 
     def __neg__(self) -> Tensor:
-        self.data = -1.0 * self.data
-        return Tensor(self.data)
+        r = -1 * self.data
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __tensorify(self, other: Tensor | float | int) -> Tensor:
         if not isinstance(other, Tensor):
-            return Tensor(other)
+            return Tensor(other, device=self.device)
+        # if self.device != other.device:
+        #     raise AttributeError("Devices of tensors do not match.")
         return other
 
     def __len__(self) -> int:
@@ -263,7 +336,8 @@ class Tensor:
         Tensor
             Tensor containing the sum of elements.
         """
-        return Tensor(np.sum(self.data, axis=axis, keepdims=keepdims))
+        r = self.data.sum(axis=axis, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
@@ -282,7 +356,8 @@ class Tensor:
         Tensor
             Tensor containing the mean of elements.
         """
-        return Tensor(np.mean(self.data, axis=axis, keepdims=keepdims))
+        r = self.data.mean(axis=axis, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def var(
         self, axis: AxisLike | None = None, ddof: int = 0, keepdims: bool = False
@@ -306,9 +381,8 @@ class Tensor:
         Tensor
             Tensor containing the variance of elements.
         """
-        return Tensor(
-            np.var(self.data, axis=axis, ddof=ddof, keepdims=keepdims), dtype=self.dtype
-        )
+        r = self.data.var(axis=axis, ddof=ddof, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def std(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
@@ -327,7 +401,8 @@ class Tensor:
         Tensor
             Tensor containing the standard deviation of elements.
         """
-        return Tensor(np.std(self.data, axis=axis, keepdims=keepdims))
+        r = self.data.std(axis=axis, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def min(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
@@ -346,7 +421,8 @@ class Tensor:
         Tensor
             Tensor containing the minimum of elements.
         """
-        return Tensor(self.data.min(axis=axis, keepdims=keepdims), dtype=self.dtype)
+        r = self.data.min(axis=axis, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def max(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
@@ -365,7 +441,8 @@ class Tensor:
         Tensor
             Tensor containing the maximum of elements.
         """
-        return Tensor(self.data.max(axis=axis, keepdims=keepdims), dtype=self.dtype)
+        r = self.data.max(axis=axis, keepdims=keepdims)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def round(self, decimals: int) -> Tensor:
         """Rounds the value of tensor elements.
@@ -380,7 +457,8 @@ class Tensor:
         Tensor
             Tensor containing the rounded values.
         """
-        return Tensor(self.data.round(decimals))
+        r = self.data.round(decimals)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def exp(self) -> Tensor:
         """Exponential of tensor elements.
@@ -390,7 +468,8 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        return Tensor(np.exp(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).exp(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log(self) -> Tensor:
         """Natural logarithm of tensor elements.
@@ -400,7 +479,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        return Tensor(np.log(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).log(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log10(self) -> Tensor:
         """Logarithm with base 10 of tensor elements.
@@ -410,7 +490,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log10(x) for each element.
         """
-        return Tensor(np.log10(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).log10(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log2(self) -> Tensor:
         """Logarithm with base 2 of tensor elements.
@@ -420,7 +501,8 @@ class Tensor:
             Tensor
                 Tensor containing the value of log2(x) for each element.
         """
-        return Tensor(np.log2(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).log2(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
@@ -430,7 +512,8 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        return Tensor(np.tanh(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).tanh(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements.
@@ -440,7 +523,8 @@ class Tensor:
             Tensor
             Tensor containing the absolute value for each element.
         """
-        return Tensor(np.abs(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).abs(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def sqrt(self) -> Tensor:
         """Square root of tensor elements.
@@ -450,9 +534,10 @@ class Tensor:
             Tensor
             Tensor containing the square root value for each element.
         """
-        return Tensor(np.sqrt(self.data), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).sqrt(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def item(self, *args) -> float:
+    def item(self) -> float:
         """Returns the scalar value of the tensor data.
 
         Returns
@@ -460,7 +545,7 @@ class Tensor:
         float
             Scalar of the tensor data.
         """
-        return self.data.item(args)
+        return self.data.item()
 
     def reshape(self, shape: ShapeLike) -> Tensor:
         """Returns a reshaped tensor of data to fit a given shape.
@@ -475,23 +560,24 @@ class Tensor:
         Tensor
             Reshapded tensor.
         """
-        return Tensor(self.data.reshape(*shape), dtype=self.dtype)
+        r = self.data.reshape(*shape)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def pad(self, widths: tuple[int, ...]) -> Tensor:
+    def pad(self, widths: tuple[tuple[int, ...]]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
         ----------
-        widths : tuple[int, ...]
-            Padding width for each dimension of the tensor.
+        widths : tuple[tuple[int, ...]]
+            Padding widths for each dimension of the tensor.
 
         Returns
         -------
         Tensor
             Padded tensor.
         """
-        paddings = tuple((w, w) for w in widths)
-        return Tensor(np.pad(self.data, paddings), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).pad(self.data, widths)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def flatten(self) -> Tensor:
         """Returns a flattened, one-dimensional tensor.
@@ -501,7 +587,8 @@ class Tensor:
         Tensor
             Flattened, one-dimensional version of the tensor.
         """
-        return Tensor(self.data.reshape((-1,)), dtype=self.dtype)
+        r = self.data.reshape((-1,))
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def transpose(self, axis: AxisLike | None = None) -> Tensor:
         """Transposes a tensor along given axes.
@@ -516,7 +603,8 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        return Tensor(np.transpose(self.data, axes=axis), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).transpose(self.data, axes=axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def astype(self, dtype: str) -> Tensor:
         """Returns a copy of the tensor with parsed values.
@@ -531,7 +619,7 @@ class Tensor:
         Tensor
             Tensor of dtype.
         """
-        return Tensor(self.data, dtype=dtype)
+        return Tensor(self.data, dtype=dtype, device=self.device)
 
     def append(self, values: Tensor, axis: int) -> Tensor:
         """Returns a copy of the tensor with appended values.
@@ -548,7 +636,8 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        return Tensor(np.append(self.data, values.data, axis=axis), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).append(self.data, values.data, axis=axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def flip(self, axis: AxisLike) -> Tensor:
         """Returns a tensor with flipped elements along given axis.
@@ -563,7 +652,8 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        return Tensor(np.flip(self.data, axis=axis), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).flip(self.data, axis=axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
@@ -580,11 +670,13 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        return Tensor(np.moveaxis(self.data, from_axis, to_axis), dtype=self.dtype)
+        r = get_cpt_pkg(self.device).moveaxis(self.data, from_axis, to_axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def squeeze(self) -> Tensor:
         """Removes axis with length one from the tensor."""
-        return Tensor(self.data.squeeze(), dtype=self.dtype)
+        r = self.data.squeeze()
+        return Tensor(r, dtype=r.dtype, device=self.device)
 
     def argmax(self, axis: int | None = None) -> Tensor:
         """Returns the indices of maximum values along a given axis.
@@ -599,4 +691,58 @@ class Tensor:
         int | tuple [int, ...]
             Index tensor.
         """
-        return Tensor(np.argmax(self.data, axis=axis), dtype="int")
+        r = get_cpt_pkg(self.device).argmax(self.data, axis=axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def resize(self, shape: ShapeLike) -> Tensor:
+        """Returns a new tensor with the specified shape.
+        If the new tensor is larger than the original one, it is filled with zeros.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Resized tensor.
+        """
+        r = get_cpt_pkg(self.device).resize(self.data, shape)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def repeat(self, n_repeats: int, axis: int) -> Tensor:
+        """Repeat elements of a tensor.
+
+        Parameters
+        ----------
+        n_repeats : int
+            Number of repeats.
+        axis : int
+            Axis, along which the values are repeated.
+
+        Returns
+        -------
+        Tensor
+            Tensor with repeated values.
+        """
+        r = self.data.repeat(n_repeats, axis)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def clip(self, min_value: int | float, max_value: int | float) -> Tensor:
+        """Limits the values of a tensor.
+
+        Parameters
+        ----------
+        min_value : int | float
+            Lower bound of allowed values.
+        max_value : int | float
+            Upper bound of allowed values.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing clipped values.
+        """
+        r = get_cpt_pkg(self.device).clip(self.data, min_value, max_value)
+        return Tensor(r, dtype=r.dtype, device=self.device)

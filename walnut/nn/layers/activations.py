@@ -1,13 +1,11 @@
 """Activation layers module"""
 
-import numpy as np
-
-from walnut.tensor import Tensor, NpArrayLike
-from walnut.nn.funcional import sigmoid, softmax, relu
+from walnut.tensor import Tensor, ArrayLike
+from walnut.nn.funcional import sigmoid, relu
 from walnut.nn.module import Module
 
 
-__all__ = ["ReLU", "Sigmoid", "Tanh", "Softmax"]
+__all__ = ["ReLU", "Sigmoid", "Tanh"]
 
 
 class ReLU(Module):
@@ -18,9 +16,9 @@ class ReLU(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
-                self.set_y_grad(y_grad)
-                return (y.data > 0) * y_grad
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return (y.data > 0) * dy
 
             self.backward = backward
 
@@ -36,9 +34,9 @@ class Tanh(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
-                self.set_y_grad(y_grad)
-                return (-y.data**2 + 1.0) * y_grad
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return (-(y.data**2) + 1.0) * dy
 
             self.backward = backward
 
@@ -54,31 +52,9 @@ class Sigmoid(Module):
 
         if self.training:
 
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
-                self.set_y_grad(y_grad)
-                return y.data * (-y.data + 1.0) * y_grad
-
-            self.backward = backward
-
-        self.set_y(y)
-        return y
-
-
-class Softmax(Module):
-    """Implements the Softmax activation function."""
-
-    def __call__(self, x: Tensor) -> Tensor:
-        y = softmax(x)
-
-        if self.training:
-
-            def backward(y_grad: NpArrayLike) -> NpArrayLike:
-                self.set_y_grad(y_grad)
-                channels = x.shape[-1]
-                # credits to https://themaverickmeerkat.com/2019-10-23-Softmax/
-                x1 = np.einsum("ij,ik->ijk", y.data, y.data)
-                x2 = np.einsum("ij,jk->ijk", y.data, np.eye(channels, channels))
-                return np.einsum("ijk,ik->ij", x2 - x1, y_grad)
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return y.data * (1.0 - y.data) * dy
 
             self.backward = backward
 

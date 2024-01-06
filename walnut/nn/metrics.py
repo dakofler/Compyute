@@ -1,26 +1,48 @@
 """Evaluation metrics module"""
 
 from walnut.tensor import Tensor
-from walnut.nn.funcional import softmax
 
 
-__all__ = ["get_accuracy"]
+__all__ = ["accuracy", "r2score"]
 
 
-def get_accuracy(x: Tensor, y: Tensor) -> float:
-    """Computes the accuracy score of a prediction compared to target values.
+def accuracy(logits: Tensor, y_target: Tensor) -> Tensor:
+    """Computes the accuracy score.
 
     Parameters
     ----------
-    x : Tensor
+    logits : Tensor
         A model's logits.
-    y : Tensor
+    y_target : Tensor
         Target values.
 
     Returns
     -------
-    float
+    Tensor
         Accuracy value.
     """
-    preds = softmax(x).argmax(-1)
-    return (preds == y).sum().item() / y.len
+
+    return (logits.argmax(-1) == y_target).sum() / len(logits)
+
+
+def r2score(logits: Tensor, y_target: Tensor, eps: float = 1e-8) -> Tensor:
+    """Computes the coefficient of determination (R2 score).
+
+    Parameters
+    ----------
+    logits : Tensor
+        A model's logits.
+    y_target : Tensor
+        Target values.
+    eps: float, optional
+        Constant for numerical stability, by default 1e-8.
+
+    Returns
+    -------
+    Tensor
+        Accuracy value.
+    """
+
+    ssr = ((y_target - logits) ** 2).sum()
+    sst = ((y_target - y_target.mean()) ** 2).sum()
+    return -ssr / (sst + eps) + 1.0
