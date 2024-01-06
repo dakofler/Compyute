@@ -45,4 +45,4 @@ def r2score(logits: Tensor, y_target: Tensor, eps: float = 1e-8) -> Tensor:
 
     ssr = ((y_target - logits) ** 2).sum()
     sst = ((y_target - y_target.mean()) ** 2).sum()
-    return -ssr / (sst + eps) + 1.0
+    return 1.0 - ssr / (sst + eps)

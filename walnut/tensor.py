@@ -204,28 +204,46 @@ class Tensor:
         r = self.data + other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    def __radd__(self, other: Tensor | float | int) -> Tensor:
+        return self + other
+
     def __mul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data * other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def __rmul__(self, other: Tensor | float | int) -> Tensor:
+        return self * other
 
     def __sub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data - other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    def __rsub__(self, other: Tensor | float | int) -> Tensor:
+        return other + (-self)
+
     def __truediv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
-        r = self.data / other.data
+        r = self.data * other.data**-1
         return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def __rtruediv__(self, other: Tensor | float | int) -> Tensor:
+        return other * self**-1
 
     def __floordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data // other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    def __rfloordiv__(self, other: Tensor | float | int) -> Tensor:
+        return other // self
+
     def __pow__(self, other: int | float) -> Tensor:
-        r = self.data**other
+        if "int" in self.dtype and other < 0:
+            r = self.data.astype("float64") ** other
+        else:
+            r = self.data**other
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def __mod__(self, other: int) -> Tensor:
