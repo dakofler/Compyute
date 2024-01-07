@@ -60,7 +60,7 @@ class Tensor:
     @data.setter
     def data(self, value: ArrayLike) -> None:
         if not isinstance(value, ArrayLike):
-            raise ValueError("Invalid dtype.")
+            raise ValueError("Can only set the gradient to be an array.")
         self._data = value
 
     @property
@@ -70,12 +70,10 @@ class Tensor:
 
     @grad.setter
     def grad(self, value: ArrayLike | None) -> None:
-        if value is not None:
-            if not isinstance(value, ArrayLike):
-                raise ValueError("Invalid dtype.")
-
+        if value is not None and not isinstance(value, ArrayLike):
+            raise ValueError("Can only set the gradient to be an array or None.")
         if value is None:
-            self._grad = value
+            self._grad = None
         else:
             cpt_pkg = get_cpt_pkg(self.device)
             self._grad = cpt_pkg.array(value, copy=False, dtype=value.dtype)
