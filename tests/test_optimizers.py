@@ -6,6 +6,7 @@ from tests.test_utils import get_vals, get_params, validate
 
 
 SHAPE = (10, 10)
+ITER = 10
 
 
 # SGD
@@ -20,12 +21,15 @@ def test_sgd_cpu() -> None:
 
     walnut_optim = walnut.nn.optimizers.SGD(l_r=1e-2)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -43,12 +47,15 @@ def test_sgd_cuda() -> None:
 
     walnut_optim = walnut.nn.optimizers.SGD(l_r=1e-2)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -64,23 +71,20 @@ def test_sgd_m_cpu() -> None:
 
     walnut_optim = walnut.nn.optimizers.SGD(l_r=1e-2, m=0.1)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["sgd_b"],
-            torch_optim.state_dict()["state"][0]["momentum_buffer"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
 
-def test_sgd_mnesterov_cpu() -> None:
+def test_sgd_m_nesterov_cpu() -> None:
     results = []
 
     # forward
@@ -91,23 +95,20 @@ def test_sgd_mnesterov_cpu() -> None:
 
     walnut_optim = walnut.nn.optimizers.SGD(l_r=1e-2, m=0.1, nesterov=True)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, nesterov=True)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["sgd_b"],
-            torch_optim.state_dict()["state"][0]["momentum_buffer"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
 
-def test_sgd_wdecay_cpu() -> None:
+def test_sgd_m_wdecay_cpu() -> None:
     results = []
 
     # forward
@@ -118,12 +119,14 @@ def test_sgd_wdecay_cpu() -> None:
 
     walnut_optim = walnut.nn.optimizers.SGD(l_r=1e-2, m=0.1, weight_decay=0.1)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
-
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -140,24 +143,15 @@ def test_adam_cpu() -> None:
 
     walnut_optim = walnut.nn.optimizers.Adam(l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.Adam([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -175,24 +169,15 @@ def test_adam_cuda() -> None:
 
     walnut_optim = walnut.nn.optimizers.Adam(l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.Adam([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -210,27 +195,17 @@ def test_adam_wdecay_cpu() -> None:
         l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
     )
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.Adam(
         [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.1
     )
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
-
+    results.append(validate(walnut_x.grad, torch_x.grad))
     assert all(results)
 
 
@@ -248,24 +223,15 @@ def test_adamw_cpu() -> None:
         l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.AdamW([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -285,24 +251,15 @@ def test_adamw_cuda() -> None:
         l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.AdamW([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)
 
@@ -320,25 +277,16 @@ def test_adamw_wdecay_cpu() -> None:
         l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
     )
     walnut_optim.parameters = [walnut_x]
-    walnut_optim.step()
 
     torch_optim = torch.optim.AdamW(
         [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.1
     )
-    torch_optim.step()
+
+    for _ in range(ITER):
+        walnut_optim.step()
+        torch_optim.step()
 
     results.append(validate(walnut_x, torch_x))
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_m"],
-            torch_optim.state_dict()["state"][0]["exp_avg"],
-        )
-    )
-    results.append(
-        validate(
-            walnut_x.optimizer_params["adam_v"],
-            torch_optim.state_dict()["state"][0]["exp_avg_sq"],
-        )
-    )
+    results.append(validate(walnut_x.grad, torch_x.grad))
 
     assert all(results)

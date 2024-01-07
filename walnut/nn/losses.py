@@ -61,7 +61,7 @@ class Crossentropy(Loss):
         Parameters
         ----------
         eps : float, optional
-            Constant used for numerical stability, by default 1e-7.
+            Constant used for numerical stability, by default 1e-8.
         """
         super().__init__()
         self.eps = eps

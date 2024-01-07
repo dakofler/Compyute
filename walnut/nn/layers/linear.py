@@ -68,7 +68,7 @@ class Linear(Module):
         x = x.astype(self.dtype)
         y = x @ self.w  # (b, [c], c_out)
         if self.use_bias:
-            y = y + self.b
+            y += self.b
 
         if self.training:
 

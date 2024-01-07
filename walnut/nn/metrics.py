@@ -22,7 +22,7 @@ def accuracy(logits: Tensor, y_target: Tensor) -> Tensor:
         Accuracy value.
     """
 
-    return (logits.argmax(-1) == y_target).sum() / len(logits)
+    return (logits.argmax(-1) == y_target).sum().astype("float32") / len(logits)
 
 
 def r2score(logits: Tensor, y_target: Tensor, eps: float = 1e-8) -> Tensor:

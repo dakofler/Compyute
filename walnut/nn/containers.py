@@ -74,9 +74,9 @@ class ParallelContainer(Module):
                     Tensor(dy, device=self.device), splits, axis=self.concat_axis
                 )
 
-                dx = tu.zeros_like(x, device=self.device).data
+                dx = 0.0
                 for i, chunk in enumerate(chunks):
-                    dx = dx + self.sub_modules[i].backward(chunk.data)
+                    dx += self.sub_modules[i].backward(chunk.data)
 
                 return dx
 
