@@ -172,9 +172,13 @@ class Tensor:
         return self.data
 
     def __getitem__(self, key) -> Tensor:
-        if isinstance(key, Tensor):
-            return Tensor(self.data[key.data], dtype=self.dtype, device=self.device)
-        return Tensor(self.data[key], dtype=self.dtype, device=self.device)
+        if isinstance(key, tuple):
+            new_key = tuple(e.data if isinstance(e, Tensor) else e for e in key)
+        elif isinstance(key, Tensor):
+            new_key = key.data
+        else:
+            new_key = key
+        return Tensor(self.data[new_key], dtype=self.dtype, device=self.device)
 
     def __setitem__(self, key, value) -> None:
         if isinstance(key, Tensor) and isinstance(value, Tensor):
