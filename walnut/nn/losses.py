@@ -19,8 +19,7 @@ class Loss(ABC):
         self.backward: Callable[[], ArrayLike] | None = None
 
     @abstractmethod
-    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
-        ...
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
 
 
 class MSE(Loss):
@@ -81,7 +80,7 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        t.astype("int32")
+        t.int()
         t = one_hot_encode(t, y.shape[-1]).astype(y.dtype)
         probs = softmax(y)
 

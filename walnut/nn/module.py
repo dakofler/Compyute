@@ -26,7 +26,7 @@ class Module(ABC):
 
     @property
     def sub_modules(self) -> list[Module]:
-        """Trainable module parameters."""
+        """List of sub-modules."""
         return self._sub_modules
 
     @sub_modules.setter

@@ -554,7 +554,7 @@ class Tensor:
         r = get_cpt_pkg(self.device).sqrt(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def item(self) -> float:
+    def item(self) -> float | int:
         """Returns the scalar value of the tensor data.
 
         Returns
@@ -637,6 +637,36 @@ class Tensor:
             Tensor of dtype.
         """
         return Tensor(self.data, dtype=dtype, device=self.device)
+
+    def float(self) -> Tensor:
+        """Returns a copy of the tensor with float values.
+
+        Returns
+        -------
+        Tensor
+            Float tensor.
+        """
+        return self.astype("float32")
+
+    def int(self) -> Tensor:
+        """Returns a copy of the tensor with int values.
+
+        Returns
+        -------
+        Tensor
+            Int tensor.
+        """
+        return self.astype("int32")
+
+    def complex(self) -> Tensor:
+        """Returns a copy of the tensor with complex values.
+
+        Returns
+        -------
+        Tensor
+            Complex tensor.
+        """
+        return self.astype("complex64")
 
     def append(self, values: Tensor, axis: int) -> Tensor:
         """Returns a copy of the tensor with appended values.

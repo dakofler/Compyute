@@ -2,175 +2,151 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import re
 
 from walnut.tensor import Tensor
 
 __all__ = ["CharacterTokenizer", "WordTokenizer"]
 
 
-def remove_punctuation(data: str):
-    """Removes punctuation characters from a string.
-
-    Parameters
-    ----------
-    data : str
-        String containing punctuation characters.
-
-    Returns
-    ----------
-    str
-        Clean string.
-    """
-    punctuations = """!()-[]{};:'",<>./?@#$%^&*_~"""
-    data_clean = data
-    for punctuation in punctuations:
-        data_clean = data_clean.replace(punctuation, "")
-
-    for i in range(5):
-        i = 5 - i
-        data_clean = data_clean.replace("\n" * i, " ")
-    return data_clean
-
-
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
     def __init__(self) -> None:
-        self.tokens: dict[str, int] = {}
+        self.vocab: dict[str, int] = {}
         self.oov_token: str = ""
 
     @property
     def vocab_size(self) -> int:
         """Number of tokens."""
-        return len(self.tokens)
+        return len(self.vocab)
 
     @abstractmethod
-    def fit(self, data: str, max_tokens: int = 100) -> None:
-        """Fits the tokenizer to data."""
+    def fit(self, text: str, max_tokens: int | None = None) -> None:
+        """Fits the tokenizer to text."""
 
     @abstractmethod
-    def encode(self, string: str) -> Tensor:
-        """Encodes a string."""
+    def encode(self, text: str) -> Tensor:
+        """Encodes text."""
 
     @abstractmethod
-    def decode(self, tokens: Tensor) -> str:
-        """Decodes tokens."""
+    def decode(self, token_ids: Tensor) -> str:
+        """Decodes token ids."""
 
 
 class CharacterTokenizer(Tokenizer):
     """Creates character tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__()
-        self.oov_token = "|"
+        self.oov_token = oov_token
+        all_tokens = [oov_token, "\n"] + list(
+            "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ "
+        )
+        self.vocab = {t: i for i, t in enumerate(all_tokens)}
 
-    def fit(self, data: str, max_tokens: int = 100) -> None:
-        """Fits the tokenizer to data.
+    def fit(self, text: str, max_tokens: int | None = None) -> None:
+        """Fits the tokenizer to text.
 
         Parameters
         ----------
-        data : str
+        text : str
             Text the tokens should be extracted from.
         max_tokens : int, optional
             Maximum number of tokens to be generated, by default 100.
         """
-        data_sorted = sorted(set(data))
-        data_sorted.insert(0, self.oov_token)
-        tokens = data_sorted[:max_tokens]
-        self.tokens = {s: t for t, s in enumerate(tokens)}
 
-    def encode(self, string: str) -> Tensor:
-        """Encodes a string.
+    def encode(self, text: str) -> Tensor:
+        """Encodes text.
 
         Parameters
         ----------
-        data : str
-            String to be encoded.
+        text : str
+            Text to be encoded.
 
         Returns
         -------
         Tensor
-            Tokens.
+            Tensor of token ids.
         """
-        return Tensor([self.tokens.get(s, 0) for s in string], dtype="int")
+        preprocessed = list(text)
+        ids = [self.vocab[s] if s in self.vocab else 0 for s in preprocessed]
+        return Tensor(ids, dtype="int")
 
-    def decode(self, tokens: Tensor) -> str:
-        """Decodes tokens.
+    def decode(self, token_ids: Tensor) -> str:
+        """Decodes token ids.
 
         Parameters
         ----------
         tokens : Tensor
-            Tensor of integer tokens to be decoded.
+            Tensor of token_ids to be decoded.
 
         Returns
         -------
         str
-            Concatenated tokens.
+            Text.
         """
-        reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
-        return "".join(
-            [reverse_tokens.get(token.item(), self.oov_token) for token in tokens.data]
-        )
+        id_to_tokens = {i: t for t, i in self.vocab.items()}
+        return "".join([id_to_tokens[int(i.item())] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
-    """Creates word tokens."""
+    """Creates character tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__()
-        self.oov_token = "<OOV>"
+        self.oov_token = oov_token
+        self.vocab = {}
 
-    def fit(self, data: str, max_tokens: int = 100) -> None:
-        """Fits the tokenizer to data.
+    def fit(self, text: str, max_tokens: int | None = None) -> None:
+        """Fits the tokenizer to text.
 
         Parameters
         ----------
-        data : str
+        text : str
             Text the tokens should be extracted from.
-        max_tokens : int, optional
-            Maximum number of tokens to be generated, by default 100.
+        max_tokens : int | None, optional
+            Maximum number of tokens to be generated, by default None.
         """
-        data_clean = remove_punctuation(data).lower()
-        data_split = data_clean.split(" ")
-        # get unique elements
-        data_unique = list(set(data_split))
-        # sort elements by occurence in data
-        data_sorted = sorted(data_unique, key=data_split.count, reverse=True)
-        data_sorted.insert(0, self.oov_token)
-        tokens = data_sorted[:max_tokens]
-        self.tokens = {token: i for i, token in enumerate(tokens)}
+        split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+        split = [s for s in split if s not in [" ", ""]]
+        tokens = [self.oov_token, "\n"] + sorted(list(set(split)))
+        if max_tokens is not None:
+            tokens = tokens[: max_tokens - 1]
+        self.vocab = {t: i for i, t in enumerate(tokens)}
 
-    def encode(self, string: str) -> Tensor:
-        """Encodes a string.
+    def encode(self, text: str) -> Tensor:
+        """Encodes a text.
 
         Parameters
         ----------
-        data : str
-            String to be encoded.
+        text : str
+            Text to be encoded.
 
         Returns
         -------
         Tensor
-            Tokens.
+            Tensor of token ids.
         """
-        string_clean = remove_punctuation(string.lower())
-        string_split = string_clean.split(" ")
-        return Tensor([self.tokens.get(s, 0) for s in string_split])
+        split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+        split = [s for s in split if s not in [" ", ""]]
+        ids = [self.vocab[s] if s in self.vocab else 0 for s in split]
+        return Tensor(ids, dtype="int")
 
-    def decode(self, tokens: Tensor) -> str:
-        """Decodes a list of tokens.
+    def decode(self, token_ids: Tensor) -> str:
+        """Decodes token ids.
 
         Parameters
         ----------
         tokens : Tensor
-            Tensor of integer tokens to be decoded.
+            Tensor of token ids to be decoded.
 
         Returns
         -------
         str
             Concatenated tokens.
         """
-        reverse_tokens = {t: s for t, s in enumerate(self.tokens)}
-        return " ".join(
-            [reverse_tokens.get(token.item(), self.oov_token) for token in tokens.data]
-        )
+        id_to_tokens = {i: t for t, i in self.vocab.items()}
+        text = " ".join([id_to_tokens[int(i.item())] for i in token_ids])
+        text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
+        return re.sub(r"\n\s", "\n", text)
