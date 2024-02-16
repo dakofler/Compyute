@@ -104,7 +104,7 @@ class Convolution1d(Module):
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y = y + tu.match_dims(self.b, y.ndim - 1)
+            y += tu.match_dims(self.b, y.ndim - 1)
 
         if self.training:
 
@@ -253,7 +253,7 @@ class Convolution2d(Module):
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y = y + tu.match_dims(x=self.b, dims=y.ndim - 1)
+            y += tu.match_dims(x=self.b, dims=y.ndim - 1)
 
         if self.training:
 

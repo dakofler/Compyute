@@ -353,8 +353,8 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
                 p = (filter_shape[-2] // 2, filter_shape[-1] // 2)
             case _:
                 p = (0, 0)
-    tpl = tuple([(0, 0)] * (x.ndim - 2) + [(p[0], p[0]), (p[1], p[1])])
-    return x.pad(tpl)
+    widths = tuple([(0, 0)] * (x.ndim - 2) + [(p[0], p[0]), (p[1], p[1])])
+    return x.pad(widths)
 
 
 def stretch2d(

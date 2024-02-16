@@ -60,7 +60,7 @@ class Tensor:
     @data.setter
     def data(self, value: ArrayLike) -> None:
         if not isinstance(value, ArrayLike):
-            raise ValueError("Invalid dtype.")
+            raise ValueError("Can only set the gradient to be an array.")
         self._data = value
 
     @property
@@ -70,12 +70,10 @@ class Tensor:
 
     @grad.setter
     def grad(self, value: ArrayLike | None) -> None:
-        if value is not None:
-            if not isinstance(value, ArrayLike):
-                raise ValueError("Invalid dtype.")
-
+        if value is not None and not isinstance(value, ArrayLike):
+            raise ValueError("Can only set the gradient to be an array or None.")
         if value is None:
-            self._grad = value
+            self._grad = None
         else:
             cpt_pkg = get_cpt_pkg(self.device)
             self._grad = cpt_pkg.array(value, copy=False, dtype=value.dtype)
@@ -172,9 +170,13 @@ class Tensor:
         return self.data
 
     def __getitem__(self, key) -> Tensor:
-        if isinstance(key, Tensor):
-            return Tensor(self.data[key.data], dtype=self.dtype, device=self.device)
-        return Tensor(self.data[key], dtype=self.dtype, device=self.device)
+        if isinstance(key, tuple):
+            new_key = tuple(e.data if isinstance(e, Tensor) else e for e in key)
+        elif isinstance(key, Tensor):
+            new_key = key.data
+        else:
+            new_key = key
+        return Tensor(self.data[new_key], dtype=self.dtype, device=self.device)
 
     def __setitem__(self, key, value) -> None:
         if isinstance(key, Tensor) and isinstance(value, Tensor):
@@ -199,34 +201,53 @@ class Tensor:
             return ret
         raise StopIteration
 
+    # basic arithmetic
     def __add__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data + other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def __radd__(self, other: Tensor | float | int) -> Tensor:
+        return self + other
 
     def __mul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data * other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def __sub__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        r = self.data - other.data
+    def __rmul__(self, other: Tensor | float | int) -> Tensor:
+        return self * other
+
+    def __pow__(self, other: int | float) -> Tensor:
+        if "int" in self.dtype and other < 0:
+            r = self.data.astype("float64") ** other
+        else:
+            r = self.data**other
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    def __neg__(self) -> Tensor:
+        return self * -1
+
+    # derived arithmetic
+    def __sub__(self, other: Tensor | float | int) -> Tensor:
+        return self + (-other)
+
+    def __rsub__(self, other: Tensor | float | int) -> Tensor:
+        return other + (-self)
+
     def __truediv__(self, other: Tensor | float | int) -> Tensor:
-        other = self.__tensorify(other)
-        r = self.data / other.data
-        return Tensor(r, dtype=r.dtype, device=self.device)
+        return self * other**-1
+
+    def __rtruediv__(self, other: Tensor | float | int) -> Tensor:
+        return other * self**-1
 
     def __floordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data // other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def __pow__(self, other: int | float) -> Tensor:
-        r = self.data**other
-        return Tensor(r, dtype=r.dtype, device=self.device)
+    def __rfloordiv__(self, other: Tensor | float | int) -> Tensor:
+        return other // self
 
     def __mod__(self, other: int) -> Tensor:
         r = self.data % other
@@ -236,6 +257,7 @@ class Tensor:
         r = self.data @ other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    # boolean operations
     def __lt__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         r = self.data < other.data
@@ -266,50 +288,45 @@ class Tensor:
         r = self.data != other.data
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    # inplace operations
     def __isub__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data += other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __iadd__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data += other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __imul__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data *= other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __idiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data /= other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __ifloordiv__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data //= other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __imod__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data %= other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
+        return self
 
     def __ipow__(self, other: Tensor | float | int) -> Tensor:
         other = self.__tensorify(other)
         self.data **= other.data
-        return Tensor(self.data, dtype=self.data.dtype, device=self.device)
-
-    def __neg__(self) -> Tensor:
-        r = -1 * self.data
-        return Tensor(r, dtype=r.dtype, device=self.device)
+        return self
 
     def __tensorify(self, other: Tensor | float | int) -> Tensor:
         if not isinstance(other, Tensor):
-            return Tensor(other, device=self.device)
-        # if self.device != other.device:
-        #     raise AttributeError("Devices of tensors do not match.")
+            return Tensor(other, dtype=self.dtype, device=self.device)
         return other
 
     def __len__(self) -> int:
@@ -537,7 +554,7 @@ class Tensor:
         r = get_cpt_pkg(self.device).sqrt(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def item(self) -> float:
+    def item(self) -> float | int:
         """Returns the scalar value of the tensor data.
 
         Returns
@@ -620,6 +637,36 @@ class Tensor:
             Tensor of dtype.
         """
         return Tensor(self.data, dtype=dtype, device=self.device)
+
+    def float(self) -> Tensor:
+        """Returns a copy of the tensor with float values.
+
+        Returns
+        -------
+        Tensor
+            Float tensor.
+        """
+        return self.astype("float32")
+
+    def int(self) -> Tensor:
+        """Returns a copy of the tensor with int values.
+
+        Returns
+        -------
+        Tensor
+            Int tensor.
+        """
+        return self.astype("int32")
+
+    def complex(self) -> Tensor:
+        """Returns a copy of the tensor with complex values.
+
+        Returns
+        -------
+        Tensor
+            Complex tensor.
+        """
+        return self.astype("complex64")
 
     def append(self, values: Tensor, axis: int) -> Tensor:
         """Returns a copy of the tensor with appended values.

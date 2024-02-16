@@ -15,7 +15,7 @@ class Batchnorm(Module):
     def __init__(
         self,
         in_channels: int,
-        eps: float = 1e-8,
+        eps: float = 1e-5,
         m: float = 0.1,
         dtype: str = "float32",
     ) -> None:
@@ -26,7 +26,7 @@ class Batchnorm(Module):
         in_channels : int
             Number of input channels of the layer.
         eps : float, optional
-            Constant for numerical stability, by default 1e-8.
+            Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: str, optional
@@ -38,9 +38,11 @@ class Batchnorm(Module):
         self.m = m
         self.dtype = dtype
 
+        # parameters
         self.w = Parameter(tu.ones((in_channels,)), dtype=dtype, label="w")
         self.b = Parameter(tu.zeros((in_channels,)), dtype=dtype, label="b")
 
+        # buffers
         self.rmean = tu.zeros((in_channels,), dtype=dtype, device=self.device)
         self.rvar = tu.ones((in_channels,), dtype=dtype, device=self.device)
 
@@ -54,6 +56,7 @@ class Batchnorm(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
+
         axis = (0,) + tuple(tu.arange(x.ndim).data[2:])
         if self.training:
             mean = x.mean(axis=axis, keepdims=True)
@@ -63,7 +66,7 @@ class Batchnorm(Module):
 
             # keep running stats
             self.rmean = self.rmean * (1.0 - self.m) + mean.squeeze() * self.m
-            _var = x.var(axis=axis, keepdims=True, ddof=1)  # torch uses ddof=1 here??
+            _var = x.var(axis=axis, keepdims=True, ddof=1)
             self.rvar = self.rvar * (1.0 - self.m) + _var.squeeze() * self.m
         else:
             _rvar = tu.match_dims(self.rvar, x.ndim - 1)
@@ -118,7 +121,7 @@ class Layernorm(Module):
     """Normalizes values per sample."""
 
     def __init__(
-        self, normalized_shape: ShapeLike, eps: float = 1e-8, dtype: str = "float32"
+        self, normalized_shape: ShapeLike, eps: float = 1e-5, dtype: str = "float32"
     ) -> None:
         """Implements layer normalization.
 
@@ -127,7 +130,7 @@ class Layernorm(Module):
         normalized_shape : ShapeLike
             Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
-            Constant for numerical stability, by default 1e-8.
+            Constant for numerical stability, by default 1e-5.
         dtype: str, optional
             Datatype of weights and biases, by default "float32".
         """
@@ -136,6 +139,7 @@ class Layernorm(Module):
         self.eps = eps
         self.dtype = dtype
 
+        # parameters
         self.w = Parameter(tu.ones(normalized_shape), dtype=dtype, label="w")
         self.b = Parameter(tu.zeros(normalized_shape), dtype=dtype, label="b")
 
@@ -148,6 +152,7 @@ class Layernorm(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
+
         axis = tuple(tu.arange(x.ndim).data[1:])
         mean = x.mean(axis=axis, keepdims=True)
         var = x.var(axis=axis, keepdims=True)

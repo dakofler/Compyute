@@ -43,5 +43,5 @@ class ExpLrScheduler(LrScheduler):
             raise AttributeError("No optimizer set.")
 
         if self.t <= self.until_epoch:
-            self.optimizer.l_r = self.optimizer.l_r * self.l_r_decay
-            self.t = self.t + 1
+            self.optimizer.l_r *= self.l_r_decay
+            self.t += 1

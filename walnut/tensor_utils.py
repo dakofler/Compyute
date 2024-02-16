@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 from walnut.cuda import get_cpt_pkg
-from walnut.tensor import Tensor, ShapeLike, AxisLike, ShapeError, PyTypeLike
+from walnut.tensor import Tensor, ShapeError, ShapeLike, AxisLike, PyTypeLike
 
 
 __all__ = [

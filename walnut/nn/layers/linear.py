@@ -66,9 +66,10 @@ class Linear(Module):
 
     def __call__(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
+
         y = x @ self.w  # (b, [c], c_out)
         if self.use_bias:
-            y = y + self.b
+            y += self.b
 
         if self.training:
 
