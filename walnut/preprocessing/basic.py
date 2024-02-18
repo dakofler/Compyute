@@ -1,11 +1,10 @@
 """basic preprocessing module"""
 
-
 from walnut.tensor import Tensor, AxisLike
 import walnut.tensor_utils as tu
 
 
-__all__ = ["split_train_val_test", "normalize"]
+__all__ = ["split_train_val_test", "normalize", "standardize"]
 
 
 def split_train_val_test(

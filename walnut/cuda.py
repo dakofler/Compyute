@@ -8,6 +8,23 @@ import cupy as cp
 
 __all__ = ["is_available"]
 
+ArrayLike = np.ndarray | cp.ndarray
+ScalarLike = (
+    np.float16
+    | np.float32
+    | np.float64
+    | np.int32
+    | np.int64
+    | cp.float16
+    | cp.float32
+    | cp.float64
+    | cp.int32
+    | cp.int64
+    | list
+    | float
+    | int
+)
+
 
 def is_available() -> bool:
     """Checks if one or more GPUs are available.

@@ -4,7 +4,13 @@
 
 Unfortunately, installing `CuPy` is required for now, even if no GPU is available.
 
+## Installation
+
+All you need to use the library is to pip install the requirements (`pip install -r requirements.txt`). As of `CuPy` v13, it does not require a GPU toolkit to be installed, so `Walnut` can now be used on CPU-only machines also. If you want to make use of GPUs, make sure to install CUDA/ROCm.
+
 ## The Toolbox
+
+There are examples included that show how to use the toolbox.
 
 ### Tensors
 Similar to `PyTorch`, in `Walnut` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's layers (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays. `Walnut` also supports CUDA.

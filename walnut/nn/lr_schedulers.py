@@ -24,18 +24,18 @@ class LrScheduler(ABC):
 class ExpLrScheduler(LrScheduler):
     """Decays an optimizers learning rate exponentially."""
 
-    def __init__(self, l_r_decay: float = 0.5, until_epoch: int = 10) -> None:
+    def __init__(self, lr_decay: float = 0.5, until_epoch: int = 10) -> None:
         """Decays an optimizers learning rate exponentially.
 
         Parameters
         ----------
-        l_r_decay : float, optional
+        lr_decay : float, optional
             Decay factor the learning rate is multiplied by each step, by default 0.5.
         until_epoch: int, optional
             Last epoch the update is applied, by default 10.
         """
         super().__init__(until_epoch)
-        self.l_r_decay = l_r_decay
+        self.lr_decay = lr_decay
 
     def step(self) -> None:
         """Decays an optimizers learning rate exponentially."""
@@ -43,5 +43,5 @@ class ExpLrScheduler(LrScheduler):
             raise AttributeError("No optimizer set.")
 
         if self.t <= self.until_epoch:
-            self.optimizer.l_r *= self.l_r_decay
+            self.optimizer.lr *= self.lr_decay
             self.t += 1

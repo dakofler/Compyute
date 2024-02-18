@@ -113,21 +113,24 @@ def convolve1d(
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    # dilate filter
     f_dil = dilate1d(f, dil).data
-
-    # padding
     x_pad = pad1d(x, f_dil.shape, pad)
 
     # convolution
     if x.device == "cpu":
-        x_fft = npfft.fft(x_pad.data).astype("complex64")
-        f_fft = npfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
-        ifft = np.real(npfft.ifft(x_fft * f_fft))
+        ifft = np.real(
+            npfft.ifft(
+                npfft.fft(x_pad.data).astype("complex64")
+                * npfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
+            )
+        )
     else:
-        x_fft = cpfft.fft(x_pad.data).astype("complex64")
-        f_fft = cpfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
-        ifft = cp.real(cpfft.ifft(x_fft * f_fft))
+        ifft = cp.real(
+            cpfft.ifft(
+                cpfft.fft(x_pad.data).astype("complex64")
+                * cpfft.fft(f_dil, n=x_pad.shape[-1]).astype("complex64")
+            )
+        )
 
     # slicing
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -180,21 +183,24 @@ def convolve2d(
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
         raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    # dilate filter
     f_dil = dilate2d(f, dil).data
-
-    # padding
     x_pad = pad2d(x, f_dil.shape, pad)
 
     # convolution
     if x.device == "cpu":
-        x_fft = npfft.fft2(x_pad.data).astype("complex64")
-        f_fft = npfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
-        ifft = np.real(npfft.ifft2(x_fft * f_fft))
+        ifft = np.real(
+            npfft.ifft2(
+                npfft.fft2(x_pad.data).astype("complex64")
+                * npfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
+            )
+        )
     else:
-        x_fft = cpfft.fft2(x_pad.data).astype("complex64")
-        f_fft = cpfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
-        ifft = cp.real(cpfft.ifft2(x_fft * f_fft))
+        ifft = cp.real(
+            cpfft.ifft2(
+                cpfft.fft2(x_pad.data).astype("complex64")
+                * cpfft.fft2(f_dil, s=x_pad.shape[-2:]).astype("complex64")
+            )
+        )
 
     # slicing
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])

@@ -11,10 +11,10 @@ __all__ = ["SGD", "Adam", "AdamW"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, l_r: float) -> None:
+    def __init__(self, lr: float) -> None:
         self.t: int = 1
         self.parameters: list[Parameter] = []
-        self.l_r = l_r
+        self.lr = lr
 
     @abstractmethod
     def step(self) -> None:
@@ -36,7 +36,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
-        l_r: float = 1e-2,
+        lr: float = 1e-2,
         m: float = 0.0,
         nesterov: bool = False,
         weight_decay: float = 0.0,
@@ -45,7 +45,7 @@ class SGD(Optimizer):
 
         Parameters
         ----------
-        l_r : float, optional
+        lr : float, optional
             Learning rate, by default 1e-2.
         m : float, optional
             Momentum factor, by default 0.
@@ -54,7 +54,7 @@ class SGD(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(l_r)
+        super().__init__(lr)
         self.m = m
         self.nesterov = nesterov
         self.weight_decay = weight_decay
@@ -83,7 +83,7 @@ class SGD(Optimizer):
                 else:
                     g = b
 
-            delta = -self.l_r * g
+            delta = -self.lr * g
             p.optimizer_params["delta"] = delta  # for analysis
             p.data += delta
         self.t += 1
@@ -95,7 +95,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
-        l_r: float = 1e-3,
+        lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
@@ -106,7 +106,7 @@ class Adam(Optimizer):
 
         Parameters
         ----------
-        l_r : float, optional
+        lr : float, optional
             Learning rate, by default 1e-3.
         beta1 : float, optional
             Exponential decay rate for the 1st momentum estimates, by default 0.9.
@@ -117,7 +117,7 @@ class Adam(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(l_r)
+        super().__init__(lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -144,7 +144,7 @@ class Adam(Optimizer):
             m_hat = m / (1.0 - self.beta1**self.t)
             v_hat = v / (1.0 - self.beta2**self.t)
 
-            delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
+            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             p.optimizer_params["delta"] = delta  # for analysis
             p.data += delta
         self.t += 1
@@ -155,7 +155,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        l_r: float = 1e-3,
+        lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
@@ -165,7 +165,7 @@ class AdamW(Optimizer):
 
         Parameters
         ----------
-        l_r : float, optional
+        lr : float, optional
             Learning rate, by default 1e-3.
         beta1 : float, optional
             Exponential decay rate for the 1st momentum estimates, by default 0.9.
@@ -176,7 +176,7 @@ class AdamW(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(l_r)
+        super().__init__(lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -188,7 +188,7 @@ class AdamW(Optimizer):
                 continue
 
             if self.weight_decay > 0:
-                p.data -= self.l_r * self.weight_decay * p.data
+                p.data -= self.lr * self.weight_decay * p.data
 
             m_prev = p.optimizer_params.get("adam_m", 0)
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
@@ -200,7 +200,7 @@ class AdamW(Optimizer):
             p.optimizer_params["adam_v"] = v
             v_hat = v / (1.0 - self.beta2**self.t)
 
-            delta = -self.l_r * m_hat / (v_hat**0.5 + self.eps)
+            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             p.optimizer_params["delta"] = delta  # for analysis
             p.data += delta
         self.t += 1

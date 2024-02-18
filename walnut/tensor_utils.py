@@ -3,7 +3,8 @@
 import pandas as pd
 import numpy as np
 from walnut.cuda import get_cpt_pkg
-from walnut.tensor import Tensor, ShapeError, ShapeLike, AxisLike, PyTypeLike
+from walnut.tensor import Tensor, ShapeError, ShapeLike, AxisLike
+from walnut.cuda import ScalarLike
 
 
 __all__ = [
@@ -461,7 +462,7 @@ def empty(dtype: str = "float64", device: str = "cpu") -> Tensor:
     return Tensor(r, dtype=r.dtype, device=device)
 
 
-def maximum(a: Tensor | PyTypeLike, b: Tensor | PyTypeLike) -> Tensor:
+def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     """Element-wise maximum of two tensors or values.
 
     Parameters

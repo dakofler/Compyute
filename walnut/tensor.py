@@ -5,18 +5,39 @@ from __future__ import annotations
 import numpy as np
 import cupy as cp
 
-from walnut.cuda import get_cpt_pkg, numpy_to_cupy, cupy_to_numpy
+from walnut.cuda import get_cpt_pkg, numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
 
-__all__ = ["Tensor", "ShapeError"]
+__all__ = ["Tensor", "tensor", "ShapeError"]
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
-ArrayLike = np.ndarray | cp.ndarray
-NpTypeLike = np.float16 | np.float32 | np.float64 | np.int32 | np.int64
-PyTypeLike = list | float | int
 
 
 class ShapeError(Exception):
     """Incompatible tensor shapes."""
+
+
+def tensor(
+    data: ArrayLike | ScalarLike, copy: bool = False, device: str = "cpu"
+) -> Tensor:
+    """Creates a Tensor instance and infers the dtype automatically.
+
+    Parameters
+    ----------
+    data : ArrayLike | ScalarLike
+        Data to initialize the tensor.
+    copy : bool, optional
+        If true, the data object is copied (may impact performance), by default False.
+    device : str, optional
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Tensor object.
+    """
+    if not isinstance(data, ArrayLike):
+        data = get_cpt_pkg(device).array(data)
+    return Tensor(data, dtype=data.dtype, copy=copy, device=device)
 
 
 class Tensor:
@@ -24,7 +45,7 @@ class Tensor:
 
     def __init__(
         self,
-        data: ArrayLike | NpTypeLike | PyTypeLike,
+        data: ArrayLike | ScalarLike,
         dtype: str = "float64",
         copy: bool = False,
         device: str = "cpu",
@@ -33,7 +54,7 @@ class Tensor:
 
         Parameters
         ----------
-        data : NpArrayLike | NpTypeLike | PyTypeLike
+        data : ArrayLike | ScalarLike
             Data to initialize the tensor.
         dtype: str, optional
             Datatype of the tensor data, by default "float64".

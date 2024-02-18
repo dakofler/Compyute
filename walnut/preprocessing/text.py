@@ -14,6 +14,7 @@ class Tokenizer(ABC):
 
     def __init__(self) -> None:
         self.vocab: dict[str, int] = {}
+        self.ivocab: dict[int, str] = {}
         self.oov_token: str = ""
 
     @property
@@ -44,6 +45,7 @@ class CharacterTokenizer(Tokenizer):
             "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ "
         )
         self.vocab = {t: i for i, t in enumerate(all_tokens)}
+        self.ivocab = {i: t for t, i in self.vocab.items()}
 
     def fit(self, text: str, max_tokens: int | None = None) -> None:
         """Fits the tokenizer to text.
@@ -86,8 +88,7 @@ class CharacterTokenizer(Tokenizer):
         str
             Text.
         """
-        id_to_tokens = {i: t for t, i in self.vocab.items()}
-        return "".join([id_to_tokens[int(i.item())] for i in token_ids])
+        return "".join([self.ivocab[int(i.item())] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
@@ -96,7 +97,6 @@ class WordTokenizer(Tokenizer):
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__()
         self.oov_token = oov_token
-        self.vocab = {}
 
     def fit(self, text: str, max_tokens: int | None = None) -> None:
         """Fits the tokenizer to text.
@@ -114,6 +114,7 @@ class WordTokenizer(Tokenizer):
         if max_tokens is not None:
             tokens = tokens[: max_tokens - 1]
         self.vocab = {t: i for i, t in enumerate(tokens)}
+        self.ivocab = {i: t for t, i in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
         """Encodes a text.
@@ -146,7 +147,6 @@ class WordTokenizer(Tokenizer):
         str
             Concatenated tokens.
         """
-        id_to_tokens = {i: t for t, i in self.vocab.items()}
-        text = " ".join([id_to_tokens[int(i.item())] for i in token_ids])
+        text = " ".join([self.ivocab[int(i.item())] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)

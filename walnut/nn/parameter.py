@@ -1,7 +1,7 @@
 """Neural network parameter module"""
 
-from walnut.tensor import Tensor, ArrayLike, NpTypeLike, PyTypeLike
-from walnut.cuda import numpy_to_cupy, cupy_to_numpy
+from walnut.tensor import Tensor
+from walnut.cuda import numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
 
 
 __all__ = ["Parameter"]
@@ -12,7 +12,7 @@ class Parameter(Tensor):
 
     def __init__(
         self,
-        data: ArrayLike | NpTypeLike | PyTypeLike,
+        data: ArrayLike | ScalarLike,
         dtype: str = "float32",
         copy: bool = False,
         device: str = "cpu",
@@ -22,7 +22,7 @@ class Parameter(Tensor):
 
         Parameters
         ----------
-        data : NpArrayLike | NpTypeLike | PyTypeLike
+        data : ArrayLike | ScalarLike
             Data to initialize the tensor.
         dtype: str, optional
             Datatype of the tensor data, by default "float32".
