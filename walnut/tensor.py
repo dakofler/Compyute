@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import cupy as cp
 
-from walnut.cuda import get_cpt_pkg, numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
+from walnut.cuda import get_engine, numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
 
 __all__ = ["Tensor", "tensor", "ShapeError"]
 ShapeLike = tuple[int, ...]
@@ -36,7 +36,7 @@ def tensor(
         Tensor object.
     """
     if not isinstance(data, ArrayLike):
-        data = get_cpt_pkg(device).array(data)
+        data = get_engine(device).array(data)
     return Tensor(data, dtype=data.dtype, copy=copy, device=device)
 
 
@@ -64,7 +64,7 @@ class Tensor:
             The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
-        self._data = get_cpt_pkg(device).array(data, copy=copy, dtype=dtype)
+        self._data = get_engine(device).array(data, copy=copy, dtype=dtype)
         self._grad = None
         self._iterator = 0
         self._device = device
@@ -96,8 +96,8 @@ class Tensor:
         if value is None:
             self._grad = None
         else:
-            cpt_pkg = get_cpt_pkg(self.device)
-            self._grad = cpt_pkg.array(value, copy=False, dtype=value.dtype)
+            engine = get_engine(self.device)
+            self._grad = engine.array(value, copy=False, dtype=value.dtype)
 
     @property
     def shape(self) -> ShapeLike:
@@ -214,12 +214,12 @@ class Tensor:
         return self
 
     def __next__(self):
-        if self._iterator < self.len:
-            ret = Tensor(
-                self.data[self._iterator], dtype=self.dtype, device=self.device
-            )
+        if self._iterator < len(self):
+            data = self.data[self._iterator]
+            if isinstance(data, ArrayLike):
+                data = Tensor(data, dtype=self.dtype, device=self.device)
             self._iterator += 1
-            return ret
+            return data
         raise StopIteration
 
     # basic arithmetic
@@ -506,7 +506,7 @@ class Tensor:
         Tensor
             Tensor containing the value of e**x for each element.
         """
-        r = get_cpt_pkg(self.device).exp(self.data)
+        r = get_engine(self.device).exp(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log(self) -> Tensor:
@@ -517,7 +517,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log(x) for each element.
         """
-        r = get_cpt_pkg(self.device).log(self.data)
+        r = get_engine(self.device).log(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log10(self) -> Tensor:
@@ -528,7 +528,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log10(x) for each element.
         """
-        r = get_cpt_pkg(self.device).log10(self.data)
+        r = get_engine(self.device).log10(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def log2(self) -> Tensor:
@@ -539,7 +539,7 @@ class Tensor:
             Tensor
                 Tensor containing the value of log2(x) for each element.
         """
-        r = get_cpt_pkg(self.device).log2(self.data)
+        r = get_engine(self.device).log2(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def tanh(self) -> Tensor:
@@ -550,7 +550,7 @@ class Tensor:
             Tensor
             Tensor containing the value of tanh(x) for each element.
         """
-        r = get_cpt_pkg(self.device).tanh(self.data)
+        r = get_engine(self.device).tanh(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def abs(self) -> Tensor:
@@ -561,7 +561,7 @@ class Tensor:
             Tensor
             Tensor containing the absolute value for each element.
         """
-        r = get_cpt_pkg(self.device).abs(self.data)
+        r = get_engine(self.device).abs(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def sqrt(self) -> Tensor:
@@ -572,7 +572,7 @@ class Tensor:
             Tensor
             Tensor containing the square root value for each element.
         """
-        r = get_cpt_pkg(self.device).sqrt(self.data)
+        r = get_engine(self.device).sqrt(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def item(self) -> float | int:
@@ -614,7 +614,7 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        r = get_cpt_pkg(self.device).pad(self.data, widths)
+        r = get_engine(self.device).pad(self.data, widths)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def flatten(self) -> Tensor:
@@ -641,7 +641,7 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        r = get_cpt_pkg(self.device).transpose(self.data, axes=axis)
+        r = get_engine(self.device).transpose(self.data, axes=axis)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def astype(self, dtype: str) -> Tensor:
@@ -704,7 +704,7 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        r = get_cpt_pkg(self.device).append(self.data, values.data, axis=axis)
+        r = get_engine(self.device).append(self.data, values.data, axis=axis)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def flip(self, axis: AxisLike) -> Tensor:
@@ -720,7 +720,7 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        r = get_cpt_pkg(self.device).flip(self.data, axis=axis)
+        r = get_engine(self.device).flip(self.data, axis=axis)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
@@ -738,7 +738,7 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        r = get_cpt_pkg(self.device).moveaxis(self.data, from_axis, to_axis)
+        r = get_engine(self.device).moveaxis(self.data, from_axis, to_axis)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def squeeze(self) -> Tensor:
@@ -759,7 +759,7 @@ class Tensor:
         int | tuple [int, ...]
             Index tensor.
         """
-        r = get_cpt_pkg(self.device).argmax(self.data, axis=axis)
+        r = get_engine(self.device).argmax(self.data, axis=axis)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def resize(self, shape: ShapeLike) -> Tensor:
@@ -776,7 +776,7 @@ class Tensor:
         Tensor
             Resized tensor.
         """
-        r = get_cpt_pkg(self.device).resize(self.data, shape)
+        r = get_engine(self.device).resize(self.data, shape)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def repeat(self, n_repeats: int, axis: int) -> Tensor:
@@ -812,5 +812,5 @@ class Tensor:
         Tensor
             Tensor containing clipped values.
         """
-        r = get_cpt_pkg(self.device).clip(self.data, min_value, max_value)
+        r = get_engine(self.device).clip(self.data, min_value, max_value)
         return Tensor(r, dtype=r.dtype, device=self.device)

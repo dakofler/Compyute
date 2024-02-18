@@ -4,7 +4,7 @@ from walnut.tensor import Tensor, AxisLike
 import walnut.tensor_utils as tu
 
 
-__all__ = ["split_train_val_test", "normalize", "standardize"]
+__all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
 
 def split_train_val_test(
@@ -84,3 +84,30 @@ def standardize(x: Tensor, axis: AxisLike | None = None) -> Tensor:
     """
 
     return x - x.mean(axis=axis) / x.var(axis=axis)
+
+
+def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
+    """One-hot-encodes a tensor, by adding an additional encoding dimension.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor containing categorical columns of type `int`.
+    num_classes : int
+        Number of classes to be considered when encoding.
+        Defines axis -1 of the output tensor.
+
+    Returns
+    -------
+    Tensor
+        One-hot-encoded tensor.
+
+    Raises
+    -------
+    ValueError
+        If the tensor dtype is not int.
+    """
+    if x.dtype not in ("int", "int32", "int64"):
+        raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
+    r = (tu.eye(num_classes, "int32", x.device)[x]).data
+    return Tensor(r, dtype=r.dtype, device=x.device)

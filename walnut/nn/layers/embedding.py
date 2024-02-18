@@ -6,7 +6,7 @@ from walnut import tensor_utils as tu
 from walnut.tensor import Tensor, ArrayLike
 from walnut.nn.module import Module
 from walnut.nn.parameter import Parameter
-from walnut.preprocessing.encoding import one_hot_encode
+from walnut.preprocessing.basic import one_hot_encode
 
 
 __all__ = ["Embedding"]

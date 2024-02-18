@@ -6,7 +6,7 @@ from typing import Callable
 from walnut.tensor import Tensor, ArrayLike
 import walnut.tensor_utils as tu
 from walnut.nn.funcional import softmax
-from walnut.preprocessing.encoding import one_hot_encode
+from walnut.preprocessing.basic import one_hot_encode
 
 
 __all__ = ["MSE", "Crossentropy"]

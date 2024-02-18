@@ -1,7 +1,4 @@
 """preprocessing module"""
 
-from walnut.preprocessing import encoding, text
-from walnut.preprocessing.basic import (
-    split_train_val_test,
-    normalize,
-)
+from walnut.preprocessing import text
+from walnut.preprocessing.basic import *

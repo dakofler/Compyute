@@ -37,7 +37,7 @@ def is_available() -> bool:
     return cp.is_available()
 
 
-def get_cpt_pkg(device: str) -> types.ModuleType:
+def get_engine(device: str) -> types.ModuleType:
     """Selets a python module for tensor computation for a given device.
 
     Parameters

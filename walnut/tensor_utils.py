@@ -1,14 +1,12 @@
 """Tensor utils module"""
 
-import pandas as pd
 import numpy as np
-from walnut.cuda import get_cpt_pkg
+from walnut.cuda import get_engine
 from walnut.tensor import Tensor, ShapeError, ShapeLike, AxisLike
 from walnut.cuda import ScalarLike
 
 
 __all__ = [
-    "df_to_tensor",
     "expand_dims",
     "match_dims",
     "arange",
@@ -31,23 +29,8 @@ __all__ = [
     "prod",
     "eye",
     "split",
+    "unique",
 ]
-
-
-def df_to_tensor(df: pd.DataFrame) -> Tensor:
-    """Converts a Pandas DataFrame into a Tensor.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Pandas DataFrame object to convert.
-
-    Returns
-    -------
-    Tensor
-        Tensor object.
-    """
-    return Tensor(df.to_numpy())
 
 
 def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
@@ -65,8 +48,8 @@ def expand_dims(x: Tensor, axis: AxisLike) -> Tensor:
     Tensor
         Tensor with extended dimensions.
     """
-    cpt_pkg = get_cpt_pkg(x.device)
-    r = cpt_pkg.expand_dims(x.data, axis=axis)
+    engine = get_engine(x.device)
+    r = engine.expand_dims(x.data, axis=axis)
     return Tensor(r, dtype=r.dtype, device=x.device)
 
 
@@ -118,8 +101,8 @@ def arange(
     Tensor
         1d tensor of evenly spaced samples.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.arange(start, stop, step, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.arange(start, stop, step, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -146,8 +129,8 @@ def linspace(
     Tensor
         1d tensor of evenly spaced samples.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.linspace(start, stop, num, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.linspace(start, stop, num, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -172,8 +155,8 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.zeros(shape, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.zeros(shape, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -194,8 +177,8 @@ def ones(shape: ShapeLike, dtype: str = "float64", device: str = "cpu") -> Tenso
     Tensor
         Tensor with all values being one.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.ones(shape, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.ones(shape, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -266,8 +249,8 @@ def randn(
     Tensor
         Tensor with random values.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.random.normal(mean, std, shape)
+    engine = get_engine(device)
+    r = engine.random.normal(mean, std, shape)
     return Tensor(r, dtype=dtype, device=device)
 
 
@@ -298,8 +281,8 @@ def randu(
     Tensor
         Tensor with random values.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.random.uniform(low, high, shape)
+    engine = get_engine(device)
+    r = engine.random.uniform(low, high, shape)
     return Tensor(r, dtype=dtype, device=device)
 
 
@@ -326,8 +309,8 @@ def randint(
     Tensor
         Tensor with random values.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.random.randint(low, high, shape)
+    engine = get_engine(device)
+    r = engine.random.randint(low, high, shape)
     return Tensor(r, dtype=dtype, device=device)
 
 
@@ -348,8 +331,8 @@ def random_permutation(n: int, dtype: str = "int32", device: str = "cpu") -> Ten
     Tensor
         Permuted range tensor.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.random.permutation(n)
+    engine = get_engine(device)
+    r = engine.random.permutation(n)
     return Tensor(r, dtype=dtype, device=device)
 
 
@@ -404,9 +387,9 @@ def random_choice_indices(p: Tensor, num_samples: int = 1) -> Tensor:
     Tensor
         Chosen samples.
     """
-    cpt_pkg = get_cpt_pkg(p.device)
+    engine = get_engine(p.device)
     return Tensor(
-        cpt_pkg.random.choice(p.len, size=num_samples, p=p.data),
+        engine.random.choice(p.len, size=num_samples, p=p.data),
         dtype="int32",
         device=p.device,
     )
@@ -436,8 +419,8 @@ def random_choice(
     Tensor
         Tensor of random choices.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.random.choice(x.data, shape, p=p.data)
+    engine = get_engine(device)
+    r = engine.random.choice(x.data, shape, p=p.data)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -457,8 +440,8 @@ def empty(dtype: str = "float64", device: str = "cpu") -> Tensor:
         Empty tensor.
     """
     # does nto accept string?
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.empty(0, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.empty(0, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -491,8 +474,8 @@ def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     else:
         _b = b
 
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.maximum(_a, _b)
+    engine = get_engine(device)
+    r = engine.maximum(_a, _b)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -513,8 +496,8 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
     """
 
     device = tensors[0].device
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.concatenate([t.data for t in tensors], axis=axis)
+    engine = get_engine(device)
+    r = engine.concatenate([t.data for t in tensors], axis=axis)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -551,8 +534,8 @@ def eye(n: int, dtype: str = "float64", device: str = "cpu") -> Tensor:
     Tensor
         Diagonal tensor.
     """
-    cpt_pkg = get_cpt_pkg(device)
-    r = cpt_pkg.eye(n, dtype=dtype)
+    engine = get_engine(device)
+    r = engine.eye(n, dtype=dtype)
     return Tensor(r, dtype=r.dtype, device=device)
 
 
@@ -575,6 +558,23 @@ def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
     list[Tensor]
         List of tensors containing the split data.
     """
-    cpt_pkg = get_cpt_pkg(x.device)
-    split_data = cpt_pkg.split(x.data, splits, axis=axis)
+    engine = get_engine(x.device)
+    split_data = engine.split(x.data, splits, axis=axis)
     return [Tensor(s, dtype=x.dtype, device=x.device) for s in split_data]
+
+
+def unique(x: Tensor) -> Tensor:
+    """Returns a tensor of unique values.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the unique ordered values.
+    """
+    engine = get_engine(x.device)
+    return Tensor(engine.unique(x.data), dtype=x.dtype, device=x.device)
