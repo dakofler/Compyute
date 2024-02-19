@@ -1,7 +1,7 @@
 """Activation layer tests"""
 
 import torch.nn.functional as F
-import walnut
+import compyute
 from tests.test_utils import get_vals, validate
 
 
@@ -13,40 +13,40 @@ def test_relu_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
-    module = walnut.nn.layers.ReLU()
+    compyute_x, torch_x = get_vals(SHAPE)
+    module = compyute.nn.layers.ReLU()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.relu(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
 
 
 def test_relu_cuda() -> None:
-    if not walnut.cuda.is_available():
+    if not compyute.cuda.is_available():
         pass
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
-    module = walnut.nn.layers.ReLU()
+    compyute_x, torch_x = get_vals(SHAPE, device="cuda")
+    module = compyute.nn.layers.ReLU()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.relu(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
 
@@ -56,40 +56,40 @@ def test_tanh_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
-    module = walnut.nn.layers.Tanh()
+    compyute_x, torch_x = get_vals(SHAPE)
+    module = compyute.nn.layers.Tanh()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.tanh(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
 
 
 def test_tanh_cuda() -> None:
-    if not walnut.cuda.is_available():
+    if not compyute.cuda.is_available():
         pass
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
-    module = walnut.nn.layers.Tanh()
+    compyute_x, torch_x = get_vals(SHAPE, device="cuda")
+    module = compyute.nn.layers.Tanh()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.tanh(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
 
@@ -99,39 +99,39 @@ def test_sigmoid_cpu() -> None:
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE)
-    module = walnut.nn.layers.Sigmoid()
+    compyute_x, torch_x = get_vals(SHAPE)
+    module = compyute.nn.layers.Sigmoid()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.sigmoid(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
 
 
 def test_sigmoid_cuda() -> None:
-    if not walnut.cuda.is_available():
+    if not compyute.cuda.is_available():
         pass
     results = []
 
     # forward
-    walnut_x, torch_x = get_vals(SHAPE, device="cuda")
-    module = walnut.nn.layers.Sigmoid()
+    compyute_x, torch_x = get_vals(SHAPE, device="cuda")
+    module = compyute.nn.layers.Sigmoid()
     module.training = True
-    walnut_y = module(walnut_x)
+    compyute_y = module(compyute_x)
     torch_y = F.sigmoid(torch_x)
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
-    walnut_dx = module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False, device="cuda")
+    compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
-    results.append(validate(walnut_dx, torch_x.grad))
+    results.append(validate(compyute_dx, torch_x.grad))
 
     assert all(results)
