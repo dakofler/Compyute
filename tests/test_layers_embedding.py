@@ -1,7 +1,7 @@
 """Embedding layer tests"""
 
 import torch
-import walnut
+import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
@@ -14,60 +14,60 @@ def test_embedding_cpu() -> None:
     shape_w = (Cin, Cout)
 
     # forward
-    walnut_x = walnut.randint((B, X), 0, Cin)
-    torch_x = torch.from_numpy(walnut_x.data)
-    walnut_w, torch_w = get_params(shape_w)
+    compyute_x = compyute.randint((B, X), 0, Cin)
+    torch_x = torch.from_numpy(compyute_x.data)
+    compyute_w, torch_w = get_params(shape_w)
 
-    walnut_module = walnut.nn.layers.Embedding(Cin, Cout)
-    walnut_module.training = True
-    walnut_module.w = walnut_w
-    walnut_y = walnut_module(walnut_x)
+    compyute_module = compyute.nn.layers.Embedding(Cin, Cout)
+    compyute_module.training = True
+    compyute_module.w = compyute_w
+    compyute_y = compyute_module(compyute_x)
 
     torch_module = torch.nn.Embedding(Cin, Cout)
     torch_module.weight = torch_w
     torch_y = torch_module(torch_x)
 
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(walnut_y.shape, torch_grad=False)
-    _ = walnut_module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    _ = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
-    results.append(validate(walnut_module.w.grad, torch_module.weight.grad))
+    results.append(validate(compyute_module.w.grad, torch_module.weight.grad))
 
     assert all(results)
 
 
 def test_embedding_cuda() -> None:
-    if not walnut.cuda.is_available():
+    if not compyute.cuda.is_available():
         pass
     results = []
     shape_w = (Cin, Cout)
 
     # forward
-    walnut_x = walnut.randint((B, X), 0, Cin)
-    torch_x = torch.from_numpy(walnut_x.data)
-    walnut_x.to_device("cuda")
-    walnut_w, torch_w = get_params(shape_w, device="cuda")
+    compyute_x = compyute.randint((B, X), 0, Cin)
+    torch_x = torch.from_numpy(compyute_x.data)
+    compyute_x.to_device("cuda")
+    compyute_w, torch_w = get_params(shape_w, device="cuda")
 
-    walnut_module = walnut.nn.layers.Embedding(Cin, Cout)
-    walnut_module.training = True
-    walnut_module.to_device("cuda")
-    walnut_module.w = walnut_w
-    walnut_y = walnut_module(walnut_x)
+    compyute_module = compyute.nn.layers.Embedding(Cin, Cout)
+    compyute_module.training = True
+    compyute_module.to_device("cuda")
+    compyute_module.w = compyute_w
+    compyute_y = compyute_module(compyute_x)
 
     torch_module = torch.nn.Embedding(Cin, Cout)
     torch_module.weight = torch_w
     torch_y = torch_module(torch_x)
 
-    results.append(validate(walnut_y, torch_y))
+    results.append(validate(compyute_y, torch_y))
 
     # backward
-    walnut_dy, torch_dy = get_vals(walnut_y.shape, torch_grad=False, device="cuda")
-    _ = walnut_module.backward(walnut_dy.data)
+    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False, device="cuda")
+    _ = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
-    results.append(validate(walnut_module.w.grad, torch_module.weight.grad))
+    results.append(validate(compyute_module.w.grad, torch_module.weight.grad))
 
     assert all(results)
