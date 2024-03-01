@@ -35,13 +35,14 @@ def log_epoch(
     train_score: float,
     val_loss: float | None,
     val_score: float | None,
+    metric_name: str
 ) -> None:
     """Outputs information each epoch about intermediate model training results."""
     line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | "
-    line += f"train_loss {train_loss:8.4f} | train_score {train_score:6.2f}"
+    line += f"train_loss {train_loss:8.4f} | train_{metric_name} {train_score:6.2f}"
 
     if val_loss is not None:
-        line += f" | val_loss {val_loss:8.4f} | val_score {val_score:6.2f}"
+        line += f" | val_loss {val_loss:8.4f} | val_{metric_name} {val_score:6.2f}"
 
     print(line)
 
@@ -218,6 +219,7 @@ class Model(Module):
                     avg_train_score,
                     avg_val_loss,
                     avg_val_score,
+                    self.metric_fn.__name__
                 )
 
         if not self.remember:

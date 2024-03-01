@@ -9,7 +9,7 @@ from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 
 
-__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d"]
+__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 
 
 class Convolution1d(Module):
@@ -363,6 +363,68 @@ class MaxPooling2d(Module):
 
                 # use p_map as mask for grads
                 return (dy_s * p_map).resize(x.shape).data
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
+
+
+class AvgPooling2d(Module):
+    """AvgPooling layer used to reduce information to avoid overfitting."""
+
+    def __init__(self, kernel_size: tuple[int, int] = (2, 2), dtype: str = "float32") -> None:
+        """AvgPooling layer used to reduce information to avoid overfitting.
+
+        Parameters
+        ----------
+        kernel_size : tuple[int, int], optional
+             Shape of the pooling window used for the pooling operation, by default (2, 2).
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
+        """
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.dtype = dtype
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        kernel_size = self.kernel_size
+        return f"{name}({kernel_size=})"
+
+    def __call__(self, x: Tensor) -> Tensor:
+        p_y, p_x = self.kernel_size
+        x_b, x_c, x_y, x_x = x.shape
+
+        # crop input to be a multiple of the pooling window size
+        y_y = x_y // p_y * p_y
+        y_x = x_x // p_x * p_x
+        x_crop = x[:, :, :y_y, :y_x]
+
+        # initialize with zeros
+        y_shape = (x_b, x_c, y_y // p_y, y_x // p_x)
+        y = tf.zeros(y_shape, dtype=self.dtype, device=x.device)
+
+        # iterate over height and width and pick highest value
+        for i in range(y.shape[-2]):
+            for j in range(y.shape[-1]):
+                c = x.data[:, :, i * p_y : (i + 1) * p_y, j * p_x : (j + 1) * p_x]
+                y[:, :, i, j] = c.mean(axis=(-2, -1))
+
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+
+                # stretch dy tensor to original shape by duplicating values
+                dy_s = stretch2d(
+                    Tensor(dy, dtype=dy.dtype, device=self.device),
+                    self.kernel_size,
+                    x_crop.shape,
+                )
+
+                # use p_map as mask for grads
+                return (dy_s / tf.prod(self.kernel_size)).resize(x.shape).data
 
             self.backward = backward
 
