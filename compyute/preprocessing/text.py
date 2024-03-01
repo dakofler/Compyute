@@ -4,6 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import re
 import regex
+from tqdm.auto import trange
 
 from compyute.tensor import Tensor
 
@@ -49,7 +50,6 @@ class CharacterTokenizer(Tokenizer):
         )
         self._vocab = {t: i for i, t in enumerate(all_tokens)}
         self._ivocab = {i: t for t, i in self._vocab.items()}
-
 
     def encode(self, text: str) -> Tensor:
         """Encodes text.
@@ -145,7 +145,6 @@ class WordTokenizer(Tokenizer):
         return re.sub(r"\n\s", "\n", text)
 
 
-
 class BPETokenizer(Tokenizer):
     """Creates tokens using Byte-Pair-Encoding. Mostly follows the code by Andrjey Karpathy."""
 
@@ -169,7 +168,7 @@ class BPETokenizer(Tokenizer):
 
         if vocab_size <= 256:
             return
-        
+
         num_merges = vocab_size - 256
 
         # split text into chunks according to a regex pattern
@@ -178,14 +177,13 @@ class BPETokenizer(Tokenizer):
         # encode all chunks
         token_ids = [list(chunk.encode("utf-8")) for chunk in text_chunks]
 
-        for i in range(num_merges):
-            print(f"Step {i+1}/{num_merges}", end="\r")
+        for i in trange(num_merges, desc="Merges"):
 
             # get counts for bigrams
             counts = {}
             for chunk_ids in token_ids:
                 self._update_counts(chunk_ids, counts)
-          
+
             # get most occuring bigram
             if len(counts) == 0:
                 print(f"Step {i+1}/{num_merges}. No more possible merges found.")
@@ -199,8 +197,7 @@ class BPETokenizer(Tokenizer):
             self._merges[bigram] = idx
             self._vocab[idx] = self._vocab[bigram[0]] + self._vocab[bigram[1]]
 
-
-    def _update_counts(self, token_ids, counts = None):
+    def _update_counts(self, token_ids, counts=None):
         counts = {} if counts is None else counts
         for bigram in zip(token_ids, token_ids[1:]):
             counts[bigram] = counts.get(bigram, 0) + 1
@@ -212,7 +209,11 @@ class BPETokenizer(Tokenizer):
 
         while i < len(token_ids):
             # if not the last id and the bigram occurs, add new idx
-            if i < len(token_ids) - 1 and token_ids[i] == bigram[0] and token_ids[i+1] == bigram[1]:
+            if (
+                i < len(token_ids) - 1
+                and token_ids[i] == bigram[0]
+                and token_ids[i + 1] == bigram[1]
+            ):
                 new_ids.append(idx)
                 i += 2
             else:
@@ -220,7 +221,6 @@ class BPETokenizer(Tokenizer):
                 i += 1
 
         return new_ids
-
 
     def _encode_chunk(self, text_bytes):
         token_ids = list(text_bytes)
@@ -236,7 +236,6 @@ class BPETokenizer(Tokenizer):
             idx = self._merges[bigram]
             token_ids = self._merge(token_ids, bigram, idx)
         return token_ids
-
 
     def encode(self, text: str) -> Tensor:
         """Encodes a text.
@@ -281,7 +280,6 @@ class BPETokenizer(Tokenizer):
                 part_bytes.append(self._vocab[idx])
             else:
                 raise ValueError(f"invalid token id: {idx}")
-            
+
         text_bytes = b"".join(part_bytes)
         return text_bytes.decode("utf-8", errors="replace")
-  

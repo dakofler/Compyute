@@ -1,8 +1,9 @@
 """Neural network models module"""
 
-import time
+# import time
 from typing import Callable
 import pickle
+from tqdm.auto import tqdm
 
 import compyute.tensor_functions as tf
 from compyute.tensor import Tensor, ArrayLike
@@ -19,32 +20,6 @@ __all__ = ["Model", "Sequential", "save_model", "load_model"]
 
 class ModelCompilationError(Exception):
     """Error if the model has not been compiled yet."""
-
-
-def log_step(step: int, n_steps: int, step_time: float) -> None:
-    """Outputs information each step about intermediate model training results."""
-    eta = (n_steps - step) * step_time / 1000.0
-    line = f"\rStep {step:5d}/{n_steps} | ETA: {eta:6.1f} s"
-    print(line, end="")
-
-
-def log_epoch(
-    n_steps: int,
-    step_time: float,
-    train_loss: float,
-    train_score: float,
-    val_loss: float | None,
-    val_score: float | None,
-    metric_name: str
-) -> None:
-    """Outputs information each epoch about intermediate model training results."""
-    line = f"\rStep {n_steps:5d}/{n_steps} | {step_time:8.2f} ms/step | "
-    line += f"train_loss {train_loss:8.4f} | train_{metric_name} {train_score:6.2f}"
-
-    if val_loss is not None:
-        line += f" | val_loss {val_loss:8.4f} | val_{metric_name} {val_score:6.2f}"
-
-    print(line)
 
 
 class Model(Module):
@@ -146,18 +121,22 @@ class Model(Module):
 
         train_losses, train_scores = [], []
         val_losses, val_scores = [], []
-        step_times = []
 
         for epoch in range(1, epochs + 1):
-            if verbose:
-                print(f"Epoch {epoch}/{epochs}")
-
             # training
             self.training = True
             n_train_steps = len(train_dataloader)
 
-            for step, train_batch in enumerate(train_dataloader(drop_remaining=True)):
-                start = time.time()
+            if verbose:
+                pbar = tqdm(
+                    desc=f"Epoch {epoch}/{epochs}",
+                    unit=" steps",
+                    total=n_train_steps,
+                )
+
+            for train_batch in train_dataloader(drop_remaining=True):
+                if verbose:
+                    pbar.update()
 
                 # prepare data
                 x_train_b, y_train_b = train_batch
@@ -179,14 +158,8 @@ class Model(Module):
                 # update model parameters
                 self.optimizer.step()
 
-                step_time = round((time.time() - start) * 1000.0, 2)
-                step_times.append(step_time)
-                if verbose:
-                    log_step((step + 1), n_train_steps, step_time)
-
             avg_train_loss = sum(train_losses[-n_train_steps:]) / n_train_steps
             avg_train_score = sum(train_scores[-n_train_steps:]) / n_train_steps
-            avg_step_time = sum(step_times[-n_train_steps:]) / n_train_steps
             self.training = False
 
             # update learning rate
@@ -211,16 +184,16 @@ class Model(Module):
                 avg_val_loss = sum(val_losses[-n_val_steps:]) / n_val_steps
                 avg_val_score = sum(val_scores[-n_val_steps:]) / n_val_steps
 
+            # logging
             if verbose:
-                log_epoch(
-                    n_train_steps,
-                    avg_step_time,
-                    avg_train_loss,
-                    avg_train_score,
-                    avg_val_loss,
-                    avg_val_score,
-                    self.metric_fn.__name__
-                )
+                m = self.metric_fn.__name__
+                log = f"train_loss {avg_train_loss:7.4f}, train_{m} {avg_train_score:5.2f}"
+                if avg_val_loss is not None:
+                    log += (
+                        f", val_loss {avg_val_loss:7.4f}, val_{m} {avg_val_score:5.2f}"
+                    )
+                pbar.set_postfix_str(log)
+                pbar.close()
 
         if not self.remember:
             self.reset()
