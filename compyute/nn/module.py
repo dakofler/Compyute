@@ -20,7 +20,7 @@ class Module(ABC):
         self.backward: Callable[[ArrayLike], ArrayLike] | None = None
         self._sub_modules: list[Module] = []
         self._remember: bool = False
-        self.y: Tensor = tf.empty("float16")
+        self.y: Tensor | None = None
         self._training: bool = False
         self._device: str = "cpu"
 
@@ -53,9 +53,12 @@ class Module(ABC):
             Device to move the tensor to. Valid options are "cpu" and "cuda".
         """
         self._device = device
-        self.y.to_device(device)
+        if self.y is not None:
+            self.y.to_device(device)
+
         for p in self.parameters():
             p.to_device(device)
+
         for module in self.sub_modules:
             module.to_device(device)
 
@@ -67,6 +70,7 @@ class Module(ABC):
     @remember.setter
     def remember(self, value: bool) -> None:
         self._remember = value
+        self.y = tf.empty("float16", device=self.device) if value else None
         for module in self.sub_modules:
             module.remember = value
 
@@ -111,7 +115,7 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.remember:
+        if self.remember and self.y is not None:
             self.y.data = y.data.copy()
 
     def set_dy(self, dy: ArrayLike) -> None:
@@ -122,16 +126,17 @@ class Module(ABC):
         dy : ArrayLike
             Module output tensor gradients.
         """
-        if self.remember:
+        if self.remember and self.y is not None:
             self.y.grad = dy.copy()
 
     def parameters(self) -> list[Parameter]:
         """Returns the list of module parameters."""
         parameters = []
 
-        for prop in self.__dict__.items():
-            if isinstance(prop[1], Parameter):
-                parameters.append(prop[1])
+        # get parameter objects
+        for item in self.__dict__.items():
+            if isinstance(item[1], Parameter):
+                parameters.append(item[1])
 
         for module in self.sub_modules:
             parameters += module.parameters()
@@ -140,8 +145,7 @@ class Module(ABC):
 
     def reset(self) -> None:
         """Resets temporary values like outputs and gradients."""
-        self.y = tf.empty("float16", self.device)
-        self.y.grad = None
+        self.y = None
         self.backward = None
 
         for module in self.sub_modules:

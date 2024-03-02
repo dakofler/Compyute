@@ -172,17 +172,17 @@ class Tensor:
         """Returns a copy of the tensor on the cpu."""
         if self.device == "cpu":
             return self
-        tensor = Tensor(cupy_to_numpy(self.data), self.dtype, device="cpu")
-        tensor.grad = cupy_to_numpy(self.grad) if self.grad is not None else None
-        return tensor
+        t = Tensor(cupy_to_numpy(self.data), self.dtype, device="cpu")
+        t.grad = cupy_to_numpy(self.grad) if self.grad is not None else None
+        return t
 
     def cuda(self):
         """Returns a copy of the tensor on the gpu."""
         if self.device == "cuda":
             return self
-        tensor = Tensor(numpy_to_cupy(self.data), self.dtype, device="cuda")
-        tensor.grad = numpy_to_cupy(self.grad) if self.grad is not None else None
-        return tensor
+        t = Tensor(numpy_to_cupy(self.data), self.dtype, device="cuda")
+        t.grad = numpy_to_cupy(self.grad) if self.grad is not None else None
+        return t
 
     # ----------------------------------------------------------------------------------------------
     # OVERLOADS

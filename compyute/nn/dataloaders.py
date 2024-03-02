@@ -43,23 +43,22 @@ class DataLoader:
             Batch of features and labels.
         """
         n = len(self.x)
-        n_steps = len(self)
-        b = min(self.batch_size, n)
-        n_trunc = n_steps * b
-
         if shuffle:
-            indices = tf.random_permutation(n)
-            self.x = self.x[indices]
+            idx = tf.random_permutation(n)
+            self.x = self.x[idx]
             if self.y is not None:
-                self.y = self.y[indices]
+                self.y = self.y[idx]
 
         # yield batches
+        n_steps = len(self)
+        b = min(self.batch_size, n)
         for i in range(n_steps):
             x = self.x[i * b : (i + 1) * b]
             y = self.y[i * b : (i + 1) * b] if self.y is not None else None
             yield (x, y)
 
         # yield remaining samples, if there are any
+        n_trunc = n_steps * b
         if not drop_remaining and n_trunc < n:
             x_remain = self.x[n_trunc:]
             y_remain = self.y[n_trunc:] if self.y is not None else None

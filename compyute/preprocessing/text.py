@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import pickle
 import re
+
 import regex
 from tqdm.auto import trange
-
 from compyute.tensor import Tensor
 
-__all__ = ["CharacterTokenizer", "WordTokenizer", "BPETokenizer"]
+__all__ = [
+    "CharacterTokenizer",
+    "WordTokenizer",
+    "BPETokenizer",
+    "save_tokenizer",
+    "load_tokenizer",
+]
 
 GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
 
@@ -28,7 +35,6 @@ class Tokenizer(ABC):
 
     def fit(self, text: str, vocab_size: int | None = None) -> None:
         """Fits the tokenizer to text."""
-        pass
 
     @abstractmethod
     def encode(self, text: str) -> Tensor:
@@ -283,3 +289,35 @@ class BPETokenizer(Tokenizer):
 
         text_bytes = b"".join(part_bytes)
         return text_bytes.decode("utf-8", errors="replace")
+
+
+def save_tokenizer(tokenizer: Tokenizer, filepath: str) -> None:
+    """Saves a tokenizer to a binary file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file.
+    """
+    file = open(filepath, "wb")
+    pickle.dump(tokenizer, file)
+    file.close()
+
+
+def load_tokenizer(filepath: str) -> Tokenizer:
+    """Load a tokenizer from a previously saved binary file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file.
+
+    Returns
+    -------
+    Tokenizer
+        Loaded tokenizer.
+    """
+    file = open(filepath, "rb")
+    obj = pickle.load(file)
+    file.close()
+    return obj

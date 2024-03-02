@@ -3,15 +3,15 @@
 # import time
 from typing import Callable
 import pickle
-from tqdm.auto import tqdm
 
+from tqdm.auto import tqdm
 import compyute.tensor_functions as tf
 from compyute.tensor import Tensor, ArrayLike
 from compyute.nn.dataloaders import DataLoader
 from compyute.nn.losses import Loss
 from compyute.nn.module import Module
 from compyute.nn.optimizers import Optimizer
-from compyute.nn.lr_schedulers import LrScheduler
+from compyute.nn.lr_schedulers import LRScheduler
 from compyute.nn.containers import SequentialContainer
 
 
@@ -29,7 +29,7 @@ class Model(Module):
         """Neural network model base class."""
         super().__init__()
         self.optimizer: Optimizer | None = None
-        self.lr_scheduler: LrScheduler | None = None
+        self.lr_scheduler: LRScheduler | None = None
         self.loss_fn: Loss | None = None
         self.metric_fn: Callable[[Tensor, Tensor], Tensor] | None = None
         self._compiled = False
@@ -44,7 +44,7 @@ class Model(Module):
         optimizer: Optimizer,
         loss_fn: Loss,
         metric_fn: Callable[[Tensor, Tensor], Tensor],
-        lr_scheduler: LrScheduler | None = None,
+        lr_scheduler: LRScheduler | None = None,
     ) -> None:
         """Compiles the model.
 
@@ -152,8 +152,7 @@ class Model(Module):
 
                 # backward pass
                 self.optimizer.reset_grads()
-                dy = self.loss_fn.backward()
-                self.backward(dy)
+                self.backward(self.loss_fn.backward())
 
                 # update model parameters
                 self.optimizer.step()
@@ -170,6 +169,7 @@ class Model(Module):
             avg_val_loss = avg_val_score = None
             if val_dataloader is not None:
                 n_val_steps = max(1, len(val_dataloader))
+                epoch_val_losses, epoch_val_scores = [], []
 
                 for val_batch in val_dataloader(shuffle=False, drop_remaining=True):
                     x_val_b, y_val_b = val_batch
@@ -179,19 +179,24 @@ class Model(Module):
                     val_loss, val_score = self._get_loss_and_score(
                         self(x_val_b), y_val_b
                     )
-                    val_losses.append(val_loss)
-                    val_scores.append(val_score)
-                avg_val_loss = sum(val_losses[-n_val_steps:]) / n_val_steps
-                avg_val_score = sum(val_scores[-n_val_steps:]) / n_val_steps
+                    epoch_val_losses.append(val_loss)
+                    epoch_val_scores.append(val_score)
+                avg_val_loss = sum(epoch_val_losses) / n_val_steps
+                avg_val_score = sum(epoch_val_scores) / n_val_steps
+                val_losses.append(avg_val_loss)
+                val_scores.append(avg_val_score)
 
             # logging
             if verbose:
                 m = self.metric_fn.__name__
                 log = f"train_loss {avg_train_loss:7.4f}, train_{m} {avg_train_score:5.2f}"
-                if avg_val_loss is not None:
+                if val_dataloader is not None:
                     log += (
                         f", val_loss {avg_val_loss:7.4f}, val_{m} {avg_val_score:5.2f}"
                     )
+                if self.lr_scheduler is not None:
+                    log += f", lr {self.optimizer.lr}"
+
                 pbar.set_postfix_str(log)
                 pbar.close()
 
@@ -296,15 +301,15 @@ class Sequential(Model):
         return y
 
 
-def save_model(model: Model, filename: str) -> None:
+def save_model(model: Model, filepath: str) -> None:
     """Saves a model as a binary file.
 
     Parameters
     ----------
     model : Model
         Model to be saved.
-    filename : str
-        Name of the file.
+    filepath : str
+        Path to the file.
     """
     if not model.compiled:
         raise ModelCompilationError("Model has not been compiled yet.")
@@ -314,25 +319,25 @@ def save_model(model: Model, filename: str) -> None:
     model.loss_fn.backward = None
     model.reset()
 
-    file = open(filename, "wb")
+    file = open(filepath, "wb")
     pickle.dump(model, file)
     file.close()
 
 
-def load_model(filename: str) -> Model:
+def load_model(filepath: str) -> Model:
     """Load a model from a previously saved binary file.
 
     Parameters
     ----------
-    filename : str
-        Name of the saved file.
+    filepath : str
+        Path to the file.
 
     Returns
     -------
     Model
         Loaded model.
     """
-    file = open(filename, "rb")
+    file = open(filepath, "rb")
     obj = pickle.load(file)
     file.close()
     return obj
