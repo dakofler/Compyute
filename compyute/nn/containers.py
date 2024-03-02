@@ -22,9 +22,9 @@ class SequentialContainer(Module):
         super().__init__()
         self.sub_modules = layers
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         for module in self.sub_modules:
-            x = module(x)
+            x = module.forward(x)
 
         if self.training:
 
@@ -60,8 +60,8 @@ class ParallelContainer(Module):
         self.sub_modules = layers
         self.concat_axis = concat_axis
 
-    def __call__(self, x: Tensor) -> Tensor:
-        ys = [m(x) for m in self.sub_modules]
+    def forward(self, x: Tensor) -> Tensor:
+        ys = [m.forward(x) for m in self.sub_modules]
         y = tf.concatenate(ys, axis=self.concat_axis)
 
         if self.training:

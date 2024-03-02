@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from typing import Callable
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from compyute.nn.parameter import Parameter
 from compyute.tensor import Tensor, ArrayLike
@@ -92,8 +92,10 @@ class Module(ABC):
             string += "\n" + module.__repr__()
         return string
 
-    @abstractmethod
     def __call__(self, x: Tensor) -> Tensor:
+        return self.forward(x)
+
+    def forward(self, x: Tensor) -> Tensor:
         """Performs a forward pass through the module.
 
         Parameters
@@ -106,6 +108,14 @@ class Module(ABC):
         Tensor
             Computed module output.
         """
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                return dy
+
+            self.backward = backward
+
+        return x
 
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.

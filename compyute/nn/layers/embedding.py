@@ -56,7 +56,7 @@ class Embedding(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.int()
         x_enc = one_hot_encode(x, self.w.shape[0]).astype(self.dtype)
         y = x_enc @ self.w

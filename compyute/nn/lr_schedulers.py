@@ -30,7 +30,7 @@ class StepLR(LRScheduler):
         Parameters
         ----------
         lr_decay : float, optional
-            Decay factor, by default 0.5.
+            Decay factor, by default 0.1.
         decay_epoch: int, optional
             Epoch, after which the update is applied, by default 10.
         """

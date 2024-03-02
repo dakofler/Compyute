@@ -145,7 +145,7 @@ class Model(Module):
 
                 # forward pass
                 train_loss, train_score = self._get_loss_and_score(
-                    self(x_train_b), y_train_b
+                    self.forward(x_train_b), y_train_b
                 )
                 train_losses.append(train_loss)
                 train_scores.append(train_score)
@@ -177,7 +177,7 @@ class Model(Module):
                     y_val_b.to_device(self.device)
 
                     val_loss, val_score = self._get_loss_and_score(
-                        self(x_val_b), y_val_b
+                        self.forward(x_val_b), y_val_b
                     )
                     epoch_val_losses.append(val_loss)
                     epoch_val_scores.append(val_score)
@@ -260,7 +260,7 @@ class Model(Module):
         for batch in dataloader(shuffle=False):
             x, _ = batch
             x.to_device(self.device)
-            outputs.append(self(x))
+            outputs.append(self.forward(x))
         if not self.remember:
             self.reset()
 
@@ -286,8 +286,8 @@ class Sequential(Model):
         super().__init__()
         self.sub_modules = [SequentialContainer(layers)]
 
-    def __call__(self, x: Tensor) -> Tensor:
-        y = self.sub_modules[0](x)
+    def forward(self, x: Tensor) -> Tensor:
+        y = self.sub_modules[0].forward(x)
 
         if self.training:
 

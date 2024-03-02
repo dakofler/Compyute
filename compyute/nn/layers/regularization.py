@@ -29,7 +29,7 @@ class Dropout(Module):
         p = self.p
         return f"{name}({p=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         if self.training:
             choices = Tensor([0, 1], dtype=x.dtype)
             probs = Tensor([self.p, 1.0 - self.p], dtype=x.dtype)

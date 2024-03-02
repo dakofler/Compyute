@@ -19,7 +19,7 @@ def test_sgd_cpu() -> None:
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(l_r=1e-2)
+    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
@@ -45,7 +45,7 @@ def test_sgd_cuda() -> None:
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(l_r=1e-2)
+    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
@@ -69,7 +69,7 @@ def test_sgd_m_cpu() -> None:
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(l_r=1e-2, m=0.1)
+    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2, m=0.1)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1)
@@ -93,7 +93,7 @@ def test_sgd_m_nesterov_cpu() -> None:
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(l_r=1e-2, m=0.1, nesterov=True)
+    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2, m=0.1, nesterov=True)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, nesterov=True)
@@ -117,7 +117,7 @@ def test_sgd_m_wdecay_cpu() -> None:
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(l_r=1e-2, m=0.1, weight_decay=0.1)
+    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2, m=0.1, weight_decay=0.1)
     compyute_optim.parameters = [compyute_x]
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
 
@@ -142,7 +142,7 @@ def test_adam_cpu() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.Adam(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     compyute_optim.parameters = [compyute_x]
 
@@ -170,7 +170,7 @@ def test_adam_cuda() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.Adam(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     compyute_optim.parameters = [compyute_x]
 
@@ -196,7 +196,7 @@ def test_adam_wdecay_cpu() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.Adam(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
     )
     compyute_optim.parameters = [compyute_x]
 
@@ -224,7 +224,7 @@ def test_adamw_cpu() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.AdamW(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     compyute_optim.parameters = [compyute_x]
 
@@ -252,7 +252,7 @@ def test_adamw_cuda() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.AdamW(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
     )
     compyute_optim.parameters = [compyute_x]
 
@@ -278,7 +278,7 @@ def test_adamw_wdecay_cpu() -> None:
     torch_x.grad = torch_dx
 
     compyute_optim = compyute.nn.optimizers.AdamW(
-        l_r=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
+        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
     )
     compyute_optim.parameters = [compyute_x]
 

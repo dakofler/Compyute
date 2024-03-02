@@ -10,6 +10,8 @@ import compyute.tensor_functions as tf
 
 
 __all__ = [
+    "relu",
+    "leaky_relu",
     "sigmoid",
     "softmax",
     "convolve1d",
@@ -35,6 +37,26 @@ def relu(x: Tensor) -> Tensor:
         Output tensor.
     """
     return tf.maximum(x, 0)
+
+
+def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
+    """Applies the ReLU function.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    alpha : float
+        Slope of the negative output.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    if "int" in x.dtype:
+        x = x.float()
+    return tf.maximum(x, 0) + alpha * tf.minimum(0, x)
 
 
 def sigmoid(x: Tensor) -> Tensor:

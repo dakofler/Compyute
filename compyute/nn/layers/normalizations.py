@@ -54,7 +54,7 @@ class Batchnorm(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {eps=}, {m=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
         axis = (0,) + tuple(tf.arange(x.ndim).data[2:])
@@ -150,7 +150,7 @@ class Layernorm(Module):
         dtype = self.dtype
         return f"{name}({normalized_shape=}, {eps=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
         axis = tuple(tf.arange(x.ndim).data[1:])

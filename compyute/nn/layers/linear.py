@@ -64,7 +64,7 @@ class Linear(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
         y = x @ self.w  # (b, [c], c_out)

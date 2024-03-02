@@ -65,7 +65,7 @@ class RecurrentCell(Module):
         dtype = self.dtype
         return f"{name}({hidden_channels=}, {activation=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
         y = tf.zeros_like(x, device=self.device)
 

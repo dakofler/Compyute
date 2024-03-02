@@ -28,7 +28,7 @@ class Reshape(Module):
         output_shape = self.output_shape
         return f"{name}({output_shape=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.reshape(self.output_shape)
 
         if self.training:
@@ -46,7 +46,7 @@ class Reshape(Module):
 class Flatten(Module):
     """Flatten layer used to reshape tensors to shape (b, -1)."""
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
@@ -84,7 +84,7 @@ class Moveaxis(Module):
         to_axis = self.to_axis
         return f"{name}({from_axis=}, {to_axis=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:

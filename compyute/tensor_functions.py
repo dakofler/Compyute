@@ -479,6 +479,40 @@ def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(r, dtype=r.dtype, device=device)
 
 
+def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
+    """Element-wise minimum of two tensors or values.
+
+    Parameters
+    ----------
+    a : Tensor | float | int
+        First value.
+    b : Tensor | float | int
+        Second value.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise minimum of either tensor.
+    """
+    device = "cpu"
+
+    if isinstance(a, Tensor):
+        _a = a.data
+        device = a.device
+    else:
+        _a = a
+
+    if isinstance(b, Tensor):
+        _b = b.data
+        device = b.device
+    else:
+        _b = b
+
+    engine = get_engine(device)
+    r = engine.minimum(_a, _b)
+    return Tensor(r, dtype=r.dtype, device=device)
+
+
 def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
     """Joins a sequence of tensors along a given axis.
 

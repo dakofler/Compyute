@@ -818,3 +818,9 @@ class Tensor:
         """
         r = get_engine(self.device).clip(self.data, min_value, max_value)
         return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def copy(self) -> Tensor:
+        """Creates a copy of the tensor."""
+        t = Tensor(self.data, dtype=self.dtype, copy=True, device=self.device)
+        t.grad = self.grad if self.grad is None else self.grad.copy()
+        return t

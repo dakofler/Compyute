@@ -88,7 +88,7 @@ class Convolution1d(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
         # rotate weights for cross correlation
@@ -238,7 +238,7 @@ class Convolution2d(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
         # rotate weights for cross correlation
@@ -327,7 +327,7 @@ class MaxPooling2d(Module):
         kernel_size = self.kernel_size
         return f"{name}({kernel_size=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         p_y, p_x = self.kernel_size
         x_b, x_c, x_y, x_x = x.shape
 
@@ -373,7 +373,9 @@ class MaxPooling2d(Module):
 class AvgPooling2d(Module):
     """AvgPooling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: tuple[int, int] = (2, 2), dtype: str = "float32") -> None:
+    def __init__(
+        self, kernel_size: tuple[int, int] = (2, 2), dtype: str = "float32"
+    ) -> None:
         """AvgPooling layer used to reduce information to avoid overfitting.
 
         Parameters
@@ -392,7 +394,7 @@ class AvgPooling2d(Module):
         kernel_size = self.kernel_size
         return f"{name}({kernel_size=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         p_y, p_x = self.kernel_size
         x_b, x_c, x_y, x_x = x.shape
 
