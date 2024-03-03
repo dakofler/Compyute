@@ -35,7 +35,7 @@ def test_sgd_cpu() -> None:
 
 
 def test_sgd_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 
@@ -159,7 +159,7 @@ def test_adam_cpu() -> None:
 
 
 def test_adam_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 
@@ -241,7 +241,7 @@ def test_adamw_cpu() -> None:
 
 
 def test_adamw_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 

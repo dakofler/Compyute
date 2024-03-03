@@ -1,4 +1,4 @@
-"""Neural network layer modules"""
+"""Compyute neural network layers module"""
 
 from compyute.nn.layers.activations import *
 from compyute.nn.layers.convolution import *

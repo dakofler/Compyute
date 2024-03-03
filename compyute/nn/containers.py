@@ -2,85 +2,117 @@
 
 from compyute.tensor import Tensor, ArrayLike
 from compyute.nn.module import Module
-import compyute.tensor_functions as tf
+from compyute.tensor_functions import concatenate, split
 
 
-__all__ = ["SequentialContainer", "ParallelContainer"]
+__all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]
 
 
-class SequentialContainer(Module):
-    """Sequential container module."""
+class Container(Module):
+    """Container base module."""
 
-    def __init__(self, layers: list[Module]) -> None:
-        """Sequential container module.
+    def __init__(self, modules: list[Module]) -> None:
+        """Container base module.
 
         Parameters
         ----------
-        layers : list[Module]
-            List of layers used in the container. These layers are processed sequentially.
+        modules : list[Module]
+            List of modules used in the container.
         """
         super().__init__()
-        self.sub_modules = layers
-
-    def forward(self, x: Tensor) -> Tensor:
-        for module in self.sub_modules:
-            x = module.forward(x)
-
-        if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-
-                for module in reversed(self.sub_modules):
-                    dy = module.backward(dy)
-                return dy
-
-            self.backward = backward
-
-        self.set_y(x)
-        return x
+        self.child_modules = modules
 
 
-class ParallelContainer(Module):
-    """Parallel container module."""
+class Sequential(Container):
+    """Sequential container module. Layers are processed sequentially."""
 
-    def __init__(self, layers: list[Module], concat_axis: int = -1) -> None:
-        """Parallel container module.
+    def __init__(self, layers: list[Module]) -> None:
+        """Sequential container module. Layers are processed sequentially.
 
         Parameters
         ----------
         layers : list[Module]
             List of layers used in the container.
-            These layers are processed in parallel and their outputs are concatenated.
-        concat_axis : int, optional
-            Axis along which the output of the parallel modules
-            shall be concatinated, by default -1.
+            These layers are processed sequentially starting at index 0.
         """
-        super().__init__()
-        self.sub_modules = layers
-        self.concat_axis = concat_axis
+        super().__init__(layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        ys = [m.forward(x) for m in self.sub_modules]
-        y = tf.concatenate(ys, axis=self.concat_axis)
+        for module in self.child_modules:
+            x = module.forward(x)
 
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                out_lens = [y.shape[self.concat_axis] for y in ys]
-                splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
-                chunks = tf.split(
-                    Tensor(dy, device=self.device), splits, axis=self.concat_axis
-                )
-
-                dx = 0.0
-                for i, chunk in enumerate(chunks):
-                    dx += self.sub_modules[i].backward(chunk.data)
-
-                return dx
+                for module in reversed(self.child_modules):
+                    dy = module.backward(dy)
+                return dy
 
             self.backward = backward
 
-        self.set_y(y)
+        return x
+
+
+class ParallelConcat(Container):
+    """Parallel container module. Output tensors are concatinated."""
+
+    def __init__(self, modules: list[Module], concat_axis: int = -1) -> None:
+        """Parallel container module. Module output tensors are concatinated.
+
+        Parameters
+        ----------
+        modules : list[Module]
+            List of modules used in the container.
+            These modules are processed in parallel and their outputs are concatenated.
+        concat_axis : int, optional
+            Axis along which the output of the parallel modules
+            shall be concatinated, by default -1.
+        """
+        super().__init__(modules)
+        self.concat_axis = concat_axis
+
+    def forward(self, x: Tensor) -> Tensor:
+        ys = [m.forward(x) for m in self.child_modules]
+        y = concatenate(ys, axis=self.concat_axis)
+
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                out_lens = [y.shape[self.concat_axis] for y in ys]
+                splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
+                dy_splits = split(
+                    Tensor(dy, device=self.device), splits, axis=self.concat_axis
+                )
+                return sum(
+                    [
+                        self.child_modules[i].backward(s.data)
+                        for i, s in enumerate(dy_splits)
+                    ]
+                )
+
+            self.backward = backward
+
+        return y
+
+
+class ParallelAdd(Container):
+    """Parallel container module. Output tensors are added."""
+
+    def __init__(self, modules: list[Module]) -> None:
+        """Parallel container module. Module output tensors are added.
+
+        Parameters
+        ----------
+        modules : list[Module]
+            List of modules used in the container.
+            These modules are processed in parallel and their outputs are added.
+        """
+        super().__init__(modules)
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = sum([m.forward(x) for m in self.child_modules])
+
+        if self.training:
+            self.backward = lambda dy: sum([m.backward(dy) for m in self.child_modules])
+
         return y

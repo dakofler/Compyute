@@ -36,7 +36,7 @@ def test_batchnorm1d_cpu() -> None:
 
 
 def test_batchnorm1d_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 
@@ -89,7 +89,7 @@ def test_batchnorm2d_cpu() -> None:
 
 
 def test_batchnorm2d_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 
@@ -141,7 +141,7 @@ def test_layernorm_cpu() -> None:
 
 
 def test_layernorm_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 

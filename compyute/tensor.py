@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from compyute.cuda import (
+from compyute.engine import (
     get_engine,
     numpy_to_cupy,
     cupy_to_numpy,
@@ -546,6 +546,61 @@ class Tensor:
         r = get_engine(self.device).log2(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
+    def sin(self) -> Tensor:
+        """Sine of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of sin(x) for each element.
+        """
+        r = get_engine(self.device).sin(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def sinh(self) -> Tensor:
+        """Hyperbolic sine of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of sinh(x) for each element.
+        """
+        r = get_engine(self.device).sinh(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def cos(self) -> Tensor:
+        """Cosine of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of cos(x) for each element.
+        """
+        r = get_engine(self.device).cos(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def cosh(self) -> Tensor:
+        """Hyperbolic cosine of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of cosh(x) for each element.
+        """
+        r = get_engine(self.device).cosh(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def tan(self) -> Tensor:
+        """Tangent of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of tan(x) for each element.
+        """
+        r = get_engine(self.device).tan(self.data)
+        return Tensor(r, dtype=r.dtype, device=self.device)
+
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements.
 
@@ -556,6 +611,16 @@ class Tensor:
         """
         r = get_engine(self.device).tanh(self.data)
         return Tensor(r, dtype=r.dtype, device=self.device)
+
+    def sech(self) -> Tensor:
+        """Hyperbolic secant of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the value of sech(x) for each element.
+        """
+        return self.cosh() ** -1
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements.
@@ -605,20 +670,23 @@ class Tensor:
         r = self.data.reshape(*shape)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
-    def pad(self, widths: tuple[tuple[int, ...]]) -> Tensor:
+    def pad(self, pad_width: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
         ----------
-        widths : tuple[tuple[int, ...]]
-            Padding widths for each dimension of the tensor.
+        pad_width : int | tuple[int, int] | tuple[tuple[int, int]]
+            Padding width.
+            `int`: Same padding for before and after in all dimensions.
+            `tuple[int, int]`: Specific before and after padding in all dimensions.
+            `tuple[tuple[int, int]`: Specific before and after padding for each dimension.
 
         Returns
         -------
         Tensor
             Padded tensor.
         """
-        r = get_engine(self.device).pad(self.data, widths)
+        r = get_engine(self.device).pad(self.data, pad_width)
         return Tensor(r, dtype=r.dtype, device=self.device)
 
     def flatten(self) -> Tensor:

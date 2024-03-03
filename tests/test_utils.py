@@ -9,6 +9,9 @@ from compyute.nn.parameter import Parameter
 from compyute.tensor import Tensor, ShapeLike, ArrayLike
 
 
+compyute.engine.set_seed(42)
+
+
 def get_vals(
     shape: ShapeLike, torch_grad: bool = True, device: str = "cpu"
 ) -> tuple[Tensor, torch.Tensor]:
@@ -41,5 +44,5 @@ def validate(
     if isinstance(x1, Tensor):
         x1 = x1.data
     if isinstance(x1, cp.ndarray):
-        x1 = compyute.cuda.cupy_to_numpy(x1)
+        x1 = compyute.engine.cupy_to_numpy(x1)
     return np.allclose(x1, x2.detach().numpy(), tol, tol)

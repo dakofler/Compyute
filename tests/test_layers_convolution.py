@@ -52,7 +52,7 @@ def test_conv1d_cpu() -> None:
 
 
 def test_conv1d_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
     shape_x = (B, Cin, X)
@@ -141,7 +141,7 @@ def test_conv2d_cpu() -> None:
 
 
 def test_conv2d_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
     shape_x = (B, Cin, Y, X)
@@ -209,7 +209,7 @@ def test_maxpool2d_cpu() -> None:
 
 
 def test_maxpool2d_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
     shape_x = (B, Cout, Y, X)

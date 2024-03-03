@@ -6,7 +6,7 @@ from abc import ABC
 
 from compyute.nn.parameter import Parameter
 from compyute.tensor import Tensor, ArrayLike
-import compyute.tensor_functions as tf
+from compyute.tensor_functions import empty
 
 
 __all__ = ["Module"]
@@ -18,20 +18,20 @@ class Module(ABC):
     def __init__(self) -> None:
         """Module base class."""
         self.backward: Callable[[ArrayLike], ArrayLike] | None = None
-        self._sub_modules: list[Module] = []
-        self._remember: bool = False
+        self._child_modules: list[Module] = []
+        self._retain_values: bool = False
         self.y: Tensor | None = None
         self._training: bool = False
         self._device: str = "cpu"
 
     @property
-    def sub_modules(self) -> list[Module]:
+    def child_modules(self) -> list[Module]:
         """List of sub-modules."""
-        return self._sub_modules
+        return self._child_modules
 
-    @sub_modules.setter
-    def sub_modules(self, value: list[Module]) -> None:
-        self._sub_modules = value
+    @child_modules.setter
+    def child_modules(self, value: list[Module]) -> None:
+        self._child_modules = value
 
     @property
     def device(self) -> str:
@@ -59,20 +59,20 @@ class Module(ABC):
         for p in self.parameters():
             p.to_device(device)
 
-        for module in self.sub_modules:
+        for module in self.child_modules:
             module.to_device(device)
 
     @property
-    def remember(self) -> bool:
+    def retain_values(self) -> bool:
         """Sets the module to keep its outputs and gradients."""
-        return self._remember
+        return self._retain_values
 
-    @remember.setter
-    def remember(self, value: bool) -> None:
-        self._remember = value
-        self.y = tf.empty("float16", device=self.device) if value else None
-        for module in self.sub_modules:
-            module.remember = value
+    @retain_values.setter
+    def retain_values(self, value: bool) -> None:
+        self._retain_values = value
+        self.y = empty("float16", device=self.device) if value else None
+        for module in self.child_modules:
+            module.retain_values = value
 
     @property
     def training(self) -> bool:
@@ -83,12 +83,12 @@ class Module(ABC):
     @training.setter
     def training(self, value: bool) -> None:
         self._training = value
-        for module in self.sub_modules:
+        for module in self.child_modules:
             module.training = value
 
     def __repr__(self) -> str:
         string = f"{self.__class__.__name__}()"
-        for module in self.sub_modules:
+        for module in self.child_modules:
             string += "\n" + module.__repr__()
         return string
 
@@ -109,11 +109,7 @@ class Module(ABC):
             Computed module output.
         """
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
-                return dy
-
-            self.backward = backward
+            self.backward = lambda dy: dy
 
         return x
 
@@ -125,7 +121,7 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.remember and self.y is not None:
+        if self.retain_values and self.y is not None:
             self.y.data = y.data.copy()
 
     def set_dy(self, dy: ArrayLike) -> None:
@@ -136,19 +132,16 @@ class Module(ABC):
         dy : ArrayLike
             Module output tensor gradients.
         """
-        if self.remember and self.y is not None:
+        if self.retain_values and self.y is not None:
             self.y.grad = dy.copy()
 
     def parameters(self) -> list[Parameter]:
         """Returns the list of module parameters."""
-        parameters = []
+        parameters = [
+            i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter)
+        ]
 
-        # get parameter objects
-        for item in self.__dict__.items():
-            if isinstance(item[1], Parameter):
-                parameters.append(item[1])
-
-        for module in self.sub_modules:
+        for module in self.child_modules:
             parameters += module.parameters()
 
         return parameters
@@ -158,5 +151,5 @@ class Module(ABC):
         self.y = None
         self.backward = None
 
-        for module in self.sub_modules:
+        for module in self.child_modules:
             module.reset()

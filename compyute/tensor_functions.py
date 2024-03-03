@@ -1,9 +1,9 @@
 """Tensor utils module"""
 
 import numpy as np
-from compyute.cuda import get_engine
+from compyute.engine import get_engine
 from compyute.tensor import Tensor, ShapeError, ShapeLike, AxisLike
-from compyute.cuda import ScalarLike
+from compyute.engine import ScalarLike
 
 
 __all__ = [

@@ -1,16 +1,14 @@
 """Neural network blocks module"""
 
-from compyute.nn.containers import SequentialContainer
+from compyute.nn.containers import Sequential, ParallelAdd
 from compyute.nn.layers import Linear, RecurrentCell
 from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["Recurrent", "Residual"]
 
 
-class Recurrent(SequentialContainer):
+class Recurrent(Sequential):
     """Recurrent neural network block."""
 
     def __init__(
@@ -46,27 +44,16 @@ class Recurrent(SequentialContainer):
         super().__init__(modules)
 
 
-class Residual(Module):
-    """Residual connection block."""
+class Residual(ParallelAdd):
+    """Block with residual connection."""
 
-    def __init__(self, layers: list[Module]) -> None:
-        """Residual connection block."""
-        super().__init__()
-        self._block = SequentialContainer(layers)
-        self.sub_modules = [self._block]
+    def __init__(self, core_module: Module) -> None:
+        """Block with residual connection bypassing the core module.
 
-    def forward(self, x: Tensor) -> Tensor:
-        y = x + self._block.forward(x)  # residual connection
-
-        if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                dx = self._block.backward(dy) + dy
-
-                return dx
-
-            self.backward = backward
-
-        self.set_y(y)
-        return y
+        Parameters
+        ----------
+        core_module : Module
+            Core module bypassed by the residual connection. For multiple modules use a container as core module.
+            To ensure matching tensor shapes, you might need to use a projection layer.
+        """
+        super().__init__([core_module, Module()])  # emtpy module as residual connection

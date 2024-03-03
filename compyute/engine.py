@@ -1,4 +1,4 @@
-"""Cuda functions module"""
+"""Engine functions module"""
 
 import types
 
@@ -6,7 +6,7 @@ import numpy as np
 import cupy as cp
 
 
-__all__ = ["is_available"]
+__all__ = ["gpu_available", "set_seed"]
 
 ArrayLike = np.ndarray | cp.ndarray
 ScalarLike = (
@@ -26,7 +26,7 @@ ScalarLike = (
 )
 
 
-def is_available() -> bool:
+def gpu_available() -> bool:
     """Checks if one or more GPUs are available.
 
     Returns
@@ -38,7 +38,7 @@ def is_available() -> bool:
 
 
 def get_engine(device: str) -> types.ModuleType:
-    """Selets a python module for tensor computation for a given device.
+    """Selects the computation engine for a given device.
 
     Parameters
     ----------
@@ -51,6 +51,30 @@ def get_engine(device: str) -> types.ModuleType:
         NumPy or CuPy module.
     """
     return np if device == "cpu" else cp
+
+
+def set_seed(seed: int) -> None:
+    """Sets the seed for RNG for reproducability.
+
+    Parameters
+    ----------
+    seed : int
+        Seed value.
+    """
+    if gpu_available():
+        cp.random.seed(seed)
+    np.random.seed(seed)
+
+
+def set_format():
+    """Sets the tensor output to show 4 decimal places."""
+    if gpu_available():
+        cp.set_printoptions(
+            precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
+        )
+    np.set_printoptions(
+        precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
+    )
 
 
 def numpy_to_cupy(np_array: np.ndarray) -> cp.ndarray:

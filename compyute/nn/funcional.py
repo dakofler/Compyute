@@ -12,6 +12,7 @@ import compyute.tensor_functions as tf
 __all__ = [
     "relu",
     "leaky_relu",
+    "gelu",
     "sigmoid",
     "softmax",
     "convolve1d",
@@ -21,10 +22,11 @@ __all__ = [
     "pad1d",
     "pad2d",
 ]
+PI: float = 3.141592653589793
 
 
 def relu(x: Tensor) -> Tensor:
-    """Applies the ReLU function.
+    """Applies the Rectified Linear Unit function.
 
     Parameters
     ----------
@@ -40,7 +42,7 @@ def relu(x: Tensor) -> Tensor:
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
-    """Applies the ReLU function.
+    """Applies the leaky ReLU function.
 
     Parameters
     ----------
@@ -57,6 +59,22 @@ def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
     if "int" in x.dtype:
         x = x.float()
     return tf.maximum(x, 0) + alpha * tf.minimum(0, x)
+
+
+def gelu(x: Tensor) -> Tensor:
+    """Applies the Gaussian Error Linear Unit function.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    return 0.5 * x * (1.0 + ((2.0 / PI) ** 0.5 * (x + 0.044715 * x**3)).tanh())
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -371,17 +389,15 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
     if not isinstance(pad, tuple) and pad not in ("valid", "same", "full"):
         raise NotImplementedError(f"Invalid padding type {pad}.")
 
-    if isinstance(pad, tuple):
-        p = pad
-    else:
+    if not isinstance(pad, tuple):
         match pad:
             case "full":
-                p = (filter_shape[-2] - 1, filter_shape[-1] - 1)
+                pad = (filter_shape[-2] - 1, filter_shape[-1] - 1)
             case "same":
-                p = (filter_shape[-2] // 2, filter_shape[-1] // 2)
+                pad = (filter_shape[-2] // 2, filter_shape[-1] // 2)
             case _:
-                p = (0, 0)
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [(p[0], p[0]), (p[1], p[1])])
+                pad = (0, 0)
+    widths = tuple([(0, 0)] * (x.ndim - 2) + [(pad[0], pad[0]), (pad[1], pad[1])])
     return x.pad(widths)
 
 

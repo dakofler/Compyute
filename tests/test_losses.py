@@ -33,7 +33,7 @@ def test_mse_cpu() -> None:
 
 
 def test_mse_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 
@@ -86,7 +86,7 @@ def test_crossentropy_cpu() -> None:
 
 # Crossentropy
 def test_crossentropy_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
 

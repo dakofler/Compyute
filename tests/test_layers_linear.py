@@ -46,7 +46,7 @@ def test_linear_cpu() -> None:
 
 
 def test_linear_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
     shape_x = (B, Cin)

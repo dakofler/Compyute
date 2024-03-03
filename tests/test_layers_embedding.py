@@ -40,7 +40,7 @@ def test_embedding_cpu() -> None:
 
 
 def test_embedding_cuda() -> None:
-    if not compyute.cuda.is_available():
+    if not compyute.engine.gpu_available():
         pass
     results = []
     shape_w = (Cin, Cout)
