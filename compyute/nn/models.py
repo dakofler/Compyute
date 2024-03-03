@@ -223,7 +223,7 @@ class Model(Module):
                         f", val_loss {avg_val_loss:7.4f}, val_{m} {avg_val_score:5.2f}"
                     )
                 if self.lr_decay is not None:
-                    log += f", lr {self.optimizer.lr}"
+                    log += f", lr {self.optimizer.lr:.6f}"
 
                 pbar.set_postfix_str(log)
                 pbar.close()
