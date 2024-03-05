@@ -15,9 +15,9 @@ class Recurrent(Sequential):
         self,
         in_channels: int,
         h_channels: int,
-        activation: str = "tanh",
         num_layers: int = 1,
         use_bias: bool = True,
+        dtype: str = "float32",
     ) -> None:
         """Recurrent neural network block.
 
@@ -27,21 +27,17 @@ class Recurrent(Sequential):
             Number of input features.
         h_channels: int
             Number of hidden features used in each recurrent cell.
-        activation: Module, optional
-            Activation function to be used in hidden layers, by default "tanh".
         num_layers: int, optional
             Number of recurrent layers in the block, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         """
-        modules = []
+        m = [Linear(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
         for i in range(num_layers):
-            if i == 0:
-                modules.append(Linear(in_channels, h_channels, use_bias=use_bias))
-            else:
-                modules.append(Linear(h_channels, h_channels, use_bias=use_bias))
-            modules.append(RecurrentCell(h_channels, activation, use_bias=use_bias))
-        super().__init__(modules)
+            if i > 0:
+                m.append(Linear(h_channels, h_channels, use_bias=use_bias, dtype=dtype))
+            m.append(RecurrentCell(h_channels, use_bias=use_bias, dtype=dtype))
+        super().__init__(m)
 
 
 class Residual(ParallelAdd):

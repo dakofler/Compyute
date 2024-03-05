@@ -1,10 +1,8 @@
 """Regularization layers module"""
 
-from __future__ import annotations
-
-from compyute.tensor_functions import random_choice
-from compyute.tensor import Tensor, ArrayLike
+from compyute.functional import random_multinomial
 from compyute.nn.module import Module
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["Dropout"]
@@ -31,16 +29,17 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
-            choices = Tensor([0, 1], dtype=x.dtype)
-            probs = Tensor([self.p, 1.0 - self.p], dtype=x.dtype)
-            d_map = random_choice(choices, probs, x.shape, self.device)
-            y = x * d_map / (1.0 - self.p)
+            p_comp = 1 - self.p
+            choices = Tensor([0, 1], dtype=x.dtype, device=self.device)
+            probs = Tensor([self.p, p_comp], dtype=x.dtype, device=self.device)
+            d_map = random_multinomial(choices, probs, x.shape)
+            y = x * d_map / p_comp
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
 
                 # use d_map as mask for grads
-                return dy * d_map.data / (1.0 - self.p)
+                return dy * d_map.data / p_comp
 
             self.backward = backward
 

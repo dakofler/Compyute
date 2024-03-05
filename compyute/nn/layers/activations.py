@@ -1,8 +1,8 @@
 """Activation layers module"""
 
-from compyute.tensor import Tensor, ArrayLike
 from compyute.nn.funcional import sigmoid, relu, leaky_relu
 from compyute.nn.module import Module
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
@@ -55,15 +55,15 @@ class GELU(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         tmp = GELU_S * (x + GELU_C * x**3)
-        y = 0.5 * x * (1.0 + tmp.tanh())
+        y = 0.5 * x * (1 + tmp.tanh())
 
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
                 return (
-                    0.5 * (1.0 + tmp.tanh())
-                    + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1.0 + 3.0 * GELU_C * x**2)
+                    0.5 * (1 + tmp.tanh())
+                    + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
                 ).data * dy
 
             self.backward = backward
@@ -82,7 +82,7 @@ class Tanh(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
-                return (1.0 - y**2).data * dy
+                return (1 - y**2).data * dy
 
             self.backward = backward
 
@@ -100,7 +100,7 @@ class Sigmoid(Module):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
-                return (y * (1.0 - y)).data * dy
+                return (y * (1 - y)).data * dy
 
             self.backward = backward
 

@@ -1,8 +1,8 @@
 """Neural network containers module"""
 
-from compyute.tensor import Tensor, ArrayLike
 from compyute.nn.module import Module
-from compyute.tensor_functions import concatenate, split
+from compyute.functional import concatenate, split
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]

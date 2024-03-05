@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from compyute.tensor import Tensor, ArrayLike, ShapeLike
-import compyute.tensor_functions as tf
+import compyute.functional as tf
 from compyute.nn.funcional import softmax
 from compyute.nn.models import Model
 
@@ -80,7 +80,7 @@ def plot_distrbution(
         print(f"{label:10s} | mean {mean:9.4f} | std {std:9.4f}")
         y_vals, x_vals = np.histogram(values, bins=bins)
         x_vals = np.delete(x_vals, -1)
-        plt.plot(x_vals, y_vals)
+        plt.plot(x_vals, y_vals, linewidth=1)
         legends.append(f"{label:s}")
     plt.grid(color="gray", linestyle="--", linewidth=0.5)
     plt.title(title)
@@ -147,7 +147,7 @@ def plot_confusion_matrix(
     classes = int(y.max().item() + 1)
     preds = x.argmax(-1)
     matrix = tf.zeros((classes, classes))
-    for i in range(preds.len):
+    for i in range(preds.shape[0]):
         matrix[y[i].item(), preds[i].item()] += 1
 
     plt.figure(figsize=figsize)

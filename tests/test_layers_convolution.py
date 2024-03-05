@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-B, Cin, Cout, Y, X, K = (10, 10, 10, 10, 10, 3)
+B, Cin, Cout, Y, X, K = (10, 20, 30, 15, 15, 3)
 
 
 # Conv1d

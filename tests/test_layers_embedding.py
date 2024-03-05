@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-B, Cin, Cout, X = (10, 10, 10, 10)
+B, Cin, Cout, X = (10, 20, 30, 40)
 
 
 # Embedding
@@ -14,7 +14,7 @@ def test_embedding_cpu() -> None:
     shape_w = (Cin, Cout)
 
     # forward
-    compyute_x = compyute.randint((B, X), 0, Cin)
+    compyute_x = compyute.random_int((B, X), 0, Cin)
     torch_x = torch.from_numpy(compyute_x.data)
     compyute_w, torch_w = get_params(shape_w)
 
@@ -46,7 +46,7 @@ def test_embedding_cuda() -> None:
     shape_w = (Cin, Cout)
 
     # forward
-    compyute_x = compyute.randint((B, X), 0, Cin)
+    compyute_x = compyute.random_int((B, X), 0, Cin)
     torch_x = torch.from_numpy(compyute_x.data)
     compyute_x.to_device("cuda")
     compyute_w, torch_w = get_params(shape_w, device="cuda")

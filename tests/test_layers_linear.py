@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-B, Cin, Cout = (10, 10, 10)
+B, Cin, Cout = (10, 20, 30)
 
 
 # Linear

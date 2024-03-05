@@ -2,24 +2,24 @@
 
 import types
 
-import numpy as np
-import cupy as cp
+import numpy
+import cupy
 
 
 __all__ = ["gpu_available", "set_seed"]
 
-ArrayLike = np.ndarray | cp.ndarray
+ArrayLike = numpy.ndarray | cupy.ndarray
 ScalarLike = (
-    np.float16
-    | np.float32
-    | np.float64
-    | np.int32
-    | np.int64
-    | cp.float16
-    | cp.float32
-    | cp.float64
-    | cp.int32
-    | cp.int64
+    numpy.float16
+    | numpy.float32
+    | numpy.float64
+    | numpy.int32
+    | numpy.int64
+    | cupy.float16
+    | cupy.float32
+    | cupy.float64
+    | cupy.int32
+    | cupy.int64
     | list
     | float
     | int
@@ -34,7 +34,7 @@ def gpu_available() -> bool:
     bool
         True if one or more GPUs are available.
     """
-    return cp.is_available()
+    return cupy.is_available()
 
 
 def get_engine(device: str) -> types.ModuleType:
@@ -50,7 +50,7 @@ def get_engine(device: str) -> types.ModuleType:
     types.ModuleType
         NumPy or CuPy module.
     """
-    return np if device == "cpu" else cp
+    return numpy if device == "cpu" else cupy
 
 
 def set_seed(seed: int) -> None:
@@ -62,48 +62,48 @@ def set_seed(seed: int) -> None:
         Seed value.
     """
     if gpu_available():
-        cp.random.seed(seed)
-    np.random.seed(seed)
+        cupy.random.seed(seed)
+    numpy.random.seed(seed)
 
 
 def set_format():
     """Sets the tensor output to show 4 decimal places."""
     if gpu_available():
-        cp.set_printoptions(
+        cupy.set_printoptions(
             precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
         )
-    np.set_printoptions(
+    numpy.set_printoptions(
         precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
     )
 
 
-def numpy_to_cupy(np_array: np.ndarray) -> cp.ndarray:
+def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
     """Converts a NumPy array to a CuPy array.
 
     Parameters
     ----------
-    np_array : np.ndarray
+    np_array : numpy.ndarray
         NumPy array.
 
     Returns
     -------
-    cp.ndarray
+    cupy.ndarray
         CuPy array.
     """
-    return cp.array(np_array)
+    return cupy.array(np_array)
 
 
-def cupy_to_numpy(cp_array: cp.ndarray) -> np.ndarray:
+def cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
     """Converts a CuPy array to a NumPy array.
 
     Parameters
     ----------
-    cp_array : cp.ndarray
+    cp_array : cupy.ndarray
         CuPy array.
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         NumPy array.
     """
-    return cp.asnumpy(cp_array)
+    return cupy.asnumpy(cp_array)

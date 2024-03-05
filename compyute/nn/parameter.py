@@ -1,7 +1,7 @@
 """Neural network parameter module"""
 
-from compyute.tensor import Tensor
 from compyute.engine import numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
+from compyute.tensor import Tensor
 
 
 __all__ = ["Parameter"]

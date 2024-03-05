@@ -16,7 +16,7 @@ def get_vals(
     shape: ShapeLike, torch_grad: bool = True, device: str = "cpu"
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = compyute.randn(shape, dtype="float32")
+    compyute_x = compyute.random_uniform(shape, dtype="float32")
     torch_x = torch.from_numpy(compyute_x.data)
     if torch_grad:
         torch_x.requires_grad = True
@@ -28,7 +28,7 @@ def get_params(
     shape: ShapeLike, T: bool = False, device: str = "cpu"
 ) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
-    compyute_x = Parameter(compyute.randn(shape), dtype="float32")
+    compyute_x = Parameter(compyute.random_uniform(shape), dtype="float32")
     if T:
         torch_x = torch.nn.Parameter(torch.from_numpy(compyute_x.T).float())
     else:

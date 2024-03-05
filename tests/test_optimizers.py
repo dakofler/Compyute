@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-SHAPE = (10, 10)
+SHAPE = (10, 20)
 ITER = 10
 
 

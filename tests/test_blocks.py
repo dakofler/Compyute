@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-B, Cin, Ch, Cout, X = (10, 10, 10, 10, 10)
+B, Cin, Ch, Cout, X = (10, 20, 30, 40, 50)
 
 
 # Recurrent
@@ -153,7 +153,7 @@ def test_residual_cpu() -> None:
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cin, Cout)
-    w2_shape = (Cout, Cout)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals(x_shape)
@@ -168,7 +168,7 @@ def test_residual_cpu() -> None:
                 ),
                 compyute.nn.layers.ReLU(),
                 compyute.nn.layers.Linear(
-                    Cout, Cout, weights=compyute_w2, use_bias=False
+                    Cout, Cin, weights=compyute_w2, use_bias=False
                 ),
             ]
         )
@@ -178,7 +178,7 @@ def test_residual_cpu() -> None:
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
     lin1.weight = torch_w1
-    lin2 = torch.nn.Linear(Cout, Cout, bias=False)
+    lin2 = torch.nn.Linear(Cout, Cin, bias=False)
     lin2.weight = torch_w2
     torch_y = torch_x + lin2(torch.nn.functional.relu(lin1(torch_x)))
 
@@ -199,7 +199,7 @@ def test_residual_cuda() -> None:
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cin, Cout)
-    w2_shape = (Cout, Cout)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals(x_shape, device="cuda")
@@ -214,7 +214,7 @@ def test_residual_cuda() -> None:
                 ),
                 compyute.nn.layers.ReLU(),
                 compyute.nn.layers.Linear(
-                    Cout, Cout, weights=compyute_w2, use_bias=False
+                    Cout, Cin, weights=compyute_w2, use_bias=False
                 ),
             ]
         )
@@ -225,7 +225,7 @@ def test_residual_cuda() -> None:
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
     lin1.weight = torch_w1
-    lin2 = torch.nn.Linear(Cout, Cout, bias=False)
+    lin2 = torch.nn.Linear(Cout, Cin, bias=False)
     lin2.weight = torch_w2
     torch_y = torch_x + lin2(torch.nn.functional.relu(lin1(torch_x)))
 

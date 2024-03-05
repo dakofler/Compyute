@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, validate
 
 
-SHAPE = (10, 10, 10)
+SHAPE = (10, 20, 30)
 
 
 # ReLU
@@ -72,7 +72,7 @@ def test_leaky_relu_cpu() -> None:
     assert all(results)
 
 
-def test_relu_cuda() -> None:
+def test_leaky_relu_cuda() -> None:
     if not compyute.engine.gpu_available():
         pass
     results = []

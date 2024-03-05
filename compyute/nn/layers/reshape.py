@@ -1,9 +1,7 @@
 """Tensor reshaping layers module"""
 
-from __future__ import annotations
-
-from compyute.tensor import Tensor, ArrayLike, ShapeLike
 from compyute.nn.module import Module
+from compyute.tensor import Tensor, ShapeLike
 
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]
@@ -32,14 +30,8 @@ class Reshape(Module):
         y = x.reshape(self.output_shape)
 
         if self.training:
+            self.backward = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
@@ -50,14 +42,8 @@ class Flatten(Module):
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
+            self.backward = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
@@ -88,17 +74,10 @@ class Moveaxis(Module):
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
+            self.backward = (
+                lambda dy: Tensor(dy, dtype=dy.dtype, device=self.device)
+                .moveaxis(self.to_axis, self.from_axis)
+                .data
+            )
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-
-                return (
-                    Tensor(dy, dtype=dy.dtype, device=self.device)
-                    .moveaxis(self.to_axis, self.from_axis)
-                    .data
-                )
-
-            self.backward = backward
-
-        self.set_y(y)
         return y

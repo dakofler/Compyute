@@ -25,13 +25,13 @@ class Tokenizer(ABC):
 
     def __init__(self) -> None:
         self.oov_token: str = ""
-        self._vocab: dict[str, int] = {}
-        self._ivocab: dict[int, str] = {}
+        self.vocab: dict[str, int] = {}
+        self.ivocab: dict[int, str] = {}
 
     @property
     def vocab_size(self) -> int:
         """Number of tokens."""
-        return len(self._vocab)
+        return len(self.vocab)
 
     def fit(self, text: str, vocab_size: int | None = None) -> None:
         """Fits the tokenizer to text."""
@@ -54,8 +54,8 @@ class CharacterTokenizer(Tokenizer):
         all_tokens = [oov_token, "\n"] + list(
             "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ "
         )
-        self._vocab = {t: i for i, t in enumerate(all_tokens)}
-        self._ivocab = {i: t for t, i in self._vocab.items()}
+        self.vocab = {t: i for i, t in enumerate(all_tokens)}
+        self.ivocab = {i: t for t, i in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
         """Encodes text.
@@ -71,7 +71,7 @@ class CharacterTokenizer(Tokenizer):
             Tensor of token ids.
         """
         preprocessed = list(text)
-        ids = [self._vocab[s] if s in self._vocab else 0 for s in preprocessed]
+        ids = [self.vocab[s] if s in self.vocab else 0 for s in preprocessed]
         return Tensor(ids, dtype="int")
 
     def decode(self, token_ids: Tensor) -> str:
@@ -87,7 +87,7 @@ class CharacterTokenizer(Tokenizer):
         str
             Text.
         """
-        return "".join([self._ivocab[i] for i in token_ids])
+        return "".join([self.ivocab[i] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
@@ -112,8 +112,8 @@ class WordTokenizer(Tokenizer):
         tokens = [self.oov_token, "\n"] + sorted(list(set(split)))
         if vocab_size is not None:
             tokens = tokens[: vocab_size - 1]
-        self._vocab = {t: i for i, t in enumerate(tokens)}
-        self._ivocab = {i: t for t, i in self._vocab.items()}
+        self.vocab = {t: i for i, t in enumerate(tokens)}
+        self.ivocab = {i: t for t, i in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
         """Encodes a text.
@@ -130,7 +130,7 @@ class WordTokenizer(Tokenizer):
         """
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
-        ids = [self._vocab[s] if s in self._vocab else 0 for s in split]
+        ids = [self.vocab[s] if s in self.vocab else 0 for s in split]
         return Tensor(ids, dtype="int")
 
     def decode(self, token_ids: Tensor) -> str:
@@ -146,7 +146,7 @@ class WordTokenizer(Tokenizer):
         str
             Concatenated tokens.
         """
-        text = " ".join([self._ivocab[i] for i in token_ids])
+        text = " ".join([self.ivocab[i] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)
 
@@ -156,9 +156,9 @@ class BPETokenizer(Tokenizer):
 
     def __init__(self) -> None:
         super().__init__()
-        self._vocab = {}
-        self._merges = {}
-        self._pattern = regex.compile(GPT4_SPLIT_PATTERN)
+        self.vocab: dict[int, bytes] = {}
+        self.__merges = {}
+        self.__pattern = regex.compile(GPT4_SPLIT_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
         """Fits the tokenizer to text.
@@ -170,7 +170,7 @@ class BPETokenizer(Tokenizer):
         vocab_size : int | None, optional
             Number of tokens to be generated, by default 256.
         """
-        self._vocab = {idx: bytes([idx]) for idx in range(256)}
+        self.vocab = {idx: bytes([idx]) for idx in range(256)}
 
         if vocab_size <= 256:
             return
@@ -178,7 +178,7 @@ class BPETokenizer(Tokenizer):
         num_merges = vocab_size - 256
 
         # split text into chunks according to a regex pattern
-        text_chunks = regex.findall(self._pattern, text)
+        text_chunks = regex.findall(self.__pattern, text)
 
         # encode all chunks
         token_ids = [list(chunk.encode("utf-8")) for chunk in text_chunks]
@@ -188,7 +188,7 @@ class BPETokenizer(Tokenizer):
             # get counts for bigrams
             counts = {}
             for chunk_ids in token_ids:
-                self._update_counts(chunk_ids, counts)
+                self.__update_counts(chunk_ids, counts)
 
             # get most occuring bigram
             if len(counts) == 0:
@@ -198,18 +198,20 @@ class BPETokenizer(Tokenizer):
 
             # replace occurences of bigram with merge id
             idx = 256 + i
-            token_ids = [self._merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
+            token_ids = [
+                self.__merge(chunk_ids, bigram, idx) for chunk_ids in token_ids
+            ]
 
-            self._merges[bigram] = idx
-            self._vocab[idx] = self._vocab[bigram[0]] + self._vocab[bigram[1]]
+            self.__merges[bigram] = idx
+            self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
-    def _update_counts(self, token_ids, counts=None):
+    def __update_counts(self, token_ids, counts=None):
         counts = {} if counts is None else counts
         for bigram in zip(token_ids, token_ids[1:]):
             counts[bigram] = counts.get(bigram, 0) + 1
         return counts
 
-    def _merge(self, token_ids, bigram, idx):
+    def __merge(self, token_ids, bigram, idx):
         new_ids = []
         i = 0
 
@@ -232,15 +234,15 @@ class BPETokenizer(Tokenizer):
         token_ids = list(text_bytes)
 
         while len(token_ids) >= 2:
-            counts = self._update_counts(token_ids)
+            counts = self.__update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))
-            if bigram not in self._merges:
+            bigram = min(counts, key=lambda p: self.__merges.get(p, float("inf")))
+            if bigram not in self.__merges:
                 break
 
-            idx = self._merges[bigram]
-            token_ids = self._merge(token_ids, bigram, idx)
+            idx = self.__merges[bigram]
+            token_ids = self.__merge(token_ids, bigram, idx)
         return token_ids
 
     def encode(self, text: str) -> Tensor:
@@ -256,7 +258,7 @@ class BPETokenizer(Tokenizer):
         Tensor
             Tensor of token ids.
         """
-        text_chunks = regex.findall(self._pattern, text)
+        text_chunks = regex.findall(self.__pattern, text)
         token_ids = []
 
         for chunk in text_chunks:
@@ -282,8 +284,8 @@ class BPETokenizer(Tokenizer):
         part_bytes = []
 
         for idx in token_ids:
-            if idx in self._vocab:
-                part_bytes.append(self._vocab[idx])
+            if idx in self.vocab:
+                part_bytes.append(self.vocab[idx])
             else:
                 raise ValueError(f"invalid token id: {idx}")
 

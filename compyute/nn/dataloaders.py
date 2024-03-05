@@ -1,7 +1,7 @@
 """Neural network models module"""
 
+from compyute.functional import random_permutation
 from compyute.tensor import Tensor
-import compyute.tensor_functions as tf
 
 
 __all__ = ["DataLoader"]
@@ -42,9 +42,9 @@ class DataLoader:
         tuple[Tensor, Tensor]
             Batch of features and labels.
         """
-        n = len(self.x)
+        n = self.x.shape[0]
         if shuffle:
-            idx = tf.random_permutation(n)
+            idx = random_permutation(n)
             self.x = self.x[idx]
             if self.y is not None:
                 self.y = self.y[idx]
@@ -65,4 +65,4 @@ class DataLoader:
             yield (x_remain, y_remain)
 
     def __len__(self) -> int:
-        return max(1, len(self.x) // self.batch_size)
+        return max(1, self.x.shape[0] // self.batch_size)

@@ -1,18 +1,17 @@
 """Neural network models module"""
 
-# import time
 from typing import Callable
 import pickle
 
 from tqdm.auto import tqdm
-from compyute.tensor_functions import concatenate
-from compyute.tensor import Tensor
+from compyute.functional import concatenate
 from compyute.nn.containers import Sequential
 from compyute.nn.dataloaders import DataLoader
 from compyute.nn.losses import Loss
 from compyute.nn.module import Module
-from compyute.nn.optimizers.optimizers import Optimizer
 from compyute.nn.optimizers.lr_decay import LRDecay
+from compyute.nn.optimizers.optimizers import Optimizer
+from compyute.tensor import Tensor
 
 
 __all__ = ["Model", "SequentialModel", "save_model", "load_model"]
@@ -196,7 +195,7 @@ class Model(Module):
             # validation
             avg_val_loss = avg_val_score = None
             if val_dataloader is not None:
-                n_val_steps = max(1, len(val_dataloader))
+                n_val_steps = len(val_dataloader)
                 epoch_val_losses, epoch_val_scores = [], []
 
                 for val_batch in val_dataloader(shuffle=False, drop_remaining=True):

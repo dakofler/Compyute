@@ -1,12 +1,12 @@
 """Functional module"""
 
-import numpy as np
-import numpy.fft as npfft
 import cupy as cp
 import cupy.fft as cpfft
+import numpy as np
+import numpy.fft as npfft
 
+from compyute.functional import maximum, minimum, zeros
 from compyute.tensor import Tensor, ShapeError, ShapeLike
-import compyute.tensor_functions as tf
 
 
 __all__ = [
@@ -38,7 +38,7 @@ def relu(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return tf.maximum(x, 0)
+    return maximum(x, 0)
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
@@ -58,7 +58,7 @@ def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
     """
     if "int" in x.dtype:
         x = x.float()
-    return tf.maximum(x, 0) + alpha * tf.minimum(0, x)
+    return maximum(x, 0) + alpha * minimum(0, x)
 
 
 def gelu(x: Tensor) -> Tensor:
@@ -74,7 +74,7 @@ def gelu(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return 0.5 * x * (1.0 + ((2.0 / PI) ** 0.5 * (x + 0.044715 * x**3)).tanh())
+    return 0.5 * x * (1 + ((2 / PI) ** 0.5 * (x + 0.044715 * x**3)).tanh())
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -90,11 +90,11 @@ def sigmoid(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return (1.0 + (-x.clip(-100, 100)).exp()) ** -1
+    return (1 + (-x.clip(-100, 100)).exp()) ** -1
 
 
 def softmax(x: Tensor) -> Tensor:
-    """Applies the softmax function over the last axis.
+    """Applies the softmax function to the last axis.
 
     Parameters
     ----------
@@ -106,8 +106,8 @@ def softmax(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    expo = (x - x.max(axis=-1, keepdims=True)).exp()
-    return expo / expo.sum(axis=-1, keepdims=True)
+    x = (x - x.max(axis=-1, keepdims=True)).exp()
+    return x / x.sum(axis=-1, keepdims=True)
 
 
 def convolve1d(
@@ -117,7 +117,7 @@ def convolve1d(
     dil: int = 1,
     pad: str | int | tuple[int, int] = "causal",
 ) -> Tensor:
-    """Convolves two tensors along their trailing dim.
+    """Convolves two tensors over their last dimension (axis=-1).
 
     Parameters
     ----------
@@ -188,7 +188,7 @@ def convolve2d(
     dil: int | tuple[int, int] = 1,
     pad: str | tuple[int, int] = "valid",
 ) -> Tensor:
-    """Convolves two tensors along their last two axis.
+    """Convolves two tensors over their 2 trailing dimensions  (ax2s=(-2, -1)).
 
     Parameters
     ----------
@@ -254,14 +254,14 @@ def convolve2d(
 
 
 def dilate1d(f: Tensor, dil: int) -> Tensor:
-    """Dilates a tensor along axis -1.
+    """Dilates the last dimension of a tensor (axis=-1).
 
     Parameters
     ----------
     x : Tensor
         Tensor to be dilated.
     dil : int
-        Dilations used.
+        Dilation used.
 
     Returns
     -------
@@ -275,7 +275,7 @@ def dilate1d(f: Tensor, dil: int) -> Tensor:
     tpl = tuple(
         ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
     )
-    f_dil = tf.zeros(tpl, f.dtype, f.device)
+    f_dil = zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 1] = slice(None, None, dil)
     f_dil[*slc_dil] = f
@@ -283,14 +283,14 @@ def dilate1d(f: Tensor, dil: int) -> Tensor:
 
 
 def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
-    """Dilates a tensor along axis -2, -1.
+    """Dilates 2 trailing dimensions of a tensor (axes=(-2, -1)).
 
     Parameters
     ----------
     x : Tensor
         Tensor to be dilated.
     dil : int | tuple [int, int]
-        Dilations used for each axis of the tensor.
+        Dilation used for each axis of the tensor.
 
     Returns
     -------
@@ -306,7 +306,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
         ((f.shape[d] - 1) * dil[-dim + d] + 1) if d >= dim - 2 else f.shape[d]
         for d in range(dim)
     )
-    f_dil = tf.zeros(tpl, f.dtype, f.device)
+    f_dil = zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
     slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
     f_dil[*slc_dil] = f
@@ -316,7 +316,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
 def pad1d(
     x: Tensor, filter_shape: ShapeLike, pad: str | int | tuple[int, int]
 ) -> Tensor:
-    """Pads axis -1 of a tensor.
+    """Pads the last dimension of a tensor (axis=-1).
 
     Parameters
     ----------
@@ -364,7 +364,7 @@ def pad1d(
 
 
 def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Tensor:
-    """Pads axis -2, -1 of a tensor.
+    """Pads 2 trailing dimensions of a tensor (axes=(-2, -1)).
 
     Parameters
     ----------
@@ -405,9 +405,9 @@ def stretch2d(
     x: Tensor,
     stretches: tuple[int, int],
     shape: ShapeLike,
-    axis: tuple[int, int] = (-2, -1),
+    axes: tuple[int, int] = (-2, -1),
 ) -> Tensor:
-    """Stretches a tensor by repeating it's elements over given axis.
+    """Stretches a tensor by repeating it's elements over given axes.
 
     Parameters
     ----------
@@ -418,15 +418,15 @@ def stretch2d(
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after stretching,
         remaining values are filled with zeroes.
-    axis : tuple[int, int], optional
-        Axis along which to stretch the tensor, by default (-2, -1).
+    axes : tuple[int, int], optional
+        Axes along which to stretch the tensor, by default (-2, -1).
 
     Returns
     -------
     Tensor
         Stretched out tensor.
     """
-    fa1, fa2 = stretches
-    ax1, ax2 = axis
-    x_stretched = x.repeat(fa1, ax1).repeat(fa2, ax2)
-    return x_stretched.resize(shape)
+    st1, st2 = stretches
+    ax1, ax2 = axes
+    x_str = x.repeat(st1, ax1).repeat(st2, ax2)
+    return x_str if x_str.shape == shape else x_str.pad_to_shape(shape)

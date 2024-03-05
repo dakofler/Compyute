@@ -5,7 +5,7 @@ import compyute
 from tests.test_utils import get_vals, validate
 
 
-SHAPE = (10, 10, 10)
+SHAPE = (10, 20, 30)
 
 
 # MSE
@@ -63,7 +63,7 @@ def test_crossentropy_cpu() -> None:
 
     # forward
     compyute_x, _ = get_vals(SHAPE)
-    compyute_t = compyute.randint(SHAPE[:-1], 0, compyute_x.shape[-1])
+    compyute_t = compyute.random_int(SHAPE[:-1], 0, compyute_x.shape[-1])
     torch_x = torch.from_numpy(compyute_x.moveaxis(-1, -2).data)
     torch_x.requires_grad = True
     torch_t = torch.from_numpy(compyute_t.data).long()
@@ -92,7 +92,7 @@ def test_crossentropy_cuda() -> None:
 
     # forward
     compyute_x, _ = get_vals(SHAPE)
-    compyute_t = compyute.randint(SHAPE[:-1], 0, compyute_x.shape[-1])
+    compyute_t = compyute.random_int(SHAPE[:-1], 0, compyute_x.shape[-1])
     torch_x = torch.from_numpy(compyute_x.moveaxis(-1, -2).data)
     torch_x.requires_grad = True
     torch_t = torch.from_numpy(compyute_t.data).long()

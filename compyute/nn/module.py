@@ -5,8 +5,8 @@ from typing import Callable
 from abc import ABC
 
 from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike
-from compyute.tensor_functions import empty
+from compyute.tensor import Tensor, ArrayLike, ShapeError
+from compyute.functional import empty
 
 
 __all__ = ["Module"]
@@ -153,3 +153,25 @@ class Module(ABC):
 
         for module in self.child_modules:
             module.reset()
+
+    def check_dims(self, x: Tensor, valid_dims: list[int]) -> None:
+        """Checks if a tensors dimensions match desired target dimensions.
+
+        Parameters
+        ----------
+        x : Tensor
+            Tensor whose dimensions are checked.
+        valid_dims : int
+            Valid numbers of dimension the tensor should have.
+
+        Raises
+        ------
+        ShapeError
+            If the tensor's dimensions do not match the target dimensions.
+        """
+        if x.ndim not in valid_dims:
+            sender = self.__class__.__name__
+            vdims = ", ".join([str(d) for d in valid_dims])
+            raise ShapeError(
+                f"{sender}: Number of input dimensions {x.ndim} is not valid (valid: {vdims})"
+            )

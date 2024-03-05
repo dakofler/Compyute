@@ -1,10 +1,9 @@
 """recurrent layers layer"""
 
-import compyute.tensor_functions as tf
-from compyute.tensor import Tensor, ArrayLike
-from compyute.nn.funcional import relu
+from compyute.functional import random_uniform, zeros, zeros_like
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["RecurrentCell"]
@@ -16,7 +15,6 @@ class RecurrentCell(Module):
     def __init__(
         self,
         hidden_channels: int,
-        activation: str = "tanh",
         weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
@@ -27,8 +25,6 @@ class RecurrentCell(Module):
         ----------
         hidden_channels : int
             Number of hidden channels of the layer.
-        activation : str, optional
-            Activation function used in the recurrent layer, by default "tanh".
         weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
@@ -38,36 +34,32 @@ class RecurrentCell(Module):
         """
         super().__init__()
         self.hidden_channels = hidden_channels
-        self.activation = activation
         self.use_bias = use_bias
         self.dtype = dtype
 
         # init weights (c_hidden, c_hidden)
         if weights is None:
             k = hidden_channels**-0.5
-            self.w = Parameter(
-                tf.randu((hidden_channels, hidden_channels), -k, k),
-                dtype=dtype,
-                label="w",
-            )
+            w = random_uniform((hidden_channels, hidden_channels), -k, k)
+            self.w = Parameter(w, dtype=dtype, label="w")
         else:
             self.w = weights
 
         # init bias (c_out,)
         if use_bias:
-            self.b = Parameter(tf.zeros((hidden_channels,)), dtype=dtype, label="w")
+            self.b = Parameter(zeros((hidden_channels,)), dtype=dtype, label="b")
 
     def __repr__(self):
         name = self.__class__.__name__
         hidden_channels = self.hidden_channels
-        activation = self.activation
         use_bias = self.use_bias
         dtype = self.dtype
-        return f"{name}({hidden_channels=}, {activation=}, {use_bias=}, {dtype=})"
+        return f"{name}({hidden_channels=}, {use_bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [3])
         x = x.astype(self.dtype)
-        y = tf.zeros_like(x, device=self.device)
+        y = zeros_like(x, device=self.device)
 
         # iterate over sequence elements
         for i in range(x.shape[1]):
@@ -77,18 +69,16 @@ class RecurrentCell(Module):
                 h += self.b
 
             # activation
-            if self.activation == "tanh":
-                y[:, i] = (x[:, i] + h).tanh()
-            else:
-                y[:, i] = relu(x[:, i] + h)
+            y[:, i] = (x[:, i] + h).tanh()
 
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
-                dx = tf.zeros_like(x, device=self.device).data
-                self.w.grad = tf.zeros_like(self.w, device=self.w.device).data
+
+                dx = zeros_like(x, device=self.device).data
+                self.w.grad = zeros_like(self.w, device=self.w.device).data
 
                 for i in range(x.shape[1] - 1, -1, -1):
                     # add hidden state gradient of next layer, if not last sequence element
@@ -98,10 +88,7 @@ class RecurrentCell(Module):
                         out_grad = dy[:, i] + dx[:, i + 1] @ self.w.T
 
                     # activation gradient
-                    if self.activation == "tanh":
-                        act_grad = -y.data[:, i] ** 2 + 1.0
-                    else:
-                        act_grad = y.data[:, i] > 0
+                    act_grad = 1 - y.data[:, i] ** 2
                     dx[:, i] = act_grad * out_grad
 
                     # weight grads
