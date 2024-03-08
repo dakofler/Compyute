@@ -1,5 +1,6 @@
 """Engine functions module"""
 
+import os
 import types
 
 import numpy
@@ -34,7 +35,26 @@ def gpu_available() -> bool:
     bool
         True if one or more GPUs are available.
     """
+    if "CUDA_PATH" not in os.environ:
+        return False
     return cupy.is_available()
+
+
+# create list of avialable devices
+devices = ["cpu"]
+if gpu_available():
+    devices.append("cuda")
+
+# set array output format
+formatter = {"float": "{:9.4f}".format}
+if gpu_available():
+    cupy.set_printoptions(
+        precision=4, formatter=formatter, linewidth=100
+    )
+else:
+    numpy.set_printoptions(
+        precision=4, formatter=formatter, linewidth=100
+    )
 
 
 def get_engine(device: str) -> types.ModuleType:
@@ -50,7 +70,7 @@ def get_engine(device: str) -> types.ModuleType:
     types.ModuleType
         NumPy or CuPy module.
     """
-    return numpy if device == "cpu" else cupy
+    return numpy if device == "cpu" or device not in devices else cupy
 
 
 def set_seed(seed: int) -> None:
@@ -64,17 +84,6 @@ def set_seed(seed: int) -> None:
     if gpu_available():
         cupy.random.seed(seed)
     numpy.random.seed(seed)
-
-
-def set_format():
-    """Sets the tensor output to show 4 decimal places."""
-    if gpu_available():
-        cupy.set_printoptions(
-            precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
-        )
-    numpy.set_printoptions(
-        precision=4, formatter={"float": "{:9.4f}".format}, linewidth=100
-    )
 
 
 def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:

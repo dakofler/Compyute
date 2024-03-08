@@ -7,5 +7,3 @@ from compyute.tensor import Tensor, tensor
 from compyute.functional import *
 
 pi: float = 3.141592653589793
-
-engine.set_format()
