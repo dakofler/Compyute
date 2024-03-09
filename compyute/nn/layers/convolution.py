@@ -1,15 +1,19 @@
 """Convolutional layers module"""
 
-from __future__ import annotations
-
-import compyute.tensor_functions as tf
-from compyute.tensor import Tensor, ArrayLike
+from compyute.functional import (
+    insert_dim,
+    match_dims,
+    prod,
+    random_uniform,
+    zeros,
+)
 from compyute.nn.funcional import convolve1d, convolve2d, stretch2d
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
+from compyute.tensor import Tensor, ArrayLike
 
 
-__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d"]
+__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 
 
 class Convolution1d(Module):
@@ -27,14 +31,18 @@ class Convolution1d(Module):
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
-        """Convolutional layer used for spacial information and feature extraction.
+        """Convolutional layer used for temporal information and feature extraction.
+        Input: (B, Ci, Ti)
+            B ... batch, Ci ... input channels, Ti ... input time
+        Output: (B, Co, To)
+            B ... batch, Co ... output channels, To ... output time
 
         Parameters
         ----------
         in_channels : int
-            Number of input channels of the layer.
+            Number of input channels.
         out_channels : int
-            Number of output channels of the layer.
+            Number of output channels.
         kernel_size : int
             Shape of each kernel.
         pad: str, optional
@@ -61,20 +69,20 @@ class Convolution1d(Module):
         self.use_bias = use_bias
         self.dtype = dtype
 
-        # init weights (c_out, c_in, x)
+        # init weights
+        # (Co, Ci, K)
         if weights is None:
             k = int(in_channels * kernel_size) ** -0.5
-            self.w = Parameter(
-                tf.randu((out_channels, in_channels, kernel_size), -k, k),
-                dtype=dtype,
-                label="w",
-            )
+            w = random_uniform((out_channels, in_channels, kernel_size), -k, k)
+            self.w = Parameter(w, dtype=dtype, label="w")
         else:
             self.w = weights
 
-        # init bias (c_out,)
+        # init biases
+        # (Co,)
         if use_bias:
-            self.b = Parameter(tf.zeros((out_channels,)), dtype=dtype, label="b")
+            b = zeros((out_channels,))
+            self.b = Parameter(b, dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -88,23 +96,28 @@ class Convolution1d(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [3])
         x = x.astype(self.dtype)
 
-        # rotate weights for cross correlation
-        w_rot = self.w.flip(-1)
+        # flip weights for cross correlation
+        w_flip = self.w.flip(-1)
 
-        # convolve (b, 1, c_in, x) * (1, c_out, c_in, x)
-        x_ext = tf.expand_dims(x, 1)
-        w_rot_ext = tf.expand_dims(w_rot, 0)
-        x_conv_w = convolve1d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
+        x = insert_dim(x, axis=1)  # (B, 1, Ci, Ti)
+        w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, K)
+
+        # convolve
+        # (B, 1, Ci, Ti) * (1, Co, Ci, K) -> (B, Co, Ci, To)
+        x_conv_w = convolve1d(x, w_flip, self.stride, self.dil, self.pad)
         x_conv_w = x_conv_w.astype(self.dtype)  # conv returns float64
 
         # sum over input channels
+        # (B, Co, Ci, To) -> (B, Co, To)
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y += tf.match_dims(self.b, y.ndim - 1)
+            # (B, Co, To) + (Co, 1)
+            y += self.b.reshape((*self.b.shape, 1))
 
         if self.training:
 
@@ -112,47 +125,61 @@ class Convolution1d(Module):
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
-                w_x = self.w.shape[-1]
-                x_x = x.shape[-1]
-                dy_b, dy_k, dy_x = dy.shape
+                K = self.w.shape[-1]
+                Ti = x.shape[-1]
+                B, Co, To = dy.shape
 
                 # undo strides by filling with zeros
-                dy_p_shape = (dy_b, dy_k, self.stride * dy_x)
-                dy_p = tf.zeros(dy_p_shape, device=self.device).data
+                dy_p = zeros((B, Co, self.stride * To), device=self.device).data
                 dy_p[:, :, :: self.stride] = dy
-                dy_p_x = 1 + (x_x - w_x) if self.pad == "valid" else x_x
-                dy_p = Tensor(dy_p[:, :, :dy_p_x], device=self.device)
+                dy_p_ti = 1 + (Ti - K) if self.pad == "valid" else Ti
+                dy_p = Tensor(dy_p[:, :, :dy_p_ti], dtype=dy.dtype, device=self.device)
 
-                # input grads (b, c_in, x)
-                dy_p_ext, w_ext = tf.expand_dims(dy_p, 2), tf.expand_dims(self.w, 0)
+                # ----------------
+                # input grads
+                # ----------------
+                dy_p_ext = insert_dim(dy_p, 2)  # (B, Co, 1, To)
+                w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K)
                 pad = "full" if self.pad == "valid" else self.pad
-                # convolve (b, c_out, 1, x) * (1, c_out, c_in, x)
+
+                # convolve
+                # (B, Co, 1, To) * (1, Co, Ci, K)
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
-                dx = dy_conv_w.sum(axis=1).data  # sum over output channels
 
-                # weight grads (c_out, c_in, x)
+                # sum over output channels
+                # (B, Ci, Ti)
+                dx = dy_conv_w.sum(axis=1).data
+
+                # ----------------
+                # weight grads
+                # ----------------
                 dy_p_ext = dy_p_ext.flip(-1)
 
                 match self.pad:
                     case "same":
-                        pad = w_x // 2 * self.dil
+                        pad = K // 2 * self.dil
                     case "causal":
-                        pad = (w_x // 2 * self.dil * 2, 0)
+                        pad = (K // 2 * self.dil * 2, 0)
                     case _:
                         pad = self.pad
 
-                # convolve (b, 1, c_in, x) * (b, c_out, 1, x)
-                x_conv_dy = convolve1d(x_ext, dy_p_ext, pad=pad)[
-                    :, :, :, -w_x * self.dil :
-                ]
+                # convolve
+                # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
+                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[:, :, :, -K * self.dil :]
                 x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
+
                 # sum over batches
+                # (B, Co, Ci, K) -> (Co, Ci, K)
                 self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
 
-                # bias grads (c_out,)
+                # ----------------
+                # bias grads
+                # ----------------
                 if self.use_bias:
-                    self.b.grad = dy.sum(axis=(0, 2))  # sum over b and x
+                    # sum over batches and time
+                    # (B, Co, To) -> (Co,)
+                    self.b.grad = dy.sum(axis=(0, 2))
 
                 return dx
 
@@ -178,6 +205,10 @@ class Convolution2d(Module):
         dtype: str = "float32",
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
+        Input: (B, Ci, Yi, Xi)
+            B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
+        Output: (B, Co, Yo, Xo)
+            B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
 
         Parameters
         ----------
@@ -211,20 +242,19 @@ class Convolution2d(Module):
         self.use_bias = use_bias
         self.dtype = dtype
 
-        # init weights (c_out, c_in, y, x)
+        # init weights
+        # (Co, Ci, Ky, Kx)
         if weights is None:
-            k = int(in_channels * tf.prod(kernel_size)) ** -0.5
-            self.w = Parameter(
-                tf.randu((out_channels, in_channels, *kernel_size), -k, k),
-                dtype=dtype,
-                label="w",
-            )
+            k = int(in_channels * prod(kernel_size)) ** -0.5
+            w = random_uniform((out_channels, in_channels, *kernel_size), -k, k)
+            self.w = Parameter(w, dtype=dtype, label="w")
         else:
             self.w = weights
 
-        # init bias (c_out,)
+        # init biases
+        # (Co,)
         if self.use_bias:
-            self.b = Parameter(tf.zeros((out_channels,)), dtype=dtype, label="b")
+            self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -238,22 +268,28 @@ class Convolution2d(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [4])
         x = x.astype(self.dtype)
 
         # rotate weights for cross correlation
-        w_rot = self.w.flip((-2, -1))
+        w_flip = self.w.flip((-2, -1))
 
-        # convolve (b, 1, c_in, y, x) * (1, c_out, c_in, y, x)
-        x_ext, w_rot_ext = tf.expand_dims(x, 1), tf.expand_dims(w_rot, 0)
-        x_conv_w = convolve2d(x_ext, w_rot_ext, self.stride, self.dil, self.pad)
+        x = insert_dim(x, 1)  # (B, 1, Ci, Yi, Xi)
+        w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, Ky, Kx)
+
+        # convolve
+        # (B, 1, Ci, Yi, Xi) * (1, Co, Ci, Ky, Kx) -> (B, Co, Ci, Yo, Xo)
+        x_conv_w = convolve2d(x, w_flip, self.stride, self.dil, self.pad)
         x_conv_w = x_conv_w.astype(self.dtype)  # conv returns float64
 
         # sum over input channels
+        # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
         y = x_conv_w.sum(axis=2)
 
         if self.use_bias:
-            y += tf.match_dims(x=self.b, dims=y.ndim - 1)
+            # (B, Co, Yo, Xo) + (Co, 1, 1)
+            y += match_dims(x=self.b, dims=3)
 
         if self.training:
 
@@ -261,44 +297,62 @@ class Convolution2d(Module):
                 dy = dy.astype(self.w.dtype)
                 self.set_dy(dy)
 
-                w_y, w_x = self.w.shape[-2:]
-                x_y, x_x = x.shape[-2:]
-                dy_b, dy_k, dy_y, dy_x = dy.shape
-                s_y, s_x = self.stride
-                d_y, d_x = self.dil
+                Ky, Kx = self.w.shape[-2:]
+                Yi, Xi = x.shape[-2:]
+                B, Co, Yo, Xo = dy.shape
+                Sy, Sx = self.stride
+                Dy, Dx = self.dil
 
                 # fill elements skipped by strides with zeros
-                dy_p_shape = (dy_b, dy_k, s_y * dy_y, s_x * dy_x)
-                dy_p = tf.zeros(dy_p_shape, device=self.device).data
-                dy_p[:, :, ::s_y, ::s_x] = dy
-                dy_p_y = 1 + (x_y - w_y) if self.pad == "valid" else x_y
-                dy_p_x = 1 + (x_x - w_x) if self.pad == "valid" else x_x
-                dy_p = Tensor(dy_p[:, :, :dy_p_y, :dy_p_x], device=self.device)
+                dy_p = zeros((B, Co, Sy * Yo, Sx * Xo), device=self.device).data
+                dy_p[:, :, ::Sy, ::Sx] = dy
+                dy_p_yi = 1 + (Yi - Ky) if self.pad == "valid" else Yi
+                dy_p_xi = 1 + (Xi - Kx) if self.pad == "valid" else Xi
+                dy_p = Tensor(
+                    dy_p[:, :, :dy_p_yi, :dy_p_xi], dtype=dy.dtype, device=self.device
+                )
 
-                # input grads (b, c_in, y, x)
-                dy_p_ext, w_ext = tf.expand_dims(dy_p, 2), tf.expand_dims(self.w, 0)
+                # ----------------
+                # input grads
+                # ----------------
+                dy_p_ext = insert_dim(dy_p, 2)  # (B, Co, 1, Yo, Xo)
+                w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, Ky, Kx)
                 pad = "full" if self.pad == "valid" else "same"
-                # convolve (b, c_out, 1, y, x) * (1, c_out, c_in, y, x)
+
+                # convolve
+                # (B, Co, 1, Yo, Xo) * (1, Co, Ci, Ky, Kx) -> (B, Co, Ci, Yi, Xi)
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
                 dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
-                dx = dy_conv_w.sum(axis=1).data  # sum over c_out
 
-                # weight grads (c_out, c_in, y, x)
+                # sum over c_out
+                # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
+                dx = dy_conv_w.sum(axis=1).data
+
+                # ----------------
+                # weight grads
+                # ----------------
                 dy_p_ext = dy_p_ext.flip((-2, -1))
-                pad = (
-                    (w_y // 2 * d_y, w_x // 2 * d_x) if self.pad == "same" else "valid"
-                )
-                # convolve (b, 1, c_in, y, x) * (b, c_out, 1, y, x)
-                x_conv_dy = convolve2d(x_ext, dy_p_ext, pad=pad)[
-                    :, :, :, -w_y * d_y :, -w_x * d_x :
+
+                pad = (Ky // 2 * Dy, Kx // 2 * Dx) if self.pad == "same" else "valid"
+
+                # convolve
+                # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, Ky, Kx)
+                x_conv_dy = convolve2d(x, dy_p_ext, pad=pad)[
+                    :, :, :, -Ky * Dy :, -Kx * Dx :
                 ]
                 x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
-                # sum over b
-                self.w.grad = x_conv_dy[:, :, :, ::d_y, ::d_x].sum(axis=0).data
 
-                # bias grads (c_out,)
+                # sum over batches
+                # (B, Co, Ci, Ky, Kx) -> (Co, Ci, Ky, Kx)
+                self.w.grad = x_conv_dy[:, :, :, ::Dy, ::Dx].sum(axis=0).data
+
+                # ----------------
+                # bias grads
+                # ----------------
                 if self.use_bias:
-                    self.b.grad = dy.sum(axis=(0, 2, 3))  # sum over b, y and x
+                    # sum over batches, height and width
+                    # (B, Co, Yo, Xo) -> (Co,)
+                    self.b.grad = dy.sum(axis=(0, 2, 3))
 
                 return dx
 
@@ -327,42 +381,108 @@ class MaxPooling2d(Module):
         kernel_size = self.kernel_size
         return f"{name}({kernel_size=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
-        p_y, p_x = self.kernel_size
-        x_b, x_c, x_y, x_x = x.shape
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [4])
+        ky, kx = self.kernel_size
+        b, c, yi, xi = x.shape
 
         # crop input to be a multiple of the pooling window size
-        y_y = x_y // p_y * p_y
-        y_x = x_x // p_x * p_x
-        x_crop = x[:, :, :y_y, :y_x]
+        yo = yi // ky * ky
+        xo = xi // kx * kx
+        x_crop = x[:, :, :yo, :xo]
 
         # initialize with zeros
-        y_shape = (x_b, x_c, y_y // p_y, y_x // p_x)
-        y = tf.zeros(y_shape, dtype=x.dtype, device=x.device)
+        y = zeros((b, c, yo // ky, xo // kx), dtype=x.dtype, device=x.device)
 
         # iterate over height and width and pick highest value
         for i in range(y.shape[-2]):
             for j in range(y.shape[-1]):
-                c = x.data[:, :, i * p_y : (i + 1) * p_y, j * p_x : (j + 1) * p_x]
-                y[:, :, i, j] = c.max(axis=(-2, -1))
+                chunk = x.data[:, :, i * ky : (i + 1) * ky, j * kx : (j + 1) * kx]
+                y[:, :, i, j] = chunk.max(axis=(-2, -1))
 
         if self.training:
             # create map of max value occurences for backprop
             y_stretched = stretch2d(y, self.kernel_size, x_crop.shape)
-            p_map = (x_crop == y_stretched) * 1.0
+            p_map = (x_crop == y_stretched).int()
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
 
                 # stretch dy tensor to original shape by duplicating values
-                dy_s = stretch2d(
+                dy_str = stretch2d(
                     Tensor(dy, dtype=dy.dtype, device=self.device),
                     self.kernel_size,
                     p_map.shape,
                 )
 
                 # use p_map as mask for grads
-                return (dy_s * p_map).resize(x.shape).data
+                dx = dy_str * p_map
+                return dx.data if dx.shape == x.shape else dx.pad_to_shape(x.shape).data
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
+
+
+class AvgPooling2d(Module):
+    """AvgPooling layer used to reduce information to avoid overfitting."""
+
+    def __init__(
+        self, kernel_size: tuple[int, int] = (2, 2), dtype: str = "float32"
+    ) -> None:
+        """AvgPooling layer used to reduce information to avoid overfitting.
+
+        Parameters
+        ----------
+        kernel_size : tuple[int, int], optional
+             Shape of the pooling window used for the pooling operation, by default (2, 2).
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
+        """
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.dtype = dtype
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        kernel_size = self.kernel_size
+        return f"{name}({kernel_size=})"
+
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [4])
+        Ky, Kx = self.kernel_size
+        B, C, Yi, Xi = x.shape
+
+        # crop input to be a multiple of the pooling window size
+        yo = Yi // Ky * Ky
+        xo = Xi // Kx * Kx
+        x_crop = x[:, :, :yo, :xo]
+
+        # initialize with zeros
+        y = zeros((B, C, yo // Ky, xo // Kx), dtype=x.dtype, device=x.device)
+
+        # iterate over height and width and compute mean value
+        for i in range(y.shape[-2]):
+            for j in range(y.shape[-1]):
+                chunk = x.data[:, :, i * Ky : (i + 1) * Ky, j * Kx : (j + 1) * Kx]
+                y[:, :, i, j] = chunk.mean(axis=(-2, -1))
+
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+
+                # stretch dy tensor to original shape by duplicating values
+                dy_str = stretch2d(
+                    Tensor(dy, dtype=dy.dtype, device=self.device),
+                    self.kernel_size,
+                    x_crop.shape,
+                )
+
+                # scale gradients down
+                dx = dy_str / prod(self.kernel_size)
+                return dx.data if dx.shape == x.shape else dx.pad_to_shape(x.shape).data
 
             self.backward = backward
 

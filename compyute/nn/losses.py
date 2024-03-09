@@ -3,10 +3,10 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from compyute.tensor import Tensor, ArrayLike
-import compyute.tensor_functions as tf
+from compyute.functional import prod
 from compyute.nn.funcional import softmax
 from compyute.preprocessing.basic import one_hot_encode
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["MSE", "Crossentropy"]
@@ -40,11 +40,11 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        dif = y - t.astype(y.dtype)
+        dif = y.float() - t.float()
 
         def backward() -> ArrayLike:
             """Performs a backward pass."""
-            return (dif * 2.0 / tf.prod(y.shape)).data
+            return (dif * 2 / prod(y.shape)).data
 
         self.backward = backward
 
@@ -80,12 +80,12 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        t = one_hot_encode(t.int(), y.shape[-1]).astype(y.dtype)
-        probs = softmax(y)
+        t = one_hot_encode(t.int(), y.shape[-1]).float()
+        probs = softmax(y.float())
 
         def backward() -> ArrayLike:
             """Performs a backward pass."""
-            return ((probs - t) / tf.prod(y.shape[:-1])).data
+            return ((probs - t) / prod(y.shape[:-1])).data
 
         self.backward = backward
 

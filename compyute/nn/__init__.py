@@ -1,4 +1,4 @@
-"""numpynn neural network module"""
+"""Compyute neural network module"""
 
 from compyute.nn import (
     analysis,
@@ -9,7 +9,6 @@ from compyute.nn import (
     inits,
     layers,
     losses,
-    lr_schedulers,
     metrics,
     models,
     optimizers,

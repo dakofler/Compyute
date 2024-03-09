@@ -5,11 +5,10 @@ import compyute
 from tests.test_utils import get_vals, get_params, validate
 
 
-B, Cin, Cout = (10, 10, 10)
+B, Bn, Cin, Cout = (10, 20, 30, 40)
 
 
-# Linear
-def test_linear_cpu() -> None:
+def test_linear_2d() -> None:
     results = []
     shape_x = (B, Cin)
     shape_w = (Cin, Cout)
@@ -45,22 +44,19 @@ def test_linear_cpu() -> None:
     assert all(results)
 
 
-def test_linear_cuda() -> None:
-    if not compyute.cuda.is_available():
-        pass
+def test_linear_nd() -> None:
     results = []
-    shape_x = (B, Cin)
+    shape_x = (B, Bn, Cin)
     shape_w = (Cin, Cout)
     shape_b = (Cout,)
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x, device="cuda")
-    compyute_w, torch_w = get_params(shape_w, T=True, device="cuda")
-    compyute_b, torch_b = get_params(shape_b, device="cuda")
+    compyute_x, torch_x = get_vals(shape_x)
+    compyute_w, torch_w = get_params(shape_w, T=True)
+    compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = compyute.nn.layers.Linear(Cin, Cout)
     compyute_module.training = True
-    compyute_module.to_device("cuda")
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -73,7 +69,7 @@ def test_linear_cuda() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False, device="cuda")
+    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 

@@ -1,7 +1,7 @@
 """basic preprocessing module"""
 
+from compyute.functional import eye, shuffle
 from compyute.tensor import Tensor, AxisLike
-import compyute.tensor_functions as tf
 
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
@@ -26,7 +26,7 @@ def split_train_val_test(
     tuple[Tensor, Tensor, Tensor]
         Train, validation and test tensors.
     """
-    x_shuffled = tf.shuffle(x)[0]
+    x_shuffled = shuffle(x)[0]
     n1 = int(len(x_shuffled) * (1 - ratio_val - ratio_test))
     n2 = int(len(x_shuffled) * (1 - ratio_test))
     train = x_shuffled[:n1]
@@ -109,5 +109,5 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     """
     if x.dtype not in ("int", "int32", "int64"):
         raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
-    r = (tf.eye(num_classes, "int32", x.device)[x]).data
+    r = (eye(num_classes, "int32", x.device)[x]).data
     return Tensor(r, dtype=r.dtype, device=x.device)

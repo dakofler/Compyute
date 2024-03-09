@@ -1,12 +1,48 @@
 """Tensor reshaping layers module"""
 
-from __future__ import annotations
-
-from compyute.tensor import Tensor, ArrayLike, ShapeLike
+from compyute.functional import zeros_like
 from compyute.nn.module import Module
+from compyute.tensor import Tensor, ShapeLike, ArrayLike
 
 
-__all__ = ["Reshape", "Flatten", "Moveaxis"]
+__all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]
+
+
+class Slice(Module):
+    """Slices a tensor."""
+
+    def __init__(self, s: list[None | int | slice]) -> None:
+        """Slices a tensor.
+
+        Parameters
+        ----------
+        s : list[None, int, slice]
+            Slice applied to a tensor.
+            e.g. [slice(None), 1] is equivalent to [:, 1]
+        """
+        super().__init__()
+        self.s = s
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        s = self.s
+        return f"{name}({s=})"
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = x[*self.s]
+
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                dx = zeros_like(x, device=self.device, dtype=dy.dtype).data
+                dx[*self.s] = dy
+                return dx
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
 
 
 class Reshape(Module):
@@ -28,36 +64,24 @@ class Reshape(Module):
         output_shape = self.output_shape
         return f"{name}({output_shape=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.reshape(self.output_shape)
 
         if self.training:
+            self.backward = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
 class Flatten(Module):
     """Flatten layer used to reshape tensors to shape (b, -1)."""
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
+            self.backward = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
@@ -84,21 +108,14 @@ class Moveaxis(Module):
         to_axis = self.to_axis
         return f"{name}({from_axis=}, {to_axis=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
+            self.backward = (
+                lambda dy: Tensor(dy, dtype=dy.dtype, device=self.device)
+                .moveaxis(self.to_axis, self.from_axis)
+                .data
+            )
 
-            def backward(dy: ArrayLike) -> ArrayLike:
-                self.set_dy(dy)
-
-                return (
-                    Tensor(dy, dtype=dy.dtype, device=self.device)
-                    .moveaxis(self.to_axis, self.from_axis)
-                    .data
-                )
-
-            self.backward = backward
-
-        self.set_y(y)
         return y

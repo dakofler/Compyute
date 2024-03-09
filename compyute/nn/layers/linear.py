@@ -1,11 +1,9 @@
 """parameter layers layer"""
 
-from __future__ import annotations
-
-import compyute.tensor_functions as tf
-from compyute.tensor import Tensor, ArrayLike
+from compyute.functional import arange, random_uniform, zeros
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
+from compyute.tensor import Tensor, ArrayLike
 
 
 __all__ = ["Linear"]
@@ -23,6 +21,10 @@ class Linear(Module):
         dtype: str = "float32",
     ) -> None:
         """Fully connected layer.
+        Input: (B, ... , Cin)
+            B ... batch, Cin ... input channels
+        Output: (B, ... , Co)
+            B ... batch, Co ... output channels
 
         Parameters
         ----------
@@ -43,18 +45,19 @@ class Linear(Module):
         self.use_bias = use_bias
         self.dtype = dtype
 
-        # init weights (c_in, c_out)
+        # init weights
+        # (Ci, Co)
         if weights is None:
             k = in_channels**-0.5
-            self.w = Parameter(
-                tf.randu((in_channels, out_channels), -k, k), dtype=dtype, label="w"
-            )
+            w = random_uniform((in_channels, out_channels), -k, k)
+            self.w = Parameter(w, dtype=dtype, label="w")
         else:
             self.w = weights
 
-        # init bias (c_out,)
+        # init biases
+        # (Co,)
         if use_bias:
-            self.b = Parameter(tf.zeros((out_channels,)), dtype=dtype, label="b")
+            self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -64,11 +67,15 @@ class Linear(Module):
         dtype = self.dtype
         return f"{name}({in_channels=}, {out_channels=}, {use_bias=}, {dtype=})"
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [2, 3])
         x = x.astype(self.dtype)
 
-        y = x @ self.w  # (b, [c], c_out)
+        # (B, ... , Ci) @ (Ci, Co) -> (B, ... , Co)
+        y = x @ self.w
+
         if self.use_bias:
+            # (B, ... , Co) + (Co,)
             y += self.b
 
         if self.training:
@@ -77,23 +84,26 @@ class Linear(Module):
                 self.set_dy(dy)
                 dy = dy.astype(self.dtype)
 
-                # input grads (b, c_in)
+                # input grads
+                # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
                 dx = dy @ self.w.T
 
-                # weight grads (c_in, c_out)
-                dim = x.ndim
-                w_ax = tuple(d if d < dim - 2 else 2 * dim - d - 3 for d in range(dim))
-                dw = x.transpose(w_ax).data @ dy
-                if dim > 2:
-                    wsum_axis = tuple(tf.arange(dim).data[:-2])
-                    dw = dw.sum(axis=wsum_axis)
+                # weight grads
+                # 2D: (Ci, B) @ (B, Co) -> (Ci, Co)
+                # ND: (B, ..., Ci, Bn) @ (B, ... , Bn, Co) -> (B, ..., Ci, Co)
+                dw = x.transpose().data @ dy
+                if x.ndim > 2:
+                    # sum over all batch dimensions
+                    # (B, ..., Ci, Co) -> (Ci, Co)
+                    dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
 
                 self.w.grad = dw
 
-                # bias grads (c_out,)
+                # bias grads
                 if self.use_bias:
-                    b_tpl = tuple(d for d in range(dim - 1))
-                    self.b.grad = dy.sum(axis=b_tpl)
+                    # sum over all batch dimensions
+                    # (B, ... , Co) -> (Co,)
+                    self.b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
 
                 return dx
 

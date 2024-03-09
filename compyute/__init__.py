@@ -1,8 +1,9 @@
 """Compyute module"""
 
 import compyute.nn as nn
-from compyute import cuda, utils, preprocessing
+from compyute import engine, preprocessing
+from compyute.engine import set_seed
+from compyute.functional import *
 from compyute.tensor import Tensor, tensor
-from compyute.tensor_functions import *
 
-utils.set_numpy_format()
+pi: float = 3.141592653589793

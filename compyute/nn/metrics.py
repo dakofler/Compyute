@@ -22,7 +22,7 @@ def accuracy(logits: Tensor, t: Tensor) -> Tensor:
         Accuracy value.
     """
 
-    return (logits.argmax(-1) == t).sum().float() / len(logits)
+    return (logits.argmax(-1) == t).sum().float() / logits.shape[0]
 
 
 def r2score(logits: Tensor, t: Tensor, eps: float = 1e-8) -> Tensor:
@@ -45,4 +45,4 @@ def r2score(logits: Tensor, t: Tensor, eps: float = 1e-8) -> Tensor:
 
     ssr = ((t - logits) ** 2).sum()
     sst = ((t - t.mean()) ** 2).sum()
-    return 1.0 - ssr / (sst + eps)
+    return 1 - ssr / (sst + eps)

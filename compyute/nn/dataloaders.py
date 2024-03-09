@@ -1,7 +1,7 @@
 """Neural network models module"""
 
+from compyute.functional import random_permutation
 from compyute.tensor import Tensor
-import compyute.tensor_functions as tf
 
 
 __all__ = ["DataLoader"]
@@ -42,28 +42,27 @@ class DataLoader:
         tuple[Tensor, Tensor]
             Batch of features and labels.
         """
-        n = len(self.x)
-        n_steps = len(self)
-        b = min(self.batch_size, n)
-        n_trunc = n_steps * b
-
+        n = self.x.shape[0]
         if shuffle:
-            indices = tf.random_permutation(n)
-            self.x = self.x[indices]
+            idx = random_permutation(n)
+            self.x = self.x[idx]
             if self.y is not None:
-                self.y = self.y[indices]
+                self.y = self.y[idx]
 
         # yield batches
+        n_steps = len(self)
+        b = min(self.batch_size, n)
         for i in range(n_steps):
             x = self.x[i * b : (i + 1) * b]
             y = self.y[i * b : (i + 1) * b] if self.y is not None else None
             yield (x, y)
 
         # yield remaining samples, if there are any
+        n_trunc = n_steps * b
         if not drop_remaining and n_trunc < n:
             x_remain = self.x[n_trunc:]
             y_remain = self.y[n_trunc:] if self.y is not None else None
             yield (x_remain, y_remain)
 
     def __len__(self) -> int:
-        return max(1, len(self.x) // self.batch_size)
+        return max(1, self.x.shape[0] // self.batch_size)
