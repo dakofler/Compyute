@@ -73,13 +73,13 @@ class Batchnorm1d(Module):
 
             # keep running stats
             self.rmean = self.rmean * (1 - self.m) + mean.squeeze() * self.m
-            _var = x.var(axis=axis, keepdims=True, ddof=1)
-            self.rvar = self.rvar * (1 - self.m) + _var.squeeze() * self.m
+            var = x.var(axis=axis, keepdims=True, ddof=1)
+            self.rvar = self.rvar * (1 - self.m) + var.squeeze() * self.m
         else:
-            _rvar = self.rvar if dim2 else self.rvar.reshape((*self.rvar.shape, 1))
-            _rmean = self.rmean if dim2 else self.rmean.reshape((*self.rmean.shape, 1))
-            var_h = (_rvar + self.eps) ** -0.5
-            x_h = (x - _rmean) * var_h
+            rvar = self.rvar if dim2 else self.rvar.reshape((*self.rvar.shape, 1))
+            rmean = self.rmean if dim2 else self.rmean.reshape((*self.rmean.shape, 1))
+            var_h = (rvar + self.eps) ** -0.5
+            x_h = (x - rmean) * var_h
 
         weights = self.w if dim2 else self.w.reshape((*self.w.shape, 1))
         biases = self.b if dim2 else self.b.reshape((*self.b.shape, 1))
@@ -193,13 +193,13 @@ class Batchnorm2d(Module):
 
             # keep running stats
             self.rmean = self.rmean * (1 - self.m) + mean.squeeze() * self.m
-            _var = x.var(axis=axis, keepdims=True, ddof=1)
-            self.rvar = self.rvar * (1 - self.m) + _var.squeeze() * self.m
+            var = x.var(axis=axis, keepdims=True, ddof=1)
+            self.rvar = self.rvar * (1 - self.m) + var.squeeze() * self.m
         else:
-            _rvar = self.rvar.reshape((*self.rvar.shape, 1, 1))
-            _rmean = self.rmean.reshape((*self.rmean.shape, 1, 1))
-            var_h = (_rvar + self.eps) ** -0.5
-            x_h = (x - _rmean) * var_h
+            rvar = self.rvar.reshape((*self.rvar.shape, 1, 1))
+            rmean = self.rmean.reshape((*self.rmean.shape, 1, 1))
+            var_h = (rvar + self.eps) ** -0.5
+            x_h = (x - rmean) * var_h
 
         weights = self.w.reshape((*self.w.shape, 1, 1))
         biases = self.b.reshape((*self.b.shape, 1, 1))
@@ -245,8 +245,11 @@ class Batchnorm2d(Module):
         device : str
             Device to move the tensor to. Valid options are "cpu" and "cuda".
         """
+
+        # necessary, because Module.to_device only moves parameters
         self.rmean.to_device(device)
         self.rvar.to_device(device)
+
         super().to_device(device)
 
 

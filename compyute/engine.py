@@ -37,24 +37,23 @@ def gpu_available() -> bool:
     """
     if "CUDA_PATH" not in os.environ:
         return False
+
     return cupy.is_available()
 
 
-# create list of avialable devices
+# create list of available devices
 devices = ["cpu"]
 if gpu_available():
     devices.append("cuda")
+d = ", ".join(devices)
+print(f"Compyute: found devices {d}")
 
 # set array output format
 formatter = {"float": "{:9.4f}".format}
 if gpu_available():
-    cupy.set_printoptions(
-        precision=4, formatter=formatter, linewidth=100
-    )
+    cupy.set_printoptions(precision=4, formatter=formatter, linewidth=100)
 else:
-    numpy.set_printoptions(
-        precision=4, formatter=formatter, linewidth=100
-    )
+    numpy.set_printoptions(precision=4, formatter=formatter, linewidth=100)
 
 
 def get_engine(device: str) -> types.ModuleType:
@@ -70,7 +69,7 @@ def get_engine(device: str) -> types.ModuleType:
     types.ModuleType
         NumPy or CuPy module.
     """
-    return numpy if device == "cpu" or device not in devices else cupy
+    return cupy if device == "cuda" and device in devices else numpy
 
 
 def set_seed(seed: int) -> None:

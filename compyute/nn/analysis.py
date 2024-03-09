@@ -94,6 +94,7 @@ def plot_images(
     figsize: tuple[int, int],
     cmap: str = "gray",
     plot_axis: bool = False,
+    global_min_max: bool = True,
 ) -> None:
     """Plots array values as images.
 
@@ -107,15 +108,19 @@ def plot_images(
         Colormap used in the plot, by default "gray".
     plot_axis : bool, optional
         Whether to plot axes, by default False.
+    global_min_max : bool, optional
+        Whether to use the same min and max for the color scale in all images, by default True.
     """
     for label in data:
         values = data[label]
         print(label)
         plt.figure(figsize=figsize)
-        vmin = np.min(values).item()
-        vmax = np.max(values).item()
+        vmin = np.min(values).item() if global_min_max else None
+        vmax = np.max(values).item() if global_min_max else None
+
         if values.ndim != 3:
             values = np.expand_dims(values, 0)
+
         for i in range(values.shape[0]):
             plt.subplot(10, 8, i + 1)
             plt.imshow(values[i, :, :], vmin=vmin, vmax=vmax, cmap=cmap)
