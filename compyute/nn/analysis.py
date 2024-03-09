@@ -14,6 +14,7 @@ __all__ = [
     "plot_images",
     "plot_confusion_matrix",
     "plot_probabilities",
+    "model_summary",
 ]
 
 

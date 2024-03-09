@@ -10,21 +10,29 @@ __all__ = ["RecurrentCell"]
 
 
 class RecurrentCell(Module):
-    """Recurrent layer."""
+    """Recurrent cell."""
 
     def __init__(
         self,
-        hidden_channels: int,
-        weights: Parameter | None = None,
+        in_channels: int,
+        h_channels: int,
+        i_weights: Parameter | None = None,
+        h_weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
-        """Recurrent layer.
+        """Recurrent cell.
+        Input: (B, T , Cin)
+            B ... batch, T ... time, Cin ... input channels
+        Output: (B, T , Ch)
+            B ... batch, T ... time, Ch ... hidden channels
 
         Parameters
         ----------
-        hidden_channels : int
-            Number of hidden channels of the layer.
+        in_channels : int
+            Number of input features.
+        h_channels : int
+            Number of hidden channels.
         weights : Parameter | None, optional
             Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
@@ -33,74 +41,114 @@ class RecurrentCell(Module):
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
-        self.hidden_channels = hidden_channels
+        self.in_channels = in_channels
+        self.h_channels = h_channels
         self.use_bias = use_bias
         self.dtype = dtype
 
-        # init weights (c_hidden, c_hidden)
-        if weights is None:
-            k = hidden_channels**-0.5
-            w = random_uniform((hidden_channels, hidden_channels), -k, k)
-            self.w = Parameter(w, dtype=dtype, label="w")
+        # init input weights
+        # (Cin, Ch)
+        if i_weights is None:
+            k = in_channels**-0.5
+            w = random_uniform((in_channels, h_channels), -k, k)
+            self.w_i = Parameter(w, dtype=dtype, label="w_i")
         else:
-            self.w = weights
+            self.w_i = i_weights
 
-        # init bias (c_out,)
+        # init input biases
+        # (Ch,)
         if use_bias:
-            self.b = Parameter(zeros((hidden_channels,)), dtype=dtype, label="b")
+            self.b_i = Parameter(zeros((h_channels,)), dtype=dtype, label="b_i")
+
+        # init hidden weights
+        # (Ch, Ch)
+        if i_weights is None:
+            k = h_channels**-0.5
+            w = random_uniform((h_channels, h_channels), -k, k)
+            self.w_h = Parameter(w, dtype=dtype, label="w_h")
+        else:
+            self.w_h = h_weights
+
+        # init hidden biases
+        # (Ch,)
+        if use_bias:
+            self.b_h = Parameter(zeros((h_channels,)), dtype=dtype, label="b_h")
 
     def __repr__(self):
         name = self.__class__.__name__
-        hidden_channels = self.hidden_channels
+        in_channels = self.in_channels
+        h_channels = self.h_channels
         use_bias = self.use_bias
         dtype = self.dtype
-        return f"{name}({hidden_channels=}, {use_bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {h_channels=}, {use_bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
-        y = zeros_like(x, device=self.device)
 
-        # iterate over sequence elements
-        for i in range(x.shape[1]):
-            # hidden states
-            h = y[:, i - 1] @ self.w
+        # input projection
+        # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
+        x_h = x @ self.w_i
+        if self.use_bias:
+            x_h += self.b_i
+
+        # iterate over timesteps
+        h = zeros_like(x_h, device=self.device)
+        for t in range(x_h.shape[1]):
+            # (B, Ch) @ (Ch, Ch) -> (B, Ch)
+            h_t = h[:, t - 1] @ self.w_h
             if self.use_bias:
-                h += self.b
+                h_t += self.b_h
 
             # activation
-            y[:, i] = (x[:, i] + h).tanh()
+            h[:, t] = (x_h[:, t] + h_t).tanh()
 
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
-                dy = dy.astype(self.dtype)
-                self.set_dy(dy)
+                dh = dy.astype(self.dtype)
+                self.set_dy(dh)
 
-                dx = zeros_like(x, device=self.device).data
-                self.w.grad = zeros_like(self.w, device=self.w.device).data
+                dx_h = zeros_like(x_h, device=self.device).data
+                self.w_h.grad = zeros_like(self.w_h, device=self.device).data
 
-                for i in range(x.shape[1] - 1, -1, -1):
-                    # add hidden state gradient of next layer, if not last sequence element
-                    if i == x.shape[1] - 1:
-                        out_grad = dy[:, i]
+                for t in range(x.shape[1] - 1, -1, -1):
+                    # add hidden state grad of next t, if not last t
+                    if t == x_h.shape[1] - 1:
+                        out_grad = dh[:, t]
                     else:
-                        out_grad = dy[:, i] + dx[:, i + 1] @ self.w.T
+                        # (B, Ch) + (B, Ch) @ (Ch, Ch) -> (B, Ch)
+                        out_grad = dh[:, t] + dx_h[:, t + 1] @ self.w_h.T
 
-                    # activation gradient
-                    act_grad = 1 - y.data[:, i] ** 2
-                    dx[:, i] = act_grad * out_grad
+                    # activation grads
+                    dx_h[:, t] = (1 - h.data[:, t] ** 2) * out_grad
 
-                    # weight grads
-                    if i > 0:
-                        self.w.grad += y[:, i - 1].T @ dx[:, i]
+                    # hidden weight grads
+                    # (Ch, B) @ (B, Ch) -> (Ch, Ch)
+                    if t > 0:
+                        self.w_h.grad += h[:, t - 1].T @ dx_h[:, t]
 
-                # bias grads
-                self.b.grad = dx.sum((0, 1))
+                # hidden bias grads
+                # (B, T, Ch) -> (Ch,)
+                self.b_h.grad = dx_h.sum((0, 1))
+
+                # input grads
+                # (B, T, Ch) @ (Ch, Cin) -> (B, T, Cin)
+                dx = dx_h @ self.w_i.T
+
+                # input weight grads
+                # (B, Cin, T) @ (B, T, Ch) -> (B, Cin, Ch)
+                dw = x.transpose().data @ dx_h
+                # (B, Cin, Ch) -> (Cin, Ch)
+                self.w_i.grad = dw.sum(axis=0)
+
+                # input bias grads
+                # (B, T, Ch) -> (Ch,)
+                self.b_i.grad = dx_h.sum((0, 1))
 
                 return dx
 
             self.backward = backward
 
-        self.set_y(y)
-        return y
+        self.set_y(h)
+        return h

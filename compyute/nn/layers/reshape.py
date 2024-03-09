@@ -1,10 +1,48 @@
 """Tensor reshaping layers module"""
 
+from compyute.functional import zeros_like
 from compyute.nn.module import Module
-from compyute.tensor import Tensor, ShapeLike
+from compyute.tensor import Tensor, ShapeLike, ArrayLike
 
 
-__all__ = ["Reshape", "Flatten", "Moveaxis"]
+__all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]
+
+
+class Slice(Module):
+    """Slices a tensor."""
+
+    def __init__(self, s: list[None | int | slice]) -> None:
+        """Slices a tensor.
+
+        Parameters
+        ----------
+        s : list[None, int, slice]
+            Slice applied to a tensor.
+            e.g. [slice(None), 1] is equivalent to [:, 1]
+        """
+        super().__init__()
+        self.s = s
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        s = self.s
+        return f"{name}({s=})"
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = x[*self.s]
+
+        if self.training:
+
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                dx = zeros_like(x, device=self.device, dtype=dy.dtype).data
+                dx[*self.s] = dy
+                return dx
+
+            self.backward = backward
+
+        self.set_y(y)
+        return y
 
 
 class Reshape(Module):

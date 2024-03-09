@@ -1,7 +1,7 @@
 """Neural network blocks module"""
 
 from compyute.nn.containers import Sequential, ParallelAdd
-from compyute.nn.layers import Linear, RecurrentCell
+from compyute.nn.layers import RecurrentCell
 from compyute.nn.module import Module
 
 
@@ -20,6 +20,10 @@ class Recurrent(Sequential):
         dtype: str = "float32",
     ) -> None:
         """Recurrent neural network block.
+        Input: (B, T , Cin)
+            B ... batch, T ... time, Cin ... input channels
+        Output: (B, T, Ch)
+            B ... batch, T ... time, Ch ... hidden channels
 
         Parameters
         ----------
@@ -32,11 +36,11 @@ class Recurrent(Sequential):
         use_bias : bool, optional
             Whether to use bias values, by default True.
         """
-        m = [Linear(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
-        for i in range(num_layers):
-            if i > 0:
-                m.append(Linear(h_channels, h_channels, use_bias=use_bias, dtype=dtype))
-            m.append(RecurrentCell(h_channels, use_bias=use_bias, dtype=dtype))
+        m = [RecurrentCell(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
+        for _ in range(num_layers - 1):
+            m.append(
+                RecurrentCell(h_channels, h_channels, use_bias=use_bias, dtype=dtype)
+            )
         super().__init__(m)
 
 
