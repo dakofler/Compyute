@@ -40,11 +40,15 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        dif = y.float() - t.float()
+        y_squeeze = y.squeeze()
+        if y_squeeze.shape != t.shape:
+            raise UserWarning(f"Shape of y {y.shape} does not match t {t.shape}.")
+
+        dif = y_squeeze.float() - t.float()
 
         def backward() -> ArrayLike:
             """Performs a backward pass."""
-            return (dif * 2 / prod(y.shape)).data
+            return (dif * 2 / prod(y.shape)).reshape(y.shape).data
 
         self.backward = backward
 

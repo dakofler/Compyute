@@ -102,7 +102,7 @@ class Model(Module):
         x: Tensor,
         y: Tensor,
         epochs: int = 100,
-        verbose: bool = True,
+        verbose: int = 2,
         val_data: tuple[Tensor, Tensor] | None = None,
         batch_size: int = 1,
     ) -> tuple[list[float], list[float], list[float], list[float]]:
@@ -118,8 +118,11 @@ class Model(Module):
             Number of training iterations, by default 100.
         batch_size : int, optional
             Number of inputs processed in parallel, by default 1.
-        verbose : bool, optional
-            Whether the model reports intermediate results during training, by default True.
+        verbose : int, optional
+            Mode of reporting intermediate results during training, by default 2.
+            0: no reporting
+            1: model reports epoch statistics
+            2: model reports step statistics
         val_dataloader : DataLoader, optional
             Data loader for vaidation data., by default None.
 
@@ -142,6 +145,9 @@ class Model(Module):
         if not self.compiled:
             raise ModelCompilationError("Model has not been compiled yet.")
 
+        if verbose not in [0, 1, 2]:
+            raise AttributeError(f"Invalid verbose mode {verbose}. Can be 0, 1, 2.")
+
         # create dataloaders
         train_dataloader = DataLoader(x, y, batch_size)
         val_dataloader = DataLoader(*val_data, batch_size) if val_data else None
@@ -149,12 +155,20 @@ class Model(Module):
         train_losses, train_scores = [], []
         val_losses, val_scores = [], []
 
+        if verbose == 1:
+            pbar = tqdm(
+                unit=" epochs",
+                total=epochs,
+            )
+
         for epoch in range(1, epochs + 1):
             # training
             self.training = True
             n_train_steps = len(train_dataloader)
 
-            if verbose:
+            if verbose == 1:
+                pbar.update()
+            elif verbose == 2:
                 pbar = tqdm(
                     desc=f"Epoch {epoch}/{epochs}",
                     unit=" steps",
@@ -162,7 +176,7 @@ class Model(Module):
                 )
 
             for train_batch in train_dataloader(drop_remaining=True):
-                if verbose:
+                if verbose == 2:
                     pbar.update()
 
                 # prepare data
@@ -214,7 +228,7 @@ class Model(Module):
                 val_scores.append(avg_val_score)
 
             # logging
-            if verbose:
+            if verbose in [1, 2]:
                 m = self.metric_fn.__name__
                 log = f"train_loss {avg_train_loss:7.4f}, train_{m} {avg_train_score:5.2f}"
                 if val_dataloader is not None:
@@ -225,7 +239,8 @@ class Model(Module):
                     log += f", lr {self.optimizer.lr:.6f}"
 
                 pbar.set_postfix_str(log)
-                pbar.close()
+                if verbose == 2:
+                    pbar.close()
 
         if not self.retain_values:
             self.reset()
