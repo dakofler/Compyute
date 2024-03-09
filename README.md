@@ -13,7 +13,7 @@ There are examples included that show how to use the toolbox. Make sure to tweak
 ### Tensors
 Similar to `PyTorch`, in `Compyute` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays.
 
-```
+```python
 # create a tensor from a list of lists
 a = Tensor([[4, 5, 6], [7, 8, 9]])
 
@@ -42,7 +42,7 @@ The framework offers some utility functions to preprocess and encode data before
 ### Building and training models
 Models can be built using predefined model-templates (e.g. `SequentialModel`), or they can also be built entirely from scratch, using custom classes that inherit from the `Model` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `SequentialModel`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. Defined models can be trained and updated using common optimizer algorithmes, such as SGD or Adam. Models can also be saved and loaded later on.
 
-```
+```python
 import compyute.nn as nn
 from compyute.nn.layers import *
 
