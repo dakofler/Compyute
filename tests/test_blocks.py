@@ -2,7 +2,7 @@
 
 import torch
 import compyute
-from tests.test_utils import get_vals, get_params, validate
+from tests.test_utils import get_vals_float, get_params, validate
 
 
 B, Cin, Ch, Cout, X = (10, 20, 30, 40, 50)
@@ -22,18 +22,18 @@ def test_recurrent() -> None:
     shape_b_h_2 = (Ch,)
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
 
-    compyute_w_in_1, torch_w_in_1 = get_params(shape_w_in_1, T=True)
+    compyute_w_in_1, torch_w_in_1 = get_params(shape_w_in_1, torch_T=True)
     compyute_b_in_1, torch_b_in_1 = get_params(shape_b_in_1)
 
-    compyute_w_h_1, torch_w_h_1 = get_params(shape_w_h_1, T=True)
+    compyute_w_h_1, torch_w_h_1 = get_params(shape_w_h_1, torch_T=True)
     compyute_b_h_1, torch_b_h_1 = get_params(shape_b_h_1)
 
-    compyute_w_in_2, torch_w_in_2 = get_params(shape_w_in_2, T=True)
+    compyute_w_in_2, torch_w_in_2 = get_params(shape_w_in_2, torch_T=True)
     compyute_b_in_2, torch_b_in_2 = get_params(shape_b_in_2)
 
-    compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2, T=True)
+    compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2, torch_T=True)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
     compyute_module = compyute.nn.blocks.Recurrent(Cin, Ch, num_layers=2)
@@ -69,7 +69,7 @@ def test_recurrent() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -136,24 +136,22 @@ def test_residual() -> None:
     w2_shape = (Cout, Cin)
 
     # forward
-    compyute_x, torch_x = get_vals(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, T=True)
+    compyute_x, torch_x = get_vals_float(x_shape)
+    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
+    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
 
     compyute_module = compyute.nn.blocks.Residual(
         compyute.nn.containers.Sequential(
             [
-                compyute.nn.layers.Linear(
-                    Cin, Cout, weights=compyute_w1, use_bias=False
-                ),
+                compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
                 compyute.nn.layers.ReLU(),
-                compyute.nn.layers.Linear(
-                    Cout, Cin, weights=compyute_w2, use_bias=False
-                ),
+                compyute.nn.layers.Linear(Cout, Cin, use_bias=False),
             ]
         )
     )
     compyute_module.training = True
+    compyute_module.child_modules[0].child_modules[0].w = compyute_w1
+    compyute_module.child_modules[0].child_modules[2].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
@@ -165,7 +163,7 @@ def test_residual() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))

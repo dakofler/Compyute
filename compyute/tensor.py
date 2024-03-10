@@ -338,9 +338,9 @@ class Tensor:
         return self
 
     def __tensorify(self, other: Tensor | ScalarLike) -> Tensor:
-        if not isinstance(other, Tensor):
-            return Tensor(other, dtype=self.dtype, device=self.device)
-        return other
+        if isinstance(other, Tensor):
+            return other
+        return Tensor(other, dtype=self.dtype, device=self.device)
 
     def __len__(self) -> int:
         return self.shape[0]

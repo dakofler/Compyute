@@ -250,7 +250,7 @@ def random_normal(
 
 def random_uniform(
     shape: ShapeLike,
-    low: float = 0.0,
+    low: float = -1.0,
     high: float = 1.0,
     dtype: str = "float64",
     device: str = "cpu",

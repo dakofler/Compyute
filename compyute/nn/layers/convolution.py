@@ -27,7 +27,6 @@ class Convolution1d(Module):
         pad: str = "causal",
         stride: int = 1,
         dil: int = 1,
-        weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
@@ -52,8 +51,6 @@ class Convolution1d(Module):
             Stride used for the convolution operation, by default 1.
         dil : int, optional
             Dilation used for each axis of the filter, by default 1.
-        weights : Parameter | None, optional
-            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         dtype: str, optional
@@ -71,12 +68,9 @@ class Convolution1d(Module):
 
         # init weights
         # (Co, Ci, K)
-        if weights is None:
-            k = int(in_channels * kernel_size) ** -0.5
-            w = random_uniform((out_channels, in_channels, kernel_size), -k, k)
-            self.w = Parameter(w, dtype=dtype, label="w")
-        else:
-            self.w = weights
+        k = int(in_channels * kernel_size) ** -0.5
+        w = random_uniform((out_channels, in_channels, kernel_size), -k, k)
+        self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
         # (Co,)
@@ -200,7 +194,6 @@ class Convolution2d(Module):
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
-        weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
@@ -225,8 +218,6 @@ class Convolution2d(Module):
             Strides used for the convolution operation, by default 1.
         dil : int | tuple [int, int], optional
             Dilations used for each axis of the filter, by default 1.
-        weights : Parameter | None, optional
-            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         dtype: str, optional
@@ -244,12 +235,9 @@ class Convolution2d(Module):
 
         # init weights
         # (Co, Ci, Ky, Kx)
-        if weights is None:
-            k = int(in_channels * prod(kernel_size)) ** -0.5
-            w = random_uniform((out_channels, in_channels, *kernel_size), -k, k)
-            self.w = Parameter(w, dtype=dtype, label="w")
-        else:
-            self.w = weights
+        k = int(in_channels * prod(kernel_size)) ** -0.5
+        w = random_uniform((out_channels, in_channels, *kernel_size), -k, k)
+        self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
         # (Co,)

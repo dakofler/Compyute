@@ -16,7 +16,6 @@ class Linear(Module):
         self,
         in_channels: int,
         out_channels: int,
-        weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
@@ -32,8 +31,6 @@ class Linear(Module):
             Number of input channels of the layer.
         out_channels : int
             Number of output channels (neurons) of the layer.
-        weights : Parameter | None, optional
-            Weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         dtype: str, optional
@@ -47,12 +44,9 @@ class Linear(Module):
 
         # init weights
         # (Ci, Co)
-        if weights is None:
-            k = in_channels**-0.5
-            w = random_uniform((in_channels, out_channels), -k, k)
-            self.w = Parameter(w, dtype=dtype, label="w")
-        else:
-            self.w = weights
+        k = in_channels**-0.5
+        w = random_uniform((in_channels, out_channels), -k, k)
+        self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
         # (Co,)

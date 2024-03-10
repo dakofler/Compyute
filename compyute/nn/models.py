@@ -34,6 +34,8 @@ class Model(Module):
         """
         super().__init__()
         self.core_module = core_module
+        if core_module is not None:
+            self.child_modules = [core_module]
 
         self.optimizer: Optimizer | None = None
         self.lr_decay: LRDecay | None = None
@@ -48,9 +50,7 @@ class Model(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.core_module is None:
-            raise ValueError(
-                "Default forward function cannot be used if no core module is used. If you used Model as a base class, define a custom forward function."
-            )
+            raise ValueError("Forward function is not defined.")
 
         y = self.core_module.forward(x)
 

@@ -2,7 +2,7 @@
 
 import torch
 import compyute
-from tests.test_utils import get_vals, get_params, validate
+from tests.test_utils import get_vals_float, get_params, validate
 
 
 B, Cin, Cout, X = (10, 20, 30, 40)
@@ -29,7 +29,7 @@ def test_embedding() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     _ = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 

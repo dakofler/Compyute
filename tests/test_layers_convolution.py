@@ -2,10 +2,10 @@
 
 import torch
 import compyute
-from tests.test_utils import get_vals, get_params, validate
+from tests.test_utils import get_vals_float, get_params, validate
 
 
-B, Cin, Cout, Y, X, K = (10, 20, 30, 15, 15, 3)
+B, Cin, Cout, Y, X, K = (10, 3, 16, 15, 15, 5)
 
 
 def test_conv1d() -> None:
@@ -19,7 +19,7 @@ def test_conv1d() -> None:
     pad = "valid"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -39,7 +39,7 @@ def test_conv1d() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -61,7 +61,7 @@ def test_conv1d_dil2() -> None:
     pad = "same"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -81,7 +81,7 @@ def test_conv1d_dil2() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -103,7 +103,7 @@ def test_conv2d_valid() -> None:
     pad = "valid"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -123,7 +123,7 @@ def test_conv2d_valid() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -145,7 +145,7 @@ def test_conv2d_same() -> None:
     pad = "same"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -165,7 +165,7 @@ def test_conv2d_same() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -187,7 +187,7 @@ def test_conv2d_stride2() -> None:
     pad = "valid"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -207,7 +207,7 @@ def test_conv2d_stride2() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -229,7 +229,7 @@ def test_conv2d_dil2() -> None:
     pad = "valid"
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
@@ -249,7 +249,7 @@ def test_conv2d_dil2() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
 
@@ -265,7 +265,7 @@ def test_maxpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_module = compyute.nn.layers.MaxPooling2d()
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
@@ -273,7 +273,7 @@ def test_maxpool2d() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -286,7 +286,7 @@ def test_avgpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # forward
-    compyute_x, torch_x = get_vals(shape_x)
+    compyute_x, torch_x = get_vals_float(shape_x)
     compyute_module = compyute.nn.layers.AvgPooling2d()
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
@@ -294,7 +294,7 @@ def test_avgpool2d() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(compyute_y.shape, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))

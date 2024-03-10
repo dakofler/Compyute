@@ -20,9 +20,9 @@ class Batchnorm1d(Module):
         dtype: str = "float32",
     ) -> None:
         """Implements Batch Normalization.
-        Input: (B, C, T)
+        Input: (B, C, T) or (B, C)
             B ... batch, C ... channels, T ... time
-        Output: (B, C, T)
+        Output: (B, C, T) or (B, C)
             B ... batch, C ... channels, T ... time
         Normalizes over the C dimension.
 

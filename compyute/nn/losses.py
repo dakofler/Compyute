@@ -40,11 +40,7 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        y_squeeze = y.squeeze()
-        if y_squeeze.shape != t.shape:
-            raise UserWarning(f"Shape of y {y.shape} does not match t {t.shape}.")
-
-        dif = y_squeeze.float() - t.float()
+        dif = y.float() - t.float()
 
         def backward() -> ArrayLike:
             """Performs a backward pass."""
@@ -84,7 +80,7 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        t = one_hot_encode(t.int(), y.shape[-1]).float()
+        t = one_hot_encode(t.int(), y.shape[-1])
         probs = softmax(y.float())
 
         def backward() -> ArrayLike:
@@ -93,4 +89,4 @@ class Crossentropy(Loss):
 
         self.backward = backward
 
-        return (-((probs + self.eps).log() * t).sum(axis=-1)).mean()
+        return -((probs + self.eps) * t).sum(-1).log().mean()
