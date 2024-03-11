@@ -110,6 +110,23 @@ def softmax(x: Tensor) -> Tensor:
     return x / x.sum(axis=-1, keepdims=True)
 
 
+def log_softmax(x: Tensor) -> Tensor:
+    """Applies the log softmax function to the last axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    x = (x - x.max(axis=-1, keepdims=True)).exp()
+    return (x / x.sum(axis=-1, keepdims=True)).log()
+
+
 def convolve1d(
     x: Tensor,
     f: Tensor,
@@ -178,7 +195,7 @@ def convolve1d(
     slc_out[ifft.ndim - 1] = slice(-out, None)
     slc_stride = [slice(None)] * ifft.ndim
     slc_stride[ifft.ndim - 1] = slice(None, None, stride)
-    return Tensor(ifft[*slc_out][*slc_stride], device=x.device)
+    return Tensor(ifft[*slc_out][*slc_stride])
 
 
 def convolve2d(
@@ -250,7 +267,7 @@ def convolve2d(
     slc_out[ifft.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
     slc_stride = [slice(None)] * ifft.ndim
     slc_stride[ifft.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
-    return Tensor(ifft[*slc_out][*slc_stride], device=x.device)
+    return Tensor(ifft[*slc_out][*slc_stride])
 
 
 def dilate1d(f: Tensor, dil: int) -> Tensor:

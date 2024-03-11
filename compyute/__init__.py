@@ -4,6 +4,6 @@ import compyute.nn as nn
 from compyute import engine, preprocessing
 from compyute.engine import set_seed
 from compyute.functional import *
-from compyute.tensor import Tensor, tensor
+from compyute.tensor import Tensor
 
 pi: float = 3.141592653589793
