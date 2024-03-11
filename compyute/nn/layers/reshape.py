@@ -17,7 +17,7 @@ class Slice(Module):
         Parameters
         ----------
         s : list[None, int, slice]
-            Slice applied to a tensor.
+            Slice applied to a tensor not including the batch dimension.
             e.g. [slice(None), 1] is equivalent to [:, 1]
         """
         super().__init__()
@@ -29,14 +29,15 @@ class Slice(Module):
         return f"{name}({s=})"
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x[*self.s]
+        s = [slice(None)] + self.s
+        y = x[*s]
 
         if self.training:
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 self.set_dy(dy)
                 dx = zeros_like(x, device=self.device, dtype=dy.dtype).data
-                dx[*self.s] = dy
+                dx[*s] = dy
                 return dx
 
             self.backward = backward
@@ -54,7 +55,7 @@ class Reshape(Module):
         Parameters
         ----------
         output_shape : ShapeLike
-            The output's target shape..
+            The output's target shape not including the batch dimension.
         """
         super().__init__()
         self.output_shape = output_shape
@@ -65,16 +66,22 @@ class Reshape(Module):
         return f"{name}({output_shape=})"
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x.reshape(self.output_shape)
+        y = x.reshape((x.shape[0],) + self.output_shape)
 
         if self.training:
-            self.backward = lambda dy: dy.reshape(x.shape)
 
+            def backward(dy: ArrayLike) -> ArrayLike:
+                self.set_dy(dy)
+                return dy.reshape(x.shape)
+
+            self.backward = backward
+
+        self.set_y(y)
         return y
 
 
 class Flatten(Module):
-    """Flatten layer used to reshape tensors to shape (b, -1)."""
+    """Flatten layer used to flatten tensors not including the batch dimension."""
 
     def forward(self, x: Tensor) -> Tensor:
         y = x.reshape((x.shape[0], -1))

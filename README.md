@@ -4,7 +4,7 @@
 
 ## Installation
 
-All you need to use the library is to pip install the requirements (`pip install -r requirements.txt`). As of `CuPy` v13, it does not require a GPU toolkit to be installed, so `Compyute` can now be used on CPU-only machines also. If you want to make use of GPUs, make sure to install CUDA.
+All you need to use the library is to pip install the requirements (`pip install -r requirements.txt`). As of `CuPy` v13, it does not require a GPU toolkit to be installed, so `Compyute` can now be used on CPU-only machines. If you want to make use of GPUs, make sure to install CUDA.
 
 ## The Toolbox
 

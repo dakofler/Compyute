@@ -165,7 +165,9 @@ def plot_confusion_matrix(
         plt.text(i, j, str(int(label)), ha="center", va="center")
 
 
-def plot_probabilities(x: Tensor, figsize: tuple[int, int]) -> None:
+def plot_probabilities(
+    x: Tensor, figsize: tuple[int, int], labels: list[str] | None = None
+) -> None:
     """Plots model predictions as a bar chart.
 
     Parameters
@@ -174,11 +176,14 @@ def plot_probabilities(x: Tensor, figsize: tuple[int, int]) -> None:
         A model's logits.
     figsize : tuple[int, int]
         Size of the plot.
+    labels: list[str] | None, optional
+        List of class labels, by default None. If None, indices are used.
     """
     classes = x.shape[1]
     preds = softmax(x)
+    l = labels if labels is not None else np.arange(0, classes, 1)
     plt.figure(figsize=figsize)
-    plt.xticks(ticks=np.arange(0, classes, 1), labels=np.arange(0, classes, 1))
+    plt.xticks(ticks=np.arange(0, classes, 1), labels=l)
     plt.bar(np.arange(0, classes), preds.reshape((classes,)).data)
     plt.xlabel("class")
     plt.ylabel("probability")
