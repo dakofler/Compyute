@@ -195,11 +195,13 @@ class Tensor:
     def __rmul__(self, other: Tensor | ScalarLike) -> Tensor:
         return self * other
 
-    def __pow__(self, other: int | float) -> Tensor:
-        if "int" in self.dtype and other < 0:
-            return Tensor(self.data.astype("float64") ** other)
-        else:
-            return Tensor(self.data**other)
+    def __pow__(self, other: Tensor | ScalarLike) -> Tensor:
+        other = self.__tensorify(other)
+        return Tensor(self.data**other.data)
+
+    def __rpow__(self, other: Tensor | ScalarLike) -> Tensor:
+        other = self.__tensorify(other)
+        return other**self
 
     def __neg__(self) -> Tensor:
         return self * -1
