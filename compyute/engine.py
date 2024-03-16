@@ -74,13 +74,6 @@ if gpu_available():
 d = ", ".join(available_devices)
 print(f"Compyute: found devices {d}")
 
-# set array output format
-formatter = {"float": "{:9.4f}".format}
-if gpu_available():
-    cupy.set_printoptions(precision=4, formatter=formatter, linewidth=100)
-else:
-    numpy.set_printoptions(precision=4, formatter=formatter, linewidth=100)
-
 
 def check_device(device: DeviceLike):
     """Checks if the specified device is available."""

@@ -102,7 +102,13 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return self.data.__repr__().replace("array", "tnsor")
+        prefix = "Tensor("
+        dtype = self.dtype
+        shape = self.shape
+        device = self.device
+        array_string = numpy.array2string(
+            self.cpu().data, max_line_width=100, prefix=prefix, separator=", ", precision=4)
+        return f"{prefix}{array_string}, {dtype=}, {shape=}, {device=})"
 
     def __call__(self) -> ArrayLike:
         return self.data
