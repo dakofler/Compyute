@@ -39,6 +39,11 @@ class Parameter(Tensor):
         self.label = label
         self.optimizer_params = {}
 
+    def __repr__(self) -> str:
+        return (
+            f"Parameter {self.label}:\n{self.data.__repr__().replace('array', 'tnsor')}"
+        )
+
     def to_device(self, device: str) -> None:
         """Moves the tensor to a specified device.
 
@@ -54,6 +59,9 @@ class Parameter(Tensor):
 
         """
         super().to_device(device)
+
+        if self.optimizer_params is None:
+            return
 
         if device == "cpu":
             for key in self.optimizer_params:

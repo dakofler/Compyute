@@ -44,7 +44,7 @@ class MSE(Loss):
 
         def backward() -> ArrayLike:
             """Performs a backward pass."""
-            return (dif * 2 / prod(y.shape)).data
+            return (dif * 2 / prod(y.shape)).reshape(y.shape).data
 
         self.backward = backward
 
@@ -80,7 +80,7 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        t = one_hot_encode(t.int(), y.shape[-1]).float()
+        t = one_hot_encode(t.int(), y.shape[-1])
         probs = softmax(y.float())
 
         def backward() -> ArrayLike:
@@ -89,4 +89,4 @@ class Crossentropy(Loss):
 
         self.backward = backward
 
-        return (-((probs + self.eps).log() * t).sum(axis=-1)).mean()
+        return -((probs + self.eps) * t).sum(-1).log().mean()

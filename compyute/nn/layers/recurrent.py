@@ -16,8 +16,6 @@ class RecurrentCell(Module):
         self,
         in_channels: int,
         h_channels: int,
-        i_weights: Parameter | None = None,
-        h_weights: Parameter | None = None,
         use_bias: bool = True,
         dtype: str = "float32",
     ) -> None:
@@ -33,8 +31,10 @@ class RecurrentCell(Module):
             Number of input features.
         h_channels : int
             Number of hidden channels.
-        weights : Parameter | None, optional
-            Weights of the layer, by default None. If None, weights are initialized randomly.
+        i_weights : Parameter | None, optional
+            Input weights of the layer, by default None. If None, weights are initialized randomly.
+        h_weights : Parameter | None, optional
+            Hidden weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         dtype: str, optional
@@ -48,12 +48,9 @@ class RecurrentCell(Module):
 
         # init input weights
         # (Cin, Ch)
-        if i_weights is None:
-            k = in_channels**-0.5
-            w = random_uniform((in_channels, h_channels), -k, k)
-            self.w_i = Parameter(w, dtype=dtype, label="w_i")
-        else:
-            self.w_i = i_weights
+        k = in_channels**-0.5
+        w = random_uniform((in_channels, h_channels), -k, k)
+        self.w_i = Parameter(w, dtype=dtype, label="w_i")
 
         # init input biases
         # (Ch,)
@@ -62,12 +59,9 @@ class RecurrentCell(Module):
 
         # init hidden weights
         # (Ch, Ch)
-        if i_weights is None:
-            k = h_channels**-0.5
-            w = random_uniform((h_channels, h_channels), -k, k)
-            self.w_h = Parameter(w, dtype=dtype, label="w_h")
-        else:
-            self.w_h = h_weights
+        k = h_channels**-0.5
+        w = random_uniform((h_channels, h_channels), -k, k)
+        self.w_h = Parameter(w, dtype=dtype, label="w_h")
 
         # init hidden biases
         # (Ch,)

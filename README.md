@@ -4,7 +4,7 @@
 
 ## Installation
 
-All you need to use the library is to pip install the requirements (`pip install -r requirements.txt`). As of `CuPy` v13, it does not require a GPU toolkit to be installed, so `Compyute` can now be used on CPU-only machines also. If you want to make use of GPUs, make sure to install CUDA.
+All you need to use the library is to pip install the requirements (`pip install -r requirements.txt`). As of `CuPy` v13, it does not require a GPU toolkit to be installed, so `Compyute` can now be used on CPU-only machines. If you want to make use of GPUs, make sure to install CUDA.
 
 ## The Toolbox
 
@@ -14,26 +14,29 @@ There are examples included that show how to use the toolbox. Make sure to tweak
 Similar to `PyTorch`, in `Compyute` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients happens within a model's (modules). The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays.
 
 ```python
-# create a tensor from a list of lists
+# create a tensor from a list of lists, the data type is inferred automatically
 a = Tensor([[4, 5, 6], [7, 8, 9]])
 
 # define data types
-b = Tensor([1, 2, 3], dtype="int32")
+b = Tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
 b = b.float()
 
-# define the device, a tensor is stored on
-d = Tensor([1, 2, 3], device="cuda")
+# define the device the tensor is stored on
+c = Tensor([1, 2, 3], device="cuda")
+
+# change devices
+c.cpu()
 
 # addition of tensors
-c = a + b
+d = a + b
 
 # matrix multiplication of tensors
-d = a @ b
+e = a @ b
 
 # sum all elements of a tensor
-e = a.sum()
+f = a.sum()
 ```
 
 ### Data preprocessing, Encoding

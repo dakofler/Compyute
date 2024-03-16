@@ -83,7 +83,7 @@ def standardize(x: Tensor, axis: AxisLike | None = None) -> Tensor:
         Standardized tensor with mean 0 and variance 1.
     """
 
-    return x - x.mean(axis=axis) / x.var(axis=axis)
+    return (x - x.mean(axis=axis)) / x.var(axis=axis)
 
 
 def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
@@ -107,7 +107,7 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     ValueError
         If the tensor dtype is not int.
     """
-    if x.dtype not in ("int", "int32", "int64"):
+    if x.dtype not in {"int", "int8", "int16", "int32", "int64"}:
         raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
-    r = (eye(num_classes, "int32", x.device)[x]).data
-    return Tensor(r, dtype=r.dtype, device=x.device)
+
+    return eye(num_classes, "int32", x.device)[x]

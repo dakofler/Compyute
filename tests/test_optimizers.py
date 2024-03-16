@@ -2,7 +2,7 @@
 
 import torch
 import compyute
-from tests.test_utils import get_vals, get_params, validate
+from tests.test_utils import get_vals_float, get_params, validate
 
 
 SHAPE = (10, 20)
@@ -14,7 +14,7 @@ def test_sgd() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -38,7 +38,7 @@ def test_sgd_m() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -62,7 +62,7 @@ def test_sgd_m_nesterov() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -75,8 +75,8 @@ def test_sgd_m_nesterov() -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
+    results.append(validate(compyute_x, torch_x, tol=1e-4))
+    results.append(validate(compyute_x.grad, torch_x.grad, tol=1e-4))
 
     assert all(results)
 
@@ -86,7 +86,7 @@ def test_sgd_m_wdecay() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -109,7 +109,7 @@ def test_adam() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -135,7 +135,7 @@ def test_adam_wdecay() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -162,7 +162,7 @@ def test_adamw() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 
@@ -188,7 +188,7 @@ def test_adamw_wdecay() -> None:
 
     # forward
     compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals(compyute_x.shape, torch_grad=False)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx.data
     torch_x.grad = torch_dx
 

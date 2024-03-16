@@ -2,7 +2,7 @@
 
 import torch
 import compyute
-from tests.test_utils import get_vals, validate
+from tests.test_utils import get_vals_float, validate
 
 
 SHAPE3D = (10, 20, 30)
@@ -13,7 +13,7 @@ def test_batchnorm1d() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE3D)
+    compyute_x, torch_x = get_vals_float(SHAPE3D)
     compyute_module = compyute.nn.layers.Batchnorm1d(SHAPE3D[1])
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
@@ -24,7 +24,7 @@ def test_batchnorm1d() -> None:
     results.append(validate(compyute_module.rvar, torch_module.running_var))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE3D, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE3D, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -38,7 +38,7 @@ def test_batchnorm2d() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE4D)
+    compyute_x, torch_x = get_vals_float(SHAPE4D)
     compyute_module = compyute.nn.layers.Batchnorm2d(SHAPE4D[1])
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
@@ -49,7 +49,7 @@ def test_batchnorm2d() -> None:
     results.append(validate(compyute_module.rvar, torch_module.running_var))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE4D, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE4D, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -63,7 +63,7 @@ def test_layernorm() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE3D)
+    compyute_x, torch_x = get_vals_float(SHAPE3D)
     compyute_module = compyute.nn.layers.Layernorm(SHAPE3D[1:])
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
@@ -72,7 +72,7 @@ def test_layernorm() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE3D, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE3D, torch_grad=False)
     compyute_dx = compyute_module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))

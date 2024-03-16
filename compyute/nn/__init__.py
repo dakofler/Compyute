@@ -1,7 +1,6 @@
 """Compyute neural network module"""
 
 from compyute.nn import (
-    analysis,
     blocks,
     containers,
     dataloaders,

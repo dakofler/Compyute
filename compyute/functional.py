@@ -2,13 +2,11 @@
 
 import numpy as np
 from compyute.engine import get_engine
-from compyute.tensor import Tensor, ShapeLike, AxisLike
-from compyute.engine import ScalarLike
+from compyute.tensor import Tensor
+from compyute.engine import DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 
 __all__ = [
-    "insert_dim",
-    "match_dims",
     "arange",
     "linspace",
     "zeros",
@@ -26,57 +24,16 @@ __all__ = [
     "maximum",
     "concatenate",
     "prod",
-    "eye",
-    "split",
-    "unique",
+    "eye"
 ]
-
-
-def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
-    """Returns a view of a tensor containing an added dimension at a given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor whose dimensions are to be extended.
-    axis : AxisLike
-        Where to insert the new dimension.
-
-    Returns
-    -------
-    Tensor
-        Tensor with an added dimension.
-    """
-    device = x.device
-    x = get_engine(device).expand_dims(x.data, axis=axis)
-    return Tensor(x, dtype=x.dtype, device=device)
-
-
-def match_dims(x: Tensor, dims: int) -> Tensor:
-    """Returns a view of a tensor with added trailing dimensions to fit a given number of dims.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be extended.
-    dims : int
-        Number of dimensions needed.
-
-    Returns
-    -------
-    Tensor
-        Tensor with trailing dimensions.
-    """
-    new_shape = x.shape + (1,) * (dims - x.ndim)
-    return x.reshape(new_shape)
 
 
 def arange(
     stop: int,
     start: int = 0,
     step: int | float = 1,
-    dtype: str = "int32",
-    device: str = "cpu",
+    dtype: DtypeLike = "int32",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
     a given interval [start, stop).
@@ -99,12 +56,15 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    x = get_engine(device).arange(start, stop, step, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
 def linspace(
-    start: float, stop: float, num: int, dtype: str = "float64", device: str = "cpu"
+    start: float,
+    stop: float,
+    num: int,
+    dtype: DtypeLike = "float64",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
     a given interval [start, stop].
@@ -127,14 +87,13 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    x = get_engine(device).linspace(start, stop, num, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
 def zeros(
     shape: ShapeLike,
-    dtype: str = "float64",
-    device: str = "cpu",
+    dtype: DtypeLike = "float64",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
@@ -152,11 +111,12 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    x = get_engine(device).zeros(shape, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 
-def ones(shape: ShapeLike, dtype: str = "float64", device: str = "cpu") -> Tensor:
+def ones(
+    shape: ShapeLike, dtype: DtypeLike = "float64", device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -173,11 +133,12 @@ def ones(shape: ShapeLike, dtype: str = "float64", device: str = "cpu") -> Tenso
     Tensor
         Tensor with all values being one.
     """
-    x = get_engine(device).ones(shape, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
-def zeros_like(x: Tensor, dtype: str = "float64", device: str = "cpu") -> Tensor:
+def zeros_like(
+    x: Tensor, dtype: DtypeLike = "float64", device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor based on the shape of a given other tensor with all values being zero.
 
     Parameters
@@ -197,7 +158,9 @@ def zeros_like(x: Tensor, dtype: str = "float64", device: str = "cpu") -> Tensor
     return zeros(x.shape, dtype=dtype, device=device)
 
 
-def ones_like(x: Tensor, dtype: str = "float64", device: str = "cpu") -> Tensor:
+def ones_like(
+    x: Tensor, dtype: DtypeLike = "float64", device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor based on the shape of a given other tensor with all values being one.
 
     Parameters
@@ -221,8 +184,8 @@ def random_normal(
     shape: ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
-    dtype: str = "float64",
-    device: str = "cpu",
+    dtype: DtypeLike = "float64",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with values drawn from a normal distribution.
 
@@ -244,16 +207,15 @@ def random_normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    x = get_engine(device).random.normal(mean, std, shape)
-    return Tensor(x, dtype=dtype, device=device)
+    return Tensor(get_engine(device).random.normal(mean, std, shape), dtype=dtype)
 
 
 def random_uniform(
     shape: ShapeLike,
-    low: float = 0.0,
+    low: float = -1.0,
     high: float = 1.0,
-    dtype: str = "float64",
-    device: str = "cpu",
+    dtype: DtypeLike = "float64",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with values drawn from a uniform distribution.
 
@@ -275,12 +237,15 @@ def random_uniform(
     Tensor
         Tensor of uniformly distributed samples.
     """
-    x = get_engine(device).random.uniform(low, high, shape)
-    return Tensor(x, dtype=dtype, device=device)
+    return Tensor(get_engine(device).random.uniform(low, high, shape), dtype=dtype)
 
 
 def random_int(
-    shape: ShapeLike, low: int, high: int, dtype: str = "int32", device: str = "cpu"
+    shape: ShapeLike,
+    low: int,
+    high: int,
+    dtype: DtypeLike = "int32",
+    device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with values drawn from a discrete uniform distribution.
 
@@ -302,11 +267,12 @@ def random_int(
     Tensor
         Tensor of samples.
     """
-    x = get_engine(device).random.randint(low, high, shape)
-    return Tensor(x, dtype=dtype, device=device)
+    return Tensor(get_engine(device).random.randint(low, high, shape), dtype=dtype)
 
 
-def random_permutation(n: int, dtype: str = "int32", device: str = "cpu") -> Tensor:
+def random_permutation(
+    n: int, dtype: DtypeLike = "int32", device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor containing a permuted range of length n.
 
     Parameters
@@ -323,8 +289,7 @@ def random_permutation(n: int, dtype: str = "int32", device: str = "cpu") -> Ten
     Tensor
         Permuted tensor.
     """
-    x = get_engine(device).random.permutation(n)
-    return Tensor(x, dtype=dtype, device=device)
+    return Tensor(get_engine(device).random.permutation(n), dtype=dtype)
 
 
 def random_multinomial_idx(p: Tensor, num_samples: int = 1) -> Tensor:
@@ -342,9 +307,11 @@ def random_multinomial_idx(p: Tensor, num_samples: int = 1) -> Tensor:
     Tensor
         Tensor of samples.
     """
-    device = p.device
-    p = get_engine(device).random.choice(p.shape[0], size=num_samples, p=p.data)
-    return Tensor(p, dtype="int32", device=device)
+    return Tensor(
+        get_engine(p.device).random.choice(
+            p.shape[0], size=num_samples, p=p.data),
+        dtype="int32",
+    )
 
 
 def random_multinomial(
@@ -368,9 +335,7 @@ def random_multinomial(
     Tensor
         Tensor of samples.
     """
-    device = x.device
-    x = get_engine(device).random.choice(x.data, shape, p=p.data)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(x.device).random.choice(x.data, shape, p=p.data))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
@@ -392,7 +357,7 @@ def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
     return x[shuffle_idx], shuffle_idx
 
 
-def empty(dtype: str = "float64", device: str = "cpu") -> Tensor:
+def empty(dtype: DtypeLike = "float64", device: DeviceLike = "cpu") -> Tensor:
     """Returns an empty tensor.
 
     Parameters
@@ -407,9 +372,7 @@ def empty(dtype: str = "float64", device: str = "cpu") -> Tensor:
     Tensor
         Empty tensor.
     """
-    # does not accept string?
-    x = get_engine(device).empty(0, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).empty(0, dtype=dtype))
 
 
 def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
@@ -441,8 +404,7 @@ def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     else:
         _b = b
 
-    x = get_engine(device).maximum(_a, _b)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).maximum(_a, _b))
 
 
 def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
@@ -474,8 +436,7 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     else:
         _b = b
 
-    x = get_engine(device).minimum(_a, _b)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).minimum(_a, _b))
 
 
 def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
@@ -495,8 +456,7 @@ def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
     """
 
     device = tensors[0].device
-    x = get_engine(device).concatenate([t.data for t in tensors], axis=axis)
-    return Tensor(x, dtype=x.dtype, device=device)
+    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
 
 
 def prod(x: tuple[int, ...]) -> int:
@@ -515,7 +475,7 @@ def prod(x: tuple[int, ...]) -> int:
     return np.prod(x).item()
 
 
-def eye(n: int, dtype: str = "float64", device: str = "cpu") -> Tensor:
+def eye(n: int, dtype: DtypeLike = "float64", device: DeviceLike = "cpu") -> Tensor:
     """Returns a diagonal tensor of shape (n, n).
 
     Parameters
@@ -532,44 +492,4 @@ def eye(n: int, dtype: str = "float64", device: str = "cpu") -> Tensor:
     Tensor
         Diagonal tensor.
     """
-    x = get_engine(device).eye(n, dtype=dtype)
-    return Tensor(x, dtype=x.dtype, device=device)
-
-
-def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
-    """Returns a list of tensors by splitting the original tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to split.
-    splits : int | list[int]
-        If an int is given, the tensor is split into n equally sized tensors.
-        If a list of indices is given, they represent the indices at which to
-        split the tensor along the given axis.
-    axis : int, optional
-        Axis along which to split the tensor, by default -1.
-
-    Returns
-    -------
-    list[Tensor]
-        List of tensors containing the split data.
-    """
-    chunks = get_engine(x.device).split(x.data, splits, axis=axis)
-    return [Tensor(c, dtype=x.dtype, device=x.device) for c in chunks]
-
-
-def unique(x: Tensor) -> Tensor:
-    """Returns a tensor of unique ordered values.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the unique ordered values.
-    """
-    return Tensor(get_engine(x.device).unique(x.data), dtype=x.dtype, device=x.device)
+    return Tensor(get_engine(device).eye(n, dtype=dtype))

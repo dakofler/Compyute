@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from compyute.nn.module import Module
-from compyute.functional import concatenate, split
+from compyute.functional import concatenate
 from compyute.tensor import Tensor, ArrayLike
 
 
@@ -79,15 +79,16 @@ class ParallelConcat(Container):
 
             def backward(dy: ArrayLike) -> ArrayLike:
                 out_lens = [y.shape[self.concat_axis] for y in ys]
-                splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
-                dy_splits = split(
-                    Tensor(dy, device=self.device), splits, axis=self.concat_axis
-                )
+                splits = [sum(out_lens[: i + 1])
+                          for i in range(len(out_lens) - 1)]
+                dy_splits = Tensor(dy, device=self.device).split(
+                    splits, axis=self.concat_axis)
+
                 return sum(
-                    [
+                    (
                         self.child_modules[i].backward(s.data)
                         for i, s in enumerate(dy_splits)
-                    ]
+                    )
                 )
 
             self.backward = backward
@@ -113,6 +114,7 @@ class ParallelAdd(Container):
         y = sum([m.forward(x) for m in self.child_modules])
 
         if self.training:
-            self.backward = lambda dy: sum([m.backward(dy) for m in self.child_modules])
+            self.backward = lambda dy: sum(
+                (m.backward(dy) for m in self.child_modules))
 
         return y

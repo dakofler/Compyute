@@ -17,7 +17,6 @@ class Embedding(Module):
         self,
         in_channels: int,
         out_channels: int,
-        weights: Parameter | None = None,
         dtype: str = "float32",
     ) -> None:
         """Embedding layer used for token embedding.
@@ -32,8 +31,6 @@ class Embedding(Module):
             Number of input channels (vocabulary size) of the layer.
         out_channels : int
             Number of output channels (embedding dimensions) of the layer.
-        weights : Parameter | None, optional
-            Weights of the layer, by default None. If None, weights are initialized randomly.
         dtype: str, optional
             Datatype of weights and biases, by default "float32".
         """
@@ -43,12 +40,9 @@ class Embedding(Module):
         self.dtype = dtype
 
         # init weights (Ci, Co)
-        if weights is None:
-            k = in_channels**-0.5
-            w = random_uniform((in_channels, out_channels), -k, k)
-            self.w = Parameter(w, dtype=dtype, label="w")
-        else:
-            self.w = weights
+        k = in_channels**-0.5
+        w = random_uniform((in_channels, out_channels), -k, k)
+        self.w = Parameter(w, dtype=dtype, label="w")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__

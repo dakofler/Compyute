@@ -4,7 +4,8 @@ from typing import Callable
 import pickle
 
 from tqdm.auto import tqdm
-from compyute.functional import concatenate
+from compyute.engine import ShapeLike
+from compyute.functional import concatenate, ones
 from compyute.nn.containers import Sequential
 from compyute.nn.dataloaders import DataLoader
 from compyute.nn.losses import Loss
@@ -34,6 +35,8 @@ class Model(Module):
         """
         super().__init__()
         self.core_module = core_module
+        if core_module is not None:
+            self.child_modules = [core_module]
 
         self.optimizer: Optimizer | None = None
         self.lr_decay: LRDecay | None = None
@@ -48,9 +51,7 @@ class Model(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.core_module is None:
-            raise ValueError(
-                "Default forward function cannot be used if no core module is used. If you used Model as a base class, define a custom forward function."
-            )
+            raise ValueError("Forward function is not defined.")
 
         y = self.core_module.forward(x)
 
@@ -102,7 +103,7 @@ class Model(Module):
         x: Tensor,
         y: Tensor,
         epochs: int = 100,
-        verbose: bool = True,
+        verbose: int = 2,
         val_data: tuple[Tensor, Tensor] | None = None,
         batch_size: int = 1,
     ) -> tuple[list[float], list[float], list[float], list[float]]:
@@ -118,8 +119,11 @@ class Model(Module):
             Number of training iterations, by default 100.
         batch_size : int, optional
             Number of inputs processed in parallel, by default 1.
-        verbose : bool, optional
-            Whether the model reports intermediate results during training, by default True.
+        verbose : int, optional
+            Mode of reporting intermediate results during training, by default 2.
+            0: no reporting
+            1: model reports epoch statistics
+            2: model reports step statistics
         val_dataloader : DataLoader, optional
             Data loader for vaidation data., by default None.
 
@@ -142,6 +146,9 @@ class Model(Module):
         if not self.compiled:
             raise ModelCompilationError("Model has not been compiled yet.")
 
+        if verbose not in [0, 1, 2]:
+            raise AttributeError(f"Invalid verbose mode {verbose}. Can be 0, 1, 2.")
+
         # create dataloaders
         train_dataloader = DataLoader(x, y, batch_size)
         val_dataloader = DataLoader(*val_data, batch_size) if val_data else None
@@ -149,12 +156,20 @@ class Model(Module):
         train_losses, train_scores = [], []
         val_losses, val_scores = [], []
 
+        if verbose == 1:
+            pbar = tqdm(
+                unit=" epochs",
+                total=epochs,
+            )
+
         for epoch in range(1, epochs + 1):
             # training
             self.training = True
             n_train_steps = len(train_dataloader)
 
-            if verbose:
+            if verbose == 1:
+                pbar.update()
+            elif verbose == 2:
                 pbar = tqdm(
                     desc=f"Epoch {epoch}/{epochs}",
                     unit=" steps",
@@ -162,7 +177,7 @@ class Model(Module):
                 )
 
             for train_batch in train_dataloader(drop_remaining=True):
-                if verbose:
+                if verbose == 2:
                     pbar.update()
 
                 # prepare data
@@ -214,7 +229,7 @@ class Model(Module):
                 val_scores.append(avg_val_score)
 
             # logging
-            if verbose:
+            if verbose in [1, 2]:
                 m = self.metric_fn.__name__
                 log = f"train_loss {avg_train_loss:7.4f}, train_{m} {avg_train_score:5.2f}"
                 if val_dataloader is not None:
@@ -225,7 +240,8 @@ class Model(Module):
                     log += f", lr {self.optimizer.lr:.6f}"
 
                 pbar.set_postfix_str(log)
-                pbar.close()
+                if verbose == 2:
+                    pbar.close()
 
         if not self.retain_values:
             self.reset()
@@ -359,3 +375,45 @@ def load_model(filepath: str) -> Model:
     obj = pickle.load(file)
     file.close()
     return obj
+
+
+def model_summary(model: Model, input_shape: ShapeLike) -> None:
+    """Prints information about a model.
+
+    Parameters
+    ----------
+    model : Model
+        Neural network model.
+    input_shape : ShapeLike
+        Shape of the model input ignoring the batch dimension.
+    """
+    n = 63
+
+    summary = [f"{model.__class__.__name__}\n{'-' * n}"]
+    summary.append(f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n")
+    summary.append("=" * n)
+    summary.append("\n")
+
+    x = ones((1,) + input_shape)
+    x.to_device(model.device)
+    model.retain_values = True
+    _ = model.forward(x)
+
+    def build_string(module, summary, depth):
+        if not isinstance(module, Model):
+            name = " " * depth + module.__class__.__name__
+            output_shape = str((-1,) + module.y.shape[1:])
+            n_params = sum(p.data.size for p in module.parameters())
+            summary.append(f"{name:25s} {output_shape:20s} {n_params:15d}\n")
+
+        for module in module.child_modules:
+            build_string(module, summary, depth + 1)
+
+    build_string(model, summary, -1)
+    summary.append("=" * n)
+    tot_parameters = sum(p.data.size for p in model.parameters())
+
+    model.reset()
+    model.retain_values = False
+    string = "".join(summary)
+    print(f"{string}\n\nTotal parameters: {tot_parameters}")

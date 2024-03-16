@@ -2,7 +2,7 @@
 
 import torch.nn.functional as F
 import compyute
-from tests.test_utils import get_vals, validate
+from tests.test_utils import get_vals_float, validate
 
 
 SHAPE = (10, 20, 30)
@@ -12,7 +12,7 @@ def test_relu() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE)
+    compyute_x, torch_x = get_vals_float(SHAPE)
     module = compyute.nn.layers.ReLU()
     module.training = True
     compyute_y = module(compyute_x)
@@ -20,7 +20,7 @@ def test_relu() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
     compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -32,7 +32,7 @@ def test_leaky_relu() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE)
+    compyute_x, torch_x = get_vals_float(SHAPE)
     module = compyute.nn.layers.LeakyReLU(alpha=0.01)
     module.training = True
     compyute_y = module(compyute_x)
@@ -40,7 +40,7 @@ def test_leaky_relu() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
     compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -52,7 +52,7 @@ def test_gelu() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE)
+    compyute_x, torch_x = get_vals_float(SHAPE)
     module = compyute.nn.layers.GELU()
     module.training = True
     compyute_y = module(compyute_x)
@@ -60,7 +60,7 @@ def test_gelu() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
     compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -72,7 +72,7 @@ def test_tanh() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE)
+    compyute_x, torch_x = get_vals_float(SHAPE)
     module = compyute.nn.layers.Tanh()
     module.training = True
     compyute_y = module(compyute_x)
@@ -80,7 +80,7 @@ def test_tanh() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
     compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
@@ -92,7 +92,7 @@ def test_sigmoid() -> None:
     results = []
 
     # forward
-    compyute_x, torch_x = get_vals(SHAPE)
+    compyute_x, torch_x = get_vals_float(SHAPE)
     module = compyute.nn.layers.Sigmoid()
     module.training = True
     compyute_y = module(compyute_x)
@@ -100,7 +100,7 @@ def test_sigmoid() -> None:
     results.append(validate(compyute_y, torch_y))
 
     # backward
-    compyute_dy, torch_dy = get_vals(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
     compyute_dx = module.backward(compyute_dy.data)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
