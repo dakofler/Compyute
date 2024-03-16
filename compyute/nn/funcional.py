@@ -90,7 +90,7 @@ def sigmoid(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return (1 + (-x.clip(-100, 100)).exp()) ** -1
+    return x.exp() * (1 + x.exp()) ** -1
 
 
 def softmax(x: Tensor) -> Tensor:
