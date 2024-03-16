@@ -3,12 +3,10 @@
 import numpy as np
 from compyute.engine import get_engine
 from compyute.tensor import Tensor
-from compyute.engine import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
+from compyute.engine import DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 
 __all__ = [
-    "insert_dim",
-    "match_dims",
     "arange",
     "linspace",
     "zeros",
@@ -26,46 +24,8 @@ __all__ = [
     "maximum",
     "concatenate",
     "prod",
-    "eye",
-    "split",
-    "unique",
+    "eye"
 ]
-
-
-def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
-    """Returns a view of a tensor containing an added dimension at a given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor whose dimensions are to be extended.
-    axis : AxisLike
-        Where to insert the new dimension.
-
-    Returns
-    -------
-    Tensor
-        Tensor with an added dimension.
-    """
-    return Tensor(get_engine(x.device).expand_dims(x.data, axis=axis))
-
-
-def match_dims(x: Tensor, dims: int) -> Tensor:
-    """Returns a view of a tensor with added trailing dimensions to fit a given number of dims.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be extended.
-    dims : int
-        Number of dimensions needed.
-
-    Returns
-    -------
-    Tensor
-        Tensor with trailing dimensions.
-    """
-    return x.reshape(x.shape + (1,) * (dims - x.ndim))
 
 
 def arange(
@@ -348,7 +308,8 @@ def random_multinomial_idx(p: Tensor, num_samples: int = 1) -> Tensor:
         Tensor of samples.
     """
     return Tensor(
-        get_engine(p.device).random.choice(p.shape[0], size=num_samples, p=p.data),
+        get_engine(p.device).random.choice(
+            p.shape[0], size=num_samples, p=p.data),
         dtype="int32",
     )
 
@@ -532,42 +493,3 @@ def eye(n: int, dtype: DtypeLike = "float64", device: DeviceLike = "cpu") -> Ten
         Diagonal tensor.
     """
     return Tensor(get_engine(device).eye(n, dtype=dtype))
-
-
-def split(x: Tensor, splits: int | list[int], axis: int = -1) -> list[Tensor]:
-    """Returns a list of tensors by splitting the original tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to split.
-    splits : int | list[int]
-        If an int is given, the tensor is split into n equally sized tensors.
-        If a list of indices is given, they represent the indices at which to
-        split the tensor along the given axis.
-    axis : int, optional
-        Axis along which to split the tensor, by default -1.
-
-    Returns
-    -------
-    list[Tensor]
-        List of tensors containing the split data.
-    """
-    chunks = get_engine(x.device).split(x.data, splits, axis=axis)
-    return [Tensor(c) for c in chunks]
-
-
-def unique(x: Tensor) -> Tensor:
-    """Returns a tensor of unique ordered values.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the unique ordered values.
-    """
-    return Tensor(get_engine(x.device).unique(x.data))

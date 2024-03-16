@@ -4,7 +4,8 @@ from typing import Callable
 import pickle
 
 from tqdm.auto import tqdm
-from compyute.functional import concatenate
+from compyute.engine import ShapeLike
+from compyute.functional import concatenate, ones
 from compyute.nn.containers import Sequential
 from compyute.nn.dataloaders import DataLoader
 from compyute.nn.losses import Loss
@@ -374,3 +375,45 @@ def load_model(filepath: str) -> Model:
     obj = pickle.load(file)
     file.close()
     return obj
+
+
+def model_summary(model: Model, input_shape: ShapeLike) -> None:
+    """Prints information about a model.
+
+    Parameters
+    ----------
+    model : Model
+        Neural network model.
+    input_shape : ShapeLike
+        Shape of the model input ignoring the batch dimension.
+    """
+    n = 63
+
+    summary = [f"{model.__class__.__name__}\n{'-' * n}"]
+    summary.append(f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n")
+    summary.append("=" * n)
+    summary.append("\n")
+
+    x = ones((1,) + input_shape)
+    x.to_device(model.device)
+    model.retain_values = True
+    _ = model.forward(x)
+
+    def build_string(module, summary, depth):
+        if not isinstance(module, Model):
+            name = " " * depth + module.__class__.__name__
+            output_shape = str((-1,) + module.y.shape[1:])
+            n_params = sum(p.data.size for p in module.parameters())
+            summary.append(f"{name:25s} {output_shape:20s} {n_params:15d}\n")
+
+        for module in module.child_modules:
+            build_string(module, summary, depth + 1)
+
+    build_string(model, summary, -1)
+    summary.append("=" * n)
+    tot_parameters = sum(p.data.size for p in model.parameters())
+
+    model.reset()
+    model.retain_values = False
+    string = "".join(summary)
+    print(f"{string}\n\nTotal parameters: {tot_parameters}")

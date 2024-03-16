@@ -1,6 +1,7 @@
 """Tensor module"""
 
 from __future__ import annotations
+import numpy
 
 from compyute.engine import (
     check_device,
@@ -41,7 +42,7 @@ class Tensor:
         data : ArrayLike | ScalarLike
             Data to initialize the tensor.
         dtype: DtypeLike, optional
-            Datatype of the tensor data, by default None. If None, the dtype is inferred from the data.
+            Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
         device: DeviceLike, optinal
@@ -78,7 +79,8 @@ class Tensor:
         elif value is None:
             self.__grad = None
         else:
-            raise ValueError("Can only set the gradient to be an array or None.")
+            raise ValueError(
+                "Can only set the gradient to be an array or None.")
 
     @property
     def ndim(self) -> int:
@@ -96,56 +98,7 @@ class Tensor:
         return self.data.T
 
     # ----------------------------------------------------------------------------------------------
-    # DEVICE FUNCTIONS
-    # ----------------------------------------------------------------------------------------------
-
-    def to_device(self, device: DeviceLike) -> None:
-        """Moves the tensor to a specified device.
-
-        Parameters
-        ----------
-        device : DeviceLike
-            Device to move the tensor to. Valid options are "cpu" and "cuda".
-
-        Raises
-        ----------
-        AttributeErrors
-            If device is not "cpu" or "cuda".
-
-        """
-        if self.device == device:
-            return
-
-        check_device(device)
-        self.device = device
-
-        if device == "cuda":
-            self.data = numpy_to_cupy(self.data)
-            if self.grad is not None:
-                self.grad = numpy_to_cupy(self.grad)
-        else:
-            self.data = cupy_to_numpy(self.data)
-            if self.grad is not None:
-                self.grad = cupy_to_numpy(self.grad)
-
-    def cpu(self):
-        """Returns a copy of the tensor on the cpu."""
-        if self.device == "cpu":
-            return self
-
-        self.to_device("cpu")
-        return self
-
-    def cuda(self):
-        """Returns a copy of the tensor on the gpu."""
-        if self.device == "cuda":
-            return self
-
-        self.to_device("cuda")
-        return self
-
-    # ----------------------------------------------------------------------------------------------
-    # DUNDER METHODS
+    # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
@@ -297,6 +250,331 @@ class Tensor:
 
     def __len__(self) -> int:
         return self.shape[0]
+
+    # ----------------------------------------------------------------------------------------------
+    # DTYPE CONVERSIONS
+    # ----------------------------------------------------------------------------------------------
+
+    def astype(self, dtype: DtypeLike) -> Tensor:
+        """Returns a copy of the tensor with parsed values.
+
+        Parameters
+        ----------
+        dtype : str
+            Datatype of tensor elements.
+
+        Returns
+        -------
+        Tensor
+            Tensor of dtype.
+        """
+        return Tensor(self.data, dtype=dtype, copy=False)
+
+    def int(self) -> Tensor:
+        """Returns a copy of the tensor with int values.
+
+        Returns
+        -------
+        Tensor
+            Int tensor.
+        """
+        return self.astype("int32")
+
+    def long(self) -> Tensor:
+        """Returns a copy of the tensor with long values.
+
+        Returns
+        -------
+        Tensor
+            Long tensor.
+        """
+        return self.astype("int64")
+
+    def half(self) -> Tensor:
+        """Returns a copy of the tensor with half precision values.
+
+        Returns
+        -------
+        Tensor
+            Half precision tensor.
+        """
+        return self.astype("float16")
+
+    def float(self) -> Tensor:
+        """Returns a copy of the tensor with float values.
+
+        Returns
+        -------
+        Tensor
+            Float tensor.
+        """
+        return self.astype("float32")
+
+    def double(self) -> Tensor:
+        """Returns a copy of the tensor with double precision values.
+
+        Returns
+        -------
+        Tensor
+            Double precision tensor.
+        """
+        return self.astype("float64")
+
+    def complex(self) -> Tensor:
+        """Returns a copy of the tensor with complex values.
+
+        Returns
+        -------
+        Tensor
+            Complex tensor.
+        """
+        return self.astype("complex64")
+
+    def to_numpy(self) -> numpy.ndarray:
+        """Returns the tensor data as a Numpy array."""
+        return self.cpu().data
+
+    # ----------------------------------------------------------------------------------------------
+    # STRUCTURE CHANGING METHODS
+    # ----------------------------------------------------------------------------------------------
+
+    def reshape(self, shape: ShapeLike) -> Tensor:
+        """Returns a view of the tensor tensor of a given shape.
+
+        Parameters
+        ----------
+        ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Reshapded tensor.
+        """
+        return Tensor(self.data.reshape(*shape))
+
+    def flatten(self) -> Tensor:
+        """Returns a flattened, one-dimensional tensor.
+
+        Returns
+        -------
+        Tensor
+            Flattened, one-dimensional version of the tensor.
+        """
+        return Tensor(self.data.reshape((-1,)))
+
+    def transpose(self, axes: AxisLike = (-2, -1)) -> Tensor:
+        """Transposes a tensor by swapping two axes.
+
+        Parameters
+        ----------
+        axes : AxisLike, optional
+            Transpose axes, by default (-2, -1).
+
+        Returns
+        -------
+        Tensor
+            Transposed tensor.
+        """
+        return self.moveaxis(*axes)
+
+    def insert_dim(self, axis: AxisLike) -> Tensor:
+        """Returns a view of the tensor containing an added dimension at a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike
+            Where to insert the new dimension.
+
+        Returns
+        -------
+        Tensor
+            Tensor with an added dimension.
+        """
+        return Tensor(self.__engine.expand_dims(self.data, axis=axis))
+
+    def add_dims(self, target_dims: int) -> Tensor:
+        """Returns a view of the tensor with added trailing dimensions.
+
+        Parameters
+        ----------
+        target_dims : int
+            Total number of dimensions needed.
+
+        Returns
+        -------
+        Tensor
+            Tensor with specified number of dimensions.
+        """
+        return self.reshape(self.shape + (1,) * (target_dims - self.ndim))
+
+    def resize(self, shape: ShapeLike) -> Tensor:
+        """Returns a new tensor with the specified shape.
+        If the new tensor is larger than the original one, it is filled with zeros.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the new tensor.
+
+        Returns
+        -------
+        Tensor
+            Resized tensor.
+        """
+        return Tensor(self.__engine.resize(self.data, shape))
+
+    def repeat(self, n_repeats: int, axis: int) -> Tensor:
+        """Repeat elements of a tensor.
+
+        Parameters
+        ----------
+        n_repeats : int
+            Number of repeats.
+        axis : int
+            Axis, along which the values are repeated.
+
+        Returns
+        -------
+        Tensor
+            Tensor with repeated values.
+        """
+        return Tensor(self.data.repeat(n_repeats, axis))
+
+    def pad(self, pad_width: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
+        """Returns a padded tensor using zero padding.
+
+        Parameters
+        ----------
+        pad_width : int | tuple[int, int] | tuple[tuple[int, int]]
+            Padding width.
+            `int`: Same padding for before and after in all dimensions.
+            `tuple[int, int]`: Specific before and after padding in all dimensions.
+            `tuple[tuple[int, int]`: Specific before and after padding for each dimension.
+
+        Returns
+        -------
+        Tensor
+            Padded tensor.
+        """
+        return Tensor(self.__engine.pad(self.data, pad_width))
+
+    def pad_to_shape(self, shape: ShapeLike) -> Tensor:
+        """Returns a padded tensor using zero padding that matches a specified shape.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Final shape of the padded tensor.
+
+        Returns
+        -------
+        Tensor
+            Padded tensor.
+        """
+        pad_width = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
+        return self.pad(tuple(pad_width))
+
+    def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
+        """Move axes of an array to new positions. Other axes remain in their original order.
+
+        Parameters
+        ----------
+        from_axis : int
+            Original positions of the axes to move. These must be unique.
+        to_axis : int
+            Destination positions for each of the original axes. These must also be unique.
+
+        Returns
+        -------
+        Tensor
+            Tensor with moved axes.
+        """
+        return Tensor(self.__engine.moveaxis(self.data, from_axis, to_axis))
+
+    def squeeze(self) -> Tensor:
+        """Removes axis with length one from the tensor."""
+        return Tensor(self.data.squeeze())
+
+    def flip(self, axis: AxisLike) -> Tensor:
+        """Returns a tensor with flipped elements along given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike
+            Axis alown which to flip the tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing flipped values.
+        """
+        return Tensor(self.__engine.flip(self.data, axis=axis))
+
+    # ----------------------------------------------------------------------------------------------
+    # MEMORY/DEVICE METHODS
+    # ----------------------------------------------------------------------------------------------
+
+    def copy(self) -> Tensor:
+        """Creates a copy of the tensor."""
+        t = Tensor(self.data, copy=True)
+        t.grad = self.grad if self.grad is None else self.grad.copy()
+        return t
+
+    def item(self) -> ScalarLike:
+        """Returns the scalar value of the tensor data.
+
+        Returns
+        -------
+        float
+            Scalar of the tensor data.
+        """
+        return self.data.item()
+
+    def to_device(self, device: DeviceLike) -> None:
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : DeviceLike
+            Device to move the tensor to. Valid options are "cpu" and "cuda".
+
+        Raises
+        ----------
+        AttributeErrors
+            If device is not "cpu" or "cuda".
+
+        """
+        if self.device == device:
+            return
+
+        check_device(device)
+        self.device = device
+
+        if device == "cuda":
+            self.data = numpy_to_cupy(self.data)
+            if self.grad is not None:
+                self.grad = numpy_to_cupy(self.grad)
+        else:
+            self.data = cupy_to_numpy(self.data)
+            if self.grad is not None:
+                self.grad = cupy_to_numpy(self.grad)
+
+    def cpu(self):
+        """Returns a copy of the tensor on the cpu."""
+        if self.device == "cpu":
+            return self
+
+        self.to_device("cpu")
+        return self
+
+    def cuda(self):
+        """Returns a copy of the tensor on the gpu."""
+        if self.device == "cuda":
+            return self
+
+        self.to_device("cuda")
+        return self
 
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
@@ -566,165 +844,6 @@ class Tensor:
         """
         return Tensor(self.__engine.sqrt(self.data))
 
-    def item(self) -> ScalarLike:
-        """Returns the scalar value of the tensor data.
-
-        Returns
-        -------
-        float
-            Scalar of the tensor data.
-        """
-        return self.data.item()
-
-    def reshape(self, shape: ShapeLike) -> Tensor:
-        """Returns a reshaped tensor of data to fit a given shape.
-
-        Parameters
-        ----------
-        ShapeLike
-            Shape of the new tensor.
-
-        Returns
-        -------
-        Tensor
-            Reshapded tensor.
-        """
-        return Tensor(self.data.reshape(*shape))
-
-    def pad(self, pad_width: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
-        """Returns a padded tensor using zero padding.
-
-        Parameters
-        ----------
-        pad_width : int | tuple[int, int] | tuple[tuple[int, int]]
-            Padding width.
-            `int`: Same padding for before and after in all dimensions.
-            `tuple[int, int]`: Specific before and after padding in all dimensions.
-            `tuple[tuple[int, int]`: Specific before and after padding for each dimension.
-
-        Returns
-        -------
-        Tensor
-            Padded tensor.
-        """
-        return Tensor(self.__engine.pad(self.data, pad_width))
-
-    def pad_to_shape(self, shape: ShapeLike) -> Tensor:
-        """Returns a padded tensor using zero padding that matches a specified shape.
-
-        Parameters
-        ----------
-        shape : ShapeLike
-            Final shape of the padded tensor.
-
-        Returns
-        -------
-        Tensor
-            Padded tensor.
-        """
-        pad_width = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
-        return self.pad(tuple(pad_width))
-
-    def flatten(self) -> Tensor:
-        """Returns a flattened, one-dimensional tensor.
-
-        Returns
-        -------
-        Tensor
-            Flattened, one-dimensional version of the tensor.
-        """
-        return Tensor(self.data.reshape((-1,)))
-
-    def transpose(self, axes: AxisLike = (-2, -1)) -> Tensor:
-        """Transposes a tensor by swapping two axes.
-
-        Parameters
-        ----------
-        axes : AxisLike, optional
-            Transpose axes, by default (-2, -1).
-
-        Returns
-        -------
-        Tensor
-            Transposed tensor.
-        """
-        return self.moveaxis(*axes)
-
-    def astype(self, dtype: DtypeLike) -> Tensor:
-        """Returns a copy of the tensor with parsed values.
-
-        Parameters
-        ----------
-        dtype : str
-            Datatype of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor of dtype.
-        """
-        return Tensor(self.data, dtype=dtype, copy=False)
-
-    def int(self) -> Tensor:
-        """Returns a copy of the tensor with int values.
-
-        Returns
-        -------
-        Tensor
-            Int tensor.
-        """
-        return self.astype("int32")
-
-    def long(self) -> Tensor:
-        """Returns a copy of the tensor with long values.
-
-        Returns
-        -------
-        Tensor
-            Long tensor.
-        """
-        return self.astype("int64")
-
-    def half(self) -> Tensor:
-        """Returns a copy of the tensor with half precision values.
-
-        Returns
-        -------
-        Tensor
-            Half precision tensor.
-        """
-        return self.astype("float16")
-
-    def float(self) -> Tensor:
-        """Returns a copy of the tensor with float values.
-
-        Returns
-        -------
-        Tensor
-            Float tensor.
-        """
-        return self.astype("float32")
-
-    def double(self) -> Tensor:
-        """Returns a copy of the tensor with double precision values.
-
-        Returns
-        -------
-        Tensor
-            Double precision tensor.
-        """
-        return self.astype("float64")
-
-    def complex(self) -> Tensor:
-        """Returns a copy of the tensor with complex values.
-
-        Returns
-        -------
-        Tensor
-            Complex tensor.
-        """
-        return self.astype("complex64")
-
     def append(self, values: Tensor, axis: int) -> Tensor:
         """Returns a copy of the tensor with appended values.
 
@@ -742,42 +861,6 @@ class Tensor:
         """
         return Tensor(self.__engine.append(self.data, values.data, axis=axis))
 
-    def flip(self, axis: AxisLike) -> Tensor:
-        """Returns a tensor with flipped elements along given axis.
-
-        Parameters
-        ----------
-        axis : AxisLike
-            Axis alown which to flip the tensor.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing flipped values.
-        """
-        return Tensor(self.__engine.flip(self.data, axis=axis))
-
-    def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
-        """Move axes of an array to new positions. Other axes remain in their original order.
-
-        Parameters
-        ----------
-        from_axis : int
-            Original positions of the axes to move. These must be unique.
-        to_axis : int
-            Destination positions for each of the original axes. These must also be unique.
-
-        Returns
-        -------
-        Tensor
-            Tensor with moved axes.
-        """
-        return Tensor(self.__engine.moveaxis(self.data, from_axis, to_axis))
-
-    def squeeze(self) -> Tensor:
-        """Removes axis with length one from the tensor."""
-        return Tensor(self.data.squeeze())
-
     def argmax(self, axis: int | None = None) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
@@ -792,39 +875,6 @@ class Tensor:
             Index tensor.
         """
         return Tensor(self.__engine.argmax(self.data, axis=axis))
-
-    def resize(self, shape: ShapeLike) -> Tensor:
-        """Returns a new tensor with the specified shape.
-        If the new tensor is larger than the original one, it is filled with zeros.
-
-        Parameters
-        ----------
-        shape : ShapeLike
-            Shape of the new tensor.
-
-        Returns
-        -------
-        Tensor
-            Resized tensor.
-        """
-        return Tensor(self.__engine.resize(self.data, shape))
-
-    def repeat(self, n_repeats: int, axis: int) -> Tensor:
-        """Repeat elements of a tensor.
-
-        Parameters
-        ----------
-        n_repeats : int
-            Number of repeats.
-        axis : int
-            Axis, along which the values are repeated.
-
-        Returns
-        -------
-        Tensor
-            Tensor with repeated values.
-        """
-        return Tensor(self.data.repeat(n_repeats, axis))
 
     def clip(self, min_value: int | float, max_value: int | float) -> Tensor:
         """Limits the values of a tensor.
@@ -843,8 +893,26 @@ class Tensor:
         """
         return Tensor(self.__engine.clip(self.data, min_value, max_value))
 
-    def copy(self) -> Tensor:
-        """Creates a copy of the tensor."""
-        t = Tensor(self.data, copy=True)
-        t.grad = self.grad if self.grad is None else self.grad.copy()
-        return t
+    def unique(self) -> Tensor:
+        """Returns the unique ordered values of the tensor."""
+        return Tensor(self.__engine.unique(self.data))
+
+    def split(self, splits: int | list[int], axis: int = -1) -> list[Tensor]:
+        """Returns a list of new tensors by splitting the tensor.
+
+        Parameters
+        ----------
+        splits : int | list[int]
+            If an int is given, the tensor is split into n equally sized tensors.
+            If a list of indices is given, they represent the indices at which to
+            split the tensor along the given axis.
+        axis : int, optional
+            Axis along which to split the tensor, by default -1.
+
+        Returns
+        -------
+        list[Tensor]
+            List of tensors containing the split data.
+        """
+        chunks = self.__engine.split(self.data, splits, axis=axis)
+        return [Tensor(c) for c in chunks]

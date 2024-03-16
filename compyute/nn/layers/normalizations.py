@@ -76,8 +76,10 @@ class Batchnorm1d(Module):
             var = x.var(axis=axis, keepdims=True, ddof=1)
             self.rvar = self.rvar * (1 - self.m) + var.squeeze() * self.m
         else:
-            rvar = self.rvar if dim2 else self.rvar.reshape((*self.rvar.shape, 1))
-            rmean = self.rmean if dim2 else self.rmean.reshape((*self.rmean.shape, 1))
+            rvar = self.rvar if dim2 else self.rvar.reshape(
+                (*self.rvar.shape, 1))
+            rmean = self.rmean if dim2 else self.rmean.reshape(
+                (*self.rmean.shape, 1))
             var_h = (rvar + self.eps) ** -0.5
             x_h = (x - rmean) * var_h
 
@@ -100,7 +102,8 @@ class Batchnorm1d(Module):
                     * (
                         n * dy
                         - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data * (dy * x_h.data).sum(axis=axis, keepdims=True)
+                        - x_h.data *
+                        (dy * x_h.data).sum(axis=axis, keepdims=True)
                     )
                 )
 
@@ -220,7 +223,8 @@ class Batchnorm2d(Module):
                     * (
                         n * dy
                         - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data * (dy * x_h.data).sum(axis=axis, keepdims=True)
+                        - x_h.data *
+                        (dy * x_h.data).sum(axis=axis, keepdims=True)
                     )
                 )
 

@@ -1,8 +1,6 @@
 """Convolutional layers module"""
 
 from compyute.functional import (
-    insert_dim,
-    match_dims,
     prod,
     random_uniform,
     zeros,
@@ -97,7 +95,7 @@ class Convolution1d(Module):
         # flip weights for cross correlation
         w_flip = self.w.flip(-1)
 
-        x = insert_dim(x, axis=1)  # (B, 1, Ci, Ti)
+        x = x.insert_dim(axis=1)  # (B, 1, Ci, Ti)
         w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, K)
 
         # convolve
@@ -124,22 +122,25 @@ class Convolution1d(Module):
                 B, Co, To = dy.shape
 
                 # undo strides by filling with zeros
-                dy_p = zeros((B, Co, self.stride * To), device=self.device).data
+                dy_p = zeros((B, Co, self.stride * To),
+                             device=self.device).data
                 dy_p[:, :, :: self.stride] = dy
                 dy_p_ti = 1 + (Ti - K) if self.pad == "valid" else Ti
-                dy_p = Tensor(dy_p[:, :, :dy_p_ti], dtype=dy.dtype, device=self.device)
+                dy_p = Tensor(dy_p[:, :, :dy_p_ti],
+                              dtype=dy.dtype, device=self.device)
 
                 # ----------------
                 # input grads
                 # ----------------
-                dy_p_ext = insert_dim(dy_p, 2)  # (B, Co, 1, To)
+                dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, To)
                 w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K)
                 pad = "full" if self.pad == "valid" else self.pad
 
                 # convolve
                 # (B, Co, 1, To) * (1, Co, Ci, K)
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
-                dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
+                dy_conv_w = dy_conv_w.astype(
+                    self.dtype)  # conv returns float64
 
                 # sum over output channels
                 # (B, Ci, Ti)
@@ -160,8 +161,10 @@ class Convolution1d(Module):
 
                 # convolve
                 # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
-                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[:, :, :, -K * self.dil :]
-                x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
+                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[
+                    :, :, :, -K * self.dil:]
+                x_conv_dy = x_conv_dy.astype(
+                    self.dtype)  # conv returns float64
 
                 # sum over batches
                 # (B, Co, Ci, K) -> (Co, Ci, K)
@@ -263,7 +266,7 @@ class Convolution2d(Module):
         # rotate weights for cross correlation
         w_flip = self.w.flip((-2, -1))
 
-        x = insert_dim(x, 1)  # (B, 1, Ci, Yi, Xi)
+        x = x.insert_dim(axis=1)  # (B, 1, Ci, Yi, Xi)
         w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, Ky, Kx)
 
         # convolve
@@ -277,7 +280,7 @@ class Convolution2d(Module):
 
         if self.use_bias:
             # (B, Co, Yo, Xo) + (Co, 1, 1)
-            y += match_dims(x=self.b, dims=3)
+            y += self.b.add_dims(target_dims=3)
 
         if self.training:
 
@@ -292,7 +295,8 @@ class Convolution2d(Module):
                 Dy, Dx = self.dil
 
                 # fill elements skipped by strides with zeros
-                dy_p = zeros((B, Co, Sy * Yo, Sx * Xo), device=self.device).data
+                dy_p = zeros((B, Co, Sy * Yo, Sx * Xo),
+                             device=self.device).data
                 dy_p[:, :, ::Sy, ::Sx] = dy
                 dy_p_yi = 1 + (Yi - Ky) if self.pad == "valid" else Yi
                 dy_p_xi = 1 + (Xi - Kx) if self.pad == "valid" else Xi
@@ -303,14 +307,15 @@ class Convolution2d(Module):
                 # ----------------
                 # input grads
                 # ----------------
-                dy_p_ext = insert_dim(dy_p, 2)  # (B, Co, 1, Yo, Xo)
-                w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, Ky, Kx)
+                dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, Yo, Xo)
+                # (1, Co, Ci, Ky, Kx)
+                w_ext = self.w.reshape((1, *self.w.shape))
                 pad = "full" if self.pad == "valid" else "same"
 
                 # convolve
                 # (B, Co, 1, Yo, Xo) * (1, Co, Ci, Ky, Kx) -> (B, Co, Ci, Yi, Xi)
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
-                dy_conv_w = dy_conv_w.astype(self.dtype)  # conv returns float64
+                dy_conv_w = dy_conv_w.astype(self.dtype)
 
                 # sum over c_out
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
@@ -321,14 +326,15 @@ class Convolution2d(Module):
                 # ----------------
                 dy_p_ext = dy_p_ext.flip((-2, -1))
 
-                pad = (Ky // 2 * Dy, Kx // 2 * Dx) if self.pad == "same" else "valid"
+                pad = (Ky // 2 * Dy, Kx // 2 *
+                       Dx) if self.pad == "same" else "valid"
 
                 # convolve
                 # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, Ky, Kx)
                 x_conv_dy = convolve2d(x, dy_p_ext, pad=pad)[
-                    :, :, :, -Ky * Dy :, -Kx * Dx :
+                    :, :, :, -Ky * Dy:, -Kx * Dx:
                 ]
-                x_conv_dy = x_conv_dy.astype(self.dtype)  # conv returns float64
+                x_conv_dy = x_conv_dy.astype(self.dtype)
 
                 # sum over batches
                 # (B, Co, Ci, Ky, Kx) -> (Co, Ci, Ky, Kx)
@@ -385,7 +391,8 @@ class MaxPooling2d(Module):
         # iterate over height and width and pick highest value
         for i in range(y.shape[-2]):
             for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i * ky : (i + 1) * ky, j * kx : (j + 1) * kx]
+                chunk = x.data[:, :, i *
+                               ky: (i + 1) * ky, j * kx: (j + 1) * kx]
                 y[:, :, i, j] = chunk.max(axis=(-2, -1))
 
         if self.training:
@@ -453,7 +460,8 @@ class AvgPooling2d(Module):
         # iterate over height and width and compute mean value
         for i in range(y.shape[-2]):
             for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i * Ky : (i + 1) * Ky, j * Kx : (j + 1) * Kx]
+                chunk = x.data[:, :, i *
+                               Ky: (i + 1) * Ky, j * Kx: (j + 1) * Kx]
                 y[:, :, i, j] = chunk.mean(axis=(-2, -1))
 
         if self.training:

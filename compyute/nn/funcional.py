@@ -168,7 +168,8 @@ def convolve1d(
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError("Same padding and even kernel size not compatible.")
+        raise NotImplementedError(
+            "Same padding and even kernel size not compatible.")
 
     f_dil = dilate1d(f, dil).data
     x_pad = pad1d(x, f_dil.shape, pad)
@@ -238,7 +239,8 @@ def convolve2d(
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError("Same padding and even kernel size not compatible.")
+        raise NotImplementedError(
+            "Same padding and even kernel size not compatible.")
 
     f_dil = dilate2d(f, dil).data
     x_pad = pad2d(x, f_dil.shape, pad)
@@ -264,9 +266,10 @@ def convolve2d(
     out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
     s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
     slc_out = [slice(None)] * ifft.ndim
-    slc_out[ifft.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
+    slc_out[ifft.ndim - 2:] = [slice(-out_y, None), slice(-out_x, None)]
     slc_stride = [slice(None)] * ifft.ndim
-    slc_stride[ifft.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
+    slc_stride[ifft.ndim -
+               2:] = [slice(None, None, s_y), slice(None, None, s_x)]
     return Tensor(ifft[*slc_out][*slc_stride])
 
 
@@ -325,7 +328,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
     )
     f_dil = zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
-    slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
+    slc_dil[dim - 2:] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
     f_dil[*slc_dil] = f
     return f_dil
 
@@ -414,7 +417,8 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
                 pad = (filter_shape[-2] // 2, filter_shape[-1] // 2)
             case _:
                 pad = (0, 0)
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [(pad[0], pad[0]), (pad[1], pad[1])])
+    widths = tuple([(0, 0)] * (x.ndim - 2) +
+                   [(pad[0], pad[0]), (pad[1], pad[1])])
     return x.pad(widths)
 
 
