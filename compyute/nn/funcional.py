@@ -1,9 +1,5 @@
 """Neural network functions module"""
 
-import cupy as cp
-import cupy.fft as cpfft
-import numpy as np
-import numpy.fft as npfft
 from compyute.functional import maximum, minimum, zeros
 from compyute.tensor import Tensor, ShapeError
 from compyute.types import ShapeLike
@@ -22,6 +18,7 @@ __all__ = [
     "pad1d",
     "pad2d",
 ]
+pi: float = 3.141592653589793
 
 
 def relu(x: Tensor) -> Tensor:
@@ -73,7 +70,7 @@ def gelu(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return 0.5 * x * (1 + ((2 / cp.pi) ** 0.5 * (x + 0.044715 * x**3)).tanh())
+    return 0.5 * x * (1 + ((2 / pi) ** 0.5 * (x + 0.044715 * x**3)).tanh())
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -170,32 +167,24 @@ def convolve1d(
         raise NotImplementedError(
             "Same padding and even kernel size not compatible.")
 
-    f_dil = dilate1d(f, dil).data
+    f_dil = dilate1d(f, dil)
     x_pad = pad1d(x, f_dil.shape, pad)
 
     # convolution
-    if x.device == "cpu":
-        ifft = np.real(
-            npfft.ifft(
-                npfft.fft(x_pad.data).astype(np.complex64)
-                * npfft.fft(f_dil, n=x_pad.shape[-1]).astype(np.complex64)
-            )
-        )
-    else:
-        ifft = cp.real(
-            cpfft.ifft(
-                cpfft.fft(x_pad.data).astype(cp.complex64)
-                * cpfft.fft(f_dil, n=x_pad.shape[-1]).astype(cp.complex64)
-            )
-        )
+    cdtype = "complex64"
+    conv = (x_pad.fft1d(dtype=cdtype) *
+            f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype)).ifft1d(dtype=cdtype).real()
 
-    # slicing
+    # out slices
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
-    slc_out = [slice(None)] * ifft.ndim
-    slc_out[ifft.ndim - 1] = slice(-out, None)
-    slc_stride = [slice(None)] * ifft.ndim
-    slc_stride[ifft.ndim - 1] = slice(None, None, stride)
-    return Tensor(ifft[*slc_out][*slc_stride])
+    slc_o = [slice(None)] * conv.ndim
+    slc_o[conv.ndim - 1] = slice(-out, None)
+
+    # stride slices
+    slc_s = [slice(None)] * conv.ndim
+    slc_s[conv.ndim - 1] = slice(None, None, stride)
+
+    return conv[*slc_o][*slc_s]
 
 
 def convolve2d(
@@ -241,35 +230,26 @@ def convolve2d(
         raise NotImplementedError(
             "Same padding and even kernel size not compatible.")
 
-    f_dil = dilate2d(f, dil).data
+    f_dil = dilate2d(f, dil)
     x_pad = pad2d(x, f_dil.shape, pad)
 
     # convolution
-    if x.device == "cpu":
-        ifft = np.real(
-            npfft.ifft2(
-                npfft.fft2(x_pad.data).astype(np.complex64)
-                * npfft.fft2(f_dil, s=x_pad.shape[-2:]).astype(np.complex64)
-            )
-        )
-    else:
-        ifft = cp.real(
-            cpfft.ifft2(
-                cpfft.fft2(x_pad.data).astype(cp.complex64)
-                * cpfft.fft2(f_dil, s=x_pad.shape[-2:]).astype(cp.complex64)
-            )
-        )
+    cdtype = "complex64"
+    conv = (x_pad.fft2d(dtype=cdtype) *
+            f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype)).ifft2d(dtype=cdtype).real()
 
-    # slicing
+    # out slices
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
     out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
     s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
-    slc_out = [slice(None)] * ifft.ndim
-    slc_out[ifft.ndim - 2:] = [slice(-out_y, None), slice(-out_x, None)]
-    slc_stride = [slice(None)] * ifft.ndim
-    slc_stride[ifft.ndim -
-               2:] = [slice(None, None, s_y), slice(None, None, s_x)]
-    return Tensor(ifft[*slc_out][*slc_stride])
+    slc_o = [slice(None)] * conv.ndim
+    slc_o[conv.ndim - 2:] = [slice(-out_y, None), slice(-out_x, None)]
+
+    # stride slices
+    slc_s = [slice(None)] * conv.ndim
+    slc_s[conv.ndim - 2:] = [slice(None, None, s_y), slice(None, None, s_x)]
+
+    return conv[*slc_o][*slc_s]
 
 
 def dilate1d(f: Tensor, dil: int) -> Tensor:

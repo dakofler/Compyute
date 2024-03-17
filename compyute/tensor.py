@@ -12,8 +12,10 @@ from compyute.engine import (
 from compyute.types import (
     ArrayLike,
     AxisLike,
+    ComplexLike,
     DeviceLike,
     DtypeLike,
+    FloatLike,
     ScalarLike,
     ShapeLike,
 )
@@ -849,6 +851,105 @@ class Tensor:
             Tensor containing the square root value for each element.
         """
         return Tensor(self.__engine.sqrt(self.data))
+
+    def fft1d(
+        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+    ) -> Tensor:
+        """Computes the 1D Fast Fourier Transform over a specified axis.
+
+        Parameters
+        ----------
+        n : int | None, optional
+            Length of the transformed axis of the output, by default None.
+        axis : AxisLike, optional
+            Axis over which to compute the FFT, by default -1.
+        dtype : ComplexLike | None, optional
+            Datatype of the output tensor, by default None.
+
+        Returns
+        -------
+        Tensor
+            Complex tensor.
+        """
+        return Tensor(self.__engine.fft.fft(self.data, n=n, axis=axis), dtype=dtype)
+
+    def ifft1d(
+        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+    ) -> Tensor:
+        """Computes the inverse 1D Fast Fourier Transform over a specified axis.
+
+        Parameters
+        ----------
+        n : int | None, optional
+            Length of the transformed axis of the output, by default None.
+        axis : AxisLike, optional
+            Axis over which to compute the inverse FFT, by default -1.
+        dtype : FloatLike | None, optional
+            Datatype of the output tensor, by default None.
+
+        Returns
+        -------
+        Tensor
+            Float tensor.
+        """
+        return Tensor(self.__engine.fft.ifft(self.data, n=n, axis=axis), dtype=dtype)
+
+    def fft2d(
+        self,
+        s: ShapeLike | None = None,
+        axes: AxisLike = (-2, -1),
+        dtype: ComplexLike | None = None
+    ) -> Tensor:
+        """Computes the 2D Fast Fourier Transform over two specified axes.
+
+        Parameters
+        ----------
+        n : ShapeLike | None, optional
+            Shape (length of each transformed axis) of the output, by default None.
+        axes : AxisLike, optional
+            Axes over which to compute the FFT, by default (-2, -1).
+        dtype : ComplexLike | None, optional
+            Datatype of the output tensor, by default None.
+
+        Returns
+        -------
+        Tensor
+            Complex tensor.
+        """
+        return Tensor(self.__engine.fft.fft2(self.data, s=s, axes=axes), dtype=dtype)
+
+    def ifft2d(
+        self,
+        s: ShapeLike | None = None,
+        axes: AxisLike = (-2, -1),
+        dtype: ComplexLike | None = None
+    ) -> Tensor:
+        """Applies the inverse 1D Fast Fourier Transform to the tensor.
+
+        Parameters
+        ----------
+        n : ShapeLike | None, optional
+            Shape (length of each transformed axis) of the output, by default None.
+        axes : AxisLike, optional
+            Axes over which to compute the inverse FFT, by default (-2, -1).
+        dtype : ComplexLike | None, optional
+            Datatype of the output tensor, by default None.
+
+        Returns
+        -------
+        Tensor
+            Float tensor.
+        """
+        return Tensor(self.__engine.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
+
+    def real(self) -> Tensor:
+        """Returns the real parts of the complex tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing real values."""
+        return Tensor(self.__engine.real(self.data))
 
     def append(self, values: Tensor, axis: int) -> Tensor:
         """Returns a copy of the tensor with appended values.
