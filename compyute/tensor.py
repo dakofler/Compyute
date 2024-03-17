@@ -96,7 +96,7 @@ class Tensor:
     @property
     def T(self) -> ArrayLike:
         """Tensor data transposed."""
-        return self.data.T
+        return Tensor(self.data.T)
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS

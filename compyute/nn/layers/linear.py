@@ -83,7 +83,7 @@ class Linear(Module):
 
                 # input grads
                 # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
-                dx = dy @ self.w
+                dx = dy @ self.w.data
 
                 # weight grads
                 # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
