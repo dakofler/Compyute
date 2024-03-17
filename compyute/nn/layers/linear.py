@@ -1,5 +1,6 @@
 """Linear transformation layers module"""
 
+from compyute.engine import get_engine
 from compyute.functional import arange, zeros
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
@@ -45,9 +46,9 @@ class Linear(Module):
         self.dtype = dtype
 
         # init weights
-        # (Ci, Co)
+        # (Co, Ci)
         k = in_channels**-0.5
-        w = uniform((in_channels, out_channels), -k, k)
+        w = uniform((out_channels, in_channels), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
@@ -68,7 +69,7 @@ class Linear(Module):
         x = x.astype(self.dtype)
 
         # (B, ... , Ci) @ (Ci, Co) -> (B, ... , Co)
-        y = x @ self.w
+        y = x @ self.w.T
 
         if self.use_bias:
             # (B, ... , Co) + (Co,)
@@ -82,12 +83,12 @@ class Linear(Module):
 
                 # input grads
                 # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
-                dx = dy @ self.w.T
+                dx = dy @ self.w
 
                 # weight grads
-                # 2D: (Ci, B) @ (B, Co) -> (Ci, Co)
-                # ND: (B, ..., Ci, Bn) @ (B, ... , Bn, Co) -> (B, ..., Ci, Co)
-                dw = x.transpose().data @ dy
+                # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
+                # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
+                dw = get_engine(x.device).moveaxis(dy, -2, -1) @ x.data
                 if x.ndim > 2:
                     # sum over all batch dimensions
                     # (B, ..., Ci, Co) -> (Ci, Co)

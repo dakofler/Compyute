@@ -12,7 +12,7 @@ B, Cin, Ch, Cout, X = (10, 20, 30, 40, 50)
 def test_recurrent() -> None:
     results = []
     shape_x = (B, X, Cin)
-    shape_w_in_1 = (Cin, Ch)
+    shape_w_in_1 = (Ch, Cin)
     shape_b_in_1 = (Ch,)
     shape_w_h_1 = (Ch, Ch)
     shape_b_h_1 = (Ch,)
@@ -24,16 +24,16 @@ def test_recurrent() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(shape_x)
 
-    compyute_w_in_1, torch_w_in_1 = get_params(shape_w_in_1, torch_T=True)
+    compyute_w_in_1, torch_w_in_1 = get_params(shape_w_in_1)
     compyute_b_in_1, torch_b_in_1 = get_params(shape_b_in_1)
 
-    compyute_w_h_1, torch_w_h_1 = get_params(shape_w_h_1, torch_T=True)
+    compyute_w_h_1, torch_w_h_1 = get_params(shape_w_h_1)
     compyute_b_h_1, torch_b_h_1 = get_params(shape_b_h_1)
 
-    compyute_w_in_2, torch_w_in_2 = get_params(shape_w_in_2, torch_T=True)
+    compyute_w_in_2, torch_w_in_2 = get_params(shape_w_in_2)
     compyute_b_in_2, torch_b_in_2 = get_params(shape_b_in_2)
 
-    compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2, torch_T=True)
+    compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
     compyute_module = compyute.nn.blocks.Recurrent(Cin, Ch, num_layers=2)
@@ -80,7 +80,7 @@ def test_recurrent() -> None:
     results.append(
         validate(
             compyute_module.child_modules[0].w_i.grad,
-            torch_module.weight_ih_l0.grad.T,
+            torch_module.weight_ih_l0.grad,
         )
     )
     results.append(
@@ -92,7 +92,7 @@ def test_recurrent() -> None:
     # hidden 1 grads
     results.append(
         validate(
-            compyute_module.child_modules[0].w_h.grad, torch_module.weight_hh_l0.grad.T
+            compyute_module.child_modules[0].w_h.grad, torch_module.weight_hh_l0.grad
         )
     )
     results.append(
@@ -104,7 +104,7 @@ def test_recurrent() -> None:
     # input 2 grads
     results.append(
         validate(
-            compyute_module.child_modules[1].w_i.grad, torch_module.weight_ih_l1.grad.T
+            compyute_module.child_modules[1].w_i.grad, torch_module.weight_ih_l1.grad
         )
     )
     results.append(
@@ -116,7 +116,7 @@ def test_recurrent() -> None:
     # hidden 2 grads
     results.append(
         validate(
-            compyute_module.child_modules[1].w_h.grad, torch_module.weight_hh_l1.grad.T
+            compyute_module.child_modules[1].w_h.grad, torch_module.weight_hh_l1.grad
         )
     )
     results.append(
@@ -132,13 +132,13 @@ def test_recurrent() -> None:
 def test_residual() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
-    w2_shape = (Cout, Cin)
+    w1_shape = (Cout, Cin)
+    w2_shape = (Cin, Cout)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = compyute.nn.blocks.Residual(
         compyute.nn.containers.Sequential(

@@ -3,7 +3,7 @@
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.preprocessing.basic import one_hot_encode
-from compyute.random import uniform
+from compyute.random import normal
 from compyute.tensor import Tensor
 from compyute.types import ArrayLike
 
@@ -16,41 +16,40 @@ class Embedding(Module):
 
     def __init__(
         self,
-        in_channels: int,
-        out_channels: int,
+        vocab_size: int,
+        embedding_dim: int,
         dtype: str = "float32",
     ) -> None:
         """Embedding layer used for token embedding.
         Input: (B, T)
             B ... batch, T ... time
-        Output: (B, T, Co)
-            B ... batch, T ... time, C ... output channels (embedding dim)
+        Output: (B, T, E)
+            B ... batch, T ... time, E ... embedding dim
 
         Parameters
         ----------
-        in_channels : int
-            Number of input channels (vocabulary size) of the layer.
-        out_channels : int
-            Number of output channels (embedding dimensions) of the layer.
+        vocab_size : int
+            Vocabulary size of the layer.
+        embedding_dim : int
+            Number of embedding dimensions of the layer.
         dtype: str, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+        self.vocab_size = vocab_size
+        self.embedding_dim = embedding_dim
         self.dtype = dtype
 
         # init weights (Ci, Co)
-        k = in_channels**-0.5
-        w = uniform((in_channels, out_channels), -k, k)
+        w = normal((vocab_size, embedding_dim))
         self.w = Parameter(w, dtype=dtype, label="w")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
-        in_channels = self.in_channels
-        out_channels = self.out_channels
+        vocab_size = self.vocab_size
+        embedding_dim = self.embedding_dim
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {dtype=})"
+        return f"{name}({vocab_size=}, {embedding_dim=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2])

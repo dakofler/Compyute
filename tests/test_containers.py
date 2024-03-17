@@ -12,13 +12,13 @@ B, Cin, Cout = (10, 20, 30)
 def test_sequential_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
     w2_shape = (Cout, Cout)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = compyute.nn.containers.Sequential(
         [
@@ -55,13 +55,13 @@ def test_sequential_container() -> None:
 def test_parallel_concat_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
-    w2_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = compyute.nn.containers.ParallelConcat(
         [
@@ -97,13 +97,13 @@ def test_parallel_concat_container() -> None:
 def test_parallel_add_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
-    w2_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = compyute.nn.containers.ParallelAdd(
         [

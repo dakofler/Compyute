@@ -64,7 +64,7 @@ class Convolution1d(Module):
 
         # init weights
         # (Co, Ci, K)
-        k = int(in_channels * kernel_size) ** -0.5
+        k = (in_channels * kernel_size) ** -0.5
         w = uniform((out_channels, in_channels, kernel_size), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
@@ -236,7 +236,7 @@ class Convolution2d(Module):
 
         # init weights
         # (Co, Ci, Ky, Kx)
-        k = int(in_channels * prod(kernel_size)) ** -0.5
+        k = (in_channels * prod(kernel_size)) ** -0.5
         w = uniform((out_channels, in_channels, *kernel_size), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 

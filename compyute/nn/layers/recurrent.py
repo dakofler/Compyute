@@ -22,9 +22,9 @@ class RecurrentCell(Module):
         dtype: str = "float32",
     ) -> None:
         """Recurrent cell.
-        Input: (B, T , Cin)
+        Input: (B, T, Cin)
             B ... batch, T ... time, Cin ... input channels
-        Output: (B, T , Ch)
+        Output: (B, T, Ch)
             B ... batch, T ... time, Ch ... hidden channels
 
         Parameters
@@ -33,10 +33,6 @@ class RecurrentCell(Module):
             Number of input features.
         h_channels : int
             Number of hidden channels.
-        i_weights : Parameter | None, optional
-            Input weights of the layer, by default None. If None, weights are initialized randomly.
-        h_weights : Parameter | None, optional
-            Hidden weights of the layer, by default None. If None, weights are initialized randomly.
         use_bias : bool, optional
             Whether to use bias values, by default True.
         dtype: str, optional
@@ -48,29 +44,29 @@ class RecurrentCell(Module):
         self.use_bias = use_bias
         self.dtype = dtype
 
+        k = h_channels**-0.5
+
         # init input weights
         # (Cin, Ch)
-        k = in_channels**-0.5
-        w = uniform((in_channels, h_channels), -k, k)
-        self.w_i = Parameter(w, dtype=dtype, label="w_i")
+        w_i = uniform((h_channels, in_channels), -k, k)
+        self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
 
         # init input biases
         # (Ch,)
         if use_bias:
-            self.b_i = Parameter(zeros((h_channels,)),
-                                 dtype=dtype, label="b_i")
+            b_i = zeros((h_channels,))
+            self.b_i = Parameter(b_i, dtype=dtype, label="b_i")
 
         # init hidden weights
         # (Ch, Ch)
-        k = h_channels**-0.5
-        w = uniform((h_channels, h_channels), -k, k)
-        self.w_h = Parameter(w, dtype=dtype, label="w_h")
+        w_h = uniform((h_channels, h_channels), -k, k)
+        self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
 
         # init hidden biases
         # (Ch,)
         if use_bias:
-            self.b_h = Parameter(zeros((h_channels,)),
-                                 dtype=dtype, label="b_h")
+            b_h = zeros((h_channels,))
+            self.b_h = Parameter(b_h, dtype=dtype, label="b_h")
 
     def __repr__(self):
         name = self.__class__.__name__
@@ -86,7 +82,7 @@ class RecurrentCell(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h = x @ self.w_i
+        x_h = x @ self.w_i.T
         if self.use_bias:
             x_h += self.b_i
 
@@ -94,7 +90,7 @@ class RecurrentCell(Module):
         h = zeros_like(x_h, device=self.device)
         for t in range(x_h.shape[1]):
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
-            h_t = h[:, t - 1] @ self.w_h
+            h_t = h[:, t - 1] @ self.w_h.T
             if self.use_bias:
                 h_t += self.b_h
 
@@ -116,7 +112,7 @@ class RecurrentCell(Module):
                         out_grad = dh[:, t]
                     else:
                         # (B, Ch) + (B, Ch) @ (Ch, Ch) -> (B, Ch)
-                        out_grad = dh[:, t] + dx_h[:, t + 1] @ self.w_h.T
+                        out_grad = dh[:, t] + dx_h[:, t + 1] @ self.w_h
 
                     # activation grads
                     dx_h[:, t] = (1 - h.data[:, t] ** 2) * out_grad
@@ -124,7 +120,7 @@ class RecurrentCell(Module):
                     # hidden weight grads
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0:
-                        self.w_h.grad += h[:, t - 1].T @ dx_h[:, t]
+                        self.w_h.grad += dx_h[:, t].T @ h[:, t - 1]
 
                 # hidden bias grads
                 # (B, T, Ch) -> (Ch,)
@@ -132,12 +128,12 @@ class RecurrentCell(Module):
 
                 # input grads
                 # (B, T, Ch) @ (Ch, Cin) -> (B, T, Cin)
-                dx = dx_h @ self.w_i.T
+                dx = dx_h @ self.w_i
 
                 # input weight grads
-                # (B, Cin, T) @ (B, T, Ch) -> (B, Cin, Ch)
-                dw = x.transpose().data @ dx_h
-                # (B, Cin, Ch) -> (Cin, Ch)
+                # (B, Ch, T) @ (B, T, Cin) -> (B, Ch, Cin)
+                dw = dx_h.transpose(0, 2, 1) @ x.data
+                # (B, Ch, Cin) -> (Ch, Cin)
                 self.w_i.grad = dw.sum(axis=0)
 
                 # input bias grads

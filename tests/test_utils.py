@@ -39,16 +39,12 @@ def get_vals_int(
 
 
 def get_params(
-    shape: ShapeLike, torch_T: bool = False, device: str = "cpu"
+    shape: ShapeLike, device: str = "cpu"
 ) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape) * 0.1
     compyute_x = Parameter(data, dtype="float32")
-    if torch_T:
-        torch_x = torch.nn.Parameter(torch.from_numpy(data.T.copy()).float())
-    else:
-        torch_x = torch.nn.Parameter(
-            torch.from_numpy(data.data.copy()).float())
+    torch_x = torch.nn.Parameter(torch.from_numpy(data.data.copy()).float())
     compyute_x.to_device(device)
     return compyute_x, torch_x
 
