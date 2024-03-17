@@ -15,7 +15,6 @@ from compyute.types import (
     ComplexLike,
     DeviceLike,
     DtypeLike,
-    FloatLike,
     ScalarLike,
     ShapeLike,
 )
@@ -47,7 +46,7 @@ class Tensor:
             Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: DeviceLike, optinal
+        device: DeviceLike, optional
             The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
@@ -115,14 +114,15 @@ class Tensor:
     def __call__(self) -> ArrayLike:
         return self.data
 
-    def __getitem__(self, idx) -> Tensor:
-        idx = idx.data if isinstance(idx, Tensor) else idx
-        idx = (
-            tuple(i.data if isinstance(i, Tensor) else i for i in idx)
-            if isinstance(idx, tuple)
-            else idx
-        )
-        return Tensor(self.data[idx])
+    def __getitem__(self, idx: Tensor | ArrayLike | int) -> Tensor | int:
+        if isinstance(idx, Tensor):
+            i = idx.data
+        elif isinstance(idx, tuple):
+            i = tuple(j.data if isinstance(j, Tensor) else j for j in idx)
+        else:
+            i = idx
+        item = self.data[i]
+        return Tensor(item) if isinstance(item, ArrayLike) else item
 
     def __setitem__(self, idx, value) -> None:
         idx = idx.data if isinstance(idx, Tensor) else idx
@@ -135,9 +135,7 @@ class Tensor:
 
     def __next__(self) -> Tensor | ScalarLike:
         if self.__iterator < self.shape[0]:
-            data = self.data[self.__iterator]
-            if isinstance(data, ArrayLike):
-                data = Tensor(data)
+            data = self[self.__iterator]
             self.__iterator += 1
             return data
         raise StopIteration
@@ -279,63 +277,27 @@ class Tensor:
         return Tensor(self.data, dtype=dtype, copy=False)
 
     def int(self) -> Tensor:
-        """Returns a copy of the tensor with int values.
-
-        Returns
-        -------
-        Tensor
-            Int tensor.
-        """
+        """Returns a copy of the tensor with int values."""
         return self.astype("int32")
 
     def long(self) -> Tensor:
-        """Returns a copy of the tensor with long values.
-
-        Returns
-        -------
-        Tensor
-            Long tensor.
-        """
+        """Returns a copy of the tensor with long values."""
         return self.astype("int64")
 
     def half(self) -> Tensor:
-        """Returns a copy of the tensor with half precision values.
-
-        Returns
-        -------
-        Tensor
-            Half precision tensor.
-        """
+        """Returns a copy of the tensor with half precision values."""
         return self.astype("float16")
 
     def float(self) -> Tensor:
-        """Returns a copy of the tensor with float values.
-
-        Returns
-        -------
-        Tensor
-            Float tensor.
-        """
+        """Returns a copy of the tensor with float values."""
         return self.astype("float32")
 
     def double(self) -> Tensor:
-        """Returns a copy of the tensor with double precision values.
-
-        Returns
-        -------
-        Tensor
-            Double precision tensor.
-        """
+        """Returns a copy of the tensor with double precision values."""
         return self.astype("float64")
 
     def complex(self) -> Tensor:
-        """Returns a copy of the tensor with complex values.
-
-        Returns
-        -------
-        Tensor
-            Complex tensor.
-        """
+        """Returns a copy of the tensor with complex values."""
         return self.astype("complex64")
 
     def to_numpy(self) -> numpy.ndarray:
@@ -362,13 +324,7 @@ class Tensor:
         return Tensor(self.data.reshape(*shape))
 
     def flatten(self) -> Tensor:
-        """Returns a flattened, one-dimensional tensor.
-
-        Returns
-        -------
-        Tensor
-            Flattened, one-dimensional version of the tensor.
-        """
+        """Returns a flattened, one-dimensional tensor."""
         return Tensor(self.data.reshape((-1,)))
 
     def transpose(self, axes: AxisLike = (-2, -1)) -> Tensor:
@@ -530,13 +486,7 @@ class Tensor:
         return t
 
     def item(self) -> ScalarLike:
-        """Returns the scalar value of the tensor data.
-
-        Returns
-        -------
-        float
-            Scalar of the tensor data.
-        """
+        """Returns the scalar value of the tensor data."""
         return self.data.item()
 
     def to_device(self, device: DeviceLike) -> None:
@@ -723,133 +673,55 @@ class Tensor:
         return Tensor(self.data.round(decimals))
 
     def exp(self) -> Tensor:
-        """Exponential of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of e**x for each element.
-        """
+        """Exponential of tensor element."""
         return Tensor(self.__engine.exp(self.data))
 
     def log(self) -> Tensor:
-        """Natural logarithm of tensor elements.
-
-        Returns
-        -------
-            Tensor
-                Tensor containing the value of log(x) for each element.
-        """
+        """Natural logarithm of tensor elements."""
         return Tensor(self.__engine.log(self.data))
 
     def log10(self) -> Tensor:
-        """Logarithm with base 10 of tensor elements.
-
-        Returns
-        -------
-            Tensor
-                Tensor containing the value of log10(x) for each element.
-        """
+        """Logarithm with base 10 of tensor elements."""
         return Tensor(self.__engine.log10(self.data))
 
     def log2(self) -> Tensor:
-        """Logarithm with base 2 of tensor elements.
-
-        Returns
-        -------
-            Tensor
-                Tensor containing the value of log2(x) for each element.
-        """
+        """Logarithm with base 2 of tensor elements."""
         return Tensor(self.__engine.log2(self.data))
 
     def sin(self) -> Tensor:
-        """Sine of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of sin(x) for each element.
-        """
+        """Sine of tensor elements."""
         return Tensor(self.__engine.sin(self.data))
 
     def sinh(self) -> Tensor:
-        """Hyperbolic sine of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of sinh(x) for each element.
-        """
+        """Hyperbolic sine of tensor elements."""
         return Tensor(self.__engine.sinh(self.data))
 
     def cos(self) -> Tensor:
-        """Cosine of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of cos(x) for each element.
-        """
+        """Cosine of tensor elements."""
         return Tensor(self.__engine.cos(self.data))
 
     def cosh(self) -> Tensor:
-        """Hyperbolic cosine of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of cosh(x) for each element.
-        """
+        """Hyperbolic cosine of tensor elements."""
         return Tensor(self.__engine.cosh(self.data))
 
     def tan(self) -> Tensor:
-        """Tangent of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of tan(x) for each element.
-        """
+        """Tangent of tensor elements."""
         return Tensor(self.__engine.tan(self.data))
 
     def tanh(self) -> Tensor:
-        """Hyperbolical tangent of tensor elements.
-
-        Returns
-        -------
-            Tensor
-            Tensor containing the value of tanh(x) for each element.
-        """
+        """Hyperbolical tangent of tensor elements."""
         return Tensor(self.__engine.tanh(self.data))
 
     def sech(self) -> Tensor:
-        """Hyperbolic secant of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the value of sech(x) for each element.
-        """
+        """Hyperbolic secant of tensor elements."""
         return self.cosh() ** -1
 
     def abs(self) -> Tensor:
-        """Absolute values of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the absolute value for each element.
-        """
+        """Absolute values of tensor elements."""
         return Tensor(self.__engine.abs(self.data))
 
     def sqrt(self) -> Tensor:
-        """Square root of tensor elements.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing the square root value for each element.
-        """
+        """Square root of tensor elements."""
         return Tensor(self.__engine.sqrt(self.data))
 
     def fft1d(
@@ -943,12 +815,7 @@ class Tensor:
         return Tensor(self.__engine.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
 
     def real(self) -> Tensor:
-        """Returns the real parts of the complex tensor.
-
-        Returns
-        -------
-        Tensor
-            Tensor containing real values."""
+        """Returns the real parts of the complex tensor."""
         return Tensor(self.__engine.real(self.data))
 
     def append(self, values: Tensor, axis: int) -> Tensor:

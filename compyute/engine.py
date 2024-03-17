@@ -11,16 +11,9 @@ __all__ = ["gpu_available"]
 
 
 def gpu_available() -> bool:
-    """Checks if one or more GPUs are available.
-
-    Returns
-    -------
-    bool
-        True if one or more GPUs are available.
-    """
+    """Returns True, if one or more GPUs are available."""
     if "CUDA_PATH" not in os.environ:
         return False
-
     return cupy.is_available()
 
 
@@ -48,7 +41,7 @@ def get_engine(device: DeviceLike) -> ModuleType:
 
     Parameters
     ----------
-    device : DeviceLike | None, optinal
+    device : DeviceLike | None, optional
         Computation device, options are "cpu" and "cuda". If None, "cpu" is used.
 
     Returns

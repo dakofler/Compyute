@@ -29,7 +29,7 @@ class Parameter(Tensor):
             Datatype of the tensor data, by default "float32".
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: str, optinal
+        device: str, optional
             The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         label: str | None, optional
             Parameter label, by default None.

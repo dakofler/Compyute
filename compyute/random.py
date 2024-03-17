@@ -1,7 +1,5 @@
 """Random functions module"""
 
-import numpy
-import cupy
 from compyute.engine import get_engine, gpu_available
 from compyute.tensor import Tensor
 from compyute.types import DeviceLike, DtypeLike, ShapeLike
@@ -10,7 +8,7 @@ from compyute.types import DeviceLike, DtypeLike, ShapeLike
 __all__ = [
     "normal",
     "uniform",
-    "integer",
+    "uniform_int",
     "permutation",
     "set_seed",
     "shuffle",
@@ -27,8 +25,8 @@ def set_seed(seed: int) -> None:
         Seed value.
     """
     if gpu_available():
-        cupy.random.seed(seed)
-    numpy.random.seed(seed)
+        get_engine("cuda").random.seed(seed)
+    get_engine("cpu").random.seed(seed)
 
 
 def normal(
@@ -50,7 +48,7 @@ def normal(
         Standard deviation of random values, by default 1.
     dtype: str, optional
         Datatype of the tensor data, by default "float64".
-    device: str, optinal
+    device: str, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -80,7 +78,7 @@ def uniform(
         Upper bound for random values, by default 1.
     dtype: str, optional
         Datatype of the tensor data, by default "float64".
-    device: str, optinal
+    device: str, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -110,7 +108,7 @@ def uniform_int(
         Upper bound for random values.
     dtype: str, optional
         Datatype of the tensor data, by default "int32".
-    device: str, optinal
+    device: str, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -132,7 +130,7 @@ def permutation(
         Length of the permuted range.
     dtype: str, optional
         Datatype of the tensor data, by default "int32".
-    device: str, optinal
+    device: str, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
