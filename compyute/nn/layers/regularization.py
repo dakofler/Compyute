@@ -1,8 +1,9 @@
 """Regularization layers module"""
 
-from compyute.functional import random_multinomial
 from compyute.nn.module import Module
-from compyute.tensor import Tensor, ArrayLike
+from compyute.random import multinomial
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["Dropout"]
@@ -32,7 +33,7 @@ class Dropout(Module):
             p_comp = 1 - self.p
             choices = Tensor([0, 1], dtype=x.dtype, device=self.device)
             probs = Tensor([self.p, p_comp], dtype=x.dtype, device=self.device)
-            d_map = random_multinomial(choices, probs, x.shape)
+            d_map = multinomial(choices, probs, x.shape)
             y = x * d_map / p_comp
 
             def backward(dy: ArrayLike) -> ArrayLike:

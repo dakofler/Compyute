@@ -1,9 +1,11 @@
-"""parameter layers layer"""
+"""Linear transformation layers module"""
 
-from compyute.functional import arange, random_uniform, zeros
+from compyute.functional import arange, zeros
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike
+from compyute.random import uniform
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["Linear"]
@@ -45,7 +47,7 @@ class Linear(Module):
         # init weights
         # (Ci, Co)
         k = in_channels**-0.5
-        w = random_uniform((in_channels, out_channels), -k, k)
+        w = uniform((in_channels, out_channels), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases

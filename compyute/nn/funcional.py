@@ -1,12 +1,12 @@
-"""Functional module"""
+"""Neural network functions module"""
 
 import cupy as cp
 import cupy.fft as cpfft
 import numpy as np
 import numpy.fft as npfft
-
 from compyute.functional import maximum, minimum, zeros
-from compyute.tensor import Tensor, ShapeError, ShapeLike
+from compyute.tensor import Tensor, ShapeError
+from compyute.types import ShapeLike
 
 
 __all__ = [
@@ -22,7 +22,6 @@ __all__ = [
     "pad1d",
     "pad2d",
 ]
-PI: float = 3.141592653589793
 
 
 def relu(x: Tensor) -> Tensor:
@@ -74,7 +73,7 @@ def gelu(x: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return 0.5 * x * (1 + ((2 / PI) ** 0.5 * (x + 0.044715 * x**3)).tanh())
+    return 0.5 * x * (1 + ((2 / cp.pi) ** 0.5 * (x + 0.044715 * x**3)).tanh())
 
 
 def sigmoid(x: Tensor) -> Tensor:

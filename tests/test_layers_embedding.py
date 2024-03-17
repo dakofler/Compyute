@@ -13,7 +13,7 @@ def test_embedding() -> None:
     shape_w = (Cin, Cout)
 
     # forward
-    compyute_x = compyute.random_int((B, X), 0, Cin)
+    compyute_x = compyute.random.uniform_int((B, X), 0, Cin)
     torch_x = torch.from_numpy(compyute_x.data)
     compyute_w, torch_w = get_params(shape_w)
 

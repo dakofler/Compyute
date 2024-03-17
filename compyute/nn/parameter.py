@@ -1,7 +1,8 @@
 """Neural network parameter module"""
 
-from compyute.engine import numpy_to_cupy, cupy_to_numpy, ArrayLike, ScalarLike
+from compyute.engine import numpy_to_cupy, cupy_to_numpy
 from compyute.tensor import Tensor
+from compyute.types import ArrayLike, ScalarLike
 
 
 __all__ = ["Parameter"]
@@ -41,7 +42,8 @@ class Parameter(Tensor):
 
     def __repr__(self) -> str:
         return (
-            f"Parameter {self.label}:\n{self.data.__repr__().replace('array', 'tnsor')}"
+            f"Parameter {self.label}:\n{
+                self.data.__repr__().replace('array', 'tnsor')}"
         )
 
     def to_device(self, device: str) -> None:
@@ -65,7 +67,9 @@ class Parameter(Tensor):
 
         if device == "cpu":
             for key in self.optimizer_params:
-                self.optimizer_params[key] = cupy_to_numpy(self.optimizer_params[key])
+                self.optimizer_params[key] = cupy_to_numpy(
+                    self.optimizer_params[key])
         else:
             for key in self.optimizer_params:
-                self.optimizer_params[key] = numpy_to_cupy(self.optimizer_params[key])
+                self.optimizer_params[key] = numpy_to_cupy(
+                    self.optimizer_params[key])

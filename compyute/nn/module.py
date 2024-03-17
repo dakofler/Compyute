@@ -1,12 +1,12 @@
-"""module base module"""
+"""Neural network module base module"""
 
 from __future__ import annotations
-from typing import Callable
 from abc import ABC
-
-from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike, ShapeError
+from typing import Callable
 from compyute.functional import empty
+from compyute.nn.parameter import Parameter
+from compyute.tensor import Tensor, ShapeError
+from compyute.types import ArrayLike
 
 
 __all__ = ["Module"]
@@ -173,5 +173,6 @@ class Module(ABC):
             sender = self.__class__.__name__
             vdims = ", ".join([str(d) for d in valid_dims])
             raise ShapeError(
-                f"{sender}: Number of input dimensions {x.ndim} is not valid (valid: {vdims})"
+                f"{sender}: Number of input dimensions {
+                    x.ndim} is not valid (valid: {vdims})"
             )

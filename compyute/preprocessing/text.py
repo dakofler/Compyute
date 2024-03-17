@@ -4,7 +4,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import pickle
 import re
-
 import regex
 from tqdm.auto import trange
 from compyute.tensor import Tensor
@@ -71,8 +70,7 @@ class CharacterTokenizer(Tokenizer):
             Tensor of token ids.
         """
         preprocessed = list(text)
-        ids = [self.vocab[s] if s in self.vocab else 0 for s in preprocessed]
-        return Tensor(ids, dtype="int")
+        return Tensor([self.vocab[s] if s in self.vocab else 0 for s in preprocessed])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -130,8 +128,7 @@ class WordTokenizer(Tokenizer):
         """
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
-        ids = [self.vocab[s] if s in self.vocab else 0 for s in split]
-        return Tensor(ids, dtype="int")
+        return Tensor([self.vocab[s] if s in self.vocab else 0 for s in split])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -192,7 +189,8 @@ class BPETokenizer(Tokenizer):
 
             # get most occuring bigram
             if len(counts) == 0:
-                print(f"Step {i+1}/{num_merges}. No more possible merges found.")
+                print(
+                    f"Step {i+1}/{num_merges}. No more possible merges found.")
                 break
             bigram = max(counts, key=counts.get)
 
@@ -237,7 +235,8 @@ class BPETokenizer(Tokenizer):
             counts = self.__update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self.__merges.get(p, float("inf")))
+            bigram = min(
+                counts, key=lambda p: self.__merges.get(p, float("inf")))
             if bigram not in self.__merges:
                 break
 
@@ -266,7 +265,7 @@ class BPETokenizer(Tokenizer):
             chunk_ids = self._encode_chunk(chunk_bytes)
             token_ids.extend(chunk_ids)
 
-        return Tensor(token_ids, dtype="int32")
+        return Tensor(token_ids)
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.

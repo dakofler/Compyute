@@ -2,7 +2,8 @@
 
 from compyute.functional import zeros_like
 from compyute.nn.module import Module
-from compyute.tensor import Tensor, ShapeLike, ArrayLike
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike, ShapeLike
 
 
 __all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]

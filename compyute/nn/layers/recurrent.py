@@ -1,9 +1,11 @@
-"""recurrent layers layer"""
+"""Recurrent layers layer"""
 
-from compyute.functional import random_uniform, zeros, zeros_like
+from compyute.functional import zeros, zeros_like
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike
+from compyute.random import uniform
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["RecurrentCell"]
@@ -49,24 +51,26 @@ class RecurrentCell(Module):
         # init input weights
         # (Cin, Ch)
         k = in_channels**-0.5
-        w = random_uniform((in_channels, h_channels), -k, k)
+        w = uniform((in_channels, h_channels), -k, k)
         self.w_i = Parameter(w, dtype=dtype, label="w_i")
 
         # init input biases
         # (Ch,)
         if use_bias:
-            self.b_i = Parameter(zeros((h_channels,)), dtype=dtype, label="b_i")
+            self.b_i = Parameter(zeros((h_channels,)),
+                                 dtype=dtype, label="b_i")
 
         # init hidden weights
         # (Ch, Ch)
         k = h_channels**-0.5
-        w = random_uniform((h_channels, h_channels), -k, k)
+        w = uniform((h_channels, h_channels), -k, k)
         self.w_h = Parameter(w, dtype=dtype, label="w_h")
 
         # init hidden biases
         # (Ch,)
         if use_bias:
-            self.b_h = Parameter(zeros((h_channels,)), dtype=dtype, label="b_h")
+            self.b_h = Parameter(zeros((h_channels,)),
+                                 dtype=dtype, label="b_h")
 
     def __repr__(self):
         name = self.__class__.__name__

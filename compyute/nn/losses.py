@@ -2,11 +2,11 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable
-
 from compyute.functional import prod
 from compyute.nn.funcional import softmax
 from compyute.preprocessing.basic import one_hot_encode
-from compyute.tensor import Tensor, ArrayLike
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["MSE", "Crossentropy"]

@@ -2,21 +2,21 @@
 
 from __future__ import annotations
 import numpy
-
 from compyute.engine import (
     check_device,
     cupy_to_numpy,
     get_engine,
     infer_device,
     numpy_to_cupy,
+)
+from compyute.types import (
     ArrayLike,
+    AxisLike,
+    DeviceLike,
     DtypeLike,
     ScalarLike,
     ShapeLike,
-    AxisLike,
-    DeviceLike,
 )
-
 
 __all__ = ["Tensor"]
 

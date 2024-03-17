@@ -2,7 +2,8 @@
 
 from compyute.nn.funcional import sigmoid, relu, leaky_relu
 from compyute.nn.module import Module
-from compyute.tensor import Tensor, ArrayLike
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]

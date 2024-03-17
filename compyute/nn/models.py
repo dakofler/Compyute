@@ -1,10 +1,8 @@
 """Neural network models module"""
 
-from typing import Callable
 import pickle
-
+from typing import Callable
 from tqdm.auto import tqdm
-from compyute.engine import ShapeLike
 from compyute.functional import concatenate, ones
 from compyute.nn.containers import Sequential
 from compyute.nn.dataloaders import DataLoader
@@ -13,6 +11,7 @@ from compyute.nn.module import Module
 from compyute.nn.optimizers.lr_decay import LRDecay
 from compyute.nn.optimizers.optimizers import Optimizer
 from compyute.tensor import Tensor
+from compyute.types import ShapeLike
 
 
 __all__ = ["Model", "SequentialModel", "save_model", "load_model"]
@@ -147,11 +146,13 @@ class Model(Module):
             raise ModelCompilationError("Model has not been compiled yet.")
 
         if verbose not in [0, 1, 2]:
-            raise AttributeError(f"Invalid verbose mode {verbose}. Can be 0, 1, 2.")
+            raise AttributeError(f"Invalid verbose mode {
+                                 verbose}. Can be 0, 1, 2.")
 
         # create dataloaders
         train_dataloader = DataLoader(x, y, batch_size)
-        val_dataloader = DataLoader(*val_data, batch_size) if val_data else None
+        val_dataloader = DataLoader(
+            *val_data, batch_size) if val_data else None
 
         train_losses, train_scores = [], []
         val_losses, val_scores = [], []
@@ -200,7 +201,8 @@ class Model(Module):
                 self.optimizer.step()
 
             avg_train_loss = sum(train_losses[-n_train_steps:]) / n_train_steps
-            avg_train_score = sum(train_scores[-n_train_steps:]) / n_train_steps
+            avg_train_score = sum(
+                train_scores[-n_train_steps:]) / n_train_steps
             self.training = False
 
             # update learning rate
@@ -213,7 +215,7 @@ class Model(Module):
                 n_val_steps = len(val_dataloader)
                 epoch_val_losses, epoch_val_scores = [], []
 
-                for val_batch in val_dataloader(shuffle=False, drop_remaining=True):
+                for val_batch in val_dataloader(shuffle_inputs=False, drop_remaining=True):
                     x_val_b, y_val_b = val_batch
                     x_val_b.to_device(self.device)
                     y_val_b.to_device(self.device)
@@ -231,10 +233,12 @@ class Model(Module):
             # logging
             if verbose in [1, 2]:
                 m = self.metric_fn.__name__
-                log = f"train_loss {avg_train_loss:7.4f}, train_{m} {avg_train_score:5.2f}"
+                log = f"train_loss {avg_train_loss:7.4f}, train_{
+                    m} {avg_train_score:5.2f}"
                 if val_dataloader is not None:
                     log += (
-                        f", val_loss {avg_val_loss:7.4f}, val_{m} {avg_val_score:5.2f}"
+                        f", val_loss {avg_val_loss:7.4f}, val_{
+                            m} {avg_val_score:5.2f}"
                     )
                 if self.lr_decay is not None:
                     log += f", lr {self.optimizer.lr:.6f}"
@@ -300,7 +304,7 @@ class Model(Module):
         dataloader = DataLoader(x, None, batch_size)
         outputs = []
 
-        for batch in dataloader(shuffle=False):
+        for batch in dataloader(shuffle_inputs=False):
             x, _ = batch
             x.to_device(self.device)
             outputs.append(self.forward(x))
@@ -349,8 +353,10 @@ def save_model(model: Model, filepath: str) -> None:
         raise ModelCompilationError("Model has not been compiled yet.")
 
     model.to_device("cpu")
-    model.optimizer.reset_grads()
-    model.loss_fn.backward = None
+    if model.optimizer is not None:
+        model.optimizer.reset_grads()
+    if model.loss_fn is not None:
+        model.loss_fn.backward = None
     model.reset()
 
     file = open(filepath, "wb")
@@ -390,7 +396,8 @@ def model_summary(model: Model, input_shape: ShapeLike) -> None:
     n = 63
 
     summary = [f"{model.__class__.__name__}\n{'-' * n}"]
-    summary.append(f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n")
+    summary.append(f"\n{'Layer':25s} {'Output Shape':20s} {
+                   '# Parameters':>15s}\n")
     summary.append("=" * n)
     summary.append("\n")
 
