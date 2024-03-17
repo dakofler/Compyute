@@ -2,7 +2,8 @@
 
 from compyute.nn.module import Module
 from compyute.functional import concatenate
-from compyute.tensor import Tensor, ArrayLike
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]

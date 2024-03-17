@@ -1,10 +1,13 @@
 """basic preprocessing module"""
 
-from compyute.functional import eye, shuffle
-from compyute.tensor import Tensor, AxisLike
+from compyute.functional import eye
+from compyute.random import shuffle
+from compyute.tensor import Tensor
+from compyute.types import AxisLike
 
 
-__all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
+__all__ = ["split_train_val_test", "normalize",
+           "standardize", "one_hot_encode"]
 
 
 def split_train_val_test(

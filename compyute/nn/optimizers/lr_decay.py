@@ -2,7 +2,6 @@
 
 from abc import ABC
 import math
-
 from compyute.nn.optimizers.optimizers import Optimizer
 
 

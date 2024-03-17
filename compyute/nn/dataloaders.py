@@ -1,6 +1,6 @@
-"""Neural network models module"""
+"""Dataloaders module"""
 
-from compyute.functional import random_permutation
+from compyute.random import shuffle
 from compyute.tensor import Tensor
 
 
@@ -26,12 +26,12 @@ class DataLoader:
         self.y = y
         self.batch_size = batch_size
 
-    def __call__(self, shuffle: bool = True, drop_remaining: bool = False):
+    def __call__(self, shuffle_inputs: bool = True, drop_remaining: bool = False):
         """Returns data in a batched form.
 
         Parameters
         ----------
-        shuffle : bool, optional
+        shuffle_inputs : bool, optional
             Whether to shuffle the data each time the dataloader is called, by default True.
         drop_remaining: bool, optional
             Whether to drop data, that remains when the number of samples is not divisible by
@@ -43,9 +43,8 @@ class DataLoader:
             Batch of features and labels.
         """
         n = self.x.shape[0]
-        if shuffle:
-            idx = random_permutation(n)
-            self.x = self.x[idx]
+        if shuffle_inputs:
+            self.x, idx = shuffle(self.x)
             if self.y is not None:
                 self.y = self.y[idx]
 
@@ -53,8 +52,8 @@ class DataLoader:
         n_steps = len(self)
         b = min(self.batch_size, n)
         for i in range(n_steps):
-            x = self.x[i * b : (i + 1) * b]
-            y = self.y[i * b : (i + 1) * b] if self.y is not None else None
+            x = self.x[i * b: (i + 1) * b]
+            y = self.y[i * b: (i + 1) * b] if self.y is not None else None
             yield (x, y)
 
         # yield remaining samples, if there are any

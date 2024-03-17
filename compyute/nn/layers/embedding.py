@@ -1,10 +1,11 @@
-"""parameter layers layer"""
+"""Embedding layers module"""
 
-from compyute.functional import random_uniform
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.preprocessing.basic import one_hot_encode
-from compyute.tensor import Tensor, ArrayLike
+from compyute.random import uniform
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["Embedding"]
@@ -41,7 +42,7 @@ class Embedding(Module):
 
         # init weights (Ci, Co)
         k = in_channels**-0.5
-        w = random_uniform((in_channels, out_channels), -k, k)
+        w = uniform((in_channels, out_channels), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
     def __repr__(self) -> str:

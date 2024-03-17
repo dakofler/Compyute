@@ -1,7 +1,6 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-
 from compyute.nn.parameter import Parameter
 
 

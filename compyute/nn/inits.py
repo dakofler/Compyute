@@ -1,7 +1,9 @@
 """Parameter initializations module"""
 
-from compyute.functional import random_normal, random_uniform, prod
-from compyute.tensor import Tensor, ShapeLike
+from compyute.functional import prod
+import compyute.random as rnd
+from compyute.tensor import Tensor
+from compyute.types import ShapeLike
 
 
 __all__ = [
@@ -42,7 +44,7 @@ def get_gain(act_fn: str) -> float:
     return GAINS.get(act_fn, 1)
 
 
-def compute_fan_in(shape: ShapeLike) -> int:
+def get_fan_in(shape: ShapeLike) -> int:
     """Computes the fan_in for a given shape.
 
     Parameters
@@ -58,7 +60,7 @@ def compute_fan_in(shape: ShapeLike) -> int:
     return int(shape[0] * prod(shape[2:]))
 
 
-def compute_fan_out(shape: ShapeLike) -> int:
+def get_fan_out(shape: ShapeLike) -> int:
     """Computes the fan_out for a given shape.
 
     Parameters
@@ -91,7 +93,7 @@ def uniform(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    return random_uniform(shape, low, high)
+    return rnd.uniform(shape, low, high)
 
 
 def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
@@ -111,7 +113,7 @@ def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    return random_normal(shape, mean, std)
+    return rnd.normal(shape, mean, std)
 
 
 def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -130,10 +132,10 @@ def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    fan_in = compute_fan_in(shape)
-    fan_out = compute_fan_out(shape)
+    fan_in = get_fan_in(shape)
+    fan_out = get_fan_out(shape)
     bound = gain * (6 / (fan_in + fan_out)) ** 0.5
-    return random_uniform(shape, -bound, bound)
+    return rnd.uniform(shape, -bound, bound)
 
 
 def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -152,10 +154,10 @@ def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    fan_in = compute_fan_in(shape)
-    fan_out = compute_fan_out(shape)
+    fan_in = get_fan_in(shape)
+    fan_out = get_fan_out(shape)
     std = gain * (2 / (fan_in + fan_out)) ** 0.5
-    return random_normal(shape, std=std)
+    return rnd.normal(shape, std=std)
 
 
 def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -174,9 +176,9 @@ def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    fan_in = compute_fan_in(shape)
+    fan_in = get_fan_in(shape)
     bound = gain * (3 / fan_in) ** 0.5
-    return random_uniform(shape, -bound, bound)
+    return rnd.uniform(shape, -bound, bound)
 
 
 def kaiming_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -195,6 +197,6 @@ def kaiming_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    fan_in = compute_fan_in(shape)
+    fan_in = get_fan_in(shape)
     std = gain / fan_in**0.5
-    return random_normal(shape, std=std)
+    return rnd.normal(shape, std=std)

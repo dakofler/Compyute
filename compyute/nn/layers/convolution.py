@@ -1,14 +1,12 @@
-"""Convolutional layers module"""
+"""Convolution layers module"""
 
-from compyute.functional import (
-    prod,
-    random_uniform,
-    zeros,
-)
+from compyute.functional import prod, zeros
 from compyute.nn.funcional import convolve1d, convolve2d, stretch2d
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor, ArrayLike
+from compyute.random import uniform
+from compyute.tensor import Tensor
+from compyute.types import ArrayLike
 
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
@@ -67,7 +65,7 @@ class Convolution1d(Module):
         # init weights
         # (Co, Ci, K)
         k = int(in_channels * kernel_size) ** -0.5
-        w = random_uniform((out_channels, in_channels, kernel_size), -k, k)
+        w = uniform((out_channels, in_channels, kernel_size), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
@@ -239,7 +237,7 @@ class Convolution2d(Module):
         # init weights
         # (Co, Ci, Ky, Kx)
         k = int(in_channels * prod(kernel_size)) ** -0.5
-        w = random_uniform((out_channels, in_channels, *kernel_size), -k, k)
+        w = uniform((out_channels, in_channels, *kernel_size), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
