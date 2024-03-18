@@ -1,6 +1,7 @@
 """Recurrent layers layer"""
 
 from compyute.functional import zeros, zeros_like
+from compyute.nn.funcional import sigmoid
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform
@@ -84,10 +85,11 @@ class RecurrentCell(Module):
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
         x_h = x @ self.w_i.T
         if self.use_bias:
+            # (B, T, Ch)+ (Ch,) -> (B, T, Ch)
             x_h += self.b_i
 
         # iterate over timesteps
-        h = zeros_like(x_h, device=self.device)
+        h = zeros_like(x_h, dtype=self.dtype, device=self.device)
         for t in range(x_h.shape[1]):
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
             h_t = h[:, t - 1] @ self.w_h.T
@@ -103,8 +105,10 @@ class RecurrentCell(Module):
                 dh = dy.astype(self.dtype)
                 self.set_dy(dh)
 
-                dx_h = zeros_like(x_h, device=self.device).data
-                self.w_h.grad = zeros_like(self.w_h, device=self.device).data
+                dx_h = zeros_like(x_h, dtype=self.dtype,
+                                  device=self.device).data
+                self.w_h.grad = zeros_like(
+                    self.w_h, dtype=self.dtype, device=self.device).data
 
                 for t in range(x.shape[1] - 1, -1, -1):
                     # add hidden state grad of next t, if not last t
@@ -146,3 +150,111 @@ class RecurrentCell(Module):
 
         self.set_y(h)
         return h
+
+
+class LSTMCell(Module):
+    """Long Short-Term Memory cell."""
+
+    def __init__(
+        self,
+        in_channels: int,
+        h_channels: int,
+        use_bias: bool = True,
+        dtype: str = "float32"
+    ) -> None:
+        """Long Short-Term Memory cell.
+        Input: (B, T, Cin)
+            B ... batch, T ... time, Cin ... input channels
+        Output: (B, Ch)
+            B ... batch, Ch ... hidden channels
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input features.
+        h_channels : int
+            Number of hidden channels.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
+        dtype: str, optional
+            Datatype of weights and biases, by default "float32".
+        """
+        super().__init__()
+        self.in_channels = in_channels
+        self.h_channels = h_channels
+        self.use_bias = use_bias
+        self.dtype = dtype
+
+        k = in_channels**-0.5
+
+        # input gate
+        w_i = uniform((h_channels, in_channels), -k, k)
+        self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
+        u_i = uniform((h_channels, h_channels), -k, k)
+        self.u_i = Parameter(u_i, dtype=dtype, label="u_i")
+        if use_bias:
+            b_i = zeros((h_channels,))
+            self.b_i = Parameter(b_i, dtype=dtype, label="b_i")
+
+        # forget gate
+        w_f = uniform((h_channels, in_channels), -k, k)
+        self.w_f = Parameter(w_f, dtype=dtype, label="w_f")
+        u_f = uniform((h_channels, h_channels), -k, k)
+        self.u_f = Parameter(u_f, dtype=dtype, label="u_f")
+        if use_bias:
+            b_f = zeros((h_channels,))
+            self.b_f = Parameter(b_f, dtype=dtype, label="b_f")
+
+        # output gate
+        w_o = uniform((h_channels, in_channels), -k, k)
+        self.w_o = Parameter(w_o, dtype=dtype, label="w_o")
+        u_o = uniform((h_channels, h_channels), -k, k)
+        self.u_o = Parameter(u_o, dtype=dtype, label="u_o")
+        if use_bias:
+            b_o = zeros((h_channels,))
+            self.b_o = Parameter(b_o, dtype=dtype, label="b_o")
+
+        # cell
+        w_c = uniform((h_channels, in_channels), -k, k)
+        self.w_c = Parameter(w_c, dtype=dtype, label="w_c")
+        u_c = uniform((h_channels, h_channels), -k, k)
+        self.u_c = Parameter(u_c, dtype=dtype, label="u_c")
+        if use_bias:
+            b_c = zeros((h_channels,))
+            self.b_c = Parameter(b_c, dtype=dtype, label="b_c")
+
+    def forward(self, x: Tensor) -> Tensor:
+        self.check_dims(x, [3])
+        x = x.astype(self.dtype)
+
+        # input projections
+        # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
+        i_h = x @ self.w_i.T
+        f_h = x @ self.w_f.T
+        o_h = x @ self.w_i.T
+        c_h = x @ self.w_i.T
+
+        if self.use_bias:
+            # (B, T, Ch)+ (Ch,) -> (B, T, Ch)
+            i_h += self.b_i
+            f_h += self.b_f
+            o_h += self.b_o
+            c_h += self.b_c
+
+        # iterate over timesteps
+        i = zeros_like(i_h, dtype=self.dtype, device=self.device)
+        f = zeros_like(f_h, dtype=self.dtype, device=self.device)
+        o = zeros_like(o_h, dtype=self.dtype, device=self.device)
+        c = zeros_like(c_h, dtype=self.dtype, device=self.device)
+        h = zeros_like(c_h, dtype=self.dtype, device=self.device)
+
+        for t in range(x.shape[1]):
+            i[:, t] = sigmoid(i_h[:, t] + h[:, t - 1] @ self.u_i.T)
+            f[:, t] = sigmoid(f_h[:, t] + h[:, t - 1] @ self.u_f.T)
+            o[:, t] = sigmoid(o_h[:, t] + h[:, t - 1] @ self.u_o.T)
+            c_t_p = (c_h[:, t] + c[:, t - 1] @ self.u_c.T).tanh()
+            c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * c_t_p
+            h[:, t] = o[:, t] * c[:, t].tanh()
+
+        self.set_y(o)
+        return o

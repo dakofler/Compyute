@@ -122,7 +122,7 @@ class Module(ABC):
             Module output tensor.
         """
         if self.retain_values and self.y is not None:
-            self.y.data = y.data.copy()
+            self.y = y.copy()
 
     def set_dy(self, dy: ArrayLike) -> None:
         """Saves the module output gradients to y tensor.
