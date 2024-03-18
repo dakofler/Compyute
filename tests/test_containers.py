@@ -44,7 +44,7 @@ def test_sequential_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -86,7 +86,7 @@ def test_parallel_concat_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -126,7 +126,7 @@ def test_parallel_add_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 

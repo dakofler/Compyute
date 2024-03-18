@@ -13,7 +13,7 @@ class Parameter(Tensor):
 
     def __init__(
         self,
-        data: ArrayLike | ScalarLike,
+        data: Tensor,
         dtype: str = "float32",
         copy: bool = False,
         device: str = "cpu",
@@ -34,11 +34,9 @@ class Parameter(Tensor):
         label: str | None, optional
             Parameter label, by default None.
         """
-        if isinstance(data, Tensor):
-            data = data.data
-        super().__init__(data, dtype, copy, device)
+        super().__init__(data.data, dtype, copy, device)
         self.label = label
-        self.optimizer_params = {}
+        self.optimizer_params: dict[str, Tensor] = {}
 
     def __repr__(self) -> str:
         return f"Parameter {self.label}:\n{super().__repr__()}"
@@ -58,15 +56,5 @@ class Parameter(Tensor):
 
         """
         super().to_device(device)
-
-        if self.optimizer_params is None:
-            return
-
-        if device == "cpu":
-            for key in self.optimizer_params:
-                self.optimizer_params[key] = cupy_to_numpy(
-                    self.optimizer_params[key])
-        else:
-            for key in self.optimizer_params:
-                self.optimizer_params[key] = numpy_to_cupy(
-                    self.optimizer_params[key])
+        for param in self.optimizer_params.values():
+            param.to_device(device)

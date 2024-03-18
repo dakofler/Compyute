@@ -4,7 +4,7 @@ from compyute.functional import ones, prod, zeros
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike, ShapeLike
+from compyute.types import ShapeLike
 
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
@@ -89,33 +89,23 @@ class Batchnorm1d(Module):
         y = weights * x_h + biases
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = float(prod(x.shape) / x.shape[1])
-                dx = (
-                    weights.data
-                    * var_h.data
-                    / n
-                    * (
-                        n * dy
-                        - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data *
-                        (dy * x_h.data).sum(axis=axis, keepdims=True)
-                    )
-                )
+                dx = weights * var_h / n * \
+                    (n * dy - dy.sum(axis=axis, keepdims=True) -
+                     x_h * (dy * x_h).sum(axis=axis, keepdims=True))
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=axis)
+                self.w.grad = (x_h * dy).sum(axis=axis)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=axis)
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)
@@ -210,33 +200,23 @@ class Batchnorm2d(Module):
         y = weights * x_h + biases
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = float(prod(x.shape) / x.shape[1])
-                dx = (
-                    weights.data
-                    * var_h.data
-                    / n
-                    * (
-                        n * dy
-                        - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data *
-                        (dy * x_h.data).sum(axis=axis, keepdims=True)
-                    )
-                )
+                dx = weights * var_h / n * \
+                    (n * dy - dy.sum(axis=axis, keepdims=True) -
+                     x_h * (dy * x_h).sum(axis=axis, keepdims=True))
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=axis)
+                self.w.grad = (x_h * dy).sum(axis=axis)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=axis)
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)
@@ -305,32 +285,23 @@ class Layernorm(Module):
         y = self.w * x_h + self.b
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape[1:])
-                dx = (
-                    self.w.data
-                    * var_h.data
-                    / n
-                    * (
-                        n * dy
-                        - dy.sum(axes, keepdims=True)
-                        - x_h.data * (dy * x_h.data).sum(axes, keepdims=True)
-                    )
-                )
+                dx = self.w * var_h / n * \
+                    (n * dy - dy.sum(axes, keepdims=True) -
+                     x_h * (dy * x_h).sum(axes, keepdims=True))
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=0)
+                self.w.grad = (x_h * dy).sum(axis=0)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=0)
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)

@@ -6,7 +6,6 @@ from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike
 
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
@@ -99,7 +98,6 @@ class Convolution1d(Module):
         # convolve
         # (B, 1, Ci, Ti) * (1, Co, Ci, K) -> (B, Co, Ci, To)
         x_conv_w = convolve1d(x, w_flip, self.stride, self.dil, self.pad)
-        x_conv_w = x_conv_w.astype(self.dtype)  # conv returns float64
 
         # sum over input channels
         # (B, Co, Ci, To) -> (B, Co, To)
@@ -110,8 +108,7 @@ class Convolution1d(Module):
             y += self.b.reshape((*self.b.shape, 1))
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
@@ -120,12 +117,10 @@ class Convolution1d(Module):
                 B, Co, To = dy.shape
 
                 # undo strides by filling with zeros
-                dy_p = zeros((B, Co, self.stride * To),
-                             device=self.device).data
+                dy_p = zeros((B, Co, self.stride * To), device=self.device)
                 dy_p[:, :, :: self.stride] = dy
                 dy_p_ti = 1 + (Ti - K) if self.pad == "valid" else Ti
-                dy_p = Tensor(dy_p[:, :, :dy_p_ti],
-                              dtype=dy.dtype, device=self.device)
+                dy_p = dy_p[:, :, :dy_p_ti]
 
                 # ----------------
                 # input grads
@@ -137,12 +132,10 @@ class Convolution1d(Module):
                 # convolve
                 # (B, Co, 1, To) * (1, Co, Ci, K)
                 dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
-                dy_conv_w = dy_conv_w.astype(
-                    self.dtype)  # conv returns float64
 
                 # sum over output channels
                 # (B, Ci, Ti)
-                dx = dy_conv_w.sum(axis=1).data
+                dx = dy_conv_w.sum(axis=1)
 
                 # ----------------
                 # weight grads
@@ -161,12 +154,10 @@ class Convolution1d(Module):
                 # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
                 x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[
                     :, :, :, -K * self.dil:]
-                x_conv_dy = x_conv_dy.astype(
-                    self.dtype)  # conv returns float64
 
                 # sum over batches
                 # (B, Co, Ci, K) -> (Co, Ci, K)
-                self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0).data
+                self.w.grad = x_conv_dy[:, :, :, :: self.dil].sum(axis=0)
 
                 # ----------------
                 # bias grads
@@ -177,7 +168,6 @@ class Convolution1d(Module):
                     self.b.grad = dy.sum(axis=(0, 2))
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)
@@ -270,7 +260,6 @@ class Convolution2d(Module):
         # convolve
         # (B, 1, Ci, Yi, Xi) * (1, Co, Ci, Ky, Kx) -> (B, Co, Ci, Yo, Xo)
         x_conv_w = convolve2d(x, w_flip, self.stride, self.dil, self.pad)
-        x_conv_w = x_conv_w.astype(self.dtype)  # conv returns float64
 
         # sum over input channels
         # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
@@ -281,9 +270,8 @@ class Convolution2d(Module):
             y += self.b.add_dims(target_dims=3)
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
-                dy = dy.astype(self.w.dtype)
+            def backward(dy: Tensor) -> Tensor:
+                dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 Ky, Kx = self.w.shape[-2:]
@@ -293,14 +281,11 @@ class Convolution2d(Module):
                 Dy, Dx = self.dil
 
                 # fill elements skipped by strides with zeros
-                dy_p = zeros((B, Co, Sy * Yo, Sx * Xo),
-                             device=self.device).data
+                dy_p = zeros((B, Co, Sy * Yo, Sx * Xo), device=self.device)
                 dy_p[:, :, ::Sy, ::Sx] = dy
                 dy_p_yi = 1 + (Yi - Ky) if self.pad == "valid" else Yi
                 dy_p_xi = 1 + (Xi - Kx) if self.pad == "valid" else Xi
-                dy_p = Tensor(
-                    dy_p[:, :, :dy_p_yi, :dy_p_xi], dtype=dy.dtype, device=self.device
-                )
+                dy_p = dy_p[:, :, :dy_p_yi, :dy_p_xi]
 
                 # ----------------
                 # input grads
@@ -313,11 +298,10 @@ class Convolution2d(Module):
                 # convolve
                 # (B, Co, 1, Yo, Xo) * (1, Co, Ci, Ky, Kx) -> (B, Co, Ci, Yi, Xi)
                 dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=self.dil, pad=pad)
-                dy_conv_w = dy_conv_w.astype(self.dtype)
 
                 # sum over c_out
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
-                dx = dy_conv_w.sum(axis=1).data
+                dx = dy_conv_w.sum(axis=1)
 
                 # ----------------
                 # weight grads
@@ -332,11 +316,10 @@ class Convolution2d(Module):
                 x_conv_dy = convolve2d(x, dy_p_ext, pad=pad)[
                     :, :, :, -Ky * Dy:, -Kx * Dx:
                 ]
-                x_conv_dy = x_conv_dy.astype(self.dtype)
 
                 # sum over batches
                 # (B, Co, Ci, Ky, Kx) -> (Co, Ci, Ky, Kx)
-                self.w.grad = x_conv_dy[:, :, :, ::Dy, ::Dx].sum(axis=0).data
+                self.w.grad = x_conv_dy[:, :, :, ::Dy, ::Dx].sum(axis=0)
 
                 # ----------------
                 # bias grads
@@ -347,7 +330,6 @@ class Convolution2d(Module):
                     self.b.grad = dy.sum(axis=(0, 2, 3))
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)
@@ -398,20 +380,15 @@ class MaxPooling2d(Module):
             y_stretched = stretch2d(y, self.kernel_size, x_crop.shape)
             p_map = (x_crop == y_stretched).int()
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
 
                 # stretch dy tensor to original shape by duplicating values
-                dy_str = stretch2d(
-                    Tensor(dy, dtype=dy.dtype, device=self.device),
-                    self.kernel_size,
-                    p_map.shape,
-                )
+                dy_str = stretch2d(dy, self.kernel_size, p_map.shape)
 
                 # use p_map as mask for grads
                 dx = dy_str * p_map
-                return dx.data if dx.shape == x.shape else dx.pad_to_shape(x.shape).data
-
+                return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
             self.backward = backward
 
         self.set_y(y)
@@ -463,21 +440,15 @@ class AvgPooling2d(Module):
                 y[:, :, i, j] = chunk.mean(axis=(-2, -1))
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
 
                 # stretch dy tensor to original shape by duplicating values
-                dy_str = stretch2d(
-                    Tensor(dy, dtype=dy.dtype, device=self.device),
-                    self.kernel_size,
-                    x_crop.shape,
-                )
+                dy_str = stretch2d(dy, self.kernel_size, x_crop.shape)
 
                 # scale gradients down
                 dx = dy_str / prod(self.kernel_size)
-                return dx.data if dx.shape == x.shape else dx.pad_to_shape(x.shape).data
-
+                return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
             self.backward = backward
 
         self.set_y(y)

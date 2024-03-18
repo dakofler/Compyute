@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from compyute.nn.parameter import Parameter
+from compyute.tensor import Tensor
 
 
 __all__ = ["SGD", "Adam", "AdamW"]
@@ -67,7 +68,7 @@ class SGD(Optimizer):
             g = p.grad.copy()
 
             if self.weight_decay > 0.0:
-                g += self.weight_decay * p.data
+                g += self.weight_decay * p
 
             if self.m > 0.0:
                 if self.t > 1:
@@ -84,7 +85,7 @@ class SGD(Optimizer):
 
             delta = -self.lr * g
             p.optimizer_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data += delta.data
         self.t += 1
 
 
@@ -130,7 +131,7 @@ class Adam(Optimizer):
             g = p.grad.copy()
 
             if self.weight_decay > 0.0:
-                g += self.weight_decay * p.data
+                g += self.weight_decay * p
 
             m_prev = p.optimizer_params.get("adam_m", 0.0)
             m = self.beta1 * m_prev + (1.0 - self.beta1) * g
@@ -145,7 +146,7 @@ class Adam(Optimizer):
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             p.optimizer_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data += delta.data
         self.t += 1
 
 
@@ -201,5 +202,5 @@ class AdamW(Optimizer):
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             p.optimizer_params["delta"] = delta  # for analysis
-            p.data += delta
+            p.data += delta.data
         self.t += 1

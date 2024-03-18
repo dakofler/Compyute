@@ -3,10 +3,8 @@
 from __future__ import annotations
 from abc import ABC
 from typing import Callable
-from compyute.functional import empty
 from compyute.nn.parameter import Parameter
 from compyute.tensor import Tensor, ShapeError
-from compyute.types import ArrayLike
 
 
 __all__ = ["Module"]
@@ -17,7 +15,7 @@ class Module(ABC):
 
     def __init__(self) -> None:
         """Module base class."""
-        self.backward: Callable[[ArrayLike], ArrayLike] | None = None
+        self.backward: Callable[[Tensor], Tensor] | None = None
         self._child_modules: list[Module] = []
         self._retain_values: bool = False
         self.y: Tensor | None = None
@@ -70,7 +68,6 @@ class Module(ABC):
     @retain_values.setter
     def retain_values(self, value: bool) -> None:
         self._retain_values = value
-        self.y = empty("float16", device=self.device) if value else None
         for module in self.child_modules:
             module.retain_values = value
 
@@ -121,15 +118,15 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.retain_values and self.y is not None:
+        if self.retain_values:
             self.y = y.copy()
 
-    def set_dy(self, dy: ArrayLike) -> None:
+    def set_dy(self, dy: Tensor) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
         ----------
-        dy : ArrayLike
+        dy : Tensor
             Module output tensor gradients.
         """
         if self.retain_values and self.y is not None:
@@ -150,6 +147,8 @@ class Module(ABC):
         """Resets temporary values like outputs and gradients."""
         self.y = None
         self.backward = None
+        for p in self.parameters():
+            p.grad = None
 
         for module in self.child_modules:
             module.reset()

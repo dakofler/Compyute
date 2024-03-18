@@ -21,7 +21,7 @@ def get_vals_float(
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
     compyute_x = uniform(shape, dtype="float32")
-    torch_x = torch.from_numpy(compyute_x.data.copy())
+    torch_x = torch.from_numpy(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True
     compyute_x.to_device(device)
@@ -33,7 +33,7 @@ def get_vals_int(
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
     compyute_x = uniform_int(shape, low=low, high=high, dtype="int64")
-    torch_x = torch.from_numpy(compyute_x.data.copy()).long()
+    torch_x = torch.from_numpy(compyute_x.to_numpy()).long()
     compyute_x.to_device(device)
     return compyute_x, torch_x
 
@@ -44,17 +44,13 @@ def get_params(
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape) * 0.1
     compyute_x = Parameter(data, dtype="float32")
-    torch_x = torch.nn.Parameter(torch.from_numpy(data.data.copy()).float())
+    torch_x = torch.nn.Parameter(torch.from_numpy(data.to_numpy()).float())
     compyute_x.to_device(device)
     return compyute_x, torch_x
 
 
 def validate(
-    x1: Tensor | Parameter | ArrayLike, x2: torch.Tensor | None, tol: float = 1e-5
+    x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5
 ) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
-    if isinstance(x1, Tensor):
-        x1 = x1.data
-    if isinstance(x1, cupy.ndarray):
-        x1 = cupy_to_numpy(x1)
-    return numpy.allclose(x1, x2.detach().numpy(), tol, tol)
+    return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)

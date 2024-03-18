@@ -173,7 +173,7 @@ def convolve1d(
     # convolution
     cdtype = "complex64"
     conv = (x_pad.fft1d(dtype=cdtype) *
-            f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype)).ifft1d(dtype=cdtype).real()
+            f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype)).ifft1d(dtype=cdtype).real(dtype=x.dtype)
 
     # out slices
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -236,7 +236,7 @@ def convolve2d(
     # convolution
     cdtype = "complex64"
     conv = (x_pad.fft2d(dtype=cdtype) *
-            f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype)).ifft2d(dtype=cdtype).real()
+            f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype)).ifft2d(dtype=cdtype).real(dtype=x.dtype)
 
     # out slices
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])

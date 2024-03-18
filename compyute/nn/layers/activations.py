@@ -3,7 +3,6 @@
 from compyute.nn.funcional import sigmoid, relu, leaky_relu
 from compyute.nn.module import Module
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
@@ -18,11 +17,9 @@ class ReLU(Module):
         y = relu(x)
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (y > 0).data * dy
-
+                return (y > 0) * dy
             self.backward = backward
 
         self.set_y(y)
@@ -40,11 +37,9 @@ class LeakyReLU(Module):
         y = leaky_relu(x)
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return ((y > 0).float() + (y < 0).float() * self.alpha).data * dy
-
+                return ((y > 0).float() + (y < 0).float() * self.alpha) * dy
             self.backward = backward
 
         self.set_y(y)
@@ -59,14 +54,12 @@ class GELU(Module):
         y = 0.5 * x * (1 + tmp.tanh())
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 return (
                     0.5 * (1 + tmp.tanh())
                     + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
-                ).data * dy
-
+                ) * dy
             self.backward = backward
 
         self.set_y(y)
@@ -80,11 +73,9 @@ class Tanh(Module):
         y = x.tanh()
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (1 - y**2).data * dy
-
+                return (1 - y**2) * dy
             self.backward = backward
 
         self.set_y(y)
@@ -98,11 +89,9 @@ class Sigmoid(Module):
         y = sigmoid(x)
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (y * (1 - y)).data * dy
-
+                return (y * (1 - y)) * dy
             self.backward = backward
 
         self.set_y(y)

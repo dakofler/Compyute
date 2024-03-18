@@ -1,12 +1,10 @@
 """Linear transformation layers module"""
 
-from compyute.engine import get_engine
 from compyute.functional import arange, zeros
 from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike
 
 
 __all__ = ["Linear"]
@@ -76,19 +74,18 @@ class Linear(Module):
             y += self.b
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 dy = dy.astype(self.dtype)
 
                 # input grads
                 # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
-                dx = dy @ self.w.data
+                dx = dy @ self.w
 
                 # weight grads
                 # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
                 # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-                dw = get_engine(x.device).moveaxis(dy, -2, -1) @ x.data
+                dw = dy.transpose() @ x
                 if x.ndim > 2:
                     # sum over all batch dimensions
                     # (B, ..., Ci, Co) -> (Ci, Co)
@@ -103,7 +100,6 @@ class Linear(Module):
                     self.b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
 
                 return dx
-
             self.backward = backward
 
         self.set_y(y)

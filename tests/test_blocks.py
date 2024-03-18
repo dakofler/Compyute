@@ -70,7 +70,7 @@ def test_recurrent() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
 
     # x grad
@@ -164,7 +164,7 @@ def test_residual() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 

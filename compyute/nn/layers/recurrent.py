@@ -6,7 +6,6 @@ from compyute.nn.module import Module
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike
 
 
 __all__ = ["RecurrentCell"]
@@ -100,15 +99,13 @@ class RecurrentCell(Module):
             h[:, t] = (x_h[:, t] + h_t).tanh()
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dh = dy.astype(self.dtype)
                 self.set_dy(dh)
 
-                dx_h = zeros_like(x_h, dtype=self.dtype,
-                                  device=self.device).data
+                dx_h = zeros_like(x_h, dtype=self.dtype, device=self.device)
                 self.w_h.grad = zeros_like(
-                    self.w_h, dtype=self.dtype, device=self.device).data
+                    self.w_h, dtype=self.dtype, device=self.device)
 
                 for t in range(x.shape[1] - 1, -1, -1):
                     # add hidden state grad of next t, if not last t
@@ -119,7 +116,7 @@ class RecurrentCell(Module):
                         out_grad = dh[:, t] + dx_h[:, t + 1] @ self.w_h
 
                     # activation grads
-                    dx_h[:, t] = (1 - h.data[:, t] ** 2) * out_grad
+                    dx_h[:, t] = (1 - h[:, t] ** 2) * out_grad
 
                     # hidden weight grads
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
@@ -136,7 +133,7 @@ class RecurrentCell(Module):
 
                 # input weight grads
                 # (B, Ch, T) @ (B, T, Cin) -> (B, Ch, Cin)
-                dw = dx_h.transpose(0, 2, 1) @ x.data
+                dw = dx_h.transpose() @ x
                 # (B, Ch, Cin) -> (Ch, Cin)
                 self.w_i.grad = dw.sum(axis=0)
 
@@ -145,7 +142,6 @@ class RecurrentCell(Module):
                 self.b_i.grad = dx_h.sum((0, 1))
 
                 return dx
-
             self.backward = backward
 
         self.set_y(h)

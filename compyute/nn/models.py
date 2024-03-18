@@ -11,7 +11,7 @@ from compyute.nn.module import Module
 from compyute.nn.optimizers.lr_decay import LRDecay
 from compyute.nn.optimizers.optimizers import Optimizer
 from compyute.tensor import Tensor
-from compyute.types import ShapeLike
+from compyute.types import DtypeLike, ScalarLike, ShapeLike
 
 
 __all__ = ["Model", "SequentialModel", "save_model", "load_model"]
@@ -210,6 +210,8 @@ class Model(Module):
                 self.lr_decay.step()
 
             # validation
+            retain_values = self.retain_values
+            self.retain_values = False
             avg_val_loss = avg_val_score = None
             if val_dataloader is not None:
                 n_val_steps = len(val_dataloader)
@@ -229,6 +231,7 @@ class Model(Module):
                 avg_val_score = sum(epoch_val_scores) / n_val_steps
                 val_losses.append(avg_val_loss)
                 val_scores.append(avg_val_score)
+            self.retain_values = retain_values
 
             # logging
             if verbose in [1, 2]:
@@ -313,7 +316,7 @@ class Model(Module):
 
         return concatenate(outputs, axis=0)
 
-    def _get_loss_and_score(self, y_pred, y_true) -> tuple[float, float]:
+    def _get_loss_and_score(self, y_pred, y_true) -> tuple[ScalarLike, ScalarLike]:
         loss = self.loss_fn(y_pred, y_true).item()
         score = self.metric_fn(y_pred, y_true).item()
         return loss, score
@@ -383,7 +386,7 @@ def load_model(filepath: str) -> Model:
     return obj
 
 
-def model_summary(model: Model, input_shape: ShapeLike) -> None:
+def model_summary(model: Model, input_shape: ShapeLike, input_dtype: DtypeLike = "float32") -> None:
     """Prints information about a model.
 
     Parameters
@@ -392,6 +395,8 @@ def model_summary(model: Model, input_shape: ShapeLike) -> None:
         Neural network model.
     input_shape : ShapeLike
         Shape of the model input ignoring the batch dimension.
+    input_dtype : DtypeLike
+        Data type of the expected input data.
     """
     n = 63
 
@@ -401,8 +406,9 @@ def model_summary(model: Model, input_shape: ShapeLike) -> None:
     summary.append("=" * n)
     summary.append("\n")
 
-    x = ones((1,) + input_shape)
+    x = ones((1,) + input_shape, dtype=input_dtype)
     x.to_device(model.device)
+    retain_values = model.retain_values
     model.retain_values = True
     _ = model.forward(x)
 
@@ -421,6 +427,6 @@ def model_summary(model: Model, input_shape: ShapeLike) -> None:
     tot_parameters = sum(p.data.size for p in model.parameters())
 
     model.reset()
-    model.retain_values = False
+    model.retain_values = retain_values
     string = "".join(summary)
     print(f"{string}\n\nTotal parameters: {tot_parameters}")

@@ -5,7 +5,6 @@ from compyute.nn.parameter import Parameter
 from compyute.preprocessing.basic import one_hot_encode
 from compyute.random import normal
 from compyute.tensor import Tensor
-from compyute.types import ArrayLike
 
 
 __all__ = ["Embedding"]
@@ -53,16 +52,18 @@ class Embedding(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2])
-        x = one_hot_encode(x.int(), self.w.shape[0]).astype(self.dtype)
+
+        if x.dtype not in ("int32", "int64"):
+            raise ValueError(f"Input must be int32 or int64, got {x.dtype}.")
+
+        x = one_hot_encode(x, self.w.shape[0]).astype(self.dtype)
         y = x @ self.w
 
         if self.training:
-
-            def backward(dy: ArrayLike) -> None:
+            def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
-                self.w.grad = (x.transpose().data @ dy).sum(axis=0)
-
+                self.w.grad = (x.transpose() @ dy).sum(axis=0)
             self.backward = backward
 
         self.set_y(y)

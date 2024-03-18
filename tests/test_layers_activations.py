@@ -21,7 +21,7 @@ def test_relu() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy.data)
+    compyute_dx = module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -41,7 +41,7 @@ def test_leaky_relu() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy.data)
+    compyute_dx = module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -61,7 +61,7 @@ def test_gelu() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy.data)
+    compyute_dx = module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -81,7 +81,7 @@ def test_tanh() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy.data)
+    compyute_dx = module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -101,7 +101,7 @@ def test_sigmoid() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy.data)
+    compyute_dx = module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
