@@ -48,6 +48,11 @@ class Trainer:
         self.metric_function = metric_function
         self.callbacks = [] if callbacks is None else callbacks
 
+        self.state: dict[str, Tensor | list[float]] = {
+            "train_losses": [],
+            "train_scores": [],
+        }
+
     def train(
         self,
         X: Tensor,
@@ -56,7 +61,7 @@ class Trainer:
         verbose: Literal[0, 1, 2] = 2,
         val_data: tuple[Tensor, Tensor] | None = None,
         batch_size: int = 1,
-    ) -> dict[str, list[float]]:
+    ) -> None:
         """Trains the model using samples and targets.
 
         Parameters
@@ -76,18 +81,13 @@ class Trainer:
             2: model reports step statistics
         val_dataloader : DataLoader, optional
             Data loader for vaidation data., by default None.
-
-        Returns
-        -------
-        dict[str, list[float]]
-            Training history.
         """
-        history = {"train_losses": [], "train_scores": []}
+
         train_dataloader = DataLoader(X, y, batch_size)
         if val_data:
             val_dataloader = DataLoader(*val_data, batch_size)
-            history["val_losses"] = []
-            history["val_scores"] = []
+            self.state["val_losses"] = []
+            self.state["val_scores"] = []
 
         if verbose == 1:
             pbar = tqdm(unit=" epochs", total=epochs)
@@ -119,9 +119,9 @@ class Trainer:
                 # forward pass
                 y_pred = self.model.forward(X_batch)
                 train_loss = self.loss_function(y_pred, y_batch).item()
-                history["train_losses"].append(train_loss)
+                self.state["train_losses"].append(train_loss)
                 train_score = self.metric_function(y_pred, y_batch).item()
-                history["train_scores"].append(train_score)
+                self.state["train_scores"].append(train_score)
 
                 # backward pass
                 self.model.backward(self.loss_function.backward())
@@ -149,9 +149,9 @@ class Trainer:
                     # forward pass
                     y_pred = self.model.forward(X_batch)
                     val_loss = self.loss_function(y_pred, y_batch).item()
-                    history["val_losses"].append(train_loss)
+                    self.state["val_losses"].append(train_loss)
                     val_score = self.metric_function(y_pred, y_batch).item()
-                    history["val_scores"].append(train_score)
+                    self.state["val_scores"].append(train_score)
 
                 self.model.retain_values = retain_values
 
@@ -172,8 +172,6 @@ class Trainer:
 
         if not self.model.retain_values:
             self.model.reset()
-
-        return history
 
     def evaluate_model(
         self, X: Tensor, y: Tensor, batch_size: int = 1

@@ -171,7 +171,6 @@ class Module(ABC):
 
         for p in self.parameters:
             p.grad = None
-            p.optimizer_params = {}
 
         for module in self.child_modules:
             module.reset()

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from ..parameter import Parameter
+from ...tensor import Tensor
 
 
 __all__ = ["SGD", "Adam", "AdamW"]
@@ -10,10 +11,23 @@ __all__ = ["SGD", "Adam", "AdamW"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, lr: float) -> None:
-        self.t: int = 1
-        self.parameters: list[Parameter] = []
+    def __init__(self, parameters: list[Parameter] | None, lr: float) -> None:
         self.lr = lr
+        self.state: dict[Parameter, dict[str, Tensor]] = {}
+        self.t: int = 1
+
+        if parameters is not None:
+            self.parameters = parameters
+
+    @property
+    def parameters(self) -> list[Parameter]:
+        """Optimizer parameters"""
+        return list(self.state)
+
+    @parameters.setter
+    def parameters(self, value: list[Parameter]) -> None:
+        for p in value:
+            self.state[p] = {}
 
     @abstractmethod
     def step(self) -> None:
@@ -25,6 +39,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
+        parameters: list[Parameter] | None = None,
         lr: float = 1e-2,
         m: float = 0.0,
         nesterov: bool = False,
@@ -34,6 +49,8 @@ class SGD(Optimizer):
 
         Parameters
         ----------
+        parameters : list[Parameter] | None
+            Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 1e-2.
         m : float, optional
@@ -43,7 +60,7 @@ class SGD(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(lr)
+        super().__init__(parameters, lr)
         self.m = m
         self.nesterov = nesterov
         self.weight_decay = weight_decay
@@ -61,11 +78,11 @@ class SGD(Optimizer):
 
             if self.m > 0.0:
                 if self.t > 1:
-                    b_prev = p.optimizer_params.get("sgd_b", 0.0)
+                    b_prev = self.state[p].get("sgd_b", 0.0)
                     b = self.m * b_prev + g
                 else:
                     b = g
-                p.optimizer_params["sgd_b"] = b
+                self.state[p]["sgd_b"] = b
 
                 if self.nesterov:
                     g += self.m * b
@@ -73,7 +90,7 @@ class SGD(Optimizer):
                     g = b
 
             delta = -self.lr * g
-            p.optimizer_params["delta"] = delta  # for analysis
+            self.state[p]["delta"] = delta  # for analysis
             p.data += delta.data
         self.t += 1
 
@@ -84,6 +101,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
+        parameters: list[Parameter] | None = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -95,6 +113,8 @@ class Adam(Optimizer):
 
         Parameters
         ----------
+        parameters : list[Parameter] | None
+            Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 1e-3.
         beta1 : float, optional
@@ -106,7 +126,7 @@ class Adam(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(lr)
+        super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -122,19 +142,19 @@ class Adam(Optimizer):
             if self.weight_decay > 0.0:
                 g += self.weight_decay * p
 
-            m_prev = p.optimizer_params.get("adam_m", 0.0)
+            m_prev = self.state[p].get("adam_m", 0.0)
             m = self.beta1 * m_prev + (1.0 - self.beta1) * g
-            p.optimizer_params["adam_m"] = m
+            self.state[p]["adam_m"] = m
 
-            v_prev = p.optimizer_params.get("adam_v", 0.0)
+            v_prev = self.state[p].get("adam_v", 0.0)
             v = self.beta2 * v_prev + (1.0 - self.beta2) * g**2
-            p.optimizer_params["adam_v"] = v
+            self.state[p]["adam_v"] = v
 
             m_hat = m / (1.0 - self.beta1**self.t)
             v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
-            p.optimizer_params["delta"] = delta  # for analysis
+            self.state[p]["delta"] = delta  # for analysis
             p.data += delta.data
         self.t += 1
 
@@ -144,6 +164,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
+        parameters: list[Parameter] | None = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -154,6 +175,8 @@ class AdamW(Optimizer):
 
         Parameters
         ----------
+        parameters : list[Parameter] | None
+            Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 1e-3.
         beta1 : float, optional
@@ -165,7 +188,7 @@ class AdamW(Optimizer):
         weight_deyas : float, optional
             Weight decay factor, by default 0.0.
         """
-        super().__init__(lr)
+        super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -179,17 +202,17 @@ class AdamW(Optimizer):
             if self.weight_decay > 0:
                 p.data -= self.lr * self.weight_decay * p.data
 
-            m_prev = p.optimizer_params.get("adam_m", 0.0)
+            m_prev = self.state[p].get("adam_m", 0.0)
             m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
-            p.optimizer_params["adam_m"] = m
+            self.state[p]["adam_m"] = m
             m_hat = m / (1.0 - self.beta1**self.t)
 
-            v_prev = p.optimizer_params.get("adam_v", 0.0)
+            v_prev = self.state[p].get("adam_v", 0.0)
             v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
-            p.optimizer_params["adam_v"] = v
+            self.state[p]["adam_v"] = v
             v_hat = v / (1.0 - self.beta2**self.t)
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
-            p.optimizer_params["delta"] = delta  # for analysis
+            self.state[p]["delta"] = delta  # for analysis
             p.data += delta.data
         self.t += 1

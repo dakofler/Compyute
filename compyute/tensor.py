@@ -43,12 +43,12 @@ class Tensor:
         ----------
         data : ArrayLike | ScalarLike
             Data to initialize the tensor.
-        dtype: DtypeLike, optional
+        dtype: DtypeLike | None, optional
             Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: DeviceLike, optional
-            Device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        device: DeviceLike | None, optional
+            Device the tensor is stored on ("cuda" or "cpu"), by default None.
         """
 
         self.__device = infer_device(data) if device is None else device
@@ -234,6 +234,9 @@ class Tensor:
 
     def __len__(self) -> int:
         return self.shape[0]
+
+    def __hash__(self):
+        return id(self)
 
     # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS
@@ -807,15 +810,15 @@ class Tensor:
         """
         return Tensor(self.__engine.real(self.data), dtype=dtype)
 
-    def append(self, values: Tensor, axis: int) -> Tensor:
+    def append(self, values: Tensor, axis: int = -1) -> Tensor:
         """Returns a copy of the tensor with appended values.
 
         Parameters
         ----------
         values : Tensor
             Values to append.
-        axis : int
-            Axis alown which to append the values
+        axis : int, optional
+            Axis alowng which to append the values, by default -1.
 
         Returns
         -------
