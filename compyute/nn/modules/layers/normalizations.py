@@ -1,10 +1,10 @@
 """Normalization layers module"""
 
-from compyute.functional import ones, prod, zeros
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor
-from compyute.types import ShapeLike
+from ..module import Module
+from ...parameter import Parameter
+from ....functional import ones, prod, zeros
+from ....tensor import Tensor
+from ....types import ShapeLike
 
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]

@@ -1,10 +1,10 @@
 """Embedding layers module"""
 
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.preprocessing.basic import one_hot_encode
-from compyute.random import normal
-from compyute.tensor import Tensor
+from ..module import Module
+from ...parameter import Parameter
+from ....preprocessing.basic import one_hot_encode
+from ....random import normal
+from ....tensor import Tensor
 
 
 __all__ = ["Embedding"]

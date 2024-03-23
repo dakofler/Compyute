@@ -1,11 +1,11 @@
 """Convolution layers module"""
 
-from compyute.functional import prod, zeros
-from compyute.nn.funcional import convolve1d, convolve2d, stretch2d
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.random import uniform
-from compyute.tensor import Tensor
+from ..module import Module
+from ...funcional import convolve1d, convolve2d, stretch2d
+from ...parameter import Parameter
+from ....functional import prod, zeros
+from ....random import uniform
+from ....tensor import Tensor
 
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]

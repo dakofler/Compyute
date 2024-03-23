@@ -1,8 +1,8 @@
 """Activation layers module"""
 
-from compyute.nn.funcional import sigmoid, relu, leaky_relu
-from compyute.nn.module import Module
-from compyute.tensor import Tensor
+from ..module import Module
+from ...funcional import sigmoid, relu, leaky_relu
+from ....tensor import Tensor
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]

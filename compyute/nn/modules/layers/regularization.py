@@ -1,8 +1,8 @@
 """Regularization layers module"""
 
-from compyute.nn.module import Module
-from compyute.random import multinomial
-from compyute.tensor import Tensor
+from ..module import Module
+from ....random import multinomial
+from ....tensor import Tensor
 
 
 __all__ = ["Dropout"]

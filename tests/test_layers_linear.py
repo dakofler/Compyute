@@ -1,7 +1,7 @@
 """Linear layer tests"""
 
 import torch
-from compyute.nn.layers import Linear
+from compyute.nn import Linear
 from tests.test_utils import get_vals_float, get_params, validate
 
 

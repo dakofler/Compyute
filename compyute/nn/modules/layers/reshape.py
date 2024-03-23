@@ -1,9 +1,9 @@
 """Tensor reshaping layers module"""
 
-from compyute.functional import zeros_like
-from compyute.nn.module import Module
-from compyute.tensor import Tensor
-from compyute.types import ShapeLike
+from ..module import Module
+from ....functional import zeros_like
+from ....tensor import Tensor
+from ....types import ShapeLike
 
 
 __all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]

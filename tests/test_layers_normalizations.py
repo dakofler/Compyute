@@ -1,7 +1,7 @@
 """Normalization layer tests"""
 
 import torch
-from compyute.nn.layers import Batchnorm1d, Batchnorm2d, Layernorm
+from compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
 from tests.test_utils import get_vals_float, validate
 
 

@@ -1,7 +1,7 @@
 """Activation layer tests"""
 
 import torch.nn.functional as F
-from compyute.nn.layers import ReLU, LeakyReLU, GELU, Sigmoid, Tanh
+from compyute.nn import ReLU, LeakyReLU, GELU, Sigmoid, Tanh
 from tests.test_utils import get_vals_float, validate
 
 

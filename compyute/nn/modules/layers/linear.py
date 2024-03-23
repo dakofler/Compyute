@@ -1,10 +1,10 @@
 """Linear transformation layers module"""
 
-from compyute.functional import arange, zeros
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.random import uniform
-from compyute.tensor import Tensor
+from ..module import Module
+from ...parameter import Parameter
+from ....functional import arange, zeros
+from ....random import uniform
+from ....tensor import Tensor
 
 
 __all__ = ["Linear"]

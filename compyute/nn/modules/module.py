@@ -3,9 +3,9 @@
 from __future__ import annotations
 from abc import ABC
 from typing import Callable
-from .parameter import Parameter
-from ..tensor import Tensor, ShapeError
-from ..types import DeviceLike
+from ..parameter import Parameter
+from ...tensor import Tensor, ShapeError
+from ...types import DeviceLike
 
 
 __all__ = ["Module"]

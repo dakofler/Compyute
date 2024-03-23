@@ -1,8 +1,8 @@
 """Containers tests"""
 
 import torch
-from compyute.nn.containers import Sequential, ParallelConcat, ParallelAdd
-from compyute.nn.layers import Linear
+from compyute.nn.modules.containers import Sequential, ParallelConcat, ParallelAdd
+from compyute.nn.modules.layers import Linear
 from tests.test_utils import get_vals_float, get_params, validate
 
 

@@ -1,11 +1,11 @@
-"""Recurrent layers layer"""
+"""Recurrent cells module"""
 
-from compyute.functional import zeros, zeros_like
-from compyute.nn.funcional import sigmoid
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.random import uniform
-from compyute.tensor import Tensor
+from ..module import Module
+from ...funcional import sigmoid
+from ...parameter import Parameter
+from ....functional import zeros, zeros_like
+from ....random import uniform
+from ....tensor import Tensor
 
 
 __all__ = ["RecurrentCell"]

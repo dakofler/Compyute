@@ -1,8 +1,8 @@
 """Neural network containers module"""
 
 from .module import Module
-from ..functional import concatenate
-from ..tensor import Tensor
+from ...functional import concatenate
+from ...tensor import Tensor
 
 
 __all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]

@@ -1,7 +1,7 @@
 """Embedding layer tests"""
 
 import torch
-from compyute.nn.layers import Embedding
+from compyute.nn import Embedding
 from compyute.random import uniform_int
 from tests.test_utils import get_vals_float, get_params, validate
 

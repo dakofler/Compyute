@@ -1,9 +1,9 @@
 """block tests"""
 
 import torch
-from compyute.nn.blocks import Recurrent, Residual
-from compyute.nn.containers import Sequential
-from compyute.nn.layers import Linear, ReLU
+from compyute.nn.modules.blocks import Recurrent, Residual
+from compyute.nn.modules.containers import Sequential
+from compyute.nn.modules.layers import Linear, ReLU
 from tests.test_utils import get_vals_float, get_params, validate
 
 

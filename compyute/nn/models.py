@@ -1,9 +1,9 @@
 """Neural network models module"""
 
 import pickle
-from .containers import Sequential
+from .modules.containers import Sequential
 from .dataloaders import DataLoader
-from .module import Module
+from .modules.module import Module
 from ..functional import concatenate, ones
 from ..tensor import Tensor
 from ..types import DtypeLike, ShapeLike
