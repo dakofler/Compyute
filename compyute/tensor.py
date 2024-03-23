@@ -1,15 +1,16 @@
 """Tensor module"""
 
 from __future__ import annotations
+from types import ModuleType
 import numpy
-from compyute.engine import (
+from .engine import (
     check_device,
     cupy_to_numpy,
     get_engine,
     infer_device,
     numpy_to_cupy,
 )
-from compyute.types import (
+from .types import (
     ArrayLike,
     AxisLike,
     ComplexLike,
@@ -47,10 +48,10 @@ class Tensor:
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
         device: DeviceLike, optional
-            The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+            Device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
         """
 
-        self.device = infer_device(data) if device is None else device
+        self.__device = infer_device(data) if device is None else device
         self.data = self.__engine.array(data, copy=copy, dtype=dtype)
         self.grad: Tensor | None = None
         self.__iterator = 0
@@ -60,8 +61,13 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def __engine(self):
-        return get_engine(self.device)
+    def __engine(self) -> ModuleType:
+        return get_engine(self.__device)
+
+    @property
+    def device(self) -> DeviceLike:
+        """Device the tensor is stored on."""
+        return self.__device
 
     @property
     def dtype(self) -> str:
@@ -72,6 +78,11 @@ class Tensor:
     def ndim(self) -> int:
         """Tensor dimensions."""
         return self.data.ndim
+
+    @property
+    def size(self) -> int:
+        """Tensor size."""
+        return self.data.size
 
     @property
     def shape(self) -> ShapeLike:
@@ -91,9 +102,14 @@ class Tensor:
         prefix = "Tensor("
         dtype = self.dtype
         shape = self.shape
-        device = self.device
+        device = self.__device
         array_string = numpy.array2string(
-            self.cpu().data, max_line_width=100, prefix=prefix, separator=", ", precision=4)
+            self.cpu().data,
+            max_line_width=100,
+            prefix=prefix,
+            separator=", ",
+            precision=4,
+        )
         return f"{prefix}{array_string}, {dtype=}, {shape=}, {device=})"
 
     def __call__(self) -> ArrayLike:
@@ -138,10 +154,10 @@ class Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data**parse_data(other))
+        return Tensor(self.data ** parse_data(other))
 
     def __rpow__(self, other: ScalarLike) -> Tensor:
-        return Tensor(other, device=self.device)**self
+        return Tensor(other, device=self.__device) ** self
 
     def __neg__(self) -> Tensor:
         return self * -1
@@ -457,7 +473,7 @@ class Tensor:
         Parameters
         ----------
         device : DeviceLike
-            Device to move the tensor to. Valid options are "cpu" and "cuda".
+            Device the tensor is stored on ("cuda" or "cpu").
 
         Raises
         ----------
@@ -465,11 +481,11 @@ class Tensor:
             If device is not "cpu" or "cuda".
 
         """
-        if self.device == device:
+        if self.__device == device:
             return
 
         check_device(device)
-        self.device = device
+        self.__device = device
 
         if device == "cuda":
             self.data = numpy_to_cupy(self.data)
@@ -481,7 +497,7 @@ class Tensor:
 
     def cpu(self):
         """Returns a copy of the tensor on the cpu."""
-        if self.device == "cpu":
+        if self.__device == "cpu":
             return self
 
         self.to_device("cpu")
@@ -489,7 +505,7 @@ class Tensor:
 
     def cuda(self):
         """Returns a copy of the tensor on the gpu."""
-        if self.device == "cuda":
+        if self.__device == "cuda":
             return self
 
         self.to_device("cuda")
@@ -686,7 +702,10 @@ class Tensor:
         return Tensor(self.__engine.sqrt(self.data))
 
     def fft1d(
-        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+        self,
+        n: int | None = None,
+        axis: AxisLike = -1,
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the 1D Fast Fourier Transform over a specified axis.
 
@@ -707,7 +726,10 @@ class Tensor:
         return Tensor(self.__engine.fft.fft(self.data, n=n, axis=axis), dtype=dtype)
 
     def ifft1d(
-        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+        self,
+        n: int | None = None,
+        axis: AxisLike = -1,
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the inverse 1D Fast Fourier Transform over a specified axis.
 
@@ -731,7 +753,7 @@ class Tensor:
         self,
         s: ShapeLike | None = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the 2D Fast Fourier Transform over two specified axes.
 
@@ -755,7 +777,7 @@ class Tensor:
         self,
         s: ShapeLike | None = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Applies the inverse 1D Fast Fourier Transform to the tensor.
 

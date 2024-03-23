@@ -77,10 +77,8 @@ class Batchnorm1d(Module):
             var = x.var(axis=axis, keepdims=True, ddof=1)
             self.rvar = self.rvar * (1 - self.m) + var.squeeze() * self.m
         else:
-            rvar = self.rvar if dim2 else self.rvar.reshape(
-                (*self.rvar.shape, 1))
-            rmean = self.rmean if dim2 else self.rmean.reshape(
-                (*self.rmean.shape, 1))
+            rvar = self.rvar if dim2 else self.rvar.reshape((*self.rvar.shape, 1))
+            rmean = self.rmean if dim2 else self.rmean.reshape((*self.rmean.shape, 1))
             var_h = (rvar + self.eps) ** -0.5
             x_h = (x - rmean) * var_h
 
@@ -89,15 +87,23 @@ class Batchnorm1d(Module):
         y = weights * x_h + biases
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = float(prod(x.shape) / x.shape[1])
-                dx = weights * var_h / n * \
-                    (n * dy - dy.sum(axis=axis, keepdims=True) -
-                     x_h * (dy * x_h).sum(axis=axis, keepdims=True))
+                dx = (
+                    weights
+                    * var_h
+                    / n
+                    * (
+                        n * dy
+                        - dy.sum(axis=axis, keepdims=True)
+                        - x_h * (dy * x_h).sum(axis=axis, keepdims=True)
+                    )
+                )
 
                 # gamma grads
                 self.w.grad = (x_h * dy).sum(axis=axis)
@@ -106,6 +112,7 @@ class Batchnorm1d(Module):
                 self.b.grad = dy.sum(axis=axis)
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)
@@ -200,15 +207,23 @@ class Batchnorm2d(Module):
         y = weights * x_h + biases
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = float(prod(x.shape) / x.shape[1])
-                dx = weights * var_h / n * \
-                    (n * dy - dy.sum(axis=axis, keepdims=True) -
-                     x_h * (dy * x_h).sum(axis=axis, keepdims=True))
+                dx = (
+                    weights
+                    * var_h
+                    / n
+                    * (
+                        n * dy
+                        - dy.sum(axis=axis, keepdims=True)
+                        - x_h * (dy * x_h).sum(axis=axis, keepdims=True)
+                    )
+                )
 
                 # gamma grads
                 self.w.grad = (x_h * dy).sum(axis=axis)
@@ -217,6 +232,7 @@ class Batchnorm2d(Module):
                 self.b.grad = dy.sum(axis=axis)
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)
@@ -285,15 +301,23 @@ class Layernorm(Module):
         y = self.w * x_h + self.b
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape[1:])
-                dx = self.w * var_h / n * \
-                    (n * dy - dy.sum(axes, keepdims=True) -
-                     x_h * (dy * x_h).sum(axes, keepdims=True))
+                dx = (
+                    self.w
+                    * var_h
+                    / n
+                    * (
+                        n * dy
+                        - dy.sum(axes, keepdims=True)
+                        - x_h * (dy * x_h).sum(axes, keepdims=True)
+                    )
+                )
 
                 # gamma grads
                 self.w.grad = (x_h * dy).sum(axis=0)
@@ -302,6 +326,7 @@ class Layernorm(Module):
                 self.b.grad = dy.sum(axis=0)
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)

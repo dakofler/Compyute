@@ -108,6 +108,7 @@ class Convolution1d(Module):
             y += self.b.reshape((*self.b.shape, 1))
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
@@ -152,8 +153,7 @@ class Convolution1d(Module):
 
                 # convolve
                 # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
-                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[
-                    :, :, :, -K * self.dil:]
+                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[:, :, :, -K * self.dil :]
 
                 # sum over batches
                 # (B, Co, Ci, K) -> (Co, Ci, K)
@@ -168,6 +168,7 @@ class Convolution1d(Module):
                     self.b.grad = dy.sum(axis=(0, 2))
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)
@@ -270,6 +271,7 @@ class Convolution2d(Module):
             y += self.b.add_dims(target_dims=3)
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
@@ -308,13 +310,12 @@ class Convolution2d(Module):
                 # ----------------
                 dy_p_ext = dy_p_ext.flip((-2, -1))
 
-                pad = (Ky // 2 * Dy, Kx // 2 *
-                       Dx) if self.pad == "same" else "valid"
+                pad = (Ky // 2 * Dy, Kx // 2 * Dx) if self.pad == "same" else "valid"
 
                 # convolve
                 # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, Ky, Kx)
                 x_conv_dy = convolve2d(x, dy_p_ext, pad=pad)[
-                    :, :, :, -Ky * Dy:, -Kx * Dx:
+                    :, :, :, -Ky * Dy :, -Kx * Dx :
                 ]
 
                 # sum over batches
@@ -330,6 +331,7 @@ class Convolution2d(Module):
                     self.b.grad = dy.sum(axis=(0, 2, 3))
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)
@@ -371,8 +373,7 @@ class MaxPooling2d(Module):
         # iterate over height and width and pick highest value
         for i in range(y.shape[-2]):
             for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i *
-                               ky: (i + 1) * ky, j * kx: (j + 1) * kx]
+                chunk = x.data[:, :, i * ky : (i + 1) * ky, j * kx : (j + 1) * kx]
                 y[:, :, i, j] = chunk.max(axis=(-2, -1))
 
         if self.training:
@@ -389,6 +390,7 @@ class MaxPooling2d(Module):
                 # use p_map as mask for grads
                 dx = dy_str * p_map
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
+
             self.backward = backward
 
         self.set_y(y)
@@ -435,11 +437,11 @@ class AvgPooling2d(Module):
         # iterate over height and width and compute mean value
         for i in range(y.shape[-2]):
             for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i *
-                               Ky: (i + 1) * Ky, j * Kx: (j + 1) * Kx]
+                chunk = x.data[:, :, i * Ky : (i + 1) * Ky, j * Kx : (j + 1) * Kx]
                 y[:, :, i, j] = chunk.mean(axis=(-2, -1))
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
 
@@ -449,6 +451,7 @@ class AvgPooling2d(Module):
                 # scale gradients down
                 dx = dy_str / prod(self.kernel_size)
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
+
             self.backward = backward
 
         self.set_y(y)

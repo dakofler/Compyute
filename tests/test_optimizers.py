@@ -1,7 +1,7 @@
 """Optimizers tests"""
 
 import torch
-import compyute
+from compyute.nn.trainer.optimizers import SGD, Adam, AdamW
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -18,7 +18,7 @@ def test_sgd() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2)
+    compyute_optim = SGD(lr=1e-2)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
@@ -42,7 +42,7 @@ def test_sgd_m() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2, m=0.1)
+    compyute_optim = SGD(lr=1e-2, m=0.1)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1)
@@ -66,11 +66,10 @@ def test_sgd_m_nesterov() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(lr=1e-2, m=0.1, nesterov=True)
+    compyute_optim = SGD(lr=1e-2, m=0.1, nesterov=True)
     compyute_optim.parameters = [compyute_x]
 
-    torch_optim = torch.optim.SGD(
-        [torch_x], lr=1e-2, momentum=0.1, nesterov=True)
+    torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, nesterov=True)
 
     for _ in range(ITER):
         compyute_optim.step()
@@ -93,11 +92,9 @@ def test_sgd_m_wdecay() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.SGD(
-        lr=1e-2, m=0.1, weight_decay=0.1)
+    compyute_optim = SGD(lr=1e-2, m=0.1, weight_decay=0.1)
     compyute_optim.parameters = [compyute_x]
-    torch_optim = torch.optim.SGD(
-        [torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
+    torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
 
     for _ in range(ITER):
         compyute_optim.step()
@@ -118,13 +115,10 @@ def test_adam() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.Adam(
-        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
-    )
+    compyute_optim = Adam(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
     compyute_optim.parameters = [compyute_x]
 
-    torch_optim = torch.optim.Adam(
-        [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    torch_optim = torch.optim.Adam([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
 
     for _ in range(ITER):
         compyute_optim.step()
@@ -145,9 +139,7 @@ def test_adam_wdecay() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.Adam(
-        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
-    )
+    compyute_optim = Adam(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.Adam(
@@ -172,13 +164,10 @@ def test_adamw() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.AdamW(
-        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8
-    )
+    compyute_optim = AdamW(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
     compyute_optim.parameters = [compyute_x]
 
-    torch_optim = torch.optim.AdamW(
-        [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    torch_optim = torch.optim.AdamW([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
 
     for _ in range(ITER):
         compyute_optim.step()
@@ -199,9 +188,7 @@ def test_adamw_wdecay() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = compyute.nn.optimizers.AdamW(
-        lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1
-    )
+    compyute_optim = AdamW(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.AdamW(

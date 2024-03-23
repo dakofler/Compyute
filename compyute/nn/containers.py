@@ -1,8 +1,8 @@
 """Neural network containers module"""
 
-from compyute.nn.module import Module
-from compyute.functional import concatenate
-from compyute.tensor import Tensor
+from .module import Module
+from ..functional import concatenate
+from ..tensor import Tensor
 
 
 __all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]
@@ -42,11 +42,13 @@ class Sequential(Container):
             x = module.forward(x)
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 for module in reversed(self.child_modules):
                     dy = module.backward(dy)
                 return dy
+
             self.backward = backward
 
         self.set_y(x)
@@ -80,10 +82,12 @@ class ParallelConcat(Container):
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 out_lens = [y.shape[self.concat_axis] for y in ys]
-                splits = [sum(out_lens[: i + 1])
-                          for i in range(len(out_lens) - 1)]
+                splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
-                return sum(self.child_modules[i].backward(s) for i, s in enumerate(dy_splits))
+                return sum(
+                    self.child_modules[i].backward(s) for i, s in enumerate(dy_splits)
+                )
+
             self.backward = backward
 
         self.set_y(y)
@@ -108,9 +112,11 @@ class ParallelAdd(Container):
         y = sum([m.forward(x) for m in self.child_modules])
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 return sum(m.backward(dy) for m in self.child_modules)
+
             self.backward = backward
 
         self.set_y(y)

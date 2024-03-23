@@ -1,24 +1,17 @@
-"""Learning rate decay module"""
+"""Learning rate decay callbacks module"""
 
-from abc import ABC
 import math
-from compyute.nn.optimizers.optimizers import Optimizer
+from .callback import Callback
 
 
 __all__ = ["ExponentialLR", "StepLR", "MultistepLR"]
 
 
-class LRDecay(ABC):
+class LRDecay(Callback):
     """Optimizer base class"""
 
     def __init__(self) -> None:
         self.t: int = 1
-        self.optimizer: Optimizer | None = None
-
-    def step(self) -> None:
-        """Updates the optimizer learning rate."""
-        if not self.optimizer:
-            raise AttributeError("No optimizer set.")
 
 
 class StepLR(LRDecay):
@@ -38,11 +31,10 @@ class StepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_epoch = decay_epoch
 
-    def step(self) -> None:
+    def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        super().step()
         if self.t == self.decay_epoch:
-            self.optimizer.lr *= self.lr_decay
+            trainer.optimizer.lr *= self.lr_decay
         self.t += 1
 
 
@@ -63,11 +55,10 @@ class MultistepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_step_size = decay_step_size
 
-    def step(self) -> None:
+    def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        super().step()
         if self.t % self.decay_step_size == 0:
-            self.optimizer.lr *= self.lr_decay
+            trainer.optimizer.lr *= self.lr_decay
         self.t += 1
 
 
@@ -88,11 +79,10 @@ class ExponentialLR(LRDecay):
         self.lr_decay = lr_decay
         self.until_epoch = until_epoch
 
-    def step(self) -> None:
+    def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        super().step()
         if self.t <= self.until_epoch:
-            self.optimizer.lr *= self.lr_decay
+            trainer.optimizer.lr *= self.lr_decay
             self.t += 1
 
 
@@ -114,18 +104,16 @@ class CosineLR(LRDecay):
         self.until_epoch = until_epoch
         self.lr_max = 1.0
 
-    def step(self) -> None:
+    def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        super().step()
 
-        # set lr_ax to be the initial learning rate
         if self.t == 1:
-            self.lr_max = self.optimizer.lr
+            self.lr_max = trainer.optimizer.lr
 
         if self.t <= self.until_epoch:
-            self.optimizer.lr = self.lr_min + 0.5 * (self.lr_max - self.lr_min) * (
+            trainer.optimizer.lr = self.lr_min + 0.5 * (self.lr_max - self.lr_min) * (
                 1.0 + math.cos(self.t / self.until_epoch * math.pi)
             )
         else:
-            self.optimizer.lr = self.lr_min
+            trainer.optimizer.lr = self.lr_min
         self.t += 1

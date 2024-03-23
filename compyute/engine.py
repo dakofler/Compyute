@@ -4,7 +4,7 @@ import os
 from types import ModuleType
 import numpy
 import cupy
-from compyute.types import ArrayLike, DeviceLike, ScalarLike
+from .types import ArrayLike, DeviceLike, ScalarLike
 
 
 __all__ = ["gpu_available"]
@@ -21,8 +21,7 @@ def gpu_available() -> bool:
 available_devices = ["cpu"]
 if gpu_available():
     available_devices.append("cuda")
-d = ", ".join(available_devices)
-print(f"Compyute: found devices {d}")
+print(f"Compyute: found devices {available_devices}")
 
 
 def check_device(device: DeviceLike):

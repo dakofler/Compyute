@@ -56,13 +56,19 @@ model = nn.SequentialModel([
     Linear(16, 3),
 ])
 
-model.compile(
-    optimizer=nn.optimizers.SGD(),
-    loss_fn=nn.losses.Crossentropy(),
-    metric_fn=nn.metrics.accuracy
-)
 
-model.train(X_train, y_train, epochs=10)
+from compyute.nn.trainer import Trainer
+from compyute.nn.trainer.losses import Crossentropy
+from compyute.nn.trainer.metrics import Accuracy
+from compyute.nn.trainer.optimizers import SGD
+
+trainer = Trainer(
+    optimizer=SGD(),
+    loss_function=Crossentropy(),
+    metric_function=Accuracy()
+)
+trainer.train(X_train, y_train, epochs=10)
+
 
 nn.save_model(model, "my_model.cp")
 ```

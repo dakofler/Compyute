@@ -1,9 +1,9 @@
 """Tensor functions module"""
 
-import numpy as np
-from compyute.engine import get_engine
-from compyute.tensor import Tensor
-from compyute.types import DeviceLike, DtypeLike, ScalarLike, ShapeLike
+import numpy
+from .engine import get_engine
+from .tensor import Tensor
+from .types import DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 
 __all__ = [
@@ -17,7 +17,7 @@ __all__ = [
     "maximum",
     "concatenate",
     "prod",
-    "eye"
+    "eye",
 ]
 
 
@@ -83,7 +83,9 @@ def linspace(
     return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
-def zeros(shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def zeros(
+    shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
     Parameters
@@ -103,7 +105,9 @@ def zeros(shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike =
     return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 
-def ones(shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def ones(
+    shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -123,7 +127,9 @@ def ones(shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = 
     return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
-def zeros_like(x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def zeros_like(
+    x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor based on the shape of a given other tensor with all values being zero.
 
     Parameters
@@ -143,7 +149,9 @@ def zeros_like(x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "
     return zeros(x.shape, dtype=dtype, device=device)
 
 
-def ones_like(x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def ones_like(
+    x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor based on the shape of a given other tensor with all values being one.
 
     Parameters
@@ -278,7 +286,7 @@ def prod(x: tuple[int, ...]) -> int:
     int
         Product of tuple elements.
     """
-    return np.prod(x).item()
+    return numpy.prod(x).item()
 
 
 def eye(n: int, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:

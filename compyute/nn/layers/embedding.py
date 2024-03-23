@@ -60,10 +60,12 @@ class Embedding(Module):
         y = x @ self.w
 
         if self.training:
+
             def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
                 self.w.grad = (x.transpose() @ dy).sum(axis=0)
+
             self.backward = backward
 
         self.set_y(y)

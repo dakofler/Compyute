@@ -1,8 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor
+from ..parameter import Parameter
 
 
 __all__ = ["SGD", "Adam", "AdamW"]
@@ -19,16 +18,6 @@ class Optimizer(ABC):
     @abstractmethod
     def step(self) -> None:
         """Updates parameters using their gradients."""
-
-    def reset_grads(self) -> None:
-        """Resets parameter grads."""
-        for parameter in self.parameters:
-            parameter.grad = None
-
-    def reset_optimizer_params(self) -> None:
-        """Resets temporary values used in the step method."""
-        for parameter in self.parameters:
-            parameter.optimizer_params = {}
 
 
 class SGD(Optimizer):
@@ -123,7 +112,7 @@ class Adam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
 
-    def step(self):
+    def step(self) -> None:
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -182,7 +171,7 @@ class AdamW(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
 
-    def step(self):
+    def step(self) -> None:
         for p in self.parameters:
             if p.grad is None:
                 continue

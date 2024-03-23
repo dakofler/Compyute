@@ -1,7 +1,7 @@
 """Activation layer tests"""
 
 import torch.nn.functional as F
-import compyute
+from compyute.nn.layers import ReLU, LeakyReLU, GELU, Sigmoid, Tanh
 from tests.test_utils import get_vals_float, validate
 
 
@@ -13,7 +13,7 @@ def test_relu() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
-    module = compyute.nn.layers.ReLU()
+    module = ReLU()
     module.training = True
     compyute_y = module(compyute_x)
     torch_y = F.relu(torch_x)
@@ -33,7 +33,7 @@ def test_leaky_relu() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
-    module = compyute.nn.layers.LeakyReLU(alpha=0.01)
+    module = LeakyReLU(alpha=0.01)
     module.training = True
     compyute_y = module(compyute_x)
     torch_y = F.leaky_relu(torch_x, negative_slope=0.01)
@@ -53,7 +53,7 @@ def test_gelu() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
-    module = compyute.nn.layers.GELU()
+    module = GELU()
     module.training = True
     compyute_y = module(compyute_x)
     torch_y = F.gelu(torch_x, approximate="tanh")
@@ -73,7 +73,7 @@ def test_tanh() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
-    module = compyute.nn.layers.Tanh()
+    module = Tanh()
     module.training = True
     compyute_y = module(compyute_x)
     torch_y = F.tanh(torch_x)
@@ -93,7 +93,7 @@ def test_sigmoid() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
-    module = compyute.nn.layers.Sigmoid()
+    module = Sigmoid()
     module.training = True
     compyute_y = module(compyute_x)
     torch_y = F.sigmoid(torch_x)

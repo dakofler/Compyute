@@ -1,7 +1,9 @@
 """block tests"""
 
 import torch
-import compyute
+from compyute.nn.blocks import Recurrent, Residual
+from compyute.nn.containers import Sequential
+from compyute.nn.layers import Linear, ReLU
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -36,7 +38,7 @@ def test_recurrent() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = compyute.nn.blocks.Recurrent(Cin, Ch, num_layers=2)
+    compyute_module = Recurrent(Cin, Ch, num_layers=2)
 
     compyute_module.training = True
 
@@ -77,53 +79,21 @@ def test_recurrent() -> None:
     results.append(validate(compyute_dx, torch_x.grad))
 
     # input 1 grads
-    results.append(
-        validate(
-            compyute_module.child_modules[0].w_i.grad,
-            torch_module.weight_ih_l0.grad,
-        )
-    )
-    results.append(
-        validate(
-            compyute_module.child_modules[0].b_i.grad, torch_module.bias_ih_l0.grad
-        )
-    )
+    layers = compyute_module.child_modules
+    results.append(validate(layers[0].w_i.grad, torch_module.weight_ih_l0.grad))
+    results.append(validate(layers[0].b_i.grad, torch_module.bias_ih_l0.grad))
 
     # hidden 1 grads
-    results.append(
-        validate(
-            compyute_module.child_modules[0].w_h.grad, torch_module.weight_hh_l0.grad
-        )
-    )
-    results.append(
-        validate(
-            compyute_module.child_modules[0].b_h.grad, torch_module.bias_hh_l0.grad
-        )
-    )
+    results.append(validate(layers[0].w_h.grad, torch_module.weight_hh_l0.grad))
+    results.append(validate(layers[0].b_h.grad, torch_module.bias_hh_l0.grad))
 
     # input 2 grads
-    results.append(
-        validate(
-            compyute_module.child_modules[1].w_i.grad, torch_module.weight_ih_l1.grad
-        )
-    )
-    results.append(
-        validate(
-            compyute_module.child_modules[1].b_i.grad, torch_module.bias_ih_l1.grad
-        )
-    )
+    results.append(validate(layers[1].w_i.grad, torch_module.weight_ih_l1.grad))
+    results.append(validate(layers[1].b_i.grad, torch_module.bias_ih_l1.grad))
 
     # hidden 2 grads
-    results.append(
-        validate(
-            compyute_module.child_modules[1].w_h.grad, torch_module.weight_hh_l1.grad
-        )
-    )
-    results.append(
-        validate(
-            compyute_module.child_modules[1].b_h.grad, torch_module.bias_hh_l1.grad
-        )
-    )
+    results.append(validate(layers[1].w_h.grad, torch_module.weight_hh_l1.grad))
+    results.append(validate(layers[1].b_h.grad, torch_module.bias_hh_l1.grad))
 
     assert all(results)
 
@@ -140,12 +110,12 @@ def test_residual() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = compyute.nn.blocks.Residual(
-        compyute.nn.containers.Sequential(
+    compyute_module = Residual(
+        Sequential(
             [
-                compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
-                compyute.nn.layers.ReLU(),
-                compyute.nn.layers.Linear(Cout, Cin, use_bias=False),
+                Linear(Cin, Cout, use_bias=False),
+                ReLU(),
+                Linear(Cout, Cin, use_bias=False),
             ]
         )
     )

@@ -99,13 +99,15 @@ class RecurrentCell(Module):
             h[:, t] = (x_h[:, t] + h_t).tanh()
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 dh = dy.astype(self.dtype)
                 self.set_dy(dh)
 
                 dx_h = zeros_like(x_h, dtype=self.dtype, device=self.device)
                 self.w_h.grad = zeros_like(
-                    self.w_h, dtype=self.dtype, device=self.device)
+                    self.w_h, dtype=self.dtype, device=self.device
+                )
 
                 for t in range(x.shape[1] - 1, -1, -1):
                     # add hidden state grad of next t, if not last t
@@ -142,6 +144,7 @@ class RecurrentCell(Module):
                 self.b_i.grad = dx_h.sum((0, 1))
 
                 return dx
+
             self.backward = backward
 
         self.set_y(h)
@@ -156,7 +159,7 @@ class LSTMCell(Module):
         in_channels: int,
         h_channels: int,
         use_bias: bool = True,
-        dtype: str = "float32"
+        dtype: str = "float32",
     ) -> None:
         """Long Short-Term Memory cell.
         Input: (B, T, Cin)

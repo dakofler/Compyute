@@ -74,6 +74,7 @@ class Linear(Module):
             y += self.b
 
         if self.training:
+
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 dy = dy.astype(self.dtype)
@@ -100,6 +101,7 @@ class Linear(Module):
                     self.b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
 
                 return dx
+
             self.backward = backward
 
         self.set_y(y)

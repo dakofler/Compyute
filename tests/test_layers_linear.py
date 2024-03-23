@@ -1,7 +1,7 @@
 """Linear layer tests"""
 
 import torch
-import compyute
+from compyute.nn.layers import Linear
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -19,7 +19,7 @@ def test_linear_2d() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Linear(Cin, Cout)
+    compyute_module = Linear(Cin, Cout)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -38,8 +38,7 @@ def test_linear_2d() -> None:
     torch_y.backward(torch_dy)
 
     results.append(validate(compyute_dx, torch_x.grad))
-    results.append(validate(compyute_module.w.grad,
-                   torch_module.weight.grad))
+    results.append(validate(compyute_module.w.grad, torch_module.weight.grad))
     results.append(validate(compyute_module.b.grad, torch_module.bias.grad))
 
     assert all(results)
@@ -56,7 +55,7 @@ def test_linear_nd() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Linear(Cin, Cout)
+    compyute_module = Linear(Cin, Cout)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -75,8 +74,7 @@ def test_linear_nd() -> None:
     torch_y.backward(torch_dy)
 
     results.append(validate(compyute_dx, torch_x.grad))
-    results.append(validate(compyute_module.w.grad,
-                   torch_module.weight.grad))
+    results.append(validate(compyute_module.w.grad, torch_module.weight.grad))
     results.append(validate(compyute_module.b.grad, torch_module.bias.grad))
 
     assert all(results)

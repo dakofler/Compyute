@@ -1,7 +1,8 @@
 """Embedding layer tests"""
 
 import torch
-import compyute
+from compyute.nn.layers import Embedding
+from compyute.random import uniform_int
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -13,11 +14,11 @@ def test_embedding() -> None:
     shape_w = (Cin, Cout)
 
     # forward
-    compyute_x = compyute.random.uniform_int((B, X), 0, Cin)
+    compyute_x = uniform_int((B, X), 0, Cin)
     torch_x = torch.from_numpy(compyute_x.to_numpy())
     compyute_w, torch_w = get_params(shape_w)
 
-    compyute_module = compyute.nn.layers.Embedding(Cin, Cout)
+    compyute_module = Embedding(Cin, Cout)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_y = compyute_module(compyute_x)

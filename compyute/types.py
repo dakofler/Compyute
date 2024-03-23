@@ -16,13 +16,7 @@ IntLike = (
     | cupy.int32
     | cupy.int64
     | cupy.int64
-    | Literal[
-        "int",
-        "int8",
-        "int16",
-        "int32",
-        "int64"
-    ]
+    | Literal["int", "int8", "int16", "int32", "int64"]
 )
 
 FloatLike = (
@@ -33,12 +27,7 @@ FloatLike = (
     | cupy.float16
     | cupy.float32
     | cupy.float64
-    | Literal[
-        "float",
-        "float16",
-        "float32",
-        "float64"
-    ]
+    | Literal["float", "float16", "float32", "float64"]
 )
 
 ComplexLike = (
@@ -46,18 +35,10 @@ ComplexLike = (
     | numpy.complex128
     | cupy.complex64
     | cupy.complex128
-    | Literal[
-        "complex",
-        "complex64",
-        "complex128"
-    ]
+    | Literal["complex", "complex64", "complex128"]
 )
 
-DtypeLike = (
-    IntLike
-    | FloatLike
-    | ComplexLike
-)
+DtypeLike = IntLike | FloatLike | ComplexLike
 
 ScalarLike = DtypeLike | list | float | int
 ShapeLike = tuple[int, ...]

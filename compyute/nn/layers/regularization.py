@@ -39,6 +39,7 @@ class Dropout(Module):
                 self.set_dy(dy)
                 # use d_map as mask for grads
                 return dy * d_map / p_comp
+
             self.backward = backward
 
         else:

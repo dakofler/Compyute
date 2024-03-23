@@ -1,7 +1,7 @@
 """Losses tests"""
 
 import torch
-import compyute
+from compyute.nn.trainer.losses import MSE, Crossentropy
 from tests.test_utils import get_vals_float, validate, get_vals_int
 
 
@@ -15,7 +15,7 @@ def test_mse() -> None:
     compyute_x, torch_x = get_vals_float(SHAPE)
     compyute_t, torch_t = get_vals_float(SHAPE)
 
-    compyute_loss = compyute.nn.losses.MSE()
+    compyute_loss = MSE()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.MSELoss()
@@ -38,7 +38,7 @@ def test_crossentropy() -> None:
     compyute_x, torch_x = get_vals_float(SHAPE)
     compyute_t, torch_t = get_vals_int((SHAPE[0],), high=SHAPE[1])
 
-    compyute_loss = compyute.nn.losses.Crossentropy()
+    compyute_loss = Crossentropy()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.CrossEntropyLoss()

@@ -1,9 +1,9 @@
 """Parameter initializations module"""
 
-from compyute.functional import prod
-import compyute.random as rnd
-from compyute.tensor import Tensor
-from compyute.types import ShapeLike
+from ..functional import prod
+from .. import random
+from ..tensor import Tensor
+from ..types import ShapeLike
 
 
 __all__ = [
@@ -93,7 +93,7 @@ def uniform(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    return rnd.uniform(shape, low, high)
+    return random.uniform(shape, low, high)
 
 
 def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
@@ -113,7 +113,7 @@ def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     Tensor
         Tensor with random values.
     """
-    return rnd.normal(shape, mean, std)
+    return random.normal(shape, mean, std)
 
 
 def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -135,7 +135,7 @@ def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     fan_in = get_fan_in(shape)
     fan_out = get_fan_out(shape)
     bound = gain * (6 / (fan_in + fan_out)) ** 0.5
-    return rnd.uniform(shape, -bound, bound)
+    return random.uniform(shape, -bound, bound)
 
 
 def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -157,7 +157,7 @@ def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     fan_in = get_fan_in(shape)
     fan_out = get_fan_out(shape)
     std = gain * (2 / (fan_in + fan_out)) ** 0.5
-    return rnd.normal(shape, std=std)
+    return random.normal(shape, std=std)
 
 
 def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -178,7 +178,7 @@ def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     """
     fan_in = get_fan_in(shape)
     bound = gain * (3 / fan_in) ** 0.5
-    return rnd.uniform(shape, -bound, bound)
+    return random.uniform(shape, -bound, bound)
 
 
 def kaiming_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
@@ -199,4 +199,4 @@ def kaiming_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     """
     fan_in = get_fan_in(shape)
     std = gain / fan_in**0.5
-    return rnd.normal(shape, std=std)
+    return random.normal(shape, std=std)

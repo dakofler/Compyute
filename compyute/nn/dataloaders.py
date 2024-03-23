@@ -1,7 +1,7 @@
 """Dataloaders module"""
 
-from compyute.random import shuffle
-from compyute.tensor import Tensor
+from ..random import shuffle
+from ..tensor import Tensor
 
 
 __all__ = ["DataLoader"]
@@ -26,12 +26,12 @@ class DataLoader:
         self.y = y
         self.batch_size = batch_size
 
-    def __call__(self, shuffle_inputs: bool = True, drop_remaining: bool = False):
+    def __call__(self, shuffle_data: bool = True, drop_remaining: bool = False):
         """Returns data in a batched form.
 
         Parameters
         ----------
-        shuffle_inputs : bool, optional
+        shuffle_data : bool, optional
             Whether to shuffle the data each time the dataloader is called, by default True.
         drop_remaining: bool, optional
             Whether to drop data, that remains when the number of samples is not divisible by
@@ -43,7 +43,7 @@ class DataLoader:
             Batch of features and labels.
         """
         n = self.x.shape[0]
-        if shuffle_inputs:
+        if shuffle_data:
             self.x, idx = shuffle(self.x)
             if self.y is not None:
                 self.y = self.y[idx]
@@ -51,9 +51,10 @@ class DataLoader:
         # yield batches
         n_steps = len(self)
         b = min(self.batch_size, n)
+
         for i in range(n_steps):
-            x = self.x[i * b: (i + 1) * b]
-            y = self.y[i * b: (i + 1) * b] if self.y is not None else None
+            x = self.x[i * b : (i + 1) * b]
+            y = self.y[i * b : (i + 1) * b] if self.y is not None else None
             yield (x, y)
 
         # yield remaining samples, if there are any

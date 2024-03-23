@@ -6,7 +6,8 @@ import pickle
 import re
 import regex
 from tqdm.auto import trange
-from compyute.tensor import Tensor
+from ..tensor import Tensor
+
 
 __all__ = [
     "CharacterTokenizer",
@@ -189,8 +190,7 @@ class BPETokenizer(Tokenizer):
 
             # get most occuring bigram
             if len(counts) == 0:
-                print(
-                    f"Step {i+1}/{num_merges}. No more possible merges found.")
+                print(f"Step {i+1}/{num_merges}. No more possible merges found.")
                 break
             bigram = max(counts, key=counts.get)
 
@@ -235,8 +235,7 @@ class BPETokenizer(Tokenizer):
             counts = self.__update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(
-                counts, key=lambda p: self.__merges.get(p, float("inf")))
+            bigram = min(counts, key=lambda p: self.__merges.get(p, float("inf")))
             if bigram not in self.__merges:
                 break
 

@@ -2,10 +2,10 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable
-from compyute.functional import prod
-from compyute.nn.funcional import softmax
-from compyute.preprocessing.basic import one_hot_encode
-from compyute.tensor import Tensor
+from ..funcional import softmax
+from ...functional import prod
+from ...preprocessing.basic import one_hot_encode
+from ...tensor import Tensor
 
 
 __all__ = ["MSE", "Crossentropy"]

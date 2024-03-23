@@ -1,7 +1,7 @@
 """Convolutional layer tests"""
 
 import torch
-import compyute
+from compyute.nn.layers import Convolution1d, Convolution2d, MaxPooling2d, AvgPooling2d
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -23,9 +23,7 @@ def test_conv1d() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution1d(
-        Cin, Cout, K, pad, strides, dilation
-    )
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -65,9 +63,7 @@ def test_conv1d_dil2() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution1d(
-        Cin, Cout, K, pad, strides, dilation
-    )
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -107,9 +103,7 @@ def test_conv2d_valid() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution2d(
-        Cin, Cout, (K, K), pad, strides, dilation
-    )
+    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -149,9 +143,7 @@ def test_conv2d_same() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution2d(
-        Cin, Cout, (K, K), pad, strides, dilation
-    )
+    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -191,9 +183,7 @@ def test_conv2d_stride2() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution2d(
-        Cin, Cout, (K, K), pad, strides, dilation
-    )
+    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -233,9 +223,7 @@ def test_conv2d_dil2() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = compyute.nn.layers.Convolution2d(
-        Cin, Cout, (K, K), pad, strides, dilation
-    )
+    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
@@ -266,7 +254,7 @@ def test_maxpool2d() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(shape_x)
-    compyute_module = compyute.nn.layers.MaxPooling2d()
+    compyute_module = MaxPooling2d()
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.max_pool2d(torch_x, (2, 2))
@@ -287,7 +275,7 @@ def test_avgpool2d() -> None:
 
     # forward
     compyute_x, torch_x = get_vals_float(shape_x)
-    compyute_module = compyute.nn.layers.AvgPooling2d()
+    compyute_module = AvgPooling2d()
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.avg_pool2d(torch_x, (2, 2))

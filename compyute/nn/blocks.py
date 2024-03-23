@@ -1,8 +1,8 @@
 """Neural network blocks module"""
 
-from compyute.nn.containers import Sequential, ParallelAdd
-from compyute.nn.layers import RecurrentCell
-from compyute.nn.module import Module
+from .containers import Sequential, ParallelAdd
+from .layers import RecurrentCell
+from .module import Module
 
 
 __all__ = ["Recurrent", "Residual"]
@@ -36,12 +36,10 @@ class Recurrent(Sequential):
         use_bias : bool, optional
             Whether to use bias values, by default True.
         """
-        m = [RecurrentCell(in_channels, h_channels,
-                           use_bias=use_bias, dtype=dtype)]
+        m = [RecurrentCell(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
         for _ in range(num_layers - 1):
             m.append(
-                RecurrentCell(h_channels, h_channels,
-                              use_bias=use_bias, dtype=dtype)
+                RecurrentCell(h_channels, h_channels, use_bias=use_bias, dtype=dtype)
             )
         super().__init__(m)
 
@@ -55,8 +53,8 @@ class Residual(ParallelAdd):
         Parameters
         ----------
         core_module : Module
-            Core module bypassed by the residual connection. For multiple modules use a container as core module.
+            Core module bypassed by the residual connection.
+            For multiple modules use a container as core module.
             To ensure matching tensor shapes, you might need to use a projection layer.
         """
-        super().__init__([core_module, Module()]
-                         )  # emtpy module as residual connection
+        super().__init__([core_module, Module()])  # emtpy module as residual connection

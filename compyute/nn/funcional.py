@@ -1,8 +1,8 @@
 """Neural network functions module"""
 
-from compyute.functional import maximum, minimum, zeros
-from compyute.tensor import Tensor, ShapeError
-from compyute.types import ShapeLike
+from ..functional import maximum, minimum, zeros
+from ..tensor import Tensor, ShapeError
+from ..types import ShapeLike
 
 
 __all__ = [
@@ -164,16 +164,18 @@ def convolve1d(
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError(
-            "Same padding and even kernel size not compatible.")
+        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     f_dil = dilate1d(f, dil)
     x_pad = pad1d(x, f_dil.shape, pad)
 
     # convolution
     cdtype = "complex64"
-    conv = (x_pad.fft1d(dtype=cdtype) *
-            f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype)).ifft1d(dtype=cdtype).real(dtype=x.dtype)
+    conv = (
+        (x_pad.fft1d(dtype=cdtype) * f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype))
+        .ifft1d(dtype=cdtype)
+        .real(dtype=x.dtype)
+    )
 
     # out slices
     out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
@@ -227,27 +229,29 @@ def convolve2d(
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
     if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError(
-            "Same padding and even kernel size not compatible.")
+        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
     f_dil = dilate2d(f, dil)
     x_pad = pad2d(x, f_dil.shape, pad)
 
     # convolution
     cdtype = "complex64"
-    conv = (x_pad.fft2d(dtype=cdtype) *
-            f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype)).ifft2d(dtype=cdtype).real(dtype=x.dtype)
+    conv = (
+        (x_pad.fft2d(dtype=cdtype) * f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype))
+        .ifft2d(dtype=cdtype)
+        .real(dtype=x.dtype)
+    )
 
     # out slices
     out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
     out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
     s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
     slc_o = [slice(None)] * conv.ndim
-    slc_o[conv.ndim - 2:] = [slice(-out_y, None), slice(-out_x, None)]
+    slc_o[conv.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
 
     # stride slices
     slc_s = [slice(None)] * conv.ndim
-    slc_s[conv.ndim - 2:] = [slice(None, None, s_y), slice(None, None, s_x)]
+    slc_s[conv.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
 
     return conv[*slc_o][*slc_s]
 
@@ -307,7 +311,7 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
     )
     f_dil = zeros(tpl, f.dtype, f.device)
     slc_dil = [slice(None)] * dim
-    slc_dil[dim - 2:] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
+    slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
     f_dil[*slc_dil] = f
     return f_dil
 
@@ -396,8 +400,7 @@ def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Ten
                 pad = (filter_shape[-2] // 2, filter_shape[-1] // 2)
             case _:
                 pad = (0, 0)
-    widths = tuple([(0, 0)] * (x.ndim - 2) +
-                   [(pad[0], pad[0]), (pad[1], pad[1])])
+    widths = tuple([(0, 0)] * (x.ndim - 2) + [(pad[0], pad[0]), (pad[1], pad[1])])
     return x.pad(widths)
 
 
