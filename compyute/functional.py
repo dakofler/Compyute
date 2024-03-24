@@ -1,9 +1,10 @@
 """Tensor functions module"""
 
+from typing import Sequence
 import numpy
 from .engine import get_engine
 from .tensor import Tensor
-from .types import DeviceLike, DtypeLike, ScalarLike, ShapeLike
+from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 
 __all__ = [
@@ -14,10 +15,14 @@ __all__ = [
     "zeros_like",
     "ones_like",
     "empty",
-    "maximum",
-    "concatenate",
-    "prod",
     "eye",
+    "maximum",
+    "minimum",
+    "prod",
+    "concatenate",
+    "stack",
+    "tensorsum",
+    "tensorprod",
 ]
 
 
@@ -189,6 +194,26 @@ def empty(dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
     return Tensor(get_engine(device).empty(0, dtype=dtype))
 
 
+def eye(n: int, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+    """Returns a diagonal tensor of shape (n, n).
+
+    Parameters
+    ----------
+    n: int
+        Size of the new tensor. The shape will be (n, n).
+    dtype: DtypeLike | None, optional
+        Datatype of the tensor data, by default None.
+    device: DeviceLike, optional
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Diagonal tensor.
+    """
+    return Tensor(get_engine(device).eye(n, dtype=dtype))
+
+
 def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     """Returns a new tensor containing the element-wise maximum of two tensors/scalars.
 
@@ -253,26 +278,6 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def concatenate(tensors: list[Tensor], axis: int = -1) -> Tensor:
-    """Returns a new tensor by joins a sequence of tensors along a given axis.
-
-    Parameters
-    ----------
-    tensors : list[Tensor]
-        List of Tensors to be joined.
-    axis : int, optional
-        Axis along which to join the tensors, by default -1.
-
-    Returns
-    -------
-    Tensor
-        Concatenated tensor.
-    """
-
-    device = tensors[0].device
-    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
-
-
 def prod(x: tuple[int, ...]) -> int:
     """Returns the product of tuple elements.
 
@@ -289,21 +294,75 @@ def prod(x: tuple[int, ...]) -> int:
     return numpy.prod(x).item()
 
 
-def eye(n: int, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
-    """Returns a diagonal tensor of shape (n, n).
+def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
+    """Returns a new tensor by joining a sequence of tensors along a given axis.
 
     Parameters
     ----------
-    n: int
-        Size of the new tensor. The shape will be (n, n).
-    dtype: DtypeLike | None, optional
-        Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+    tensors : Sequence[Tensor]
+        List of Tensors to be joined.
+    axis : AxisLike, optional
+        Axis along which to join the tensors, by default -1.
 
     Returns
     -------
     Tensor
-        Diagonal tensor.
+        Concatenated tensor.
     """
-    return Tensor(get_engine(device).eye(n, dtype=dtype))
+    device = tensors[0].device
+    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
+
+
+def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+    """Returns a new tensor by stacking a sequence of tensors along a given axis.
+
+    Parameters
+    ----------
+    tensors : Sequence[Tensor]
+        List of Tensors to be stacked.
+    axis : AxisLike, optional
+        Axis along which to stack the tensors, by default 0.
+
+    Returns
+    -------
+    Tensor
+        Stacked tensor.
+    """
+    device = tensors[0].device
+    return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))
+
+
+def tensorsum(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+    """Sums a sequence of tensors element-wise.
+
+    Parameters
+    ----------
+    tensors : Sequence[Tensor]
+        List of Tensors to be joined.
+    axis : AxisLike, optional
+        Axis along which to join the tensors, by default -1.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing element-wise sums.
+    """
+    return stack(tensors=tensors, axis=axis).sum(axis=axis)
+
+
+def tensorprod(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+    """Multiplies a sequence of tensors element-wise.
+
+    Parameters
+    ----------
+    tensors : Sequence[Tensor]
+        List of Tensors to be joined.
+    axis : AxisLike, optional
+        Axis along which to join the tensors, by default -1.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing element-wise products.
+    """
+    return stack(tensors=tensors, axis=axis).prod(axis=axis)

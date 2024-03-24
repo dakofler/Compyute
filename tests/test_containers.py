@@ -1,7 +1,11 @@
 """Containers tests"""
 
 import torch
-from compyute.nn.modules.containers import Sequential, ParallelConcat, ParallelAdd
+from compyute.nn.modules.containers import (
+    SequentialContainer,
+    ParallelConcatContainer,
+    ParallelAddContainer,
+)
 from compyute.nn.modules.layers import Linear
 from tests.test_utils import get_vals_float, get_params, validate
 
@@ -21,7 +25,7 @@ def test_sequential_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = Sequential(
+    compyute_module = SequentialContainer(
         [
             Linear(Cin, Cout, use_bias=False),
             Linear(Cout, Cout, use_bias=False),
@@ -64,7 +68,7 @@ def test_parallel_concat_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = ParallelConcat(
+    compyute_module = ParallelConcatContainer(
         [
             Linear(Cin, Cout, use_bias=False),
             Linear(Cin, Cout, use_bias=False),
@@ -106,7 +110,7 @@ def test_parallel_add_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = ParallelAdd(
+    compyute_module = ParallelAddContainer(
         [
             Linear(Cin, Cout, use_bias=False),
             Linear(Cin, Cout, use_bias=False),

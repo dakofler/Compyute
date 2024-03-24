@@ -90,7 +90,7 @@ class Trainer:
             self.state["val_scores"] = []
 
         if verbose == 1:
-            pbar = tqdm(unit=" epochs", total=epochs)
+            pbar = tqdm(unit=" epoch", total=epochs)
 
         for epoch in range(1, epochs + 1):
 
@@ -140,7 +140,7 @@ class Trainer:
                 retain_values = self.model.retain_values
                 self.model.retain_values = False
 
-                for batch in val_dataloader(shuffle_data=False, drop_remaining=True):
+                for batch in val_dataloader(shuffle=False, drop_remaining=True):
                     # prepare data
                     X_batch, y_batch = batch
                     X_batch.to_device(self.model.device)
@@ -149,9 +149,9 @@ class Trainer:
                     # forward pass
                     y_pred = self.model.forward(X_batch)
                     val_loss = self.loss_function(y_pred, y_batch).item()
-                    self.state["val_losses"].append(train_loss)
+                    self.state["val_losses"].append(val_loss)
                     val_score = self.metric_function(y_pred, y_batch).item()
-                    self.state["val_scores"].append(train_score)
+                    self.state["val_scores"].append(val_score)
 
                 self.model.retain_values = retain_values
 

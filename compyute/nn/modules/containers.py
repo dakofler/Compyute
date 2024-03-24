@@ -1,11 +1,11 @@
 """Neural network containers module"""
 
 from .module import Module
-from ...functional import concatenate
+from ...functional import concatenate, tensorsum
 from ...tensor import Tensor
 
 
-__all__ = ["Sequential", "ParallelConcat", "ParallelAdd"]
+__all__ = ["SequentialContainer", "ParallelConcatContainer", "ParallelAddContainer"]
 
 
 class Container(Module):
@@ -23,7 +23,7 @@ class Container(Module):
         self.child_modules = modules
 
 
-class Sequential(Container):
+class SequentialContainer(Container):
     """Sequential container module. Layers are processed sequentially."""
 
     def __init__(self, layers: list[Module]) -> None:
@@ -55,8 +55,10 @@ class Sequential(Container):
         return x
 
 
-class ParallelConcat(Container):
-    """Parallel container module. Output tensors are concatinated."""
+class ParallelConcatContainer(Container):
+    """Parallel container module.
+    Inputs are processed independently and outputs are concatinated.
+    """
 
     def __init__(self, modules: list[Module], concat_axis: int = -1) -> None:
         """Parallel container module. Module output tensors are concatinated.
@@ -84,8 +86,8 @@ class ParallelConcat(Container):
                 out_lens = [y.shape[self.concat_axis] for y in ys]
                 splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
-                return sum(
-                    self.child_modules[i].backward(s) for i, s in enumerate(dy_splits)
+                return tensorsum(
+                    [self.child_modules[i].backward(s) for i, s in enumerate(dy_splits)]
                 )
 
             self.backward = backward
@@ -94,8 +96,10 @@ class ParallelConcat(Container):
         return y
 
 
-class ParallelAdd(Container):
-    """Parallel container module. Output tensors are added."""
+class ParallelAddContainer(Container):
+    """Parallel container module.
+    Inputs are processed independently and outputs are added element-wise.
+    """
 
     def __init__(self, modules: list[Module]) -> None:
         """Parallel container module. Module output tensors are added.
@@ -109,13 +113,13 @@ class ParallelAdd(Container):
         super().__init__(modules)
 
     def forward(self, x: Tensor) -> Tensor:
-        y = sum([m.forward(x) for m in self.child_modules])
+        y = tensorsum([m.forward(x) for m in self.child_modules])
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return sum(m.backward(dy) for m in self.child_modules)
+                return tensorsum([m.backward(dy) for m in self.child_modules])
 
             self.backward = backward
 

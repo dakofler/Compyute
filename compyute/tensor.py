@@ -537,6 +537,25 @@ class Tensor:
         """
         return Tensor(self.data.sum(axis=axis, keepdims=keepdims))
 
+    def prod(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+        """Product of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike | None, optional
+            Axis over which the product is computed, by default None.
+            If none it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions, by default False.
+            If false the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the product of elements.
+        """
+        return Tensor(self.data.prod(axis=axis, keepdims=keepdims))
+
     def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
 

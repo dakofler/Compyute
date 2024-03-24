@@ -1,14 +1,14 @@
 """Neural network blocks module"""
 
-from .containers import Sequential, ParallelAdd
+from .containers import SequentialContainer, ParallelAddContainer
 from .layers import RecurrentCell
 from .module import Module
 
 
-__all__ = ["Recurrent", "Residual"]
+__all__ = ["RecurrentBlock", "ResidualBlock"]
 
 
-class Recurrent(Sequential):
+class RecurrentBlock(SequentialContainer):
     """Recurrent neural network block."""
 
     def __init__(
@@ -44,7 +44,7 @@ class Recurrent(Sequential):
         super().__init__(m)
 
 
-class Residual(ParallelAdd):
+class ResidualBlock(ParallelAddContainer):
     """Block with residual connection."""
 
     def __init__(self, core_module: Module) -> None:

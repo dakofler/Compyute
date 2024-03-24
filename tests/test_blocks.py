@@ -1,8 +1,8 @@
 """block tests"""
 
 import torch
-from compyute.nn.modules.blocks import Recurrent, Residual
-from compyute.nn.modules.containers import Sequential
+from compyute.nn.modules.blocks import RecurrentBlock, ResidualBlock
+from compyute.nn.modules.containers import SequentialContainer
 from compyute.nn.modules.layers import Linear, ReLU
 from tests.test_utils import get_vals_float, get_params, validate
 
@@ -38,7 +38,7 @@ def test_recurrent() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = Recurrent(Cin, Ch, num_layers=2)
+    compyute_module = RecurrentBlock(Cin, Ch, num_layers=2)
 
     compyute_module.training = True
 
@@ -110,8 +110,8 @@ def test_residual() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = Residual(
-        Sequential(
+    compyute_module = ResidualBlock(
+        SequentialContainer(
             [
                 Linear(Cin, Cout, use_bias=False),
                 ReLU(),

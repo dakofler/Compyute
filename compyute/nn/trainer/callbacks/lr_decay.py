@@ -12,6 +12,7 @@ class LRDecay(Callback):
 
     def __init__(self) -> None:
         self.t: int = 1
+        self.state: dict[str, list[dict[int, float]]] = {"lrs": []}
 
 
 class StepLR(LRDecay):
@@ -33,6 +34,7 @@ class StepLR(LRDecay):
 
     def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
+        self.state["lrs"].append({self.t: trainer.optimizer.lr})
         if self.t == self.decay_epoch:
             trainer.optimizer.lr *= self.lr_decay
         self.t += 1
@@ -57,6 +59,7 @@ class MultistepLR(LRDecay):
 
     def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
+        self.state["lrs"].append({self.t: trainer.optimizer.lr})
         if self.t % self.decay_step_size == 0:
             trainer.optimizer.lr *= self.lr_decay
         self.t += 1
@@ -81,6 +84,7 @@ class ExponentialLR(LRDecay):
 
     def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
+        self.state["lrs"].append({self.t: trainer.optimizer.lr})
         if self.t <= self.until_epoch:
             trainer.optimizer.lr *= self.lr_decay
             self.t += 1
@@ -106,6 +110,7 @@ class CosineLR(LRDecay):
 
     def epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
+        self.state["lrs"].append({self.t: trainer.optimizer.lr})
 
         if self.t == 1:
             self.lr_max = trainer.optimizer.lr

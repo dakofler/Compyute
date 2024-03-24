@@ -1,7 +1,7 @@
 """Neural network models module"""
 
 import pickle
-from .modules.containers import Sequential
+from .modules.containers import SequentialContainer
 from .dataloaders import DataLoader
 from .modules.module import Module
 from ..functional import concatenate, ones
@@ -72,13 +72,12 @@ class Model(Module):
             Predictions.
         """
 
-        dataloader = DataLoader(X, None, batch_size)
+        dataloader = DataLoader(X, batch_size=batch_size)
         outputs = []
 
-        for batch in dataloader(shuffle_data=False):
-            X_batch = batch[0]
-            X_batch.to_device(self.device)
-            outputs.append(self.forward(X_batch))
+        for x in dataloader(shuffle=False):
+            x.to_device(self.device)
+            outputs.append(self.forward(x))
 
         if not self.retain_values:
             self.reset()
@@ -98,7 +97,7 @@ class SequentialModel(Model):
             List of layers for the model.
             These layers are processed sequentially starting at index 0.
         """
-        super().__init__(Sequential(layers))
+        super().__init__(SequentialContainer(layers))
 
 
 def save_model(model: Model, filepath: str) -> None:
