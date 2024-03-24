@@ -142,10 +142,12 @@ class Adam(Optimizer):
             if self.weight_decay > 0:
                 g += self.weight_decay * p
 
+            # first momentum estimate
             m_prev = self.state[p].get("adam_m", 0)
             m = self.beta1 * m_prev + (1 - self.beta1) * g
             self.state[p]["adam_m"] = m
 
+            # second momentum estimate
             v_prev = self.state[p].get("adam_v", 0)
             v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["adam_v"] = v
@@ -202,14 +204,17 @@ class AdamW(Optimizer):
             if self.weight_decay > 0:
                 p.data -= self.lr * self.weight_decay * p.data
 
+            # first momentum estimate
             m_prev = self.state[p].get("adam_m", 0)
             m = self.beta1 * m_prev + (1 - self.beta1) * p.grad
             self.state[p]["adam_m"] = m
-            m_hat = m / (1.0 - self.beta1**self.t)
 
+            # second momentum estimate
             v_prev = self.state[p].get("adam_v", 0)
             v = self.beta2 * v_prev + (1 - self.beta2) * p.grad**2
             self.state[p]["adam_v"] = v
+
+            m_hat = m / (1 - self.beta1**self.t)
             v_hat = v / (1 - self.beta2**self.t)
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
@@ -275,10 +280,12 @@ class NAdam(Optimizer):
                 1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
             )
 
+            # first momentum estimate
             m_prev = self.state[p].get("nadam_m", 0)
             m = self.beta1 * m_prev + (1 - self.beta1) * g
             self.state[p]["nadam_m"] = m
 
+            # second momentum estimate
             v_prev = self.state[p].get("nadam_v", 0)
             v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["nadam_v"] = v
