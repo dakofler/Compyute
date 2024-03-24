@@ -49,9 +49,13 @@ class Trainer:
         self.callbacks = [] if callbacks is None else callbacks
 
         self.state: dict[str, Tensor | list[float]] = {
-            "train_losses": [],
-            "train_scores": [],
+            "epoch_train_losses": [],
+            "epoch_train_scores": [],
+            "step_train_losses": [],
+            "step_train_scores": [],
         }
+        self.t: int = 1
+        self.abort: bool = False
 
     def train(
         self,
@@ -83,20 +87,23 @@ class Trainer:
             Data loader for vaidation data., by default None.
         """
 
-        train_dataloader = DataLoader(X, y, batch_size)
+        train_dl = DataLoader(X, y, batch_size)
+
         if val_data:
-            val_dataloader = DataLoader(*val_data, batch_size)
-            self.state["val_losses"] = []
-            self.state["val_scores"] = []
+            val_dl = DataLoader(*val_data, batch_size)
+            self.state["epoch_val_losses"] = []
+            self.state["epoch_val_scores"] = []
+            self.state["step_val_losses"] = []
+            self.state["step_val_scores"] = []
 
         if verbose == 1:
             pbar = tqdm(unit=" epoch", total=epochs)
 
-        for epoch in range(1, epochs + 1):
+        for epoch in range(self.t, self.t + epochs):
 
             # training
             self.model.training = True
-            n_train_steps = len(train_dataloader)
+            n_train = len(train_dl)
 
             if verbose == 1:
                 pbar.update()
@@ -104,10 +111,10 @@ class Trainer:
                 pbar = tqdm(
                     desc=f"Epoch {epoch}/{epochs}",
                     unit=" steps",
-                    total=n_train_steps,
+                    total=n_train,
                 )
 
-            for batch in train_dataloader(drop_remaining=True):
+            for batch in train_dl(drop_remaining=True):
                 if verbose == 2:
                     pbar.update()
 
@@ -118,10 +125,10 @@ class Trainer:
 
                 # forward pass
                 y_pred = self.model.forward(X_batch)
-                train_loss = self.loss_function(y_pred, y_batch).item()
-                self.state["train_losses"].append(train_loss)
-                train_score = self.metric_function(y_pred, y_batch).item()
-                self.state["train_scores"].append(train_score)
+                s_train_loss = self.loss_function(y_pred, y_batch).item()
+                s_train_score = self.metric_function(y_pred, y_batch).item()
+                self.state["step_train_losses"].append(s_train_loss)
+                self.state["step_train_scores"].append(s_train_score)
 
                 # backward pass
                 self.model.backward(self.loss_function.backward())
@@ -135,12 +142,18 @@ class Trainer:
 
             self.model.training = False
 
+            e_train_loss = sum(self.state["step_train_losses"][-n_train:]) / n_train
+            e_train_score = sum(self.state["step_train_scores"][-n_train:]) / n_train
+            self.state["epoch_train_losses"].append(e_train_loss)
+            self.state["epoch_train_scores"].append(e_train_score)
+
             # validation
             if val_data:
                 retain_values = self.model.retain_values
                 self.model.retain_values = False
+                n_val = len(val_dl)
 
-                for batch in val_dataloader(shuffle=False, drop_remaining=True):
+                for batch in val_dl(shuffle=False, drop_remaining=True):
                     # prepare data
                     X_batch, y_batch = batch
                     X_batch.to_device(self.model.device)
@@ -148,27 +161,35 @@ class Trainer:
 
                     # forward pass
                     y_pred = self.model.forward(X_batch)
-                    val_loss = self.loss_function(y_pred, y_batch).item()
-                    self.state["val_losses"].append(val_loss)
-                    val_score = self.metric_function(y_pred, y_batch).item()
-                    self.state["val_scores"].append(val_score)
+                    s_val_loss = self.loss_function(y_pred, y_batch).item()
+                    s_val_score = self.metric_function(y_pred, y_batch).item()
+                    self.state["step_val_losses"].append(s_val_loss)
+                    self.state["step_val_scores"].append(s_val_score)
+
+                e_val_loss = sum(self.state["step_val_losses"][-n_val:]) / n_val
+                e_val_score = sum(self.state["step_val_scores"][-n_val:]) / n_val
+                self.state["epoch_val_losses"].append(e_val_loss)
+                self.state["epoch_val_scores"].append(e_val_score)
 
                 self.model.retain_values = retain_values
 
-            # epoch callbacks
-            for callback in self.callbacks:
-                callback(self, is_step=False)
-
-            # logging
+            # logging #n_train_steps
             if verbose in [1, 2]:
-                m = self.metric_function.__class__.__name__
-                log = f"train_loss {train_loss:7.4f}, train_{m} {train_score:5.2f}"
+                m = self.metric_function.__class__.__name__.lower()
+                log = f"train_loss {e_train_loss:7.4f}, train_{m} {e_train_score:5.2f}"
                 if val_data:
-                    log += f", val_loss {val_loss:7.4f}, val_{m} {val_score:5.2f}"
+                    log += f", val_loss {e_val_loss:7.4f}, val_{m} {e_val_score:5.2f}"
 
                 pbar.set_postfix_str(log)
                 if verbose == 2:
                     pbar.close()
+
+            # epoch callbacks
+            for callback in self.callbacks:
+                callback(self, is_step=False)
+            if self.abort:
+                break
+            self.t += 1
 
         if not self.model.retain_values:
             self.model.reset()

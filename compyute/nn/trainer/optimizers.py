@@ -2,10 +2,10 @@
 
 from abc import ABC, abstractmethod
 from ..parameter import Parameter
-from ...tensor import Tensor
+from ...functional import prod
 
 
-__all__ = ["SGD", "Adam", "AdamW"]
+__all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 
 
 class Optimizer(ABC):
@@ -13,7 +13,7 @@ class Optimizer(ABC):
 
     def __init__(self, parameters: list[Parameter] | None, lr: float) -> None:
         self.lr = lr
-        self.state: dict[Parameter, dict[str, Tensor]] = {}
+        self.state: dict = {}
         self.t: int = 1
 
         if parameters is not None:
@@ -22,7 +22,7 @@ class Optimizer(ABC):
     @property
     def parameters(self) -> list[Parameter]:
         """Optimizer parameters"""
-        return list(self.state)
+        return [p for p in self.state if isinstance(p, Parameter)]
 
     @parameters.setter
     def parameters(self, value: list[Parameter]) -> None:
@@ -40,10 +40,10 @@ class SGD(Optimizer):
     def __init__(
         self,
         parameters: list[Parameter] | None = None,
-        lr: float = 1e-2,
-        m: float = 0.0,
+        lr: float = 0.001,
+        momentum: float = 0,
         nesterov: bool = False,
-        weight_decay: float = 0.0,
+        weight_decay: float = 0,
     ) -> None:
         """Updates parameters using stochastic gradient descent.
 
@@ -52,16 +52,16 @@ class SGD(Optimizer):
         parameters : list[Parameter] | None
             Paramters to optimize, by default None.
         lr : float, optional
-            Learning rate, by default 1e-2.
-        m : float, optional
+            Learning rate, by default 0.001.
+        momentum : float, optional
             Momentum factor, by default 0.
         nesterov : bool, optional
             Whether to use the neterov momentum algorithm, by default False.
         weight_deyas : float, optional
-            Weight decay factor, by default 0.0.
+            Weight decay factor, by default 0.
         """
         super().__init__(parameters, lr)
-        self.m = m
+        self.momentum = momentum
         self.nesterov = nesterov
         self.weight_decay = weight_decay
 
@@ -73,19 +73,19 @@ class SGD(Optimizer):
 
             g = p.grad.copy()
 
-            if self.weight_decay > 0.0:
+            if self.weight_decay > 0:
                 g += self.weight_decay * p
 
-            if self.m > 0.0:
+            if self.momentum > 0:
                 if self.t > 1:
-                    b_prev = self.state[p].get("sgd_b", 0.0)
-                    b = self.m * b_prev + g
+                    b_prev = self.state[p].get("sgd_b", 0)
+                    b = self.momentum * b_prev + g
                 else:
                     b = g
                 self.state[p]["sgd_b"] = b
 
                 if self.nesterov:
-                    g += self.m * b
+                    g += self.momentum * b
                 else:
                     g = b
 
@@ -102,11 +102,11 @@ class Adam(Optimizer):
     def __init__(
         self,
         parameters: list[Parameter] | None = None,
-        lr: float = 1e-3,
+        lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        weight_decay: float = 0.0,
+        weight_decay: float = 0,
     ) -> None:
         """Updates parameters following the Adam learning algorithm
         as described by Kingma et al., 2014.
@@ -116,15 +116,15 @@ class Adam(Optimizer):
         parameters : list[Parameter] | None
             Paramters to optimize, by default None.
         lr : float, optional
-            Learning rate, by default 1e-3.
+            Learning rate, by default 0.001.
         beta1 : float, optional
             Exponential decay rate for the 1st momentum estimates, by default 0.9.
         beta2 : float, optional
             Exponential decay rate for the 2nd momentum estimates, by default 0.999.
         eps : float, optional
-            Constant for numerical stability, by default 1e-07.
+            Constant for numerical stability, by default 1e-08.
         weight_deyas : float, optional
-            Weight decay factor, by default 0.0.
+            Weight decay factor, by default 0.
         """
         super().__init__(parameters, lr)
         self.beta1 = beta1
@@ -139,19 +139,19 @@ class Adam(Optimizer):
 
             g = p.grad.copy()
 
-            if self.weight_decay > 0.0:
+            if self.weight_decay > 0:
                 g += self.weight_decay * p
 
-            m_prev = self.state[p].get("adam_m", 0.0)
-            m = self.beta1 * m_prev + (1.0 - self.beta1) * g
+            m_prev = self.state[p].get("adam_m", 0)
+            m = self.beta1 * m_prev + (1 - self.beta1) * g
             self.state[p]["adam_m"] = m
 
-            v_prev = self.state[p].get("adam_v", 0.0)
-            v = self.beta2 * v_prev + (1.0 - self.beta2) * g**2
+            v_prev = self.state[p].get("adam_v", 0)
+            v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["adam_v"] = v
 
-            m_hat = m / (1.0 - self.beta1**self.t)
-            v_hat = v / (1.0 - self.beta2**self.t)
+            m_hat = m / (1 - self.beta1**self.t)
+            v_hat = v / (1 - self.beta2**self.t)
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             self.state[p]["delta"] = delta  # for analysis
@@ -165,7 +165,7 @@ class AdamW(Optimizer):
     def __init__(
         self,
         parameters: list[Parameter] | None = None,
-        lr: float = 1e-3,
+        lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
@@ -178,15 +178,15 @@ class AdamW(Optimizer):
         parameters : list[Parameter] | None
             Paramters to optimize, by default None.
         lr : float, optional
-            Learning rate, by default 1e-3.
+            Learning rate, by default 0.001.
         beta1 : float, optional
             Exponential decay rate for the 1st momentum estimates, by default 0.9.
         beta2 : float, optional
             Exponential decay rate for the 2nd momentum estimates, by default 0.999.
         eps : float, optional
-            Constant for numerical stability, by default 1e-07.
-        weight_deyas : float, optional
-            Weight decay factor, by default 0.0.
+            Constant for numerical stability, by default 1e-08.
+        weight_decay : float, optional
+            Weight decay factor, by default 0.
         """
         super().__init__(parameters, lr)
         self.beta1 = beta1
@@ -202,15 +202,91 @@ class AdamW(Optimizer):
             if self.weight_decay > 0:
                 p.data -= self.lr * self.weight_decay * p.data
 
-            m_prev = self.state[p].get("adam_m", 0.0)
-            m = self.beta1 * m_prev + (1.0 - self.beta1) * p.grad
+            m_prev = self.state[p].get("adam_m", 0)
+            m = self.beta1 * m_prev + (1 - self.beta1) * p.grad
             self.state[p]["adam_m"] = m
             m_hat = m / (1.0 - self.beta1**self.t)
 
-            v_prev = self.state[p].get("adam_v", 0.0)
-            v = self.beta2 * v_prev + (1.0 - self.beta2) * p.grad**2
+            v_prev = self.state[p].get("adam_v", 0)
+            v = self.beta2 * v_prev + (1 - self.beta2) * p.grad**2
             self.state[p]["adam_v"] = v
-            v_hat = v / (1.0 - self.beta2**self.t)
+            v_hat = v / (1 - self.beta2**self.t)
+
+            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
+            self.state[p]["delta"] = delta  # for analysis
+            p.data += delta.data
+        self.t += 1
+
+
+class NAdam(Optimizer):
+    """Updates parameters following the NAdam learning algorithm."""
+
+    def __init__(
+        self,
+        parameters: list[Parameter] | None = None,
+        lr: float = 0.002,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        eps: float = 1e-8,
+        weight_decay: float = 0,
+        momentum_decay: float = 0.004,
+    ) -> None:
+        """Updates parameters following the NAdam learning algorithm.
+
+        Parameters
+        ----------
+        parameters : list[Parameter] | None
+            Paramters to optimize, by default None.
+        lr : float, optional
+            Learning rate, by default 0.002.
+        beta1 : float, optional
+            Exponential decay rate for the 1st momentum estimates, by default 0.9.
+        beta2 : float, optional
+            Exponential decay rate for the 2nd momentum estimates, by default 0.999.
+        eps : float, optional
+            Constant for numerical stability, by default 1e-08.
+        weight_decay : float, optional
+            Weight decay factor, by default 0.
+        momentum_decay : float, optional
+            Momentum decay factor, by default 0.004.
+        """
+        super().__init__(parameters, lr)
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.weight_decay = weight_decay
+        self.momentum_decay = momentum_decay
+
+        self.state["nadam_mu"] = []
+
+    def step(self) -> None:
+        for p in self.parameters:
+            if p.grad is None:
+                continue
+
+            g = p.grad.copy()
+
+            if self.weight_decay > 0:
+                g += self.weight_decay * p
+
+            mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
+            self.state["nadam_mu"].append(mu)
+            mu_succ = self.beta1 * (
+                1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
+            )
+
+            m_prev = self.state[p].get("nadam_m", 0)
+            m = self.beta1 * m_prev + (1 - self.beta1) * g
+            self.state[p]["nadam_m"] = m
+
+            v_prev = self.state[p].get("nadam_v", 0)
+            v = self.beta2 * v_prev + (1 - self.beta2) * g**2
+            self.state[p]["nadam_v"] = v
+
+            m_hat = mu * m / (1 - prod(self.state["nadam_mu"]) * mu_succ) + (
+                1 - mu
+            ) * g / (1 - prod(self.state["nadam_mu"]))
+            v_hat = v / (1 - self.beta2**self.t)
 
             delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
             self.state[p]["delta"] = delta  # for analysis

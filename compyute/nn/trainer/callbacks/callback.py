@@ -17,17 +17,3 @@ class Callback(ABC):
 
     def epoch(self, trainer) -> None:
         """Does someting after each epoch."""
-
-
-class Yell(Callback):
-    """Just yells."""
-
-    def epoch(self, trainer) -> None:
-        print("AAAAAAAAAHHHHHHHHH!!")
-
-
-class Swear(Callback):
-    """Swears."""
-
-    def step(self, trainer) -> None:
-        print("FUCK!!")

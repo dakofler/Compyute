@@ -1,4 +1,5 @@
 """Training callbacks module"""
 
-from .callback import Callback
 from . import lr_decay
+from .callback import Callback
+from .early_stopping import EarlyStopping

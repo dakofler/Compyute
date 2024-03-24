@@ -1,7 +1,7 @@
 """Optimizers tests"""
 
 import torch
-from compyute.nn.trainer.optimizers import SGD, Adam, AdamW
+from compyute.nn.trainer.optimizers import SGD, Adam, AdamW, NAdam
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -42,7 +42,7 @@ def test_sgd_m() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, m=0.1)
+    compyute_optim = SGD(lr=1e-2, momentum=0.1)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1)
@@ -66,7 +66,7 @@ def test_sgd_m_nesterov() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, m=0.1, nesterov=True)
+    compyute_optim = SGD(lr=1e-2, momentum=0.1, nesterov=True)
     compyute_optim.parameters = [compyute_x]
 
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, nesterov=True)
@@ -92,7 +92,7 @@ def test_sgd_m_wdecay() -> None:
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, m=0.1, weight_decay=0.1)
+    compyute_optim = SGD(lr=1e-2, momentum=0.1, weight_decay=0.1)
     compyute_optim.parameters = [compyute_x]
     torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
 
@@ -193,6 +193,39 @@ def test_adamw_wdecay() -> None:
 
     torch_optim = torch.optim.AdamW(
         [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.1
+    )
+
+    for _ in range(ITER):
+        compyute_optim.step()
+        torch_optim.step()
+
+    results.append(validate(compyute_x, torch_x))
+    results.append(validate(compyute_x.grad, torch_x.grad))
+
+    assert all(results)
+
+
+def test_nadam() -> None:
+    results = []
+
+    # forward
+    compyute_x, torch_x = get_params(SHAPE)
+    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    compyute_x.grad = compyute_dx
+    torch_x.grad = torch_dx
+
+    compyute_optim = NAdam(
+        lr=2e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0, momentum_decay=4e-3
+    )
+    compyute_optim.parameters = [compyute_x]
+
+    torch_optim = torch.optim.NAdam(
+        [torch_x],
+        lr=2e-3,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0,
+        momentum_decay=4e-3,
     )
 
     for _ in range(ITER):

@@ -1,7 +1,6 @@
 """Tensor functions module"""
 
 from typing import Sequence
-import numpy
 from .engine import get_engine
 from .tensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
@@ -278,20 +277,20 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def prod(x: tuple[int, ...]) -> int:
-    """Returns the product of tuple elements.
+def prod(x: Sequence[int | float]) -> int | float:
+    """Returns the product of a sequence of elements.
 
     Parameters
     ----------
-    x : tuple[int, ...]
-        Tuple of integers.
+    x : Sequence[int | float]
+        Sequence of elements.
 
     Returns
     -------
-    int
-        Product of tuple elements.
+    int | float
+        Product of elements.
     """
-    return numpy.prod(x).item()
+    return get_engine("cpu").prod(x).item()
 
 
 def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
