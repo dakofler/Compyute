@@ -106,3 +106,19 @@ class Sigmoid(Module):
 
         self.set_y(y)
         return y
+
+
+ACTIVATIONS = {
+    "relu": ReLU,
+    "leaky_relu": LeakyReLU,
+    "gelu": GELU,
+    "sigmoid": Sigmoid,
+    "tanh": Tanh,
+}
+
+
+def get_act_from_str(activation: str) -> Module:
+    """Returns an instance of an actiation function."""
+    if activation not in ACTIVATIONS.keys():
+        raise ValueError(f"Unknown activation function {activation}.")
+    return ACTIVATIONS[activation]()

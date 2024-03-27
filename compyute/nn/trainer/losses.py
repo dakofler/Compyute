@@ -89,3 +89,13 @@ class Crossentropy(Loss):
         self.backward = backward
 
         return -((probs + self.eps) * t).sum(-1).log().mean()
+
+
+LOSSES = {"mse": MSE, "crossentropy": Crossentropy}
+
+
+def get_loss_from_str(loss: str) -> Loss:
+    """Returns an instance of a loss function."""
+    if loss not in LOSSES.keys():
+        raise ValueError(f"Unknown loss function {loss}.")
+    return LOSSES[loss]()

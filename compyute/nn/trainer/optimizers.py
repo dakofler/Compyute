@@ -299,3 +299,13 @@ class NAdam(Optimizer):
             self.state[p]["delta"] = delta  # for analysis
             p.data += delta.data
         self.t += 1
+
+
+OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
+
+
+def get_optim_from_str(optim: str) -> Optimizer:
+    """Returns an instance of an optimizer."""
+    if optim not in OPTIMIZERS.keys():
+        raise ValueError(f"Unknown optimizer {optim}.")
+    return OPTIMIZERS[optim]()

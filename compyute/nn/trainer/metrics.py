@@ -10,6 +10,11 @@ __all__ = ["Accuracy", "R2"]
 class Metric(ABC):
     """Metric base class."""
 
+    @property
+    def name(self) -> str:
+        """Metric name."""
+        return self.__class__.__name__.lower()
+
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
 
@@ -60,3 +65,13 @@ class R2(Metric):
         ssr = ((t - logits) ** 2).sum()
         sst = ((t - t.mean()) ** 2).sum()
         return 1 - ssr / (sst + eps)
+
+
+METRICS = {"accuracy": Accuracy, "r2": R2}
+
+
+def get_metric_from_str(metric: str) -> Metric:
+    """Returns an instance of a metric function."""
+    if metric not in METRICS.keys():
+        raise ValueError(f"Unknown metric function {metric}.")
+    return METRICS[metric]()

@@ -3,12 +3,13 @@
 from typing import Literal
 from tqdm.auto import tqdm
 from .callbacks import Callback
-from .optimizers import Optimizer
-from .losses import Loss
-from .metrics import Metric
+from .optimizers import Optimizer, get_optim_from_str
+from .losses import Loss, get_loss_from_str
+from .metrics import Metric, get_metric_from_str
 from ..dataloaders import DataLoader
 from ..models import Model
 from ...tensor import Tensor
+from ...types import ScalarLike
 
 
 __all__ = ["Trainer"]
@@ -20,9 +21,9 @@ class Trainer:
     def __init__(
         self,
         model: Model,
-        optimizer: Optimizer,
-        loss_functon: Loss,
-        metric_function: Metric,
+        optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
+        loss_functon: Loss | Literal["mse", "crossentropy"],
+        metric_function: Metric | Literal["accuracy", "r2"] | None = None,
         callbacks: list[Callback] | None = None,
     ) -> None:
         """Neural network model trainer.
@@ -31,70 +32,87 @@ class Trainer:
         ----------
         model : Model
             Model to be trained.
-        optimizer : Optimizer
+        optimizer : Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
             Optimizer algorithm used to update model parameters.
-        loss_functon : Loss
+        loss_functon : Loss | Literal["mse", "crossentropy"]
             Loss function used to evaluate the model.
-        metric_function : Metric
-            Metric function used to evaluate the model.
+        metric_function : Metric | Literal["accuracy", "r2"] | None, optional
+            Metric function used to evaluate the model, by default None.
         callbacks : list[Callback] | None
             Callback functions to be executed during training, by default None.
         """
         super().__init__()
         self.model = model
-        optimizer.parameters = model.parameters
-        self.optimizer = optimizer
-        self.loss_function = loss_functon
-        self.metric_function = metric_function
+
+        self.optimizer = (
+            optimizer
+            if isinstance(optimizer, Optimizer)
+            else get_optim_from_str(optimizer)
+        )
+        self.optimizer.parameters = model.parameters
+
+        self.loss_function = (
+            loss_functon
+            if isinstance(loss_functon, Loss)
+            else get_loss_from_str(loss_functon)
+        )
+
+        self.metric_function = (
+            metric_function
+            if isinstance(metric_function, Metric | None)
+            else get_metric_from_str(metric_function)
+        )
+
         self.callbacks = [] if callbacks is None else callbacks
 
-        self.state: dict[str, Tensor | list[float]] = {
-            "epoch_train_losses": [],
-            "epoch_train_scores": [],
-            "step_train_losses": [],
-            "step_train_scores": [],
-        }
+        self.state: dict[str, Tensor | list[float]] = {"loss": [], "epoch_loss": []}
+        if metric_function is not None:
+            self.state[self.metric_function.name] = []
+            self.state[f"epoch_{self.metric_function.name}"] = []
+
         self.t: int = 1
         self.abort: bool = False
 
     def train(
         self,
-        X: Tensor,
-        y: Tensor,
+        X_train: Tensor,
+        y_train: Tensor,
         epochs: int = 100,
         verbose: Literal[0, 1, 2] = 2,
         val_data: tuple[Tensor, Tensor] | None = None,
-        batch_size: int = 1,
+        batch_size: int = 32,
     ) -> None:
         """Trains the model using samples and targets.
 
         Parameters
         ----------
-        X : Tensor
+        X_train : Tensor
             Input tensor.
-        y : Tensor
+        y_train : Tensor
             Target tensor.
         epochs : int, optional
             Number of training iterations, by default 100.
-        batch_size : int, optional
-            Number of inputs processed in parallel, by default 1.
         verbose : int, optional
             Mode of reporting intermediate results during training, by default 2.
             0: no reporting
             1: model reports epoch statistics
             2: model reports step statistics
-        val_dataloader : DataLoader, optional
-            Data loader for vaidation data., by default None.
+        val_data : tuple[Tensor, Tensor] | None, optional
+            Data used for the validaton every epoch, by default None.
+        batch_size : int, optional
+            Number of inputs processed in parallel, by default 32.
         """
 
-        train_dl = DataLoader(X, y, batch_size)
+        train_dl = DataLoader(X_train, y_train, batch_size)
 
         if val_data:
             val_dl = DataLoader(*val_data, batch_size)
-            self.state["epoch_val_losses"] = []
-            self.state["epoch_val_scores"] = []
-            self.state["step_val_losses"] = []
-            self.state["step_val_scores"] = []
+            self.state["val_loss"] = []
+            self.state["epoch_val_loss"] = []
+
+            if self.metric_function is not None:
+                self.state[f"val_{self.metric_function.name}"] = []
+                self.state[f"epoch_val_{self.metric_function.name}"] = []
 
         if verbose == 1:
             pbar = tqdm(unit=" epoch", total=epochs)
@@ -117,35 +135,16 @@ class Trainer:
             for batch in train_dl(drop_remaining=True):
                 if verbose == 2:
                     pbar.update()
-
-                # prepare data
-                X_batch, y_batch = batch
-                X_batch.to_device(self.model.device)
-                y_batch.to_device(self.model.device)
-
-                # forward pass
-                y_pred = self.model.forward(X_batch)
-                s_train_loss = self.loss_function(y_pred, y_batch).item()
-                s_train_score = self.metric_function(y_pred, y_batch).item()
-                self.state["step_train_losses"].append(s_train_loss)
-                self.state["step_train_scores"].append(s_train_score)
-
-                # backward pass
-                self.model.backward(self.loss_function.backward())
-
-                # update model parameters
-                self.optimizer.step()
-
-                # step callbacks
+                self.train_step(batch)
                 for callback in self.callbacks:
                     callback(self, is_step=True)
 
-            self.model.training = False
+            # train statistics
+            self.__log_epoch_loss(n_train)
+            if self.metric_function is not None:
+                self.__log_epoch_score(n_train)
 
-            e_train_loss = sum(self.state["step_train_losses"][-n_train:]) / n_train
-            e_train_score = sum(self.state["step_train_scores"][-n_train:]) / n_train
-            self.state["epoch_train_losses"].append(e_train_loss)
-            self.state["epoch_train_scores"].append(e_train_score)
+            self.model.training = False
 
             # validation
             if val_data:
@@ -154,49 +153,125 @@ class Trainer:
                 n_val = len(val_dl)
 
                 for batch in val_dl(shuffle=False, drop_remaining=True):
-                    # prepare data
-                    X_batch, y_batch = batch
-                    X_batch.to_device(self.model.device)
-                    y_batch.to_device(self.model.device)
+                    self.val_step(batch)
 
-                    # forward pass
-                    y_pred = self.model.forward(X_batch)
-                    s_val_loss = self.loss_function(y_pred, y_batch).item()
-                    s_val_score = self.metric_function(y_pred, y_batch).item()
-                    self.state["step_val_losses"].append(s_val_loss)
-                    self.state["step_val_scores"].append(s_val_score)
-
-                e_val_loss = sum(self.state["step_val_losses"][-n_val:]) / n_val
-                e_val_score = sum(self.state["step_val_scores"][-n_val:]) / n_val
-                self.state["epoch_val_losses"].append(e_val_loss)
-                self.state["epoch_val_scores"].append(e_val_score)
+                # val statistics
+                self.__log_epoch_loss(n_val, "val_")
+                if self.metric_function is not None:
+                    self.__log_epoch_score(n_val, "val_")
 
                 self.model.retain_values = retain_values
 
             # logging #n_train_steps
             if verbose in [1, 2]:
-                m = self.metric_function.__class__.__name__.lower()
-                log = f"train_loss {e_train_loss:7.4f}, train_{m} {e_train_score:5.2f}"
-                if val_data:
-                    log += f", val_loss {e_val_loss:7.4f}, val_{m} {e_val_score:5.2f}"
-
-                pbar.set_postfix_str(log)
+                include_val = val_data is not None
+                pbar.set_postfix_str(self.__get_pbar_postfix(include_val))
                 if verbose == 2:
                     pbar.close()
 
             # epoch callbacks
             for callback in self.callbacks:
                 callback(self, is_step=False)
+
             if self.abort:
                 break
+
             self.t += 1
 
         if not self.model.retain_values:
             self.model.reset()
 
+    def __get_pbar_postfix(self, include_val: bool = False) -> str:
+        loss = self.state["epoch_loss"][-1]
+        log = f"train_loss {loss:7.4f}"
+
+        if self.metric_function is not None:
+            metric = self.metric_function.name
+            score = self.state[f"epoch_{metric}"][-1]
+            log += f", train_{metric} {score:5.2f}"
+
+        if include_val:
+            val_loss = self.state["epoch_val_loss"][-1]
+            log += f", val_loss {val_loss:7.4f}"
+            if self.metric_function is not None:
+                val_score = self.state[f"epoch_val_{metric}"][-1]
+                log += f", val_{metric} {val_score:5.2f}"
+
+        return log
+
+    def train_step(self, batch: tuple[Tensor, Tensor]) -> None:
+        """Performs one training step on a batch of data.
+
+        Parameters
+        ----------
+        batch : tuple[Tensor, Tensor]
+            Batch of data.
+        """
+        X_batch, y_batch = batch
+        X_batch.to_device(self.model.device)
+        y_batch.to_device(self.model.device)
+
+        # forward pass
+        y_pred = self.model.forward(X_batch)
+        loss = self.__get_loss(y_pred, y_batch)
+        self.__log_loss(loss)
+
+        if self.metric_function is not None:
+            score = self.__get_score(y_pred, y_batch)
+            self.__log_score(score)
+
+        # backward pass
+        self.model.backward(self.loss_function.backward())
+
+        # update model parameters
+        self.optimizer.step()
+
+    def val_step(self, batch: tuple[Tensor, Tensor]) -> None:
+        """Performs one validation step on a batch of data.
+
+        Parameters
+        ----------
+        batch : tuple[Tensor, Tensor]
+            Batch of data.
+        """
+        X_batch, y_batch = batch
+        X_batch.to_device(self.model.device)
+        y_batch.to_device(self.model.device)
+
+        # forward pass
+        y_pred = self.model.forward(X_batch)
+        loss = self.__get_loss(y_pred, y_batch)
+        self.__log_loss(loss, prefix="val_")
+
+        if self.metric_function is not None:
+            score = self.__get_score(y_pred, y_batch)
+            self.__log_score(score, prefix="val_")
+
+    def __get_loss(self, y_pred: Tensor, y_true: Tensor) -> ScalarLike:
+        return self.loss_function(y_pred, y_true).item()
+
+    def __log_loss(self, loss: float, prefix: str = "") -> None:
+        self.state[f"{prefix}loss"].append(loss)
+
+    def __log_epoch_loss(self, n_steps: int, prefix: str = "") -> None:
+        epoch_loss = sum(self.state[f"{prefix}loss"][-n_steps:]) / n_steps
+        self.state[f"epoch_{prefix}loss"].append(epoch_loss)
+
+    def __get_score(self, y_pred: Tensor, y_true: Tensor) -> ScalarLike | None:
+        return self.metric_function(y_pred, y_true).item()
+
+    def __log_score(self, score: float, prefix: str = "") -> None:
+        self.state[f"{prefix}{self.metric_function.name}"].append(score)
+
+    def __log_epoch_score(self, n_steps: int, prefix: str = "") -> None:
+        epoch_loss = (
+            sum(self.state[f"{prefix}{self.metric_function.name}"][-n_steps:]) / n_steps
+        )
+        self.state[f"epoch_{prefix}{self.metric_function.name}"].append(epoch_loss)
+
     def evaluate_model(
         self, X: Tensor, y: Tensor, batch_size: int = 1
-    ) -> tuple[float, float]:
+    ) -> tuple[ScalarLike, ScalarLike]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -210,9 +285,9 @@ class Trainer:
 
         Returns
         ----------
-        float
+        ScalarLike
             Loss value.
-        float
+        ScalarLike
             Metric score.
 
         Raises
@@ -222,6 +297,6 @@ class Trainer:
         """
         y.to_device(self.model.device)
         y_pred = self.model.predict(X, batch_size)
-        loss = self.loss_function(y_pred, y).item()
-        score = self.metric_function(y_pred, y).item()
+        loss = self.__get_loss(y_pred, y)
+        score = self.__get_score(y_pred, y)
         return loss, score

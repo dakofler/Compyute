@@ -18,7 +18,7 @@ class Module(ABC):
         """Module base class."""
         self.backward: Callable[[Tensor], Tensor] | None = None
         self.y: Tensor | None = None
-        self.__child_modules: list[Module] = []
+        self.__child_modules: list[Module] | None = None
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
         self.__training: bool = False
@@ -28,12 +28,12 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def child_modules(self) -> list[Module]:
-        """Model child modules."""
+    def child_modules(self) -> list[Module] | None:
+        """List of child modules."""
         return self.__child_modules
 
     @child_modules.setter
-    def child_modules(self, value: list[Module]) -> None:
+    def child_modules(self, value: list[Module] | None) -> None:
         self.__child_modules = value
 
     @property
@@ -59,16 +59,18 @@ class Module(ABC):
         for p in self.parameters:
             p.to_device(device)
 
-        for module in self.child_modules:
-            module.to_device(device)
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                module.to_device(device)
 
     @property
     def parameters(self) -> list[Parameter]:
         """Returns the list of module parameters."""
         p = [i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter)]
 
-        for module in self.child_modules:
-            p += module.parameters
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                p += module.parameters
 
         return p
 
@@ -81,10 +83,12 @@ class Module(ABC):
     def retain_values(self, value: bool) -> None:
         if self.__retain_values == value:
             return
+
         self.__retain_values = value
 
-        for module in self.child_modules:
-            module.retain_values = value
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                module.retain_values = value
 
     @property
     def training(self) -> bool:
@@ -98,8 +102,9 @@ class Module(ABC):
             return
         self.__training = value
 
-        for module in self.child_modules:
-            module.training = value
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                module.training = value
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -107,8 +112,11 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         string = f"{self.__class__.__name__}()"
-        for module in self.child_modules:
-            string += "\n" + module.__repr__()
+
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                string += "\n" + module.__repr__()
+
         return string
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -172,8 +180,9 @@ class Module(ABC):
         for p in self.parameters:
             p.grad = None
 
-        for module in self.child_modules:
-            module.reset()
+        if self.child_modules is not None:
+            for module in self.child_modules:
+                module.reset()
 
     def check_dims(self, x: Tensor, valid_dims: list[int]) -> None:
         """Checks if a tensors dimensions match desired target dimensions.

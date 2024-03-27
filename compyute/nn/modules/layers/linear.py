@@ -5,6 +5,7 @@ from ...parameter import Parameter
 from ....functional import arange, zeros
 from ....random import uniform
 from ....tensor import Tensor
+from ....types import DtypeLike
 
 
 __all__ = ["Linear"]
@@ -18,7 +19,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Fully connected layer.
         Input: (B, ... , Cin)
@@ -34,7 +35,7 @@ class Linear(Module):
             Number of output channels (neurons) of the layer.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()

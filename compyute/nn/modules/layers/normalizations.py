@@ -4,7 +4,7 @@ from ..module import Module
 from ...parameter import Parameter
 from ....functional import ones, prod, zeros
 from ....tensor import Tensor
-from ....types import ShapeLike
+from ....types import DtypeLike, ShapeLike
 
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
@@ -18,7 +18,7 @@ class Batchnorm1d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, T) or (B, C)
@@ -35,7 +35,7 @@ class Batchnorm1d(Module):
             Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -139,7 +139,7 @@ class Batchnorm2d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, Y, X)
@@ -156,7 +156,7 @@ class Batchnorm2d(Module):
             Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -258,7 +258,10 @@ class Layernorm(Module):
     """Normalizes values per sample."""
 
     def __init__(
-        self, normalized_shape: ShapeLike, eps: float = 1e-5, dtype: str = "float32"
+        self,
+        normalized_shape: ShapeLike,
+        eps: float = 1e-5,
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements layer normalization.
         Input: (B, ...)
@@ -273,7 +276,7 @@ class Layernorm(Module):
             Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()

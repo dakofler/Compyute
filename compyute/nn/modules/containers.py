@@ -11,7 +11,7 @@ __all__ = ["SequentialContainer", "ParallelConcatContainer", "ParallelAddContain
 class Container(Module):
     """Container base module."""
 
-    def __init__(self, modules: list[Module]) -> None:
+    def __init__(self, modules: list[Module] | None = None) -> None:
         """Container base module.
 
         Parameters
@@ -22,22 +22,38 @@ class Container(Module):
         super().__init__()
         self.child_modules = modules
 
+    def add(self, module: Module) -> None:
+        """Adds a module.
+
+        Parameters
+        ----------
+        layer : Module
+            Module to append.
+        """
+        if self.child_modules is None:
+            self.child_modules = [module]
+        else:
+            self.child_modules.append(module)
+
 
 class SequentialContainer(Container):
     """Sequential container module. Layers are processed sequentially."""
 
-    def __init__(self, layers: list[Module]) -> None:
+    def __init__(self, layers: list[Module] | None = None) -> None:
         """Sequential container module. Layers are processed sequentially.
 
         Parameters
         ----------
-        layers : list[Module]
+        layers : list[Module] | None, optional
             List of layers used in the container.
             These layers are processed sequentially starting at index 0.
         """
         super().__init__(layers)
 
     def forward(self, x: Tensor) -> Tensor:
+        if self.child_modules is None:
+            raise ValueError("No modules have been added yet.")
+
         for module in self.child_modules:
             x = module.forward(x)
 
@@ -76,6 +92,9 @@ class ParallelConcatContainer(Container):
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
+        if self.child_modules is None:
+            raise ValueError("No modules have been added yet.")
+
         ys = [m.forward(x) for m in self.child_modules]
         y = concatenate(ys, axis=self.concat_axis)
 
@@ -101,18 +120,21 @@ class ParallelAddContainer(Container):
     Inputs are processed independently and outputs are added element-wise.
     """
 
-    def __init__(self, modules: list[Module]) -> None:
+    def __init__(self, modules: list[Module] | None) -> None:
         """Parallel container module. Module output tensors are added.
 
         Parameters
         ----------
-        modules : list[Module]
+        modules : list[Module] | None, optional
             List of modules used in the container.
             These modules are processed in parallel and their outputs are added.
         """
         super().__init__(modules)
 
     def forward(self, x: Tensor) -> Tensor:
+        if self.child_modules is None:
+            raise ValueError("No modules have been added yet.")
+
         y = tensorsum([m.forward(x) for m in self.child_modules])
 
         if self.training:

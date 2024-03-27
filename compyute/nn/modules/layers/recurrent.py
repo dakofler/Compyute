@@ -6,6 +6,7 @@ from ...parameter import Parameter
 from ....functional import zeros, zeros_like
 from ....random import uniform
 from ....tensor import Tensor
+from ....types import DtypeLike
 
 
 __all__ = ["RecurrentCell"]
@@ -19,7 +20,7 @@ class RecurrentCell(Module):
         in_channels: int,
         h_channels: int,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Recurrent cell.
         Input: (B, T, Cin)
@@ -35,7 +36,7 @@ class RecurrentCell(Module):
             Number of hidden channels.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -159,7 +160,7 @@ class LSTMCell(Module):
         in_channels: int,
         h_channels: int,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Long Short-Term Memory cell.
         Input: (B, T, Cin)
@@ -175,7 +176,7 @@ class LSTMCell(Module):
             Number of hidden channels.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()

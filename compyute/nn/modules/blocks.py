@@ -1,11 +1,51 @@
 """Neural network blocks module"""
 
+from typing import Literal
 from .containers import SequentialContainer, ParallelAddContainer
-from .layers import RecurrentCell
+from .layers import RecurrentCell, Linear
+from .layers.activations import get_act_from_str
 from .module import Module
+from ...types import DtypeLike
 
 
-__all__ = ["RecurrentBlock", "ResidualBlock"]
+__all__ = ["DenseBlock", "RecurrentBlock", "ResidualBlock"]
+
+
+class DenseBlock(SequentialContainer):
+    """Dense neural network block."""
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
+        use_bias: bool = True,
+        dtype: DtypeLike = "float32",
+    ) -> None:
+        """Dense neural network block.
+        Input: (B, ... , Cin)
+            B ... batch, Cin ... input channels
+        Output: (B, ... , Co)
+            B ... batch, Co ... output channels
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input features.
+        out_channels : int
+            Number of output channels (neurons) of the dense block.
+        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+            Activation function to use in the dense block.
+        use_bias : bool, optional
+            Whether to use bias values, by default True.
+        dtype: DtypeLike, optional
+            Datatype of weights and biases, by default "float32".
+        """
+        layers = [
+            Linear(in_channels, out_channels, use_bias, dtype),
+            get_act_from_str(activation),
+        ]
+        super().__init__(layers)
 
 
 class RecurrentBlock(SequentialContainer):
@@ -17,7 +57,7 @@ class RecurrentBlock(SequentialContainer):
         h_channels: int,
         num_layers: int = 1,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Recurrent neural network block.
         Input: (B, T , Cin)
@@ -35,6 +75,8 @@ class RecurrentBlock(SequentialContainer):
             Number of recurrent layers in the block, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
+        dtype: DtypeLike, optional
+            Datatype of weights and biases, by default "float32".
         """
         m = [RecurrentCell(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
         for _ in range(num_layers - 1):

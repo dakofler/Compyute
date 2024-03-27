@@ -6,6 +6,7 @@ from ...parameter import Parameter
 from ....functional import prod, zeros
 from ....random import uniform
 from ....tensor import Tensor
+from ....types import DtypeLike
 
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
@@ -23,7 +24,7 @@ class Convolution1d(Module):
         stride: int = 1,
         dil: int = 1,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Convolutional layer used for temporal information and feature extraction.
         Input: (B, Ci, Ti)
@@ -48,7 +49,7 @@ class Convolution1d(Module):
             Dilation used for each axis of the filter, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -187,7 +188,7 @@ class Convolution2d(Module):
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
         use_bias: bool = True,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
         Input: (B, Ci, Yi, Xi)
@@ -212,7 +213,7 @@ class Convolution2d(Module):
             Dilations used for each axis of the filter, by default 1.
         use_bias : bool, optional
             Whether to use bias values, by default True.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()

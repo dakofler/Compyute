@@ -5,6 +5,7 @@ from ...parameter import Parameter
 from ....preprocessing.basic import one_hot_encode
 from ....random import normal
 from ....tensor import Tensor
+from ....types import DtypeLike
 
 
 __all__ = ["Embedding"]
@@ -17,7 +18,7 @@ class Embedding(Module):
         self,
         vocab_size: int,
         embedding_dim: int,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Embedding layer used for token embedding.
         Input: (B, T)
@@ -31,7 +32,7 @@ class Embedding(Module):
             Vocabulary size of the layer.
         embedding_dim : int
             Number of embedding dimensions of the layer.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
