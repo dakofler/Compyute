@@ -6,8 +6,6 @@ from ....tensor import Tensor
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
-GELU_S = 0.7978845608028654  # sqrt(2/pi)
-GELU_C = 0.044715
 
 
 class ReLU(Module):
@@ -36,7 +34,7 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y = leaky_relu(x)
+        y = leaky_relu(x, self.alpha)
 
         if self.training:
 
@@ -48,6 +46,10 @@ class LeakyReLU(Module):
 
         self.set_y(y)
         return y
+
+
+GELU_S = 0.7978845608028654  # sqrt(2/pi)
+GELU_C = 0.044715
 
 
 class GELU(Module):

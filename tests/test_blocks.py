@@ -113,9 +113,9 @@ def test_residual() -> None:
     compyute_module = ResidualBlock(
         SequentialContainer(
             [
-                Linear(Cin, Cout, use_bias=False),
+                Linear(Cin, Cout, bias=False),
                 ReLU(),
-                Linear(Cout, Cin, use_bias=False),
+                Linear(Cout, Cin, bias=False),
             ]
         )
     )

@@ -304,8 +304,10 @@ class NAdam(Optimizer):
 OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
 
 
-def get_optim_from_str(optim: str) -> Optimizer:
+def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
     """Returns an instance of an optimizer."""
-    if optim not in OPTIMIZERS.keys():
-        raise ValueError(f"Unknown optimizer {optim}.")
-    return OPTIMIZERS[optim]()
+    if isinstance(optimizer, Optimizer):
+        return optimizer
+    if optimizer not in OPTIMIZERS.keys():
+        raise ValueError(f"Unknown optimizer {optimizer}.")
+    return OPTIMIZERS[optimizer]()

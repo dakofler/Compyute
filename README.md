@@ -56,12 +56,12 @@ model = nn.SequentialModel([
 ])
 
 
-from compyute.nn.trainer import losses, metrics, optimizers, Trainer
+from compyute.nn.trainer import lTrainer
 
 trainer = Trainer(
-    optimizer=optimizers.SGD(),
-    loss_function=losses.Crossentropy(),
-    metric_function=metrics.Accuracy()
+    optimizer="sgd",
+    loss_function="crossentropy",
+    metric_function="accuracy"
 )
 trainer.train(X_train, y_train, epochs=10)
 

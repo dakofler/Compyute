@@ -1,6 +1,6 @@
 """Early stopping callback module"""
 
-from typing import Literal
+from typing import OrderedDict
 from .callback import Callback
 from ....tensor import Tensor
 
@@ -15,7 +15,7 @@ class EarlyStopping(Callback):
         self,
         patience: int = 3,
         use_best_params: bool = True,
-        mode: str = "loss",
+        target: str = "loss",
     ) -> None:
         """Aborts the training process if the model stops improving.
 
@@ -25,19 +25,19 @@ class EarlyStopping(Callback):
             Number of epocs without improvement, before the training is aborted, by default 3.
         use_best_params : bool, optional
             Whether to reset the model parameters to the best values found, by default True.
-        mode : str, optional
+        target : str, optional
             Metric to consider, by default "loss".
         """
         self.patience = patience
         self.use_best_params = use_best_params
-        self.mode = mode
+        self.target = target
         self.state: dict[str, float | int | list[Tensor]] = {"best_loss": float("inf")}
 
-    def epoch(self, trainer) -> None:
-        if self.mode not in trainer.state.keys():
-            raise ValueError(f"{self.mode} not found in trainer state.")
+    def on_epoch(self, trainer) -> None:
+        if self.target not in trainer.state.keys():
+            raise ValueError(f"{self.target} not found in trainer state.")
 
-        hist = trainer.state[f"epoch_{self.mode}"]
+        hist = trainer.state[f"epoch_{self.target}"]
         best_loss = self.state["best_loss"]
 
         # record best loss
@@ -56,10 +56,9 @@ class EarlyStopping(Callback):
         if all([hist[-i] > best_loss for i in range(1, self.patience + 1)]):
             msg = f"Early stopping: no improvement over last {self.patience} epochs."
 
+            # reset model parameters to best epoch
             if self.use_best_params:
-                msg += f"\nResetting parameters to epoch {self.state['best_epoch']}."
-
-                # reset model parameters
+                msg += f" Resetting parameters to epoch {self.state['best_epoch']}."
                 for i, p in enumerate(trainer.model.parameters):
                     p.data = self.state["best_params"][i].data
 

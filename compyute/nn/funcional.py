@@ -1,6 +1,6 @@
 """Neural network functions module"""
 
-from ..functional import maximum, minimum, zeros
+from ..functional import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import ShapeLike
 
@@ -121,6 +121,74 @@ def log_softmax(x: Tensor) -> Tensor:
     """
     x = (x - x.max(axis=-1, keepdims=True)).exp()
     return (x / x.sum(axis=-1, keepdims=True)).log()
+
+
+def linear(x: Tensor, w: Tensor, b: Tensor | None = None) -> Tensor:
+    """Applies a linea transformation.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    w : Tensor
+        Weight tensor.
+    b : Tensor | None, optional
+        Bias tensor, by default None
+
+    Returns
+    -------
+    Tensor
+        Linearly transformed tensor.
+    """
+    if b is None:
+        return x @ w.T
+    return x @ w.T + b
+
+
+def linear_backward(
+    dy: Tensor, x: Tensor, w: Tensor, b: Tensor | None = None
+) -> Tensor:
+    """Backpropagates through a linear transformation.
+
+    Parameters
+    ----------
+    dy : Tensor
+        Output gradients.
+    x : Tensor
+        Input tensor.
+    w : Tensor
+        Weight tensor.
+    b : Tensor | None, optional
+        Bias tensor, by default None
+
+    Returns
+    -------
+    Tensor
+        Input gradients.
+    """
+
+    # input grads
+    # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
+    dx = dy @ w
+
+    # weight grads
+    # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
+    # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
+    dw = dy.transpose() @ x
+    if x.ndim > 2:
+        # sum over all batch dimensions
+        # (B, ..., Ci, Co) -> (Ci, Co)
+        dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
+
+    w.grad = dw
+
+    # bias grads
+    if b is not None:
+        # sum over all batch dimensions
+        # (B, ... , Co) -> (Co,)
+        b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
+
+    return dx
 
 
 def convolve1d(

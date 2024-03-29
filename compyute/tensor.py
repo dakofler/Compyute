@@ -90,7 +90,7 @@ class Tensor:
         return self.data.shape
 
     @property
-    def T(self) -> ArrayLike:
+    def T(self) -> Tensor:
         """Tensor data transposed."""
         return Tensor(self.data.T)
 

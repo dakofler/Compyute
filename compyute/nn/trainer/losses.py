@@ -94,8 +94,10 @@ class Crossentropy(Loss):
 LOSSES = {"mse": MSE, "crossentropy": Crossentropy}
 
 
-def get_loss_from_str(loss: str) -> Loss:
+def get_loss(loss: Loss | str) -> Loss:
     """Returns an instance of a loss function."""
+    if isinstance(loss, Loss):
+        return loss
     if loss not in LOSSES.keys():
         raise ValueError(f"Unknown loss function {loss}.")
     return LOSSES[loss]()

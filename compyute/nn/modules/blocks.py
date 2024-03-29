@@ -19,7 +19,7 @@ class DenseBlock(SequentialContainer):
         in_channels: int,
         out_channels: int,
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Dense neural network block.
@@ -36,13 +36,13 @@ class DenseBlock(SequentialContainer):
             Number of output channels (neurons) of the dense block.
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
             Activation function to use in the dense block.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         layers = [
-            Linear(in_channels, out_channels, use_bias, dtype),
+            Linear(in_channels, out_channels, bias, dtype),
             get_act_from_str(activation),
         ]
         super().__init__(layers)
@@ -56,7 +56,7 @@ class RecurrentBlock(SequentialContainer):
         in_channels: int,
         h_channels: int,
         num_layers: int = 1,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Recurrent neural network block.
@@ -73,16 +73,14 @@ class RecurrentBlock(SequentialContainer):
             Number of hidden features used in each recurrent cell.
         num_layers: int, optional
             Number of recurrent layers in the block, by default 1.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
-        m = [RecurrentCell(in_channels, h_channels, use_bias=use_bias, dtype=dtype)]
+        m = [RecurrentCell(in_channels, h_channels, bias=bias, dtype=dtype)]
         for _ in range(num_layers - 1):
-            m.append(
-                RecurrentCell(h_channels, h_channels, use_bias=use_bias, dtype=dtype)
-            )
+            m.append(RecurrentCell(h_channels, h_channels, bias=bias, dtype=dtype))
         super().__init__(m)
 
 

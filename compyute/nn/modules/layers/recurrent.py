@@ -1,7 +1,7 @@
 """Recurrent cells module"""
 
 from ..module import Module
-from ...funcional import sigmoid
+from ...funcional import linear, linear_backward, sigmoid
 from ...parameter import Parameter
 from ....functional import zeros, zeros_like
 from ....random import uniform
@@ -19,7 +19,7 @@ class RecurrentCell(Module):
         self,
         in_channels: int,
         h_channels: int,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Recurrent cell.
@@ -34,7 +34,7 @@ class RecurrentCell(Module):
             Number of input features.
         h_channels : int
             Number of hidden channels.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
@@ -42,7 +42,7 @@ class RecurrentCell(Module):
         super().__init__()
         self.in_channels = in_channels
         self.h_channels = h_channels
-        self.use_bias = use_bias
+        self.bias = bias
         self.dtype = dtype
 
         k = h_channels**-0.5
@@ -54,9 +54,9 @@ class RecurrentCell(Module):
 
         # init input biases
         # (Ch,)
-        if use_bias:
-            b_i = zeros((h_channels,))
-            self.b_i = Parameter(b_i, dtype=dtype, label="b_i")
+        self.b_i = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_i") if bias else None
+        )
 
         # init hidden weights
         # (Ch, Ch)
@@ -65,39 +65,31 @@ class RecurrentCell(Module):
 
         # init hidden biases
         # (Ch,)
-        if use_bias:
-            b_h = zeros((h_channels,))
-            self.b_h = Parameter(b_h, dtype=dtype, label="b_h")
+        self.b_h = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_h") if bias else None
+        )
 
     def __repr__(self):
         name = self.__class__.__name__
         in_channels = self.in_channels
         h_channels = self.h_channels
-        use_bias = self.use_bias
+        bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {h_channels=}, {use_bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {h_channels=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
 
         # input projection
-        # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h = x @ self.w_i.T
-        if self.use_bias:
-            # (B, T, Ch)+ (Ch,) -> (B, T, Ch)
-            x_h += self.b_i
+        # (B, T, Cin) @ (Cin, Ch)  -> (B, T, Ch)
+        x_h = linear(x, self.w_i, self.b_i)
 
         # iterate over timesteps
         h = zeros_like(x_h, dtype=self.dtype, device=self.device)
         for t in range(x_h.shape[1]):
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
-            h_t = h[:, t - 1] @ self.w_h.T
-            if self.use_bias:
-                h_t += self.b_h
-
-            # activation
-            h[:, t] = (x_h[:, t] + h_t).tanh()
+            h[:, t] = (x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)).tanh()
 
         if self.training:
 
@@ -115,8 +107,8 @@ class RecurrentCell(Module):
                     if t == x_h.shape[1] - 1:
                         out_grad = dh[:, t]
                     else:
-                        # (B, Ch) + (B, Ch) @ (Ch, Ch) -> (B, Ch)
-                        out_grad = dh[:, t] + dx_h[:, t + 1] @ self.w_h
+                        # (B, Ch) @ (Ch, Ch) + (B, Ch) -> (B, Ch)
+                        out_grad = dx_h[:, t + 1] @ self.w_h + dh[:, t]
 
                     # activation grads
                     dx_h[:, t] = (1 - h[:, t] ** 2) * out_grad
@@ -131,20 +123,7 @@ class RecurrentCell(Module):
                 self.b_h.grad = dx_h.sum((0, 1))
 
                 # input grads
-                # (B, T, Ch) @ (Ch, Cin) -> (B, T, Cin)
-                dx = dx_h @ self.w_i
-
-                # input weight grads
-                # (B, Ch, T) @ (B, T, Cin) -> (B, Ch, Cin)
-                dw = dx_h.transpose() @ x
-                # (B, Ch, Cin) -> (Ch, Cin)
-                self.w_i.grad = dw.sum(axis=0)
-
-                # input bias grads
-                # (B, T, Ch) -> (Ch,)
-                self.b_i.grad = dx_h.sum((0, 1))
-
-                return dx
+                return linear_backward(dx_h, x, self.w_i, self.b_i)
 
             self.backward = backward
 
@@ -159,7 +138,7 @@ class LSTMCell(Module):
         self,
         in_channels: int,
         h_channels: int,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Long Short-Term Memory cell.
@@ -174,7 +153,7 @@ class LSTMCell(Module):
             Number of input features.
         h_channels : int
             Number of hidden channels.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
@@ -182,7 +161,7 @@ class LSTMCell(Module):
         super().__init__()
         self.in_channels = in_channels
         self.h_channels = h_channels
-        self.use_bias = use_bias
+        self.bias = bias
         self.dtype = dtype
 
         k = in_channels**-0.5
@@ -192,54 +171,47 @@ class LSTMCell(Module):
         self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
         u_i = uniform((h_channels, h_channels), -k, k)
         self.u_i = Parameter(u_i, dtype=dtype, label="u_i")
-        if use_bias:
-            b_i = zeros((h_channels,))
-            self.b_i = Parameter(b_i, dtype=dtype, label="b_i")
+        self.b_i = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_i") if bias else None
+        )
 
         # forget gate
         w_f = uniform((h_channels, in_channels), -k, k)
         self.w_f = Parameter(w_f, dtype=dtype, label="w_f")
         u_f = uniform((h_channels, h_channels), -k, k)
         self.u_f = Parameter(u_f, dtype=dtype, label="u_f")
-        if use_bias:
-            b_f = zeros((h_channels,))
-            self.b_f = Parameter(b_f, dtype=dtype, label="b_f")
+        self.b_f = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_f") if bias else None
+        )
 
         # output gate
         w_o = uniform((h_channels, in_channels), -k, k)
         self.w_o = Parameter(w_o, dtype=dtype, label="w_o")
         u_o = uniform((h_channels, h_channels), -k, k)
         self.u_o = Parameter(u_o, dtype=dtype, label="u_o")
-        if use_bias:
-            b_o = zeros((h_channels,))
-            self.b_o = Parameter(b_o, dtype=dtype, label="b_o")
+        self.b_o = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_o") if bias else None
+        )
 
         # cell
         w_c = uniform((h_channels, in_channels), -k, k)
         self.w_c = Parameter(w_c, dtype=dtype, label="w_c")
         u_c = uniform((h_channels, h_channels), -k, k)
         self.u_c = Parameter(u_c, dtype=dtype, label="u_c")
-        if use_bias:
-            b_c = zeros((h_channels,))
-            self.b_c = Parameter(b_c, dtype=dtype, label="b_c")
+        self.b_c = (
+            Parameter(zeros((h_channels,)), dtype=dtype, label="b_c") if bias else None
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
 
         # input projections
-        # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        i_h = x @ self.w_i.T
-        f_h = x @ self.w_f.T
-        o_h = x @ self.w_i.T
-        c_h = x @ self.w_i.T
-
-        if self.use_bias:
-            # (B, T, Ch)+ (Ch,) -> (B, T, Ch)
-            i_h += self.b_i
-            f_h += self.b_f
-            o_h += self.b_o
-            c_h += self.b_c
+        # (B, T, Cin) @ (Cin, Ch) + (Ch,) -> (B, T, Ch)
+        i_h = linear(x, self.w_i.T, self.b_i)
+        f_h = linear(x, self.w_f.T, self.b_f)
+        o_h = linear(x, self.w_o.T, self.b_o)
+        c_h = linear(x, self.w_c.T, self.b_c)
 
         # iterate over timesteps
         i = zeros_like(i_h, dtype=self.dtype, device=self.device)
@@ -249,10 +221,12 @@ class LSTMCell(Module):
         h = zeros_like(c_h, dtype=self.dtype, device=self.device)
 
         for t in range(x.shape[1]):
-            i[:, t] = sigmoid(i_h[:, t] + h[:, t - 1] @ self.u_i.T)
-            f[:, t] = sigmoid(f_h[:, t] + h[:, t - 1] @ self.u_f.T)
-            o[:, t] = sigmoid(o_h[:, t] + h[:, t - 1] @ self.u_o.T)
-            c_t_p = (c_h[:, t] + c[:, t - 1] @ self.u_c.T).tanh()
+            i[:, t] = sigmoid(linear(h[:, t - 1], self.u_i, i_h[:, t]))
+            f[:, t] = sigmoid(linear(h[:, t - 1], self.u_f, f_h[:, t]))
+            o[:, t] = sigmoid(linear(h[:, t - 1], self.u_o, o_h[:, t]))
+
+            c_t_p = linear(c[:, t - 1], self.u_c, c_h[:, t]).tanh()
+
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * c_t_p
             h[:, t] = o[:, t] * c[:, t].tanh()
 

@@ -2,6 +2,7 @@
 
 from ..module import Module
 from ...parameter import Parameter
+from ...funcional import linear, linear_backward
 from ....functional import arange, zeros
 from ....random import uniform
 from ....tensor import Tensor
@@ -18,7 +19,7 @@ class Linear(Module):
         self,
         in_channels: int,
         out_channels: int,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Fully connected layer.
@@ -33,7 +34,7 @@ class Linear(Module):
             Number of input channels of the layer.
         out_channels : int
             Number of output channels (neurons) of the layer.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
@@ -41,7 +42,7 @@ class Linear(Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.use_bias = use_bias
+        self.bias = bias
         self.dtype = dtype
 
         # init weights
@@ -52,56 +53,30 @@ class Linear(Module):
 
         # init biases
         # (Co,)
-        if use_bias:
-            self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b")
+        self.b = (
+            Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
+        )
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
         in_channels = self.in_channels
         out_channels = self.out_channels
-        use_bias = self.use_bias
+        bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {use_bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {out_channels=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3])
         x = x.astype(self.dtype)
 
-        # (B, ... , Ci) @ (Ci, Co) -> (B, ... , Co)
-        y = x @ self.w.T
-
-        if self.use_bias:
-            # (B, ... , Co) + (Co,)
-            y += self.b
+        y = linear(x, self.w, self.b)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 dy = dy.astype(self.dtype)
-
-                # input grads
-                # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
-                dx = dy @ self.w
-
-                # weight grads
-                # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
-                # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-                dw = dy.transpose() @ x
-                if x.ndim > 2:
-                    # sum over all batch dimensions
-                    # (B, ..., Ci, Co) -> (Ci, Co)
-                    dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
-
-                self.w.grad = dw
-
-                # bias grads
-                if self.use_bias:
-                    # sum over all batch dimensions
-                    # (B, ... , Co) -> (Co,)
-                    self.b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
-
-                return dx
+                return linear_backward(dy, x, self.w, self.b)
 
             self.backward = backward
 

@@ -27,8 +27,8 @@ def test_sequential_container() -> None:
 
     compyute_module = SequentialContainer(
         [
-            Linear(Cin, Cout, use_bias=False),
-            Linear(Cout, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cout, Cout, bias=False),
         ]
     )
     compyute_module.training = True
@@ -70,8 +70,8 @@ def test_parallel_concat_container() -> None:
 
     compyute_module = ParallelConcatContainer(
         [
-            Linear(Cin, Cout, use_bias=False),
-            Linear(Cin, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cin, Cout, bias=False),
         ],
         -1,
     )
@@ -112,8 +112,8 @@ def test_parallel_add_container() -> None:
 
     compyute_module = ParallelAddContainer(
         [
-            Linear(Cin, Cout, use_bias=False),
-            Linear(Cin, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cin, Cout, bias=False),
         ]
     )
     compyute_module.training = True

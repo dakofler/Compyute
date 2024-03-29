@@ -23,7 +23,7 @@ class Convolution1d(Module):
         pad: str = "causal",
         stride: int = 1,
         dil: int = 1,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Convolutional layer used for temporal information and feature extraction.
@@ -47,7 +47,7 @@ class Convolution1d(Module):
             Stride used for the convolution operation, by default 1.
         dil : int, optional
             Dilation used for each axis of the filter, by default 1.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
@@ -59,7 +59,7 @@ class Convolution1d(Module):
         self.pad = pad
         self.stride = stride
         self.dil = dil
-        self.use_bias = use_bias
+        self.bias = bias
         self.dtype = dtype
 
         # init weights
@@ -70,9 +70,9 @@ class Convolution1d(Module):
 
         # init biases
         # (Co,)
-        if use_bias:
-            b = zeros((out_channels,))
-            self.b = Parameter(b, dtype=dtype, label="b")
+        self.b = (
+            Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
+        )
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -82,9 +82,9 @@ class Convolution1d(Module):
         pad = self.pad
         stride = self.stride
         dil = self.dil
-        use_bias = self.use_bias
+        bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
@@ -104,7 +104,7 @@ class Convolution1d(Module):
         # (B, Co, Ci, To) -> (B, Co, To)
         y = x_conv_w.sum(axis=2)
 
-        if self.use_bias:
+        if self.bias:
             # (B, Co, To) + (Co, 1)
             y += self.b.reshape((*self.b.shape, 1))
 
@@ -163,7 +163,7 @@ class Convolution1d(Module):
                 # ----------------
                 # bias grads
                 # ----------------
-                if self.use_bias:
+                if self.bias:
                     # sum over batches and time
                     # (B, Co, To) -> (Co,)
                     self.b.grad = dy.sum(axis=(0, 2))
@@ -187,7 +187,7 @@ class Convolution2d(Module):
         pad: str = "valid",
         stride: int | tuple[int, int] = 1,
         dil: int | tuple[int, int] = 1,
-        use_bias: bool = True,
+        bias: bool = True,
         dtype: DtypeLike = "float32",
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
@@ -211,7 +211,7 @@ class Convolution2d(Module):
             Strides used for the convolution operation, by default 1.
         dil : int | tuple [int, int], optional
             Dilations used for each axis of the filter, by default 1.
-        use_bias : bool, optional
+        bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
@@ -223,7 +223,7 @@ class Convolution2d(Module):
         self.pad = pad
         self.stride = (stride, stride) if isinstance(stride, int) else stride
         self.dil = (dil, dil) if isinstance(dil, int) else dil
-        self.use_bias = use_bias
+        self.bias = bias
         self.dtype = dtype
 
         # init weights
@@ -234,7 +234,7 @@ class Convolution2d(Module):
 
         # init biases
         # (Co,)
-        if self.use_bias:
+        if self.bias:
             self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
@@ -245,9 +245,9 @@ class Convolution2d(Module):
         pad = self.pad
         stride = self.stride
         dil = self.dil
-        use_bias = self.use_bias
+        bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {use_bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -267,7 +267,7 @@ class Convolution2d(Module):
         # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
         y = x_conv_w.sum(axis=2)
 
-        if self.use_bias:
+        if self.bias:
             # (B, Co, Yo, Xo) + (Co, 1, 1)
             y += self.b.add_dims(target_dims=3)
 
@@ -326,7 +326,7 @@ class Convolution2d(Module):
                 # ----------------
                 # bias grads
                 # ----------------
-                if self.use_bias:
+                if self.bias:
                     # sum over batches, height and width
                     # (B, Co, Yo, Xo) -> (Co,)
                     self.b.grad = dy.sum(axis=(0, 2, 3))
