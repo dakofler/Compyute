@@ -102,7 +102,7 @@ class Trainer:
         if verbose == 1:
             pbar = tqdm(unit=" epoch", total=epochs)
 
-        for epoch in range(self.t, self.t + epochs):
+        for epoch in range(1, epochs + 1):
 
             # training
             self.model.training = True
@@ -160,8 +160,6 @@ class Trainer:
 
             if self.abort:
                 break
-
-            self.t += 1
 
         if not self.model.retain_values:
             self.model.reset()

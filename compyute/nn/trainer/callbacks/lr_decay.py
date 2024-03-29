@@ -11,7 +11,6 @@ class LRDecay(Callback):
     """Optimizer base class"""
 
     def __init__(self) -> None:
-        self.t: int = 1
         self.state: dict[str, list[dict[int, float]]] = {"lrs": []}
 
 
@@ -34,10 +33,9 @@ class StepLR(LRDecay):
 
     def on_epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        self.state["lrs"].append({self.t: trainer.optimizer.lr})
-        if self.t == self.decay_epoch:
+        self.state["lrs"].append({trainer.optimizer.t: trainer.optimizer.lr})
+        if trainer.optimizer.t == self.decay_epoch:
             trainer.optimizer.lr *= self.lr_decay
-        self.t += 1
 
 
 class MultistepLR(LRDecay):
@@ -59,10 +57,9 @@ class MultistepLR(LRDecay):
 
     def on_epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        self.state["lrs"].append({self.t: trainer.optimizer.lr})
-        if self.t % self.decay_step_size == 0:
+        self.state["lrs"].append({trainer.optimizer.t: trainer.optimizer.lr})
+        if trainer.optimizer.t % self.decay_step_size == 0:
             trainer.optimizer.lr *= self.lr_decay
-        self.t += 1
 
 
 class ExponentialLR(LRDecay):
@@ -84,10 +81,9 @@ class ExponentialLR(LRDecay):
 
     def on_epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        self.state["lrs"].append({self.t: trainer.optimizer.lr})
-        if self.t <= self.until_epoch:
+        self.state["lrs"].append({trainer.optimizer.t: trainer.optimizer.lr})
+        if trainer.optimizer.t <= self.until_epoch:
             trainer.optimizer.lr *= self.lr_decay
-            self.t += 1
 
 
 class CosineLR(LRDecay):
@@ -110,15 +106,14 @@ class CosineLR(LRDecay):
 
     def on_epoch(self, trainer) -> None:
         """Updates the optimizer learning rate."""
-        self.state["lrs"].append({self.t: trainer.optimizer.lr})
+        self.state["lrs"].append({trainer.optimizer.t: trainer.optimizer.lr})
 
-        if self.t == 1:
+        if trainer.optimizer.t == 1:
             self.lr_max = trainer.optimizer.lr
 
-        if self.t <= self.until_epoch:
+        if trainer.optimizer.t <= self.until_epoch:
             trainer.optimizer.lr = self.lr_min + 0.5 * (self.lr_max - self.lr_min) * (
-                1.0 + math.cos(self.t / self.until_epoch * math.pi)
+                1 + math.cos(trainer.optimizer.t / self.until_epoch * math.pi)
             )
         else:
             trainer.optimizer.lr = self.lr_min
-        self.t += 1

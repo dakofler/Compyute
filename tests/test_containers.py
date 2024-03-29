@@ -32,8 +32,8 @@ def test_sequential_container() -> None:
         ]
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     torch_module = torch.nn.Sequential()
@@ -76,8 +76,8 @@ def test_parallel_concat_container() -> None:
         -1,
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
@@ -117,8 +117,8 @@ def test_parallel_add_container() -> None:
         ]
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)

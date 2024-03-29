@@ -1,6 +1,5 @@
 """Early stopping callback module"""
 
-from typing import OrderedDict
 from .callback import Callback
 from ....tensor import Tensor
 
@@ -49,7 +48,7 @@ class EarlyStopping(Callback):
             if self.use_best_params:
                 self.state["best_params"] = [p.copy() for p in trainer.model.parameters]
 
-        if trainer.t <= self.patience:
+        if len(hist) <= self.patience:
             return
 
         # check if loss has decreased

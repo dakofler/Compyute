@@ -42,15 +42,15 @@ def test_recurrent() -> None:
 
     compyute_module.training = True
 
-    compyute_module.child_modules[0].w_i = compyute_w_in_1
-    compyute_module.child_modules[0].b_i = compyute_b_in_1
-    compyute_module.child_modules[0].w_h = compyute_w_h_1
-    compyute_module.child_modules[0].b_h = compyute_b_h_1
+    compyute_module.modules[0].w_i = compyute_w_in_1
+    compyute_module.modules[0].b_i = compyute_b_in_1
+    compyute_module.modules[0].w_h = compyute_w_h_1
+    compyute_module.modules[0].b_h = compyute_b_h_1
 
-    compyute_module.child_modules[1].w_i = compyute_w_in_2
-    compyute_module.child_modules[1].b_i = compyute_b_in_2
-    compyute_module.child_modules[1].w_h = compyute_w_h_2
-    compyute_module.child_modules[1].b_h = compyute_b_h_2
+    compyute_module.modules[1].w_i = compyute_w_in_2
+    compyute_module.modules[1].b_i = compyute_b_in_2
+    compyute_module.modules[1].w_h = compyute_w_h_2
+    compyute_module.modules[1].b_h = compyute_b_h_2
 
     compyute_y = compyute_module(compyute_x)
 
@@ -79,7 +79,7 @@ def test_recurrent() -> None:
     results.append(validate(compyute_dx, torch_x.grad))
 
     # input 1 grads
-    layers = compyute_module.child_modules
+    layers = compyute_module.modules
     results.append(validate(layers[0].w_i.grad, torch_module.weight_ih_l0.grad))
     results.append(validate(layers[0].b_i.grad, torch_module.bias_ih_l0.grad))
 
@@ -120,8 +120,8 @@ def test_residual() -> None:
         )
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].child_modules[0].w = compyute_w1
-    compyute_module.child_modules[0].child_modules[2].w = compyute_w2
+    compyute_module.modules[0].modules[0].w = compyute_w1
+    compyute_module.modules[0].modules[2].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)

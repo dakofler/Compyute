@@ -20,7 +20,7 @@ class Container(Module):
             List of modules used in the container.
         """
         super().__init__()
-        self.child_modules = modules
+        self.modules = modules
 
     def add(self, module: Module) -> None:
         """Adds a module.
@@ -30,10 +30,10 @@ class Container(Module):
         layer : Module
             Module to append.
         """
-        if self.child_modules is None:
-            self.child_modules = [module]
+        if self.modules is None:
+            self.modules = [module]
         else:
-            self.child_modules.append(module)
+            self.modules.append(module)
 
 
 class SequentialContainer(Container):
@@ -51,17 +51,17 @@ class SequentialContainer(Container):
         super().__init__(layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.child_modules is None:
+        if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        for module in self.child_modules:
+        for module in self.modules:
             x = module.forward(x)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                for module in reversed(self.child_modules):
+                for module in reversed(self.modules):
                     dy = module.backward(dy)
                 return dy
 
@@ -92,10 +92,10 @@ class ParallelConcatContainer(Container):
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.child_modules is None:
+        if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        ys = [m.forward(x) for m in self.child_modules]
+        ys = [m.forward(x) for m in self.modules]
         y = concatenate(ys, axis=self.concat_axis)
 
         if self.training:
@@ -106,7 +106,7 @@ class ParallelConcatContainer(Container):
                 splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
                 return tensorsum(
-                    [self.child_modules[i].backward(s) for i, s in enumerate(dy_splits)]
+                    [self.modules[i].backward(s) for i, s in enumerate(dy_splits)]
                 )
 
             self.backward = backward
@@ -132,16 +132,16 @@ class ParallelAddContainer(Container):
         super().__init__(modules)
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.child_modules is None:
+        if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum([m.forward(x) for m in self.child_modules])
+        y = tensorsum([m.forward(x) for m in self.modules])
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return tensorsum([m.backward(dy) for m in self.child_modules])
+                return tensorsum([m.backward(dy) for m in self.modules])
 
             self.backward = backward
 

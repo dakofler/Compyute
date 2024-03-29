@@ -108,13 +108,13 @@ def test_conv2d_valid() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
 
-    torch_module = torch.nn.Conv2d(Cin, Cout, (K, K), strides, pad, dilation)
+    torch_module = torch.nn.Conv2d(Cin, Cout, K, strides, pad, dilation)
     torch_module.weight = torch_w
     torch_module.bias = torch_b
     torch_y = torch_module(torch_x)
@@ -148,13 +148,13 @@ def test_conv2d_same() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
 
-    torch_module = torch.nn.Conv2d(Cin, Cout, (K, K), strides, pad, dilation)
+    torch_module = torch.nn.Conv2d(Cin, Cout, K, strides, pad, dilation)
     torch_module.weight = torch_w
     torch_module.bias = torch_b
     torch_y = torch_module(torch_x)
@@ -188,13 +188,13 @@ def test_conv2d_stride2() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
 
-    torch_module = torch.nn.Conv2d(Cin, Cout, (K, K), strides, pad, dilation)
+    torch_module = torch.nn.Conv2d(Cin, Cout, K, strides, pad, dilation)
     torch_module.weight = torch_w
     torch_module.bias = torch_b
     torch_y = torch_module(torch_x)
@@ -228,13 +228,13 @@ def test_conv2d_dil2() -> None:
     compyute_w, torch_w = get_params(shape_w)
     compyute_b, torch_b = get_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, (K, K), pad, strides, dilation)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.training = True
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
 
-    torch_module = torch.nn.Conv2d(Cin, Cout, (K, K), strides, pad, dilation)
+    torch_module = torch.nn.Conv2d(Cin, Cout, K, strides, pad, dilation)
     torch_module.weight = torch_w
     torch_module.bias = torch_b
     torch_y = torch_module(torch_x)
@@ -262,7 +262,7 @@ def test_maxpool2d() -> None:
     compyute_module = MaxPooling2d()
     compyute_module.training = True
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch.nn.functional.max_pool2d(torch_x, (2, 2))
+    torch_y = torch.nn.functional.max_pool2d(torch_x, 2)
     results.append(validate(compyute_y, torch_y))
 
     # backward

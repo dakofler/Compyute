@@ -15,23 +15,20 @@ __all__ = ["Model", "SequentialModel", "save_model", "load_model"]
 class Model(Module):
     """Trainable neural network model."""
 
-    def __init__(self, core_module: Module | None = None) -> None:
+    def __init__(self, module: Module | None = None) -> None:
         """Trainable neural network model.
 
         Parameters
         ----------
-        core_module : Module | None, optional
-            Core module of the model. For multiple modules use a container as core module.
+        module : Module | None, optional
+            Core module of the model. For multiple modules use a container.
         """
         super().__init__()
-        self.core_module = core_module
+        self.module = module
 
     @property
-    def child_modules(self) -> list[Module]:
+    def modules(self) -> list[Module]:
         """Model child modules."""
-        if self.core_module is not None:
-            return [self.core_module]
-
         return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
 
     def forward(self, x: Tensor) -> Tensor:
@@ -47,13 +44,13 @@ class Model(Module):
         Tensor
             Computed module output.
         """
-        if self.core_module is None:
+        if self.module is None:
             raise ValueError("Forward function is not defined.")
 
-        y = self.core_module.forward(x)
+        y = self.module.forward(x)
 
         if self.training:
-            self.backward = self.core_module.backward
+            self.backward = self.module.backward
 
         return y
 
@@ -115,8 +112,8 @@ class Model(Module):
                 n_params = sum(p.size for p in module.parameters)
                 summary += [f"{name:25s} {output_shape:20s} {n_params:15d}\n"]
 
-            if module.child_modules is not None:
-                for module in module.child_modules:
+            if module.modules is not None:
+                for module in module.modules:
                     build_summary(module, summary, depth + 1)
 
         build_summary(self, summary, -1)
@@ -151,10 +148,11 @@ class SequentialModel(Model):
         layer : Module
             Layer to append.
         """
-        if self.core_module.child_modules is None:
-            self.core_module.child_modules = [layer]
-        else:
-            self.core_module.child_modules.append(layer)
+        if self.module is not None:
+            if self.module.modules is None:
+                self.module.modules = [layer]
+            else:
+                self.module.modules.append(layer)
 
 
 def save_model(model: Model, filepath: str) -> None:
