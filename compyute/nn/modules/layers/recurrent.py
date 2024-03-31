@@ -202,6 +202,8 @@ class LSTM(Module):
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
         n = self.h_channels
+        n2 = 2 * n
+        n3 = 3 * n
 
         # input
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
@@ -218,15 +220,14 @@ class LSTM(Module):
             ifgo_preact = x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)
 
             # gates post activation i_t, f_t, g_t, o_t
-            ifgo[:, t, : 2 * n] = sigmoid(ifgo_preact[:, : 2 * n])  # input, forget
-            ifgo[:, t, 2 * n : 3 * n] = ifgo_preact[:, 2 * n : 3 * n].tanh()  # node
+            ifgo[:, t, :n2] = sigmoid(ifgo_preact[:, :n2])  # input, forget
+            ifgo[:, t, n2:n3] = ifgo_preact[:, n2:n3].tanh()  # node
             ifgo[:, t, -n:] = sigmoid(ifgo_preact[:, -n:])  # output
 
             # cell state
             # c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = (
-                ifgo[:, t, n : 2 * n] * c[:, t - 1]
-                + ifgo[:, t, :n] * ifgo[:, t, 2 * n : 3 * n]
+                ifgo[:, t, n:n2] * c[:, t - 1] + ifgo[:, t, :n] * ifgo[:, t, n2:n3]
             )
 
             # hidden state
@@ -264,19 +265,19 @@ class LSTM(Module):
                     if t < x.shape[1] - 1:
                         # cell state gradients from next time step
                         # dc_t += f_t+1 * dc_t+1
-                        dc[:, t] += ifgo[:, t + 1, n : 2 * n] * dc[:, t + 1]
+                        dc[:, t] += ifgo[:, t + 1, n:n2] * dc[:, t + 1]
 
                     # input gate gradients
                     # di_t = g_t * dc_t
-                    difgo_t[:, :n] = ifgo[:, t, 2 * n : 3 * n] * dc[:, t]
+                    difgo_t[:, :n] = ifgo[:, t, n2:n3] * dc[:, t]
 
                     # forget gate gradients
                     # df_t = c_t-1 * dc_t
-                    difgo_t[:, n : 2 * n] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
+                    difgo_t[:, n:n2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
 
                     # node gradients
                     # dg_t = i_t * dc_t
-                    difgo_t[:, 2 * n : 3 * n] = ifgo[:, t, :n] * dc[:, t]
+                    difgo_t[:, n2:n3] = ifgo[:, t, :n] * dc[:, t]
 
                     # output gate gradients
                     # do_t = tanh(c_t) * output grads
@@ -284,16 +285,14 @@ class LSTM(Module):
 
                     # pre actiation gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
-                    difgo_preact[:, t, : 2 * n] = (
-                        ifgo[:, t, : 2 * n]
-                        * (1 - ifgo[:, t, : 2 * n])
-                        * difgo_t[:, : 2 * n]
+                    difgo_preact[:, t, :n2] = (
+                        ifgo[:, t, :n2] * (1 - ifgo[:, t, :n2]) * difgo_t[:, :n2]
                     )
 
                     # dg_t = dtanh(g_t) * dg_t
-                    difgo_preact[:, t, 2 * n : 3 * n] = (
-                        1 - ifgo[:, t, 2 * n : 3 * n] ** 2
-                    ) * difgo_t[:, 2 * n : 3 * n]
+                    difgo_preact[:, t, n2:n3] = (1 - ifgo[:, t, n2:n3] ** 2) * difgo_t[
+                        :, n2:n3
+                    ]
 
                     # do_t = dsigmoid(o_t) * do_t
                     difgo_preact[:, t, -n:] = (
