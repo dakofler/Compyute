@@ -93,7 +93,7 @@ class Batchnorm1d(Module):
                 self.set_dy(dy)
 
                 # input grads
-                n = float(prod(x.shape) / x.shape[1])
+                n = prod(x.shape) / x.shape[1]
                 dx = (
                     weights
                     * var_h
@@ -213,7 +213,7 @@ class Batchnorm2d(Module):
                 self.set_dy(dy)
 
                 # input grads
-                n = float(prod(x.shape) / x.shape[1])
+                n = prod(x.shape) / x.shape[1]
                 dx = (
                     weights
                     * var_h

@@ -131,48 +131,36 @@ def ones(
     return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
-def zeros_like(
-    x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
-) -> Tensor:
-    """Returns a tensor based on the shape of a given other tensor with all values being zero.
+def zeros_like(x: Tensor) -> Tensor:
+    """Returns a tensor based on a given other tensor with all values being zero.
 
     Parameters
     ----------
     x : Tensor
-        Tensor whose shape is used.
-    dtype: DtypeLike | None, optional
-        Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        Tensor whose shape, dtype and device is used.
 
     Returns
     -------
     Tensor
         Tensor with all values being zero.
     """
-    return zeros(x.shape, dtype=dtype, device=device)
+    return zeros(x.shape, dtype=x.dtype, device=x.device)
 
 
-def ones_like(
-    x: Tensor, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
-) -> Tensor:
-    """Returns a tensor based on the shape of a given other tensor with all values being one.
+def ones_like(x: Tensor) -> Tensor:
+    """Returns a tensor based on a given other tensor with all values being one.
 
     Parameters
     ----------
     x : Tensor
-        Tensor whose shape is used.
-    dtype: DtypeLike | None, optional
-        Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        Tensor whose shape, dtype and device is used.
 
     Returns
     -------
     Tensor
         Tensor with all values being one.
     """
-    return ones(x.shape, dtype=dtype, device=device)
+    return ones(x.shape, dtype=x.dtype, device=x.device)
 
 
 def empty(dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:

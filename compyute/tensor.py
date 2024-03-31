@@ -70,7 +70,7 @@ class Tensor:
         return self.__device
 
     @property
-    def dtype(self) -> str:
+    def dtype(self) -> DtypeLike:
         """Tensor data datatype."""
         return str(self.data.dtype)
 

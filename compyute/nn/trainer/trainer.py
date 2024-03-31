@@ -55,7 +55,6 @@ class Trainer:
             self.state[self.metric.name] = []
             self.state[f"epoch_{self.metric.name}"] = []
 
-        self.t: int = 1
         self.abort: bool = False
 
     def train(

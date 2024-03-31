@@ -37,7 +37,7 @@ class Slice(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                dx = zeros_like(x, device=self.device, dtype=dy.dtype)
+                dx = zeros_like(x)
                 dx[*s] = dy
                 return dx
 
