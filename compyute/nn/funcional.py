@@ -124,7 +124,7 @@ def log_softmax(x: Tensor) -> Tensor:
 
 
 def linear(x: Tensor, w: Tensor, b: Tensor | None = None) -> Tensor:
-    """Applies a linea transformation.
+    """Applies the linear transformation X @ W^T + b.
 
     Parameters
     ----------

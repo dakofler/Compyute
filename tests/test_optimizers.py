@@ -75,10 +75,8 @@ def test_sgd_m_nesterov() -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    tol = 1e-4
-
-    results.append(validate(compyute_x, torch_x, tol=tol))
-    results.append(validate(compyute_x.grad, torch_x.grad, tol=tol))
+    results.append(validate(compyute_x, torch_x))
+    results.append(validate(compyute_x.grad, torch_x.grad))
 
     assert all(results)
 

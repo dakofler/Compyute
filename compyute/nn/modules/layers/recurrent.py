@@ -160,150 +160,106 @@ class LSTMCell(Module):
 
         k = in_channels**-0.5
 
-        # init if
-        w_if = uniform((h_channels, in_channels), -k, k)
-        self.w_if = Parameter(w_if, dtype=dtype, label="w_if")
-        self.b_if = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_if") if bias else None
+        # init i
+        w_i = uniform((4 * h_channels, in_channels), -k, k)
+        self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
+        self.b_i = (
+            Parameter(zeros((4 * h_channels,)), dtype=dtype, label="b_i")
+            if bias
+            else None
         )
 
-        # init hf
-        w_hf = uniform((h_channels, h_channels), -k, k)
-        self.w_hf = Parameter(w_hf, dtype=dtype, label="w_hf")
-        self.b_hf = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_hf") if bias else None
+        # init h
+        w_h = uniform((4 * h_channels, h_channels), -k, k)
+        self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
+        self.b_h = (
+            Parameter(zeros((4 * h_channels,)), dtype=dtype, label="b_h")
+            if bias
+            else None
         )
 
-        # init ii
-        w_ii = uniform((h_channels, in_channels), -k, k)
-        self.w_ii = Parameter(w_ii, dtype=dtype, label="w_ii")
-        self.b_ii = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_ii") if bias else None
-        )
-
-        # init hi
-        w_hi = uniform((h_channels, h_channels), -k, k)
-        self.w_hi = Parameter(w_hi, dtype=dtype, label="w_hi")
-        self.b_hi = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_hi") if bias else None
-        )
-
-        # init ig
-        w_ig = uniform((h_channels, in_channels), -k, k)
-        self.w_ig = Parameter(w_ig, dtype=dtype, label="w_ig")
-        self.b_ig = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_ig") if bias else None
-        )
-
-        # init hg
-        w_hg = uniform((h_channels, h_channels), -k, k)
-        self.w_hg = Parameter(w_hg, dtype=dtype, label="w_hg")
-        self.b_hg = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_hg") if bias else None
-        )
-
-        # init io
-        w_io = uniform((h_channels, in_channels), -k, k)
-        self.w_io = Parameter(w_io, dtype=dtype, label="w_io")
-        self.b_io = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_io") if bias else None
-        )
-
-        # init ho
-        w_ho = uniform((h_channels, h_channels), -k, k)
-        self.w_ho = Parameter(w_ho, dtype=dtype, label="w_ho")
-        self.b_ho = (
-            Parameter(zeros((h_channels,)), dtype=dtype, label="b_ho") if bias else None
-        )
+    def __repr__(self):
+        name = self.__class__.__name__
+        in_channels = self.in_channels
+        h_channels = self.h_channels
+        bias = self.bias
+        dtype = self.dtype
+        return f"{name}({in_channels=}, {h_channels=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor):
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
+        n = self.h_channels
 
         # input projections
-        # (B, T, Cin) @ (Cin, Ch) + (Ch,) -> (B, T, Ch)
-        f_h = linear(x, self.w_if, self.b_if)
-        i_h = linear(x, self.w_ii, self.b_ii)
-        g_h = linear(x, self.w_ig, self.b_ig)
-        o_h = linear(x, self.w_io, self.b_io)
+        # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
+        x_h = linear(x, self.w_i, self.b_i)
 
         # iterate over timesteps
-        # (B, T, Ch)
-        f = zeros_like(f_h)
-        i = zeros_like(i_h)
-        g = zeros_like(g_h)
-        o = zeros_like(o_h)
-        c = zeros_like(f_h)
-        h = zeros_like(f_h)
+        ifgo = zeros_like(x_h)
+        c = zeros_like(x_h[:, :, :n])
+        h = zeros_like(c)
 
         for t in range(x.shape[1]):
             # (B, 4*Ch) + (B, Ch) @ (Ch, 4*Ch) + (4*Ch,) -> (B, 4*Ch)
-            f[:, t] = sigmoid(f_h[:, t] + linear(h[:, t - 1], self.w_hf, self.b_hf))
-            i[:, t] = sigmoid(i_h[:, t] + linear(h[:, t - 1], self.w_hi, self.b_hi))
-            g[:, t] = (g_h[:, t] + linear(h[:, t - 1], self.w_hg, self.b_hg)).tanh()
-            o[:, t] = sigmoid(o_h[:, t] + linear(h[:, t - 1], self.w_ho, self.b_ho))
+            ifgo_preact = x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)
 
-            c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
-            h[:, t] = o[:, t] * c[:, t].tanh()
+            ifgo[:, t, : 2 * n] = sigmoid(ifgo_preact[:, : 2 * n])
+            ifgo[:, t, 2 * n : 3 * n] = ifgo_preact[:, 2 * n : 3 * n].tanh()
+            ifgo[:, t, -n:] = sigmoid(ifgo_preact[:, -n:])
+
+            c[:, t] = (
+                ifgo[:, t, n : 2 * n] * c[:, t - 1]
+                + ifgo[:, t, :n] * ifgo[:, t, 2 * n : 3 * n]
+            )
+            h[:, t] = ifgo[:, t, -n:] * c[:, t].tanh()
 
         if self.training:
+
+            # https://pureai.com/articles/2019/11/14/~/media/ECG/pureai/Images/2019/11/lstm_1.asxh
 
             def backward(dy: Tensor) -> Tensor:
                 dh = dy.astype(self.dtype)
                 self.set_dy(dh)
 
                 dc = zeros_like(c)
-
-                d_sig_f = zeros_like(f)
-                d_sig_i = zeros_like(i)
-                d_tanh_g = zeros_like(g)
-                d_sig_o = zeros_like(o)
-
-                self.w_hf.grad = zeros_like(self.w_hf)
-                self.w_hi.grad = zeros_like(self.w_hi)
-                self.w_hg.grad = zeros_like(self.w_hg)
-                self.w_ho.grad = zeros_like(self.w_ho)
+                difgo_preact = zeros_like(ifgo)
+                self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
+                    difgo_t = zeros_like(ifgo[:, 1])
+
                     out_grad = dh[:, t]
                     if t < x.shape[1] - 1:
-                        out_grad += d_sig_f[:, t + 1] @ self.w_hf
-                        out_grad += d_sig_i[:, t + 1] @ self.w_hi
-                        out_grad += d_tanh_g[:, t + 1] @ self.w_hg
-                        out_grad += d_sig_o[:, t + 1] @ self.w_ho
+                        out_grad += difgo_preact[:, t + 1] @ self.w_h
 
-                    do_t = c[:, t].tanh() * out_grad
-
-                    dc[:, t] = (1 - c[:, t].tanh() ** 2) * o[:, t] * out_grad
+                    dc[:, t] = (1 - c[:, t].tanh() ** 2) * ifgo[:, t, -n:] * out_grad
                     if t < x.shape[1] - 1:
-                        dc[:, t] += f[:, t + 1] * dc[:, t + 1]
+                        dc[:, t] += ifgo[:, t + 1, n : 2 * n] * dc[:, t + 1]
 
-                    df_t = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
-                    di_t = g[:, t] * dc[:, t]
-                    dg_t = i[:, t] * dc[:, t]
+                    difgo_t[:, :n] = ifgo[:, t, 2 * n : 3 * n] * dc[:, t]
+                    difgo_t[:, n : 2 * n] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
+                    difgo_t[:, 2 * n : 3 * n] = ifgo[:, t, :n] * dc[:, t]
+                    difgo_t[:, -n:] = c[:, t].tanh() * out_grad
 
-                    d_sig_f[:, t] = f[:, t] * (1 - f[:, t]) * df_t
-                    d_sig_i[:, t] = i[:, t] * (1 - i[:, t]) * di_t
-                    d_tanh_g[:, t] = (1 - g[:, t] ** 2) * dg_t
-                    d_sig_o[:, t] = o[:, t] * (1 - o[:, t]) * do_t
+                    difgo_preact[:, t, : 2 * n] = (
+                        ifgo[:, t, : 2 * n]
+                        * (1 - ifgo[:, t, : 2 * n])
+                        * difgo_t[:, : 2 * n]
+                    )
+                    difgo_preact[:, t, 2 * n : 3 * n] = (
+                        1 - ifgo[:, t, 2 * n : 3 * n] ** 2
+                    ) * difgo_t[:, 2 * n : 3 * n]
+                    difgo_preact[:, t, -n:] = (
+                        ifgo[:, t, -n:] * (1 - ifgo[:, t, -n:]) * difgo_t[:, -n:]
+                    )
 
                     if t > 0:
-                        self.w_hf.grad += d_sig_f[:, t].T @ h[:, t - 1]
-                        self.w_hi.grad += d_sig_i[:, t].T @ h[:, t - 1]
-                        self.w_hg.grad += d_tanh_g[:, t].T @ h[:, t - 1]
-                        self.w_ho.grad += d_sig_o[:, t].T @ h[:, t - 1]
+                        self.w_h.grad += difgo_preact[:, t].T @ h[:, t - 1]
 
-                self.b_hf.grad = d_sig_f.sum(axis=(0, 1))
-                self.b_hi.grad = d_sig_i.sum(axis=(0, 1))
-                self.b_hg.grad = d_tanh_g.sum(axis=(0, 1))
-                self.b_ho.grad = d_sig_o.sum(axis=(0, 1))
+                self.b_h.grad = difgo_preact.sum(axis=(0, 1))
 
-                dx = linear_backward(d_sig_f, x, self.w_if, self.b_if)
-                dx += linear_backward(d_sig_i, x, self.w_ii, self.b_ii)
-                dx += linear_backward(d_tanh_g, x, self.w_ig, self.b_ig)
-                dx += linear_backward(d_sig_o, x, self.w_io, self.b_io)
-
-                return dx
+                return linear_backward(difgo_preact, x, self.w_i, self.b_i)
 
             self.backward = backward
 

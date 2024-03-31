@@ -1,14 +1,12 @@
 """Test utils module"""
 
 import numpy
-import cupy
 import torch
 
-from compyute.engine import cupy_to_numpy
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform_int, set_seed, uniform
 from compyute.tensor import Tensor
-from compyute.types import ShapeLike, ArrayLike
+from compyute.types import ShapeLike
 
 
 set_seed(42)
@@ -20,8 +18,8 @@ def get_vals_float(
     device: str = "cpu",
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform(shape, dtype="float32")
-    torch_x = torch.from_numpy(compyute_x.to_numpy())
+    compyute_x = uniform(shape, dtype="float32") * 0.1
+    torch_x = torch.tensor(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True
     compyute_x.to_device(device)
@@ -33,7 +31,7 @@ def get_vals_int(
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
     compyute_x = uniform_int(shape, low=low, high=high, dtype="int64")
-    torch_x = torch.from_numpy(compyute_x.to_numpy()).long()
+    torch_x = torch.tensor(compyute_x.to_numpy()).long()
     compyute_x.to_device(device)
     return compyute_x, torch_x
 
@@ -42,9 +40,9 @@ def get_params(
     shape: ShapeLike, device: str = "cpu"
 ) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
-    data = uniform(shape) * 0.1
-    compyute_x = Parameter(data, dtype="float32")
-    torch_x = torch.nn.Parameter(torch.from_numpy(data.to_numpy()).float())
+    data = uniform(shape, dtype="float32") * 0.1
+    compyute_x = Parameter(data)
+    torch_x = torch.nn.Parameter(torch.tensor(data.to_numpy()).float())
     compyute_x.to_device(device)
     return compyute_x, torch_x
 
