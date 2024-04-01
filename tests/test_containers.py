@@ -1,7 +1,12 @@
 """Containers tests"""
 
 import torch
-import compyute
+from compyute.nn.modules.containers import (
+    SequentialContainer,
+    ParallelConcatContainer,
+    ParallelAddContainer,
+)
+from compyute.nn.modules.layers import Linear
 from tests.test_utils import get_vals_float, get_params, validate
 
 
@@ -12,23 +17,23 @@ B, Cin, Cout = (10, 20, 30)
 def test_sequential_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
     w2_shape = (Cout, Cout)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = compyute.nn.containers.Sequential(
+    compyute_module = SequentialContainer(
         [
-            compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
-            compyute.nn.layers.Linear(Cout, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cout, Cout, bias=False),
         ]
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     torch_module = torch.nn.Sequential()
@@ -44,7 +49,7 @@ def test_sequential_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -55,24 +60,24 @@ def test_sequential_container() -> None:
 def test_parallel_concat_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
-    w2_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = compyute.nn.containers.ParallelConcat(
+    compyute_module = ParallelConcatContainer(
         [
-            compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
-            compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cin, Cout, bias=False),
         ],
         -1,
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
@@ -86,7 +91,7 @@ def test_parallel_concat_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 
@@ -97,23 +102,23 @@ def test_parallel_concat_container() -> None:
 def test_parallel_add_container() -> None:
     results = []
     x_shape = (B, Cin)
-    w1_shape = (Cin, Cout)
-    w2_shape = (Cin, Cout)
+    w1_shape = (Cout, Cin)
+    w2_shape = (Cout, Cin)
 
     # forward
     compyute_x, torch_x = get_vals_float(x_shape)
-    compyute_w1, torch_w1 = get_params(w1_shape, torch_T=True)
-    compyute_w2, torch_w2 = get_params(w2_shape, torch_T=True)
+    compyute_w1, torch_w1 = get_params(w1_shape)
+    compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = compyute.nn.containers.ParallelAdd(
+    compyute_module = ParallelAddContainer(
         [
-            compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
-            compyute.nn.layers.Linear(Cin, Cout, use_bias=False),
+            Linear(Cin, Cout, bias=False),
+            Linear(Cin, Cout, bias=False),
         ]
     )
     compyute_module.training = True
-    compyute_module.child_modules[0].w = compyute_w1
-    compyute_module.child_modules[1].w = compyute_w2
+    compyute_module.modules[0].w = compyute_w1
+    compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
 
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)
@@ -126,7 +131,7 @@ def test_parallel_add_container() -> None:
 
     # backward
     compyute_dy, torch_dy = get_vals_float(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy.data)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     results.append(validate(compyute_dx, torch_x.grad))
 

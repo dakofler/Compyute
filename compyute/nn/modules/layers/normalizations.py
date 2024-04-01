@@ -1,10 +1,10 @@
 """Normalization layers module"""
 
-from compyute.functional import ones, prod, zeros
-from compyute.nn.module import Module
-from compyute.nn.parameter import Parameter
-from compyute.tensor import Tensor
-from compyute.types import ArrayLike, ShapeLike
+from ..module import Module
+from ...parameter import Parameter
+from ....tensor_f import ones, prod, zeros
+from ....tensor import Tensor
+from ....types import DtypeLike, ShapeLike
 
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
@@ -18,7 +18,7 @@ class Batchnorm1d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, T) or (B, C)
@@ -30,12 +30,12 @@ class Batchnorm1d(Module):
         Parameters
         ----------
         channels : int
-            Number of channels of the layer.
+            Number of channels.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -77,10 +77,8 @@ class Batchnorm1d(Module):
             var = x.var(axis=axis, keepdims=True, ddof=1)
             self.rvar = self.rvar * (1 - self.m) + var.squeeze() * self.m
         else:
-            rvar = self.rvar if dim2 else self.rvar.reshape(
-                (*self.rvar.shape, 1))
-            rmean = self.rmean if dim2 else self.rmean.reshape(
-                (*self.rmean.shape, 1))
+            rvar = self.rvar if dim2 else self.rvar.reshape((*self.rvar.shape, 1))
+            rmean = self.rmean if dim2 else self.rmean.reshape((*self.rmean.shape, 1))
             var_h = (rvar + self.eps) ** -0.5
             x_h = (x - rmean) * var_h
 
@@ -90,26 +88,25 @@ class Batchnorm1d(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
-                n = float(prod(x.shape) / x.shape[1])
+                n = prod(x.shape) / x.shape[1]
                 dx = (
-                    weights.data
-                    * var_h.data
+                    weights
+                    * var_h
                     / n
                     * (
                         n * dy
                         - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data *
-                        (dy * x_h.data).sum(axis=axis, keepdims=True)
+                        - x_h * (dy * x_h).sum(axis=axis, keepdims=True)
                     )
                 )
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=axis)
+                self.w.grad = (x_h * dy).sum(axis=axis)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=axis)
@@ -142,7 +139,7 @@ class Batchnorm2d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: str = "float32",
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, Y, X)
@@ -154,12 +151,12 @@ class Batchnorm2d(Module):
         Parameters
         ----------
         channels : int
-            Number of channels of the layer.
+            Number of channels.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -211,26 +208,25 @@ class Batchnorm2d(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
-                n = float(prod(x.shape) / x.shape[1])
+                n = prod(x.shape) / x.shape[1]
                 dx = (
-                    weights.data
-                    * var_h.data
+                    weights
+                    * var_h
                     / n
                     * (
                         n * dy
                         - dy.sum(axis=axis, keepdims=True)
-                        - x_h.data *
-                        (dy * x_h.data).sum(axis=axis, keepdims=True)
+                        - x_h * (dy * x_h).sum(axis=axis, keepdims=True)
                     )
                 )
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=axis)
+                self.w.grad = (x_h * dy).sum(axis=axis)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=axis)
@@ -262,7 +258,10 @@ class Layernorm(Module):
     """Normalizes values per sample."""
 
     def __init__(
-        self, normalized_shape: ShapeLike, eps: float = 1e-5, dtype: str = "float32"
+        self,
+        normalized_shape: ShapeLike,
+        eps: float = 1e-5,
+        dtype: DtypeLike = "float32",
     ) -> None:
         """Implements layer normalization.
         Input: (B, ...)
@@ -277,7 +276,7 @@ class Layernorm(Module):
             Shape of the normalized tensor ignoring the batch dimension.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
-        dtype: str, optional
+        dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """
         super().__init__()
@@ -306,25 +305,25 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
                 self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape[1:])
                 dx = (
-                    self.w.data
-                    * var_h.data
+                    self.w
+                    * var_h
                     / n
                     * (
                         n * dy
                         - dy.sum(axes, keepdims=True)
-                        - x_h.data * (dy * x_h.data).sum(axes, keepdims=True)
+                        - x_h * (dy * x_h).sum(axes, keepdims=True)
                     )
                 )
 
                 # gamma grads
-                self.w.grad = (x_h.data * dy).sum(axis=0)
+                self.w.grad = (x_h * dy).sum(axis=0)
 
                 # beta grads
                 self.b.grad = dy.sum(axis=0)

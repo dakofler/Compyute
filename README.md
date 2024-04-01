@@ -47,22 +47,24 @@ Models can be built using predefined model-templates (e.g. `SequentialModel`), o
 
 ```python
 import compyute.nn as nn
-from compyute.nn.layers import *
 
 model = nn.SequentialModel([
-    Linear(4, 16),
-    ReLU(),
-    Batchnorm1d(16),
-    Linear(16, 3),
+    nn.Linear(4, 16),
+    nn.ReLU(),
+    nn.Batchnorm1d(16),
+    nn.Linear(16, 3),
 ])
 
-model.compile(
-    optimizer=nn.optimizers.SGD(),
-    loss_fn=nn.losses.Crossentropy(),
-    metric_fn=nn.metrics.accuracy
-)
 
-model.train(X_train, y_train, epochs=10)
+from compyute.nn.trainer import lTrainer
+
+trainer = Trainer(
+    optimizer="sgd",
+    loss_function="crossentropy",
+    metric_function="accuracy"
+)
+trainer.train(X_train, y_train, epochs=10)
+
 
 nn.save_model(model, "my_model.cp")
 ```

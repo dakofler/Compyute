@@ -1,15 +1,16 @@
 """Tensor module"""
 
 from __future__ import annotations
+from types import ModuleType
 import numpy
-from compyute.engine import (
+from .engine import (
     check_device,
     cupy_to_numpy,
     get_engine,
     infer_device,
     numpy_to_cupy,
 )
-from compyute.types import (
+from .types import (
     ArrayLike,
     AxisLike,
     ComplexLike,
@@ -42,17 +43,17 @@ class Tensor:
         ----------
         data : ArrayLike | ScalarLike
             Data to initialize the tensor.
-        dtype: DtypeLike, optional
+        dtype: DtypeLike | None, optional
             Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: DeviceLike, optional
-            The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        device: DeviceLike | None, optional
+            Device the tensor is stored on ("cuda" or "cpu"), by default None.
         """
 
-        self.device = infer_device(data) if device is None else device
+        self.__device = infer_device(data) if device is None else device
         self.data = self.__engine.array(data, copy=copy, dtype=dtype)
-        self.__grad = None
+        self.grad: Tensor | None = None
         self.__iterator = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -60,28 +61,18 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def __engine(self):
-        return get_engine(self.device)
+    def __engine(self) -> ModuleType:
+        return get_engine(self.__device)
 
     @property
-    def dtype(self) -> str:
+    def device(self) -> DeviceLike:
+        """Device the tensor is stored on."""
+        return self.__device
+
+    @property
+    def dtype(self) -> DtypeLike:
         """Tensor data datatype."""
         return str(self.data.dtype)
-
-    @property
-    def grad(self) -> ArrayLike | None:
-        """Tensor gradient."""
-        return self.__grad
-
-    @grad.setter
-    def grad(self, value: ArrayLike | None) -> None:
-        if isinstance(value, ArrayLike):
-            self.__grad = self.__engine.array(value, copy=False)
-        elif value is None:
-            self.__grad = None
-        else:
-            raise ValueError(
-                "Can only set the gradient to be an array or None.")
 
     @property
     def ndim(self) -> int:
@@ -89,14 +80,19 @@ class Tensor:
         return self.data.ndim
 
     @property
+    def size(self) -> int:
+        """Tensor size."""
+        return self.data.size
+
+    @property
     def shape(self) -> ShapeLike:
         """Tensor shape."""
         return self.data.shape
 
     @property
-    def T(self) -> ArrayLike:
+    def T(self) -> Tensor:
         """Tensor data transposed."""
-        return self.data.T
+        return Tensor(self.data.T)
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -106,15 +102,20 @@ class Tensor:
         prefix = "Tensor("
         dtype = self.dtype
         shape = self.shape
-        device = self.device
+        device = self.__device
         array_string = numpy.array2string(
-            self.cpu().data, max_line_width=100, prefix=prefix, separator=", ", precision=4)
+            self.cpu().data,
+            max_line_width=100,
+            prefix=prefix,
+            separator=", ",
+            precision=4,
+        )
         return f"{prefix}{array_string}, {dtype=}, {shape=}, {device=})"
 
     def __call__(self) -> ArrayLike:
         return self.data
 
-    def __getitem__(self, idx: Tensor | ArrayLike | int) -> Tensor | int:
+    def __getitem__(self, idx: Tensor | ArrayLike | int) -> Tensor:
         if isinstance(idx, Tensor):
             i = idx.data
         elif isinstance(idx, tuple):
@@ -141,48 +142,43 @@ class Tensor:
         raise StopIteration
 
     def __add__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data + other.data)
+        return Tensor(self.data + parse_data(other))
 
-    def __radd__(self, other: Tensor | ScalarLike) -> Tensor:
+    def __radd__(self, other: ScalarLike) -> Tensor:
         return self + other
 
     def __mul__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data * other.data)
+        return Tensor(self.data * parse_data(other))
 
-    def __rmul__(self, other: Tensor | ScalarLike) -> Tensor:
+    def __rmul__(self, other: ScalarLike) -> Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data**other.data)
+        return Tensor(self.data ** parse_data(other))
 
-    def __rpow__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return other**self
+    def __rpow__(self, other: ScalarLike) -> Tensor:
+        return Tensor(other, device=self.__device) ** self
 
     def __neg__(self) -> Tensor:
         return self * -1
 
     def __sub__(self, other: Tensor | ScalarLike) -> Tensor:
-        return self + (-other)
+        return Tensor(self.data - parse_data(other))
 
-    def __rsub__(self, other: Tensor | ScalarLike) -> Tensor:
-        return other + (-self)
+    def __rsub__(self, other: ScalarLike) -> Tensor:
+        return -self + other
 
     def __truediv__(self, other: Tensor | ScalarLike) -> Tensor:
-        return self * other**-1
+        return Tensor(self.data / parse_data(other))
 
-    def __rtruediv__(self, other: Tensor | ScalarLike) -> Tensor:
-        return other * self**-1
+    def __rtruediv__(self, other: ScalarLike) -> Tensor:
+        return self**-1 * other
 
     def __floordiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data // other.data)
+        return Tensor(self.data // parse_data(other))
 
     def __rfloordiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        return other // self
+        return (other / self).int().astype(self.dtype)
 
     def __mod__(self, other: int) -> Tensor:
         return Tensor(self.data % other)
@@ -191,71 +187,56 @@ class Tensor:
         return Tensor(self.data @ other.data)
 
     def __lt__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data < other.data)
+        return Tensor(self.data < parse_data(other))
 
     def __gt__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data > other.data)
+        return Tensor(self.data > parse_data(other))
 
     def __le__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data <= other.data)
+        return Tensor(self.data <= parse_data(other))
 
     def __ge__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data >= other.data)
+        return Tensor(self.data >= parse_data(other))
 
     def __eq__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data == other.data)
+        return Tensor(self.data == parse_data(other))
 
     def __ne__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        return Tensor(self.data != other.data)
+        return Tensor(self.data != parse_data(other))
 
     def __isub__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data += other.data
+        self.data += parse_data(other)
         return self
 
     def __iadd__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data += other.data
+        self.data += parse_data(other)
         return self
 
     def __imul__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data *= other.data
+        self.data *= parse_data(other)
         return self
 
     def __idiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data /= other.data
+        self.data /= parse_data(other)
         return self
 
     def __ifloordiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data //= other.data
+        self.data //= parse_data(other)
         return self
 
     def __imod__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data %= other.data
+        self.data %= parse_data(other)
         return self
 
     def __ipow__(self, other: Tensor | ScalarLike) -> Tensor:
-        other = self.__tensorify(other)
-        self.data **= other.data
+        self.data **= parse_data(other)
         return self
-
-    def __tensorify(self, other: Tensor | ScalarLike) -> Tensor:
-        if isinstance(other, Tensor):
-            return other
-        return Tensor(other, dtype=self.dtype, device=self.device)
 
     def __len__(self) -> int:
         return self.shape[0]
+
+    def __hash__(self):
+        return id(self)
 
     # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS
@@ -405,7 +386,7 @@ class Tensor:
         """
         return Tensor(self.data.repeat(n_repeats, axis))
 
-    def pad(self, pad_width: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
+    def pad(self, padding: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
@@ -421,7 +402,7 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        return Tensor(self.__engine.pad(self.data, pad_width))
+        return Tensor(self.__engine.pad(self.data, padding))
 
     def pad_to_shape(self, shape: ShapeLike) -> Tensor:
         """Returns a padded tensor using zero padding that matches a specified shape.
@@ -436,8 +417,8 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        pad_width = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
-        return self.pad(tuple(pad_width))
+        padding = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
+        return self.pad(tuple(padding))
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
@@ -482,7 +463,7 @@ class Tensor:
     def copy(self) -> Tensor:
         """Creates a copy of the tensor."""
         t = Tensor(self.data, copy=True)
-        t.grad = self.grad if self.grad is None else self.grad.copy()
+        t.grad = None if self.grad is None else self.grad.copy()
         return t
 
     def item(self) -> ScalarLike:
@@ -495,7 +476,7 @@ class Tensor:
         Parameters
         ----------
         device : DeviceLike
-            Device to move the tensor to. Valid options are "cpu" and "cuda".
+            Device the tensor is stored on ("cuda" or "cpu").
 
         Raises
         ----------
@@ -503,24 +484,23 @@ class Tensor:
             If device is not "cpu" or "cuda".
 
         """
-        if self.device == device:
+        if self.__device == device:
             return
 
         check_device(device)
-        self.device = device
+        self.__device = device
 
         if device == "cuda":
             self.data = numpy_to_cupy(self.data)
-            if self.grad is not None:
-                self.grad = numpy_to_cupy(self.grad)
         else:
             self.data = cupy_to_numpy(self.data)
-            if self.grad is not None:
-                self.grad = cupy_to_numpy(self.grad)
+
+        if self.grad is not None:
+            self.grad.to_device(device)
 
     def cpu(self):
         """Returns a copy of the tensor on the cpu."""
-        if self.device == "cpu":
+        if self.__device == "cpu":
             return self
 
         self.to_device("cpu")
@@ -528,7 +508,7 @@ class Tensor:
 
     def cuda(self):
         """Returns a copy of the tensor on the gpu."""
-        if self.device == "cuda":
+        if self.__device == "cuda":
             return self
 
         self.to_device("cuda")
@@ -556,6 +536,25 @@ class Tensor:
             Tensor containing the sum of elements.
         """
         return Tensor(self.data.sum(axis=axis, keepdims=keepdims))
+
+    def prod(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+        """Product of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike | None, optional
+            Axis over which the product is computed, by default None.
+            If none it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions, by default False.
+            If false the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the product of elements.
+        """
+        return Tensor(self.data.prod(axis=axis, keepdims=keepdims))
 
     def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
@@ -725,7 +724,10 @@ class Tensor:
         return Tensor(self.__engine.sqrt(self.data))
 
     def fft1d(
-        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+        self,
+        n: int | None = None,
+        axis: AxisLike = -1,
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the 1D Fast Fourier Transform over a specified axis.
 
@@ -746,7 +748,10 @@ class Tensor:
         return Tensor(self.__engine.fft.fft(self.data, n=n, axis=axis), dtype=dtype)
 
     def ifft1d(
-        self, n: int | None = None, axis: AxisLike = -1, dtype: ComplexLike | None = None
+        self,
+        n: int | None = None,
+        axis: AxisLike = -1,
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the inverse 1D Fast Fourier Transform over a specified axis.
 
@@ -770,7 +775,7 @@ class Tensor:
         self,
         s: ShapeLike | None = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Computes the 2D Fast Fourier Transform over two specified axes.
 
@@ -794,7 +799,7 @@ class Tensor:
         self,
         s: ShapeLike | None = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None
+        dtype: ComplexLike | None = None,
     ) -> Tensor:
         """Applies the inverse 1D Fast Fourier Transform to the tensor.
 
@@ -814,19 +819,25 @@ class Tensor:
         """
         return Tensor(self.__engine.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
 
-    def real(self) -> Tensor:
-        """Returns the real parts of the complex tensor."""
-        return Tensor(self.__engine.real(self.data))
+    def real(self, dtype: DtypeLike | None = None) -> Tensor:
+        """Returns the real parts of the complex tensor.
 
-    def append(self, values: Tensor, axis: int) -> Tensor:
+        Parameters
+        ----------
+        dtype : DtypeLike | None, optional
+            Datatype of the output tensor, by default None.
+        """
+        return Tensor(self.__engine.real(self.data), dtype=dtype)
+
+    def append(self, values: Tensor, axis: int = -1) -> Tensor:
         """Returns a copy of the tensor with appended values.
 
         Parameters
         ----------
         values : Tensor
             Values to append.
-        axis : int
-            Axis alown which to append the values
+        axis : int, optional
+            Axis alowng which to append the values, by default -1.
 
         Returns
         -------
@@ -890,3 +901,9 @@ class Tensor:
         """
         chunks = self.__engine.split(self.data, splits, axis=axis)
         return [Tensor(c) for c in chunks]
+
+
+def parse_data(value: Tensor | ScalarLike) -> ArrayLike | ScalarLike:
+    if isinstance(value, Tensor):
+        return value.data
+    return value

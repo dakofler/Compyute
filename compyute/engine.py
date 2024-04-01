@@ -4,7 +4,7 @@ import os
 from types import ModuleType
 import numpy
 import cupy
-from compyute.types import ArrayLike, DeviceLike, ScalarLike
+from .types import ArrayLike, DeviceLike, ScalarLike
 
 
 __all__ = ["gpu_available"]
@@ -18,11 +18,8 @@ def gpu_available() -> bool:
 
 
 # create list of available devices
-available_devices = ["cpu"]
-if gpu_available():
-    available_devices.append("cuda")
-d = ", ".join(available_devices)
-print(f"Compyute: found devices {d}")
+available_devices = ["cpu"] + ["cuda"] if gpu_available() else []
+print(f"Compyute: found devices {available_devices}")
 
 
 def check_device(device: DeviceLike):
@@ -34,6 +31,9 @@ def check_device(device: DeviceLike):
         If the specified device is not available."""
     if device not in available_devices:
         raise AttributeError(f"Device {device} is not available.")
+
+
+DEVICE_ENGINES = {"cpu": numpy, "cuda": cupy}
 
 
 def get_engine(device: DeviceLike) -> ModuleType:
@@ -50,7 +50,7 @@ def get_engine(device: DeviceLike) -> ModuleType:
         NumPy or CuPy module.
     """
     check_device(device)
-    return cupy if device == "cuda" else numpy
+    return DEVICE_ENGINES.get(device, numpy)
 
 
 def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:

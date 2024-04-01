@@ -1,8 +1,8 @@
 """Random functions module"""
 
-from compyute.engine import get_engine, gpu_available
-from compyute.tensor import Tensor
-from compyute.types import DeviceLike, DtypeLike, ShapeLike
+from .engine import get_engine, gpu_available
+from .tensor import Tensor
+from .types import DeviceLike, DtypeLike, ShapeLike
 
 
 __all__ = [
@@ -12,7 +12,7 @@ __all__ = [
     "permutation",
     "set_seed",
     "shuffle",
-    "multinomial"
+    "multinomial",
 ]
 
 

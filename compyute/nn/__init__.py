@@ -1,17 +1,11 @@
 """Compyute neural network module"""
 
-from compyute.nn import (
-    blocks,
-    containers,
+from . import (
     dataloaders,
-    funcional,
+    functional,
     inits,
-    layers,
-    losses,
-    metrics,
-    models,
-    optimizers,
+    trainer,
 )
-from compyute.nn.models import *
-from compyute.nn.module import *
-from compyute.nn.parameter import *
+from .models import *
+from .modules import *
+from .parameter import *

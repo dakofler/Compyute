@@ -2,11 +2,10 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable
-from compyute.functional import prod
-from compyute.nn.funcional import softmax
-from compyute.preprocessing.basic import one_hot_encode
-from compyute.tensor import Tensor
-from compyute.types import ArrayLike
+from ..functional import softmax
+from ...tensor_f import prod
+from ...preprocessing.basic import one_hot_encode
+from ...tensor import Tensor
 
 
 __all__ = ["MSE", "Crossentropy"]
@@ -16,7 +15,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self):
-        self.backward: Callable[[], ArrayLike] | None = None
+        self.backward: Callable[[], Tensor] | None = None
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
@@ -42,9 +41,9 @@ class MSE(Loss):
         """
         dif = y.float() - t.float()
 
-        def backward() -> ArrayLike:
+        def backward() -> Tensor:
             """Performs a backward pass."""
-            return (dif * 2 / prod(y.shape)).reshape(y.shape).data
+            return (dif * 2 / prod(y.shape)).reshape(y.shape)
 
         self.backward = backward
 
@@ -83,10 +82,22 @@ class Crossentropy(Loss):
         t = one_hot_encode(t.int(), y.shape[-1])
         probs = softmax(y.float())
 
-        def backward() -> ArrayLike:
+        def backward() -> Tensor:
             """Performs a backward pass."""
-            return ((probs - t) / prod(y.shape[:-1])).data
+            return (probs - t) / prod(y.shape[:-1])
 
         self.backward = backward
 
         return -((probs + self.eps) * t).sum(-1).log().mean()
+
+
+LOSSES = {"mse": MSE, "crossentropy": Crossentropy}
+
+
+def get_loss(loss: Loss | str) -> Loss:
+    """Returns an instance of a loss function."""
+    if isinstance(loss, Loss):
+        return loss
+    if loss not in LOSSES.keys():
+        raise ValueError(f"Unknown loss function {loss}.")
+    return LOSSES[loss]()

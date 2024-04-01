@@ -1,7 +1,8 @@
 """Dataloaders module"""
 
-from compyute.random import shuffle
-from compyute.tensor import Tensor
+from typing import Generator
+from ..random import permutation
+from ..tensor import Tensor
 
 
 __all__ = ["DataLoader"]
@@ -16,9 +17,9 @@ class DataLoader:
         Parameters
         ----------
         x : Tensor
-            Freature tensor.
-        y : Tensor, optional
-            Label tensor, by default None.
+            Input tensor.
+        y : Tensor | None, optional
+            Target tensor, by default None.
         batch_size : int, optional
             Size of returned batches, by default 1.
         """
@@ -26,12 +27,14 @@ class DataLoader:
         self.y = y
         self.batch_size = batch_size
 
-    def __call__(self, shuffle_inputs: bool = True, drop_remaining: bool = False):
+    def __call__(
+        self, shuffle: bool = True, drop_remaining: bool = False
+    ) -> Generator[Tensor, None, None] | Generator[tuple[Tensor, Tensor], None, None]:
         """Returns data in a batched form.
 
         Parameters
         ----------
-        shuffle_inputs : bool, optional
+        shuffle : bool, optional
             Whether to shuffle the data each time the dataloader is called, by default True.
         drop_remaining: bool, optional
             Whether to drop data, that remains when the number of samples is not divisible by
@@ -39,29 +42,33 @@ class DataLoader:
 
         Yields
         ------
-        tuple[Tensor, Tensor]
-            Batch of features and labels.
+        Generator[Tensor, None, None] | Generator[tuple[Tensor, Tensor], None, None]
+            Batch of inputs or batch of inputs and targets,
+            depending on whether targets were provided.
         """
         n = self.x.shape[0]
-        if shuffle_inputs:
-            self.x, idx = shuffle(self.x)
-            if self.y is not None:
-                self.y = self.y[idx]
-
-        # yield batches
         n_steps = len(self)
         b = min(self.batch_size, n)
-        for i in range(n_steps):
-            x = self.x[i * b: (i + 1) * b]
-            y = self.y[i * b: (i + 1) * b] if self.y is not None else None
-            yield (x, y)
-
-        # yield remaining samples, if there are any
         n_trunc = n_steps * b
-        if not drop_remaining and n_trunc < n:
-            x_remain = self.x[n_trunc:]
-            y_remain = self.y[n_trunc:] if self.y is not None else None
-            yield (x_remain, y_remain)
+        shuffle_idx = permutation(n, device=self.x.device)
+
+        # if y is None
+        x = self.x if not shuffle else self.x[shuffle_idx]
+
+        if self.y is None:
+            for i in range(n_steps):
+                yield x[i * b : (i + 1) * b]
+
+            if not drop_remaining and n_trunc < n:
+                yield x[n_trunc:]
+        else:
+            y = self.y if not shuffle else self.y[shuffle_idx]
+
+            for i in range(n_steps):
+                yield x[i * b : (i + 1) * b], y[i * b : (i + 1) * b]
+
+            if not drop_remaining and n_trunc < n:
+                yield x[n_trunc:], y[n_trunc:]
 
     def __len__(self) -> int:
         return max(1, self.x.shape[0] // self.batch_size)

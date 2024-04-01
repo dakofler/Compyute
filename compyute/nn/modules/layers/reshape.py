@@ -1,9 +1,9 @@
 """Tensor reshaping layers module"""
 
-from compyute.functional import zeros_like
-from compyute.nn.module import Module
-from compyute.tensor import Tensor
-from compyute.types import ArrayLike, ShapeLike
+from ..module import Module
+from ....tensor_f import zeros_like
+from ....tensor import Tensor
+from ....types import ShapeLike
 
 
 __all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]
@@ -35,9 +35,9 @@ class Slice(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                dx = zeros_like(x, device=self.device, dtype=dy.dtype).data
+                dx = zeros_like(x)
                 dx[*s] = dy
                 return dx
 
@@ -71,7 +71,7 @@ class Reshape(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 return dy.reshape(x.shape)
 
@@ -88,8 +88,14 @@ class Flatten(Module):
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
-            self.backward = lambda dy: dy.reshape(x.shape)
 
+            def backward(dy: Tensor) -> Tensor:
+                self.set_dy(dy)
+                return dy.reshape(x.shape)
+
+            self.backward = backward
+
+        self.set_y(y)
         return y
 
 
@@ -120,10 +126,12 @@ class Moveaxis(Module):
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
-            self.backward = (
-                lambda dy: Tensor(dy, dtype=dy.dtype, device=self.device)
-                .moveaxis(self.to_axis, self.from_axis)
-                .data
-            )
 
+            def backward(dy: Tensor) -> Tensor:
+                self.set_dy(dy)
+                return dy.moveaxis(self.to_axis, self.from_axis)
+
+            self.backward = backward
+
+        self.set_y(y)
         return y

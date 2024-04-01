@@ -1,14 +1,11 @@
 """Activation layers module"""
 
-from compyute.nn.funcional import sigmoid, relu, leaky_relu
-from compyute.nn.module import Module
-from compyute.tensor import Tensor
-from compyute.types import ArrayLike
+from ..module import Module
+from ...functional import sigmoid, relu, leaky_relu
+from ....tensor import Tensor
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
-GELU_S = 0.7978845608028654  # sqrt(2/pi)
-GELU_C = 0.044715
 
 
 class ReLU(Module):
@@ -19,9 +16,9 @@ class ReLU(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (y > 0).data * dy
+                return (y > 0) * dy
 
             self.backward = backward
 
@@ -37,18 +34,22 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y = leaky_relu(x)
+        y = leaky_relu(x, self.alpha)
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return ((y > 0).float() + (y < 0).float() * self.alpha).data * dy
+                return ((y > 0).float() + (y < 0).float() * self.alpha) * dy
 
             self.backward = backward
 
         self.set_y(y)
         return y
+
+
+GELU_S = 0.7978845608028654  # sqrt(2/pi)
+GELU_C = 0.044715
 
 
 class GELU(Module):
@@ -60,12 +61,12 @@ class GELU(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
                 return (
                     0.5 * (1 + tmp.tanh())
                     + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
-                ).data * dy
+                ) * dy
 
             self.backward = backward
 
@@ -81,9 +82,9 @@ class Tanh(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (1 - y**2).data * dy
+                return (1 - y**2) * dy
 
             self.backward = backward
 
@@ -99,11 +100,27 @@ class Sigmoid(Module):
 
         if self.training:
 
-            def backward(dy: ArrayLike) -> ArrayLike:
+            def backward(dy: Tensor) -> Tensor:
                 self.set_dy(dy)
-                return (y * (1 - y)).data * dy
+                return (y * (1 - y)) * dy
 
             self.backward = backward
 
         self.set_y(y)
         return y
+
+
+ACTIVATIONS = {
+    "relu": ReLU,
+    "leaky_relu": LeakyReLU,
+    "gelu": GELU,
+    "sigmoid": Sigmoid,
+    "tanh": Tanh,
+}
+
+
+def get_act_from_str(activation: str) -> Module:
+    """Returns an instance of an actiation function."""
+    if activation not in ACTIVATIONS.keys():
+        raise ValueError(f"Unknown activation function {activation}.")
+    return ACTIVATIONS[activation]()
