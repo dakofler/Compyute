@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from .module import Module
-from ...functional import concatenate, tensorsum
+from ...tensor_f import concatenate, tensorsum
 from ...tensor import Tensor
 
 

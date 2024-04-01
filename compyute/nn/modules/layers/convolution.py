@@ -1,9 +1,9 @@
 """Convolution layers module"""
 
 from ..module import Module
-from ...funcional import convolve1d, convolve2d, stretch2d
+from ...functional import convolve1d, convolve2d, stretch2d
 from ...parameter import Parameter
-from ....functional import zeros
+from ....tensor_f import zeros
 from ....random import uniform
 from ....tensor import Tensor
 from ....types import DtypeLike
@@ -37,7 +37,7 @@ class Convolution1d(Module):
         in_channels : int
             Number of input channels.
         out_channels : int
-            Number of output channels.
+            Number of output channels (filters).
         kernel_size : int
             Size of each kernel.
         pad: str, optional
@@ -201,9 +201,9 @@ class Convolution2d(Module):
         Parameters
         ----------
         in_channels : int
-            Number of input channels of the layer.
+            Number of input channels (color channels).
         out_channels : int
-            Number of output channels (neurons) of the layer.
+            Number of output channels (filters).
         kernel_size : int, optional
             Size of each kernel, by default 3.
         pad: str, optional

@@ -2,8 +2,8 @@
 
 from ..module import Module
 from ...parameter import Parameter
-from ...funcional import linear, linear_backward
-from ....functional import arange, zeros
+from ...functional import linear, linear_backward
+from ....tensor_f import zeros
 from ....random import uniform
 from ....tensor import Tensor
 from ....types import DtypeLike
@@ -31,9 +31,9 @@ class Linear(Module):
         Parameters
         ----------
         in_channels : int
-            Number of input channels of the layer.
+            Number of input channels.
         out_channels : int
-            Number of output channels (neurons) of the layer.
+            Number of output channels (neurons).
         bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional

@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable
-from ..funcional import softmax
-from ...functional import prod
+from ..functional import softmax
+from ...tensor_f import prod
 from ...preprocessing.basic import one_hot_encode
 from ...tensor import Tensor
 

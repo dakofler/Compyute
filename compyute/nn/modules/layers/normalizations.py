@@ -2,7 +2,7 @@
 
 from ..module import Module
 from ...parameter import Parameter
-from ....functional import ones, prod, zeros
+from ....tensor_f import ones, prod, zeros
 from ....tensor import Tensor
 from ....types import DtypeLike, ShapeLike
 
@@ -30,7 +30,7 @@ class Batchnorm1d(Module):
         Parameters
         ----------
         channels : int
-            Number of channels of the layer.
+            Number of channels.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         m : float, optional
@@ -151,7 +151,7 @@ class Batchnorm2d(Module):
         Parameters
         ----------
         channels : int
-            Number of channels of the layer.
+            Number of channels.
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         m : float, optional

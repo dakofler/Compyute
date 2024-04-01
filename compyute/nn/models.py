@@ -4,7 +4,7 @@ import pickle
 from .modules.containers import SequentialContainer
 from .dataloaders import DataLoader
 from .modules.module import Module
-from ..functional import concatenate, ones
+from ..tensor_f import concatenate, ones
 from ..tensor import Tensor
 from ..types import DtypeLike, ShapeLike
 

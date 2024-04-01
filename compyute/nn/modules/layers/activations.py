@@ -1,7 +1,7 @@
 """Activation layers module"""
 
 from ..module import Module
-from ...funcional import sigmoid, relu, leaky_relu
+from ...functional import sigmoid, relu, leaky_relu
 from ....tensor import Tensor
 
 

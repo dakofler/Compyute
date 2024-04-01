@@ -29,9 +29,9 @@ class Embedding(Module):
         Parameters
         ----------
         vocab_size : int
-            Vocabulary size of the layer.
+            Vocabulary size.
         embedding_dim : int
-            Number of embedding dimensions of the layer.
+            Embedding dimensionality.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
         """

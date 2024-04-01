@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from ..parameter import Parameter
-from ...functional import prod
+from ...tensor_f import prod
 
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -89,9 +89,7 @@ class SGD(Optimizer):
                 else:
                     g = b
 
-            delta = -self.lr * g
-            self.state[p]["delta"] = delta  # for analysis
-            p.data += delta.data
+            p.data -= (self.lr * g).data
         self.t += 1
 
 
@@ -155,9 +153,7 @@ class Adam(Optimizer):
             m_hat = m / (1 - self.beta1**self.t)
             v_hat = v / (1 - self.beta2**self.t)
 
-            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
-            self.state[p]["delta"] = delta  # for analysis
-            p.data += delta.data
+            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
         self.t += 1
 
 
@@ -217,9 +213,7 @@ class AdamW(Optimizer):
             m_hat = m / (1 - self.beta1**self.t)
             v_hat = v / (1 - self.beta2**self.t)
 
-            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
-            self.state[p]["delta"] = delta  # for analysis
-            p.data += delta.data
+            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
         self.t += 1
 
 
@@ -295,9 +289,7 @@ class NAdam(Optimizer):
             ) * g / (1 - prod(self.state["nadam_mu"]))
             v_hat = v / (1 - self.beta2**self.t)
 
-            delta = -self.lr * m_hat / (v_hat**0.5 + self.eps)
-            self.state[p]["delta"] = delta  # for analysis
-            p.data += delta.data
+            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
         self.t += 1
 
 

@@ -1,7 +1,7 @@
 """Tensor reshaping layers module"""
 
 from ..module import Module
-from ....functional import zeros_like
+from ....tensor_f import zeros_like
 from ....tensor import Tensor
 from ....types import ShapeLike
 

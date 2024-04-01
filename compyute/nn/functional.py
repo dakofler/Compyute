@@ -1,6 +1,6 @@
 """Neural network functions module"""
 
-from ..functional import arange, maximum, minimum, zeros
+from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import ShapeLike
 

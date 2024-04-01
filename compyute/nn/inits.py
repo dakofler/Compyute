@@ -1,7 +1,7 @@
 """Parameter initializations module"""
 
-from ..functional import prod
 from .. import random
+from ..tensor_f import prod
 from ..tensor import Tensor
 from ..types import ShapeLike
 

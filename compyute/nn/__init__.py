@@ -2,7 +2,7 @@
 
 from . import (
     dataloaders,
-    funcional,
+    functional,
     inits,
     trainer,
 )

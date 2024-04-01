@@ -1,6 +1,6 @@
 """basic preprocessing module"""
 
-from ..functional import eye
+from ..tensor_f import eye
 from ..random import shuffle
 from ..tensor import Tensor
 from ..types import AxisLike

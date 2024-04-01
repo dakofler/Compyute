@@ -1,9 +1,9 @@
 """Recurrent cells module"""
 
 from ..module import Module
-from ...funcional import linear, linear_backward, sigmoid
+from ...functional import linear, linear_backward, sigmoid
 from ...parameter import Parameter
-from ....functional import zeros, zeros_like
+from ....tensor_f import zeros, zeros_like
 from ....random import uniform
 from ....tensor import Tensor
 from ....types import DtypeLike
@@ -32,7 +32,7 @@ class Recurrent(Module):
         Parameters
         ----------
         in_channels : int
-            Number of input features.
+            Number of input channels.
         h_channels : int
             Number of hidden channels.
         bias : bool, optional
@@ -152,7 +152,7 @@ class LSTM(Module):
         Parameters
         ----------
         in_channels : int
-            Number of input features.
+            Number of input channels.
         h_channels : int
             Number of hidden channels.
         bias : bool, optional
