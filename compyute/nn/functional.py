@@ -263,9 +263,6 @@ def __dilate1d(x: Tensor, dilation: int) -> Tensor:
 
 
 def __convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
-    if x.ndim != f.ndim:
-        raise ShapeError("Dimensions of input and filter must match.")
-
     # convolution
     cdtype = "complex64"
     conv = (
@@ -338,39 +335,11 @@ def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
 
 
 def __pad2d(x: Tensor, padding: tuple[tuple[int, int]]) -> Tensor:
-    """Pads 2 trailing dimensions of a tensor (axes=(-2, -1)).
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be padded.
-    padding : tuple[tuple[int, int]]
-        Padding applied before and after the elements of each axis.
-
-    Returns
-    -------
-    Tensor
-        Padded tensor.
-    """
     widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
     return x.pad(widths)
 
 
 def __dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
-    """Dilates a tensor over it's last two axes.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be dilated.
-    dilation : tuple [int, int]
-        Dilation used for each axis of the tensor.
-
-    Returns
-    -------
-    Tensor
-        Dilated tensor.
-    """
     dilated_shape = (
         dilation[0] * x.shape[-2] - 1,
         dilation[1] * x.shape[-1] - 1,
@@ -390,7 +359,6 @@ def __convolve2d(
     f: Tensor,
     strides: tuple[int, int] = (1, 1),
 ) -> Tensor:
-
     # convolution
     cdtype = "complex64"
     conv = (

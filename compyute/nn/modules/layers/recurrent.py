@@ -78,13 +78,14 @@ class Recurrent(Module):
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
 
-        # input
+        # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
         x_h = linear(x, self.w_i, self.b_i)
 
         # iterate over timesteps
         h = zeros_like(x_h)
         for t in range(x_h.shape[1]):
+            # hidden state
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
             h[:, t] = (x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)).tanh()
 
@@ -105,6 +106,7 @@ class Recurrent(Module):
                 self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
+                    # hidden state gradients
                     out_grad = dh[:, t]
                     if t < x_h.shape[1] - 1:
                         # hidden state gradients from next time step
@@ -122,7 +124,7 @@ class Recurrent(Module):
                 # (B, T, Ch) -> (Ch,)
                 self.b_h.grad = dx_h.sum((0, 1))
 
-                # input gradients
+                # input projection gradients
                 return linear_backward(dx_h, x, self.w_i, self.b_i)
 
             self.backward = backward
@@ -201,17 +203,19 @@ class LSTM(Module):
     def forward(self, x: Tensor):
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
-        n = self.h_channels
-        n2 = 2 * n
-        n3 = 3 * n
 
-        # input
+        # indices used to acces the concatined matrices
+        i1 = self.h_channels
+        i2 = 2 * i1
+        i3 = 3 * i1
+
+        # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
         x_h = linear(x, self.w_i, self.b_i)
 
         # iterate over timesteps
         ifgo = zeros_like(x_h)
-        c = zeros_like(x_h[:, :, :n])
+        c = zeros_like(x_h[:, :, :i1])
         h = zeros_like(c)
 
         for t in range(x.shape[1]):
@@ -220,19 +224,19 @@ class LSTM(Module):
             ifgo_preact = x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)
 
             # gates post activation i_t, f_t, g_t, o_t
-            ifgo[:, t, :n2] = sigmoid(ifgo_preact[:, :n2])  # input, forget
-            ifgo[:, t, n2:n3] = ifgo_preact[:, n2:n3].tanh()  # node
-            ifgo[:, t, -n:] = sigmoid(ifgo_preact[:, -n:])  # output
+            ifgo[:, t, :i2] = sigmoid(ifgo_preact[:, :i2])  # input, forget
+            ifgo[:, t, i2:i3] = ifgo_preact[:, i2:i3].tanh()  # node
+            ifgo[:, t, i3:] = sigmoid(ifgo_preact[:, i3:])  # output
 
             # cell state
             # c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = (
-                ifgo[:, t, n:n2] * c[:, t - 1] + ifgo[:, t, :n] * ifgo[:, t, n2:n3]
+                ifgo[:, t, i1:i2] * c[:, t - 1] + ifgo[:, t, :i1] * ifgo[:, t, i2:i3]
             )
 
             # hidden state
             # h_t = o_t * tanh(c_t)
-            h[:, t] = ifgo[:, t, -n:] * c[:, t].tanh()
+            h[:, t] = ifgo[:, t, i3:] * c[:, t].tanh()
 
         if self.training:
 
@@ -252,8 +256,8 @@ class LSTM(Module):
                 self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
-                    difgo_t = zeros_like(ifgo[:, 1])
 
+                    # hidden state gradients
                     out_grad = dh[:, t]
                     if t < x.shape[1] - 1:
                         # hidden state gradients from next time step
@@ -261,42 +265,46 @@ class LSTM(Module):
 
                     # cell state gradients
                     # dc_t = dtanh(c_t) * do_t * output grads
-                    dc[:, t] = (1 - c[:, t].tanh() ** 2) * ifgo[:, t, -n:] * out_grad
+                    dc[:, t] = (1 - c[:, t].tanh() ** 2) * ifgo[:, t, i3:] * out_grad
                     if t < x.shape[1] - 1:
                         # cell state gradients from next time step
                         # dc_t += f_t+1 * dc_t+1
-                        dc[:, t] += ifgo[:, t + 1, n:n2] * dc[:, t + 1]
+                        dc[:, t] += ifgo[:, t + 1, i1:i2] * dc[:, t + 1]
+
+                    difgo_t = zeros_like(ifgo[:, 1])
 
                     # input gate gradients
                     # di_t = g_t * dc_t
-                    difgo_t[:, :n] = ifgo[:, t, n2:n3] * dc[:, t]
+                    difgo_t[:, :i1] = ifgo[:, t, i2:i3] * dc[:, t]
 
                     # forget gate gradients
                     # df_t = c_t-1 * dc_t
-                    difgo_t[:, n:n2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
+                    difgo_t[:, i1:i2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
 
                     # node gradients
                     # dg_t = i_t * dc_t
-                    difgo_t[:, n2:n3] = ifgo[:, t, :n] * dc[:, t]
+                    difgo_t[:, i2:i3] = ifgo[:, t, :i1] * dc[:, t]
 
                     # output gate gradients
                     # do_t = tanh(c_t) * output grads
-                    difgo_t[:, -n:] = c[:, t].tanh() * out_grad
+                    difgo_t[:, i3:] = c[:, t].tanh() * out_grad
 
-                    # pre actiation gradients
+                    # pre actiation input and forget gate gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
-                    difgo_preact[:, t, :n2] = (
-                        ifgo[:, t, :n2] * (1 - ifgo[:, t, :n2]) * difgo_t[:, :n2]
+                    difgo_preact[:, t, :i2] = (
+                        ifgo[:, t, :i2] * (1 - ifgo[:, t, :i2]) * difgo_t[:, :i2]
                     )
 
+                    # pre actiation node gradients
                     # dg_t = dtanh(g_t) * dg_t
-                    difgo_preact[:, t, n2:n3] = (1 - ifgo[:, t, n2:n3] ** 2) * difgo_t[
-                        :, n2:n3
+                    difgo_preact[:, t, i2:i3] = (1 - ifgo[:, t, i2:i3] ** 2) * difgo_t[
+                        :, i2:i3
                     ]
 
+                    # pre actiation output gate gradients
                     # do_t = dsigmoid(o_t) * do_t
-                    difgo_preact[:, t, -n:] = (
-                        ifgo[:, t, -n:] * (1 - ifgo[:, t, -n:]) * difgo_t[:, -n:]
+                    difgo_preact[:, t, i3:] = (
+                        ifgo[:, t, i3:] * (1 - ifgo[:, t, i3:]) * difgo_t[:, i3:]
                     )
 
                     # hidden weight gradients
@@ -308,7 +316,7 @@ class LSTM(Module):
                 # (B, T, Ch) -> (Ch,)
                 self.b_h.grad = difgo_preact.sum(axis=(0, 1))
 
-                # input gradients
+                # input projection gradients
                 return linear_backward(difgo_preact, x, self.w_i, self.b_i)
 
             self.backward = backward
