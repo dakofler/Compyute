@@ -1,5 +1,6 @@
 """Convolution layers module"""
 
+from typing import Literal
 from ..module import Module
 from ...functional import convolve1d, convolve2d, stretch2d
 from ...parameter import Parameter
@@ -20,7 +21,7 @@ class Convolution1d(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        pad: str = "causal",
+        padding: Literal["causal", "same", "valid"] = "causal",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -40,9 +41,8 @@ class Convolution1d(Module):
             Number of output channels (filters).
         kernel_size : int
             Size of each kernel.
-        pad: str, optional
-            Padding applied before convolution.
-            Options are "causal", "valid" or "same", by default "causal".
+        padding: Literal["causal", "same", "valid"], optional
+            Padding applied to a tensor before the convolution, by default "causal".
         stride : int, optional
             Stride used for the convolution operation, by default 1.
         dilation : int, optional
@@ -56,7 +56,7 @@ class Convolution1d(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.pad = pad
+        self.padding = padding
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
@@ -79,12 +79,12 @@ class Convolution1d(Module):
         in_channels = self.in_channels
         out_channels = self.out_channels
         kernel_size = self.kernel_size
-        pad = self.pad
+        padding = self.padding
         stride = self.stride
         dilation = self.dilation
         bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dilation=}, {bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dilation=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
@@ -98,7 +98,9 @@ class Convolution1d(Module):
 
         # convolve
         # (B, 1, Ci, Ti) * (1, Co, Ci, K) -> (B, Co, Ci, To)
-        x_conv_w = convolve1d(x, w_flip, self.stride, self.dilation, self.pad)
+        x_conv_w = convolve1d(
+            x, w_flip, padding=self.padding, stride=self.stride, dilation=self.dilation
+        )
 
         # sum over input channels
         # (B, Co, Ci, To) -> (B, Co, To)
@@ -120,10 +122,10 @@ class Convolution1d(Module):
                 S = self.stride
                 D = self.dilation
 
-                # undo strides by filling with zeros
+                # fill elements skipped by strides with zeros
                 dy_p = zeros((B, Co, S * To), device=self.device)
                 dy_p[:, :, ::S] = dy
-                dy_p_ti = 1 + (Ti - K) if self.pad == "valid" else Ti
+                dy_p_ti = 1 + (Ti - K) if self.padding == "valid" else Ti
                 dy_p = dy_p[:, :, :dy_p_ti]
 
                 # ----------------
@@ -131,11 +133,11 @@ class Convolution1d(Module):
                 # ----------------
                 dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, To)
                 w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K)
-                pad = "full" if self.pad == "valid" else self.pad
+                padding = "full" if self.padding == "valid" else self.padding
 
                 # convolve
                 # (B, Co, 1, To) * (1, Co, Ci, K)
-                dy_conv_w = convolve1d(dy_p_ext, w_ext, dil=D, pad=pad)
+                dy_conv_w = convolve1d(dy_p_ext, w_ext, padding=padding, dilation=D)
 
                 # sum over output channels
                 # (B, Ci, Ti)
@@ -146,21 +148,19 @@ class Convolution1d(Module):
                 # ----------------
                 dy_p_ext = dy_p_ext.flip(-1)
 
-                match self.pad:
-                    case "same":
-                        pad = K // 2 * D
-                    case "causal":
-                        pad = (K // 2 * D * 2, 0)
-                    case _:
-                        pad = self.pad
-
                 # convolve
                 # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
-                x_conv_dy = convolve1d(x, dy_p_ext, pad=pad)[:, :, :, -K * D :]
+                x_conv_dy = convolve1d(x, dy_p_ext, padding=padding)
+                if self.padding == "causal":
+                    x_conv_dy = x_conv_dy[:, :, :, -K * D :: D]
+                else:
+                    k_size = (K - 1) * D + 1
+                    k = (x_conv_dy.shape[-1] - k_size) // 2
+                    x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D]
 
                 # sum over batches
                 # (B, Co, Ci, K) -> (Co, Ci, K)
-                self.w.grad = x_conv_dy[:, :, :, ::D].sum(axis=0)
+                self.w.grad = x_conv_dy.sum(axis=0)
 
                 # ----------------
                 # bias grads
@@ -186,7 +186,7 @@ class Convolution2d(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        pad: str = "valid",
+        padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -206,9 +206,8 @@ class Convolution2d(Module):
             Number of output channels (filters).
         kernel_size : int, optional
             Size of each kernel, by default 3.
-        pad: str, optional
-            Padding applied before convolution.
-            Options are "valid" and "same", by default "valid".
+        padding: Literal["same", "valid"], optional
+            Padding applied to a tensor before the convolution, by default "valid".
         stride : int , optional
             Strides used for the convolution operation, by default 1.
         dilation : int , optional
@@ -222,7 +221,7 @@ class Convolution2d(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.pad = pad
+        self.padding = padding
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
@@ -247,12 +246,12 @@ class Convolution2d(Module):
         in_channels = self.in_channels
         out_channels = self.out_channels
         kernel_size = self.kernel_size
-        pad = self.pad
+        padding = self.padding
         stride = self.stride
         dil = self.dilation
         bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {pad=}, {stride=}, {dil=}, {bias=}, {dtype=})"
+        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dil=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -266,7 +265,9 @@ class Convolution2d(Module):
 
         # convolve
         # (B, 1, Ci, Yi, Xi) * (1, Co, Ci, K, K) -> (B, Co, Ci, Yo, Xo)
-        x_conv_w = convolve2d(x, w_flip, self.stride, self.dilation, self.pad)
+        x_conv_w = convolve2d(
+            x, w_flip, padding=self.padding, stride=self.stride, dilation=self.dilation
+        )
 
         # sum over input channels
         # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
@@ -291,8 +292,8 @@ class Convolution2d(Module):
                 # fill elements skipped by strides with zeros
                 dy_p = zeros((B, Co, S * Yo, S * Xo), device=self.device)
                 dy_p[:, :, ::S, ::S] = dy
-                dy_p_yi = 1 + (Yi - K) if self.pad == "valid" else Yi
-                dy_p_xi = 1 + (Xi - K) if self.pad == "valid" else Xi
+                dy_p_yi = 1 + (Yi - K) if self.padding == "valid" else Yi
+                dy_p_xi = 1 + (Xi - K) if self.padding == "valid" else Xi
                 dy_p = dy_p[:, :, :dy_p_yi, :dy_p_xi]
 
                 # ----------------
@@ -300,11 +301,11 @@ class Convolution2d(Module):
                 # ----------------
                 dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, Yo, Xo)
                 w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K, K)
-                pad = "full" if self.pad == "valid" else "same"
+                padding = "full" if self.padding == "valid" else self.padding
 
                 # convolve
                 # (B, Co, 1, Yo, Xo) * (1, Co, Ci, K, K) -> (B, Co, Ci, Yi, Xi)
-                dy_conv_w = convolve2d(dy_p_ext, w_ext, dil=D, pad=pad)
+                dy_conv_w = convolve2d(dy_p_ext, w_ext, padding=padding, dilation=D)
 
                 # sum over c_out
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
@@ -314,17 +315,17 @@ class Convolution2d(Module):
                 # weight grads
                 # ----------------
                 dy_p_ext = dy_p_ext.flip((-2, -1))
-                pad = (K // 2 * D, K // 2 * D) if self.pad == "same" else "valid"
 
                 # convolve
                 # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, K, K)
-                x_conv_dy = convolve2d(x, dy_p_ext, pad=pad)[
-                    :, :, :, -K * D :, -K * D :
-                ]
+                x_conv_dy = convolve2d(x, dy_p_ext, padding=padding)
+                k_size = (K - 1) * D + 1
+                k = (x_conv_dy.shape[-1] - k_size) // 2
+                x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D, k : k + k_size : D]
 
                 # sum over batches
                 # (B, Co, Ci, K, K) -> (Co, Ci, K, K)
-                self.w.grad = x_conv_dy[:, :, :, ::D, ::D].sum(axis=0)
+                self.w.grad = x_conv_dy.sum(axis=0)
 
                 # ----------------
                 # bias grads

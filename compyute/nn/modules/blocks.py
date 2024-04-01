@@ -57,7 +57,7 @@ class Convolution1dBlock(SequentialContainer):
         out_channels: int,
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
         kernel_size: int,
-        pad: str = "causal",
+        padding: Literal["causal", "same", "valid"] = "causal",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -79,9 +79,8 @@ class Convolution1dBlock(SequentialContainer):
             Size of each kernel.
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
             Activation function to use in the dense block.
-        pad: str, optional
-            Padding applied before convolution.
-            Options are "causal", "valid" or "same", by default "causal".
+        padding: Literal["causal", "same", "valid"], optional
+            Padding applied before convolution, by default "causal".
         stride : int, optional
             Stride used for the convolution operation, by default 1.
         dilation : int, optional
@@ -96,7 +95,7 @@ class Convolution1dBlock(SequentialContainer):
                 in_channels,
                 out_channels,
                 kernel_size,
-                pad,
+                padding,
                 stride,
                 dilation,
                 bias,
@@ -116,7 +115,7 @@ class Convolution2dBlock(SequentialContainer):
         out_channels: int,
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
         kernel_size: int = 3,
-        pad: str = "valid",
+        padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -138,9 +137,8 @@ class Convolution2dBlock(SequentialContainer):
             Size of each kernel, by default 3.
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
             Activation function to use in the dense block.
-        pad: str, optional
-            Padding applied before convolution.
-            Options are "valid" and "same", by default "valid".
+        padding: Literal["same", "valid"], optional
+            Padding applied before convolution, by default "valid".
         stride : int , optional
             Strides used for the convolution operation, by default 1.
         dilation : int , optional
@@ -155,7 +153,7 @@ class Convolution2dBlock(SequentialContainer):
                 in_channels,
                 out_channels,
                 kernel_size,
-                pad,
+                padding,
                 stride,
                 dilation,
                 bias,

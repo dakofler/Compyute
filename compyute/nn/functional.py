@@ -1,5 +1,6 @@
 """Neural network functions module"""
 
+from typing import Literal
 from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import ShapeLike
@@ -13,10 +14,6 @@ __all__ = [
     "softmax",
     "convolve1d",
     "convolve2d",
-    "dilate1d",
-    "dilate2d",
-    "pad1d",
-    "pad2d",
 ]
 pi: float = 3.141592653589793
 
@@ -52,7 +49,7 @@ def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
     Tensor
         Output tensor.
     """
-    if "int" in x.dtype:
+    if "int" in str(x.dtype):
         x = x.float()
     return maximum(x, 0) + alpha * minimum(0, x)
 
@@ -194,11 +191,11 @@ def linear_backward(
 def convolve1d(
     x: Tensor,
     f: Tensor,
+    padding: Literal["causal", "full", "same", "valid"] = "valid",
     stride: int = 1,
-    dil: int = 1,
-    pad: str | int | tuple[int, int] = "causal",
+    dilation: int = 1,
 ) -> Tensor:
-    """Convolves two tensors over their last dimension (axis=-1).
+    """Convolves two tensors over their last axis.
 
     Parameters
     ----------
@@ -206,15 +203,12 @@ def convolve1d(
         Input tensor.
     f : Tensor
         Filter tensor.
+    padding: Literal["causal", "full", "same", "valid"], optional
+        Padding applied to a tensor before the convolution, by default "causal".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
-    dil : int, optional
-        Dilation used in the filter, by default 1.
-    pad : str | int, optional
-        Padding applied before convolution.
-        Options are "causal", "valid", "same" and "full" or the padding width as int,
-        by default "causal".
-
+    dilation : int, optional
+        Dilation used for each axis of the filter, by default 1.
     Returns
     -------
     Tensor
@@ -223,48 +217,79 @@ def convolve1d(
     Raises
     -------
     ShapeError
-        If dimensions of input are < 3.
-    ShapeError
         If dimensions of input and filter do not match.
-    NotImplementedError
-        If padding is "same" and the kernel shape is even.
     """
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    f_dil = dilate1d(f, dil)
-    x_pad = pad1d(x, f_dil.shape, pad)
+    if dilation > 1:
+        f = __dilate1d(f, dilation)
+
+    if padding != "valid":
+        p = __pad1d_from_str(padding, f.shape[-1])
+        x = __pad1d(x, p)
+
+    return __convolve1d(x, f, stride)
+
+
+def __pad1d_from_str(
+    padding: Literal["causal", "full", "same", "valid"], kernel_size: int
+) -> tuple[int, int]:
+    match padding:
+        case "causal":
+            return (kernel_size - 1, 0)
+        case "full":
+            return (kernel_size - 1,) * 2
+        case "same":
+            return (kernel_size // 2,) * 2
+        case _:
+            return (0, 0)
+
+
+def __pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
+    widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
+    return x.pad(widths)
+
+
+def __dilate1d(x: Tensor, dilation: int) -> Tensor:
+    if dilation == 1:
+        return x
+
+    dilated_shape = (dilation * x.shape[-1] - 1,)
+    x_dilated = zeros(x.shape[:-1] + dilated_shape, x.dtype, x.device)
+    dilation_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
+    x_dilated[*dilation_slice] = x
+    return x_dilated
+
+
+def __convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
+    if x.ndim != f.ndim:
+        raise ShapeError("Dimensions of input and filter must match.")
 
     # convolution
     cdtype = "complex64"
     conv = (
-        (x_pad.fft1d(dtype=cdtype) * f_dil.fft1d(n=x_pad.shape[-1], dtype=cdtype))
+        (x.fft1d(dtype=cdtype) * f.fft1d(n=x.shape[-1], dtype=cdtype))
         .ifft1d(dtype=cdtype)
         .real(dtype=x.dtype)
     )
 
-    # out slices
-    out = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
-    slc_o = [slice(None)] * conv.ndim
-    slc_o[conv.ndim - 1] = slice(-out, None)
+    # slicing
+    out = 1 + (x.shape[-1] - f.shape[-1])
+    out_slice = [slice(None)] * (x.ndim - 1) + [slice(-out, None)]
+    stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
 
-    # stride slices
-    slc_s = [slice(None)] * conv.ndim
-    slc_s[conv.ndim - 1] = slice(None, None, stride)
-
-    return conv[*slc_o][*slc_s]
+    return conv[*out_slice][*stride_slice]
 
 
 def convolve2d(
     x: Tensor,
     f: Tensor,
-    stride: int | tuple[int, int] = 1,
-    dil: int | tuple[int, int] = 1,
-    pad: str | tuple[int, int] = "valid",
+    padding: Literal["same", "valid"] = "valid",
+    stride: int = 1,
+    dilation: int = 1,
 ) -> Tensor:
-    """Convolves two tensors over their 2 trailing dimensions  (ax2s=(-2, -1)).
+    """Convolves two tensors over their last two axes.
 
     Parameters
     ----------
@@ -272,13 +297,12 @@ def convolve2d(
         Input tensor.
     f : Tensor
         Filter tensor.
-    stride : int | tuple [int, int], optional
-        Strides used for each axis in the convolution operation, by default 1.
-    dil : int | tuple [int, int], optional
-        Dilations used for each axis of the filter, by default 1.
-    pad : str | tuple[int, int], optional
-        Padding applied before convolution.
-        Options are "valid", "same" and "full" or a tuple of padding widths, by default "valid".
+    padding: Literal["same", "valid"], optional
+        Padding applied to a tensor before the convolution, by default "valid".
+    stride : int, optional
+        Stride used in the convolution operation, by default 1.
+    dilation : int, optional
+        Dilation used for each axis of the filter, by default 1.
 
     Returns
     -------
@@ -288,79 +312,58 @@ def convolve2d(
     Raises
     -------
     ShapeError
-        If dimensions of input are < 4.
-    ShapeError
         If dimensions of input and filter do not match.
-    NotImplementedError
-        If padding is "same" and the kernel shape is even.
     """
     if x.ndim != f.ndim:
         raise ShapeError("Dimensions of input and filter must match.")
-    if pad == "same" and f.shape[-1] % 2 == 0 and dil == 1:
-        raise NotImplementedError("Same padding and even kernel size not compatible.")
 
-    f_dil = dilate2d(f, dil)
-    x_pad = pad2d(x, f_dil.shape, pad)
+    if dilation > 1:
+        f = __dilate2d(f, (dilation, dilation))
 
-    # convolution
-    cdtype = "complex64"
-    conv = (
-        (x_pad.fft2d(dtype=cdtype) * f_dil.fft2d(s=x_pad.shape[-2:], dtype=cdtype))
-        .ifft2d(dtype=cdtype)
-        .real(dtype=x.dtype)
-    )
+    if padding != "valid":
+        p = __pad2d_from_str(padding, f.shape[-1])
+        x = __pad2d(x, p)
 
-    # out slices
-    out_y = 1 + (x_pad.shape[-2] - f_dil.shape[-2])
-    out_x = 1 + (x_pad.shape[-1] - f_dil.shape[-1])
-    s_y, s_x = (stride, stride) if isinstance(stride, int) else stride
-    slc_o = [slice(None)] * conv.ndim
-    slc_o[conv.ndim - 2 :] = [slice(-out_y, None), slice(-out_x, None)]
-
-    # stride slices
-    slc_s = [slice(None)] * conv.ndim
-    slc_s[conv.ndim - 2 :] = [slice(None, None, s_y), slice(None, None, s_x)]
-
-    return conv[*slc_o][*slc_s]
+    return __convolve2d(x, f, (stride, stride))
 
 
-def dilate1d(f: Tensor, dil: int) -> Tensor:
-    """Dilates the last dimension of a tensor (axis=-1).
+def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
+    match padding:
+        case "full":
+            return ((kernel_size - 1,) * 2,) * 2
+        case "same":
+            return ((kernel_size // 2,) * 2,) * 2
+        case _:
+            return ((0, 0), (0, 0))
+
+
+def __pad2d(x: Tensor, padding: tuple[tuple[int, int]]) -> Tensor:
+    """Pads 2 trailing dimensions of a tensor (axes=(-2, -1)).
 
     Parameters
     ----------
     x : Tensor
-        Tensor to be dilated.
-    dil : int
-        Dilation used.
+        Tensor to be padded.
+    padding : tuple[tuple[int, int]]
+        Padding applied before and after the elements of each axis.
 
     Returns
     -------
     Tensor
-        Dilated tensor.
+        Padded tensor.
     """
-    if dil == 1:
-        return f
-
-    dim = f.ndim
-    tpl = tuple(
-        ((f.shape[d] - 1) * dil + 1) if d == dim - 1 else f.shape[d] for d in range(dim)
-    )
-    f_dil = zeros(tpl, f.dtype, f.device)
-    slc_dil = [slice(None)] * dim
-    slc_dil[dim - 1] = slice(None, None, dil)
-    f_dil[*slc_dil] = f
-    return f_dil
+    widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
+    return x.pad(widths)
 
 
-def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
-    """Dilates 2 trailing dimensions of a tensor (axes=(-2, -1)).
+def __dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
+    """Dilates a tensor over it's last two axes.
 
     Parameters
     ----------
     x : Tensor
         Tensor to be dilated.
-    dil : int | tuple [int, int]
+    dilation : tuple [int, int]
         Dilation used for each axis of the tensor.
 
     Returns
@@ -368,108 +371,47 @@ def dilate2d(f: Tensor, dil: int | tuple[int, int]) -> Tensor:
     Tensor
         Dilated tensor.
     """
-    dil = (dil, dil) if isinstance(dil, int) else dil
-    if dil == (1, 1):
-        return f
-
-    dim = f.ndim
-    tpl = tuple(
-        ((f.shape[d] - 1) * dil[-dim + d] + 1) if d >= dim - 2 else f.shape[d]
-        for d in range(dim)
+    dilated_shape = (
+        dilation[0] * x.shape[-2] - 1,
+        dilation[1] * x.shape[-1] - 1,
     )
-    f_dil = zeros(tpl, f.dtype, f.device)
-    slc_dil = [slice(None)] * dim
-    slc_dil[dim - 2 :] = [slice(None, None, dil[0]), slice(None, None, dil[1])]
-    f_dil[*slc_dil] = f
-    return f_dil
+    x_dilated = zeros(x.shape[:-2] + dilated_shape, x.dtype, x.device)
+    dilation_slice = (
+        [slice(None)] * (x.ndim - 2)
+        + [slice(None, None, dilation[0])]
+        + [slice(None, None, dilation[1])]
+    )
+    x_dilated[*dilation_slice] = x
+    return x_dilated
 
 
-def pad1d(
-    x: Tensor, filter_shape: ShapeLike, pad: str | int | tuple[int, int]
+def __convolve2d(
+    x: Tensor,
+    f: Tensor,
+    strides: tuple[int, int] = (1, 1),
 ) -> Tensor:
-    """Pads the last dimension of a tensor (axis=-1).
 
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be padded.
-    filter_shape : ShapeLike
-        Shape of the filter tensor.
-    pad : str | int | tuple[int, int]
-        Padding applied before convolution.
-        Options are "causal", "valid", "same" and "full" or the padding width as int.
+    # convolution
+    cdtype = "complex64"
+    conv = (
+        (x.fft2d(dtype=cdtype) * f.fft2d(s=x.shape[-2:], dtype=cdtype))
+        .ifft2d(dtype=cdtype)
+        .real(dtype=x.dtype)
+    )
 
-    Returns
-    -------
-    Tensor
-        Padded tensor.
+    # slicing
+    out_y = 1 + (x.shape[-2] - f.shape[-2])
+    out_x = 1 + (x.shape[-1] - f.shape[-1])
+    out_slice = [slice(None)] * (x.ndim - 2) + [
+        slice(-out_y, None),
+        slice(-out_x, None),
+    ]
+    stride_slice = [slice(None)] * (x.ndim - 2) + [
+        slice(None, None, strides[0]),
+        slice(None, None, strides[1]),
+    ]
 
-    Raises
-    -------
-    NotImplementedError
-        If padding type is invalid.
-    """
-    if (
-        not isinstance(pad, int)
-        and not isinstance(pad, tuple)
-        and pad not in ("valid", "same", "full", "causal")
-    ):
-        raise NotImplementedError(f"Invalid padding type {pad}.")
-
-    if isinstance(pad, int):
-        p = (pad,) * 2
-    elif isinstance(pad, tuple):
-        p = pad
-    else:
-        match pad:
-            case "full":
-                p = (filter_shape[-1] - 1,) * 2
-            case "same":
-                p = (filter_shape[-1] // 2,) * 2
-            case "causal":
-                p = (filter_shape[-1] - 1, 0)
-            case _:
-                p = (0, 0)
-    widths = tuple([(0, 0)] * (x.ndim - 1) + [p])
-    return x.pad(widths)
-
-
-def pad2d(x: Tensor, filter_shape: ShapeLike, pad: str | tuple[int, int]) -> Tensor:
-    """Pads 2 trailing dimensions of a tensor (axes=(-2, -1)).
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be padded.
-    filter_shape : ShapeLike
-        Shape of the filter tensor.
-    pad : str | tuple[int, int]
-        Padding applied to the tensor.
-        Options are "valid", "same" and "full" or a tuple of padding widths.
-
-    Returns
-    -------
-    Tensor
-        Padded tensor.
-
-    Raises
-    -------
-    NotImplementedError
-        If padding type is invalid.
-    """
-    if not isinstance(pad, tuple) and pad not in ("valid", "same", "full"):
-        raise NotImplementedError(f"Invalid padding type {pad}.")
-
-    if not isinstance(pad, tuple):
-        match pad:
-            case "full":
-                pad = (filter_shape[-2] - 1, filter_shape[-1] - 1)
-            case "same":
-                pad = (filter_shape[-2] // 2, filter_shape[-1] // 2)
-            case _:
-                pad = (0, 0)
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [(pad[0], pad[0]), (pad[1], pad[1])])
-    return x.pad(widths)
+    return conv[*out_slice][*stride_slice]
 
 
 def stretch2d(

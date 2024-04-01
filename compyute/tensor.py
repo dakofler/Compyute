@@ -386,7 +386,7 @@ class Tensor:
         """
         return Tensor(self.data.repeat(n_repeats, axis))
 
-    def pad(self, pad_width: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
+    def pad(self, padding: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
@@ -402,7 +402,7 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        return Tensor(self.__engine.pad(self.data, pad_width))
+        return Tensor(self.__engine.pad(self.data, padding))
 
     def pad_to_shape(self, shape: ShapeLike) -> Tensor:
         """Returns a padded tensor using zero padding that matches a specified shape.
@@ -417,8 +417,8 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        pad_width = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
-        return self.pad(tuple(pad_width))
+        padding = [(0, shape[i] - self.shape[i]) for i in range(self.ndim)]
+        return self.pad(tuple(padding))
 
     def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
