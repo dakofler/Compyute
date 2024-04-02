@@ -1,5 +1,6 @@
 """Neural network containers module"""
 
+from typing import Optional
 from .module import Module
 from ...tensor_f import concatenate, tensorsum
 from ...tensor import Tensor
@@ -11,12 +12,12 @@ __all__ = ["SequentialContainer", "ParallelConcatContainer", "ParallelAddContain
 class Container(Module):
     """Container base module."""
 
-    def __init__(self, modules: list[Module] | None = None) -> None:
+    def __init__(self, modules: Optional[list[Module]] = None) -> None:
         """Container base module.
 
         Parameters
         ----------
-        modules : list[Module]
+        modules : list[Module], optional
             List of modules used in the container.
         """
         super().__init__()
@@ -39,12 +40,12 @@ class Container(Module):
 class SequentialContainer(Container):
     """Sequential container module. Layers are processed sequentially."""
 
-    def __init__(self, layers: list[Module] | None = None) -> None:
+    def __init__(self, layers: Optional[list[Module]] = None) -> None:
         """Sequential container module. Layers are processed sequentially.
 
         Parameters
         ----------
-        layers : list[Module] | None, optional
+        layers : list[Module], optional
             List of layers used in the container.
             These layers are processed sequentially starting at index 0.
         """
@@ -120,12 +121,12 @@ class ParallelAddContainer(Container):
     Inputs are processed independently and outputs are added element-wise.
     """
 
-    def __init__(self, modules: list[Module] | None) -> None:
+    def __init__(self, modules: Optional[list[Module]]) -> None:
         """Parallel container module. Module output tensors are added.
 
         Parameters
         ----------
-        modules : list[Module] | None, optional
+        modules : list[Module], optional
             List of modules used in the container.
             These modules are processed in parallel and their outputs are added.
         """

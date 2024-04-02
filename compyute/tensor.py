@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from types import ModuleType
+from typing import Optional
 import numpy
 from .engine import (
     check_device,
@@ -33,9 +34,9 @@ class Tensor:
     def __init__(
         self,
         data: ArrayLike | ScalarLike,
-        dtype: DtypeLike | None = None,
+        dtype: Optional[DtypeLike] = None,
         copy: bool = False,
-        device: DeviceLike | None = None,
+        device: Optional[DeviceLike] = None,
     ) -> None:
         """Tensor object.
 
@@ -43,17 +44,17 @@ class Tensor:
         ----------
         data : ArrayLike | ScalarLike
             Data to initialize the tensor.
-        dtype: DtypeLike | None, optional
+        dtype: DtypeLike, optional
             Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: DeviceLike | None, optional
+        device: DeviceLike, optional
             Device the tensor is stored on ("cuda" or "cpu"), by default None.
         """
 
         self.__device = infer_device(data) if device is None else device
         self.data = self.__engine.array(data, copy=copy, dtype=dtype)
-        self.grad: Tensor | None = None
+        self.grad: Optional[Tensor] = None
         self.__iterator = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -300,7 +301,7 @@ class Tensor:
         Returns
         -------
         Tensor
-            Reshapded tensor.
+            Reshaped tensor.
         """
         return Tensor(self.data.reshape(*shape))
 
@@ -518,12 +519,12 @@ class Tensor:
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
 
-    def sum(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def sum(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Sum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the sum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -537,12 +538,12 @@ class Tensor:
         """
         return Tensor(self.data.sum(axis=axis, keepdims=keepdims))
 
-    def prod(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def prod(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Product of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the product is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -556,12 +557,12 @@ class Tensor:
         """
         return Tensor(self.data.prod(axis=axis, keepdims=keepdims))
 
-    def mean(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def mean(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Mean of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the mean is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -576,13 +577,13 @@ class Tensor:
         return Tensor(self.data.mean(axis=axis, keepdims=keepdims))
 
     def var(
-        self, axis: AxisLike | None = None, ddof: int = 0, keepdims: bool = False
+        self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
     ) -> Tensor:
         """Variance of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the variance is computed, by default None.
             If none it is computed over the flattened tensor.
         ddof : int, optional
@@ -599,12 +600,12 @@ class Tensor:
         """
         return Tensor(self.data.var(axis=axis, ddof=ddof, keepdims=keepdims))
 
-    def std(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def std(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Standard deviation of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the standard deviation is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -618,12 +619,12 @@ class Tensor:
         """
         return Tensor(self.data.std(axis=axis, keepdims=keepdims))
 
-    def min(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def min(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Minimum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the minimum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -637,12 +638,12 @@ class Tensor:
         """
         return Tensor(self.data.min(axis=axis, keepdims=keepdims))
 
-    def max(self, axis: AxisLike | None = None, keepdims: bool = False) -> Tensor:
+    def max(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Maximum of tensor elements over a given axis.
 
         Parameters
         ----------
-        axis : AxisLike | None, optional
+        axis : AxisLike, optional
             Axis over which the maximum is computed, by default None.
             If none it is computed over the flattened tensor.
         keepdims : bool, optional
@@ -725,19 +726,19 @@ class Tensor:
 
     def fft1d(
         self,
-        n: int | None = None,
+        n: Optional[int] = None,
         axis: AxisLike = -1,
-        dtype: ComplexLike | None = None,
+        dtype: Optional[ComplexLike] = None,
     ) -> Tensor:
         """Computes the 1D Fast Fourier Transform over a specified axis.
 
         Parameters
         ----------
-        n : int | None, optional
+        n : int, optional
             Length of the transformed axis of the output, by default None.
         axis : AxisLike, optional
             Axis over which to compute the FFT, by default -1.
-        dtype : ComplexLike | None, optional
+        dtype : ComplexLike, optional
             Datatype of the output tensor, by default None.
 
         Returns
@@ -749,19 +750,19 @@ class Tensor:
 
     def ifft1d(
         self,
-        n: int | None = None,
+        n: Optional[int] = None,
         axis: AxisLike = -1,
-        dtype: ComplexLike | None = None,
+        dtype: Optional[ComplexLike] = None,
     ) -> Tensor:
         """Computes the inverse 1D Fast Fourier Transform over a specified axis.
 
         Parameters
         ----------
-        n : int | None, optional
+        n : int, optional
             Length of the transformed axis of the output, by default None.
         axis : AxisLike, optional
             Axis over which to compute the inverse FFT, by default -1.
-        dtype : FloatLike | None, optional
+        dtype : FloatLike, optional
             Datatype of the output tensor, by default None.
 
         Returns
@@ -773,19 +774,19 @@ class Tensor:
 
     def fft2d(
         self,
-        s: ShapeLike | None = None,
+        s: Optional[ShapeLike] = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None,
+        dtype: Optional[ComplexLike] = None,
     ) -> Tensor:
         """Computes the 2D Fast Fourier Transform over two specified axes.
 
         Parameters
         ----------
-        n : ShapeLike | None, optional
+        n : ShapeLike, optional
             Shape (length of each transformed axis) of the output, by default None.
         axes : AxisLike, optional
             Axes over which to compute the FFT, by default (-2, -1).
-        dtype : ComplexLike | None, optional
+        dtype : ComplexLike, optional
             Datatype of the output tensor, by default None.
 
         Returns
@@ -797,19 +798,19 @@ class Tensor:
 
     def ifft2d(
         self,
-        s: ShapeLike | None = None,
+        s: Optional[ShapeLike] = None,
         axes: AxisLike = (-2, -1),
-        dtype: ComplexLike | None = None,
+        dtype: Optional[ComplexLike] = None,
     ) -> Tensor:
         """Applies the inverse 1D Fast Fourier Transform to the tensor.
 
         Parameters
         ----------
-        n : ShapeLike | None, optional
+        n : ShapeLike, optional
             Shape (length of each transformed axis) of the output, by default None.
         axes : AxisLike, optional
             Axes over which to compute the inverse FFT, by default (-2, -1).
-        dtype : ComplexLike | None, optional
+        dtype : ComplexLike, optional
             Datatype of the output tensor, by default None.
 
         Returns
@@ -819,12 +820,12 @@ class Tensor:
         """
         return Tensor(self.__engine.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
 
-    def real(self, dtype: DtypeLike | None = None) -> Tensor:
+    def real(self, dtype: Optional[DtypeLike] = None) -> Tensor:
         """Returns the real parts of the complex tensor.
 
         Parameters
         ----------
-        dtype : DtypeLike | None, optional
+        dtype : DtypeLike, optional
             Datatype of the output tensor, by default None.
         """
         return Tensor(self.__engine.real(self.data), dtype=dtype)
@@ -846,12 +847,12 @@ class Tensor:
         """
         return Tensor(self.__engine.append(self.data, values.data, axis=axis))
 
-    def argmax(self, axis: int | None = None) -> Tensor:
+    def argmax(self, axis: Optional[int] = None) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         Parameters
         ----------
-        axis : int | None = None
+        axis : Optional[int] = None
             Axis, along which the maximum value is located, by default None.
 
         Returns
@@ -903,7 +904,8 @@ class Tensor:
         return [Tensor(c) for c in chunks]
 
 
-def parse_data(value: Tensor | ScalarLike) -> ArrayLike | ScalarLike:
-    if isinstance(value, Tensor):
-        return value.data
-    return value
+def parse_data(data: Tensor | ScalarLike) -> ArrayLike | ScalarLike:
+    """Returns data based on given data."""
+    if isinstance(data, Tensor):
+        return data.data
+    return data

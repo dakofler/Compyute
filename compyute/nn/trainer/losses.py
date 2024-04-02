@@ -1,7 +1,7 @@
 """Loss functions module"""
 
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Optional
 from ..functional import softmax
 from ...tensor_f import prod
 from ...preprocessing.basic import one_hot_encode
@@ -15,7 +15,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self):
-        self.backward: Callable[[], Tensor] | None = None
+        self.backward: Optional[Callable[[], Tensor]] = None
 
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...

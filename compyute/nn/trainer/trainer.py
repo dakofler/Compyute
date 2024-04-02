@@ -1,6 +1,6 @@
 """Neural network models module"""
 
-from typing import Literal
+from typing import Literal, Optional
 from tqdm.auto import tqdm
 from .callbacks import Callback
 from .optimizers import Optimizer, get_optimizer
@@ -23,8 +23,8 @@ class Trainer:
         model: Model,
         optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
         loss: Loss | Literal["mse", "crossentropy"],
-        metric: Metric | Literal["accuracy", "r2"] | None = None,
-        callbacks: list[Callback] | None = None,
+        metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
+        callbacks: Optional[list[Callback]] = None,
     ) -> None:
         """Neural network model trainer.
 
@@ -36,9 +36,9 @@ class Trainer:
             Optimizer algorithm used to update model parameters.
         loss : Loss | Literal["mse", "crossentropy"]
             Loss function used to evaluate the model.
-        metric : Metric | Literal["accuracy", "r2"] | None, optional
+        metric : Metric | Literal["accuracy", "r2"], optional
             Metric function used to evaluate the model, by default None.
-        callbacks : list[Callback] | None
+        callbacks : list[Callback], optional
             Callback functions to be executed during training, by default None.
         """
         super().__init__()
@@ -63,7 +63,7 @@ class Trainer:
         y_train: Tensor,
         epochs: int = 100,
         verbose: Literal[0, 1, 2] = 2,
-        val_data: tuple[Tensor, Tensor] | None = None,
+        val_data: Optional[tuple[Tensor, Tensor]] = None,
         batch_size: int = 32,
     ) -> None:
         """Trains the model using samples and targets.
@@ -81,7 +81,7 @@ class Trainer:
             0: no reporting
             1: model reports epoch statistics
             2: model reports step statistics
-        val_data : tuple[Tensor, Tensor] | None, optional
+        val_data : tuple[Tensor, Tensor], optional
             Data used for the validaton every epoch, by default None.
         batch_size : int, optional
             Number of inputs processed in parallel, by default 32.
@@ -165,7 +165,7 @@ class Trainer:
 
     def evaluate_model(
         self, X: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[ScalarLike, ScalarLike | None]:
+    ) -> tuple[ScalarLike, Optional[ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -181,7 +181,7 @@ class Trainer:
         ----------
         ScalarLike
             Loss value.
-        ScalarLike | None
+        ScalarLike, optional
             Metric score.
         """
         y.to_device(self.model.device)
@@ -244,7 +244,7 @@ class Trainer:
 
     def __compute_score(
         self, y_pred: Tensor, y_true: Tensor, log: bool = False, log_prefix: str = ""
-    ) -> ScalarLike | None:
+    ) -> Optional[ScalarLike]:
         if self.metric is None:
             return
         score = self.metric(y_pred, y_true).item()

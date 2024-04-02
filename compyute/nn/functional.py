@@ -1,6 +1,6 @@
 """Neural network functions module"""
 
-from typing import Literal
+from typing import Literal, Optional
 from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import ShapeLike
@@ -120,7 +120,7 @@ def log_softmax(x: Tensor) -> Tensor:
     return (x / x.sum(axis=-1, keepdims=True)).log()
 
 
-def linear(x: Tensor, w: Tensor, b: Tensor | None = None) -> Tensor:
+def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
     """Applies the linear transformation X @ W^T + b.
 
     Parameters
@@ -129,7 +129,7 @@ def linear(x: Tensor, w: Tensor, b: Tensor | None = None) -> Tensor:
         Input tensor.
     w : Tensor
         Weight tensor.
-    b : Tensor | None, optional
+    b : Tensor, optional
         Bias tensor, by default None
 
     Returns
@@ -143,7 +143,7 @@ def linear(x: Tensor, w: Tensor, b: Tensor | None = None) -> Tensor:
 
 
 def linear_backward(
-    dy: Tensor, x: Tensor, w: Tensor, b: Tensor | None = None
+    dy: Tensor, x: Tensor, w: Tensor, b: Optional[Tensor] = None
 ) -> Tensor:
     """Backpropagates through a linear transformation.
 
@@ -155,7 +155,7 @@ def linear_backward(
         Input tensor.
     w : Tensor
         Weight tensor.
-    b : Tensor | None, optional
+    b : Tensor, optional
         Bias tensor, by default None
 
     Returns

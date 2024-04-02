@@ -1,5 +1,6 @@
 """Neural network parameter module"""
 
+from typing import Optional
 from ..tensor import Tensor
 from ..types import DeviceLike, DtypeLike
 
@@ -15,8 +16,8 @@ class Parameter(Tensor):
         data: Tensor,
         dtype: DtypeLike = "float32",
         copy: bool = False,
-        device: DeviceLike | None = None,
-        label: str | None = None,
+        device: Optional[DeviceLike] = None,
+        label: Optional[str] = None,
     ) -> None:
         """Trainable neural network parameter.
 
@@ -24,13 +25,13 @@ class Parameter(Tensor):
         ----------
         data : ArrayLike | ScalarLike
             Data to initialize the tensor.
-        dtype: DtypeLike | None, optional
+        dtype: DtypeLike, optional
             Datatype of the tensor data, by default None. If None, the dtype is inferred.
         copy: bool, optional
             If true, the data object is copied (may impact performance), by default False.
-        device: DeviceLike | None, optional
+        device: DeviceLike, optional
             Device the tensor is stored on ("cuda" or "cpu"), by default None.
-        label: str | None, optional
+        label: str, optional
             Parameter label, by default None.
         """
         super().__init__(data.data, dtype, copy, device)
