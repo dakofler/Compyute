@@ -1,6 +1,7 @@
 """Neural network models module"""
 
 import pickle
+from typing import Optional
 from .modules.containers import SequentialContainer
 from .dataloaders import DataLoader
 from .modules.module import Module
@@ -15,12 +16,12 @@ __all__ = ["Model", "SequentialModel", "save_model", "load_model"]
 class Model(Module):
     """Trainable neural network model."""
 
-    def __init__(self, module: Module | None = None) -> None:
+    def __init__(self, module: Optional[Module] = None) -> None:
         """Trainable neural network model.
 
         Parameters
         ----------
-        module : Module | None, optional
+        module : Module, optional
             Core module of the model. For multiple modules use a container.
         """
         super().__init__()
@@ -129,12 +130,12 @@ class Model(Module):
 class SequentialModel(Model):
     """Sequential model. Layers are processed sequentially."""
 
-    def __init__(self, layers: list[Module] | None = None) -> None:
+    def __init__(self, layers: Optional[list[Module]] = None) -> None:
         """Sequential model. Layers are processed sequentially.
 
         Parameters
         ----------
-        layers : list[Module] | None, optional
+        layers : list[Module], optional
             List of layers for the model.
             These layers are processed sequentially starting at index 0.
         """

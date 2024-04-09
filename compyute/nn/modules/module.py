@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from abc import ABC
-from typing import Callable
+from typing import Callable, Optional
 from ..parameter import Parameter
 from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
@@ -16,9 +16,9 @@ class Module(ABC):
 
     def __init__(self) -> None:
         """Module base class."""
-        self.backward: Callable[[Tensor], Tensor] | None = None
-        self.y: Tensor | None = None
-        self.__modules: list[Module] | None = None
+        self.backward: Optional[Callable[[Tensor], Tensor]] = None
+        self.y: Optional[Tensor] = None
+        self.__modules: Optional[list[Module]] = None
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
         self.__training: bool = False
@@ -28,12 +28,12 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def modules(self) -> list[Module] | None:
+    def modules(self) -> Optional[list[Module]]:
         """List of child modules."""
         return self.__modules
 
     @modules.setter
-    def modules(self, value: list[Module] | None) -> None:
+    def modules(self, value: Optional[list[Module]]) -> None:
         self.__modules = value
 
     @property

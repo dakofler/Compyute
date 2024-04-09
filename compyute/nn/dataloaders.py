@@ -1,6 +1,6 @@
 """Dataloaders module"""
 
-from typing import Generator
+from typing import Generator, Optional
 from ..random import permutation
 from ..tensor import Tensor
 
@@ -11,14 +11,16 @@ __all__ = ["DataLoader"]
 class DataLoader:
     """DataLoader base class."""
 
-    def __init__(self, x: Tensor, y: Tensor | None = None, batch_size: int = 1) -> None:
+    def __init__(
+        self, x: Tensor, y: Optional[Tensor] = None, batch_size: int = 1
+    ) -> None:
         """DataLoader base class.
 
         Parameters
         ----------
         x : Tensor
             Input tensor.
-        y : Tensor | None, optional
+        y : Tensor, optional
             Target tensor, by default None.
         batch_size : int, optional
             Size of returned batches, by default 1.

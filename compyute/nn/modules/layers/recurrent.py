@@ -122,7 +122,8 @@ class Recurrent(Module):
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
-                self.b_h.grad = dx_h.sum((0, 1))
+                if self.b_h is not None:
+                    self.b_h.grad = dx_h.sum((0, 1))
 
                 # input projection gradients
                 return linear_backward(dx_h, x, self.w_i, self.b_i)
@@ -182,7 +183,7 @@ class LSTM(Module):
             else None
         )
 
-        # init hidden weights and biases (Wii, Wif, Wig, Wio concatinated)
+        # init hidden weights and biases (Whi, Whf, Whg, Who concatinated)
         w_h = uniform((4 * h_channels, h_channels), -k, k)
         self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
         self.b_h = (
@@ -204,7 +205,7 @@ class LSTM(Module):
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
 
-        # indices used to acces the concatined matrices
+        # indices used to access the concatined matrices
         i1 = self.h_channels
         i2 = 2 * i1
         i3 = 3 * i1
@@ -314,7 +315,8 @@ class LSTM(Module):
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
-                self.b_h.grad = difgo_preact.sum(axis=(0, 1))
+                if self.b_h is not None:
+                    self.b_h.grad = difgo_preact.sum(axis=(0, 1))
 
                 # input projection gradients
                 return linear_backward(difgo_preact, x, self.w_i, self.b_i)

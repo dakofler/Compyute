@@ -1,6 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 from ..parameter import Parameter
 from ...tensor_f import prod
 
@@ -11,7 +12,7 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, parameters: list[Parameter] | None, lr: float) -> None:
+    def __init__(self, parameters: Optional[list[Parameter]], lr: float) -> None:
         self.lr = lr
         self.state: dict = {}
         self.t: int = 1
@@ -39,7 +40,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
-        parameters: list[Parameter] | None = None,
+        parameters: Optional[list[Parameter]] = None,
         lr: float = 0.001,
         momentum: float = 0,
         nesterov: bool = False,
@@ -49,7 +50,7 @@ class SGD(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter] | None
+        parameters : list[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -99,7 +100,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
-        parameters: list[Parameter] | None = None,
+        parameters: Optional[list[Parameter]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -111,7 +112,7 @@ class Adam(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter] | None
+        parameters : list[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -162,7 +163,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        parameters: list[Parameter] | None = None,
+        parameters: Optional[list[Parameter]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -173,7 +174,7 @@ class AdamW(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter] | None
+        parameters : list[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -222,7 +223,7 @@ class NAdam(Optimizer):
 
     def __init__(
         self,
-        parameters: list[Parameter] | None = None,
+        parameters: Optional[list[Parameter]] = None,
         lr: float = 0.002,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -234,7 +235,7 @@ class NAdam(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter] | None
+        parameters : list[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.002.

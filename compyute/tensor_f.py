@@ -1,6 +1,6 @@
 """Tensor functions module"""
 
-from typing import Sequence
+from typing import Optional, Sequence
 from .engine import get_engine
 from .tensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
@@ -29,7 +29,7 @@ def arange(
     stop: int,
     start: int = 0,
     step: int | float = 1,
-    dtype: DtypeLike | None = None,
+    dtype: Optional[DtypeLike] = None,
     device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
@@ -43,7 +43,7 @@ def arange(
         Start value, by default 0.
     step : int | float, optional
         Spacing between values, by default 1.
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
@@ -60,7 +60,7 @@ def linspace(
     start: float,
     stop: float,
     num: int,
-    dtype: DtypeLike | None = None,
+    dtype: Optional[DtypeLike] = None,
     device: DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
@@ -74,7 +74,7 @@ def linspace(
         Stop value.
     num : int
         Number of samples.
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
@@ -88,7 +88,7 @@ def linspace(
 
 
 def zeros(
-    shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
@@ -96,7 +96,7 @@ def zeros(
     ----------
     ShapeLike
         Shape of the new tensor.
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
@@ -110,7 +110,7 @@ def zeros(
 
 
 def ones(
-    shape: ShapeLike, dtype: DtypeLike | None = None, device: DeviceLike = "cpu"
+    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -118,7 +118,7 @@ def ones(
     ----------
     ShapeLike
         Shape of the new tensor.
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
@@ -163,12 +163,12 @@ def ones_like(x: Tensor) -> Tensor:
     return ones(x.shape, dtype=x.dtype, device=x.device)
 
 
-def empty(dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def empty(dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
     """Returns an empty tensor.
 
     Parameters
     ----------
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
@@ -181,14 +181,16 @@ def empty(dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
     return Tensor(get_engine(device).empty(0, dtype=dtype))
 
 
-def eye(n: int, dtype: DtypeLike | None = None, device: DeviceLike = "cpu") -> Tensor:
+def eye(
+    n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
+) -> Tensor:
     """Returns a diagonal tensor of shape (n, n).
 
     Parameters
     ----------
     n: int
         Size of the new tensor. The shape will be (n, n).
-    dtype: DtypeLike | None, optional
+    dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
