@@ -48,7 +48,7 @@ class Model(Module):
         if self.module is None:
             raise ValueError("Forward function is not defined.")
 
-        y = self.module.forward(x)
+        y = self.module(x)
 
         if self.training:
             self.backward = self.module.backward
@@ -104,7 +104,7 @@ class Model(Module):
         x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
         retain_values = self.retain_values
         self.retain_values = True
-        _ = self.forward(x)
+        _ = self(x)
 
         def build_summary(module, summary, depth):
             if not isinstance(module, Model):

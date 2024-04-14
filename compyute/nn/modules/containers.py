@@ -56,19 +56,17 @@ class SequentialContainer(Container):
             raise ValueError("No modules have been added yet.")
 
         for module in self.modules:
-            x = module.forward(x)
+            x = module(x)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
                 for module in reversed(self.modules):
                     dy = module.backward(dy)
                 return dy
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(x)
         return x
 
 
@@ -96,13 +94,12 @@ class ParallelConcatContainer(Container):
         if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        ys = [m.forward(x) for m in self.modules]
+        ys = [m(x) for m in self.modules]
         y = concatenate(ys, axis=self.concat_axis)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
                 out_lens = [y.shape[self.concat_axis] for y in ys]
                 splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
@@ -110,9 +107,8 @@ class ParallelConcatContainer(Container):
                     [self.modules[i].backward(s) for i, s in enumerate(dy_splits)]
                 )
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
 
@@ -136,15 +132,11 @@ class ParallelAddContainer(Container):
         if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum([m.forward(x) for m in self.modules])
+        y = tensorsum([m(x) for m in self.modules])
 
         if self.training:
+            self.backward_function = lambda dy: tensorsum(
+                [m.backward(dy) for m in self.modules]
+            )
 
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                return tensorsum([m.backward(dy) for m in self.modules])
-
-            self.backward = backward
-
-        self.set_y(y)
         return y

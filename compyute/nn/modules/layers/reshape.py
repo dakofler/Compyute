@@ -36,14 +36,12 @@ class Slice(Module):
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
                 dx = zeros_like(x)
                 dx[*s] = dy
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
 
@@ -70,14 +68,8 @@ class Reshape(Module):
         y = x.reshape((x.shape[0],) + self.output_shape)
 
         if self.training:
+            self.backward_function = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
@@ -88,14 +80,8 @@ class Flatten(Module):
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
+            self.backward_function = lambda dy: dy.reshape(x.shape)
 
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                return dy.reshape(x.shape)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y
 
 
@@ -126,12 +112,8 @@ class Moveaxis(Module):
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
+            self.backward_function = lambda dy: dy.moveaxis(
+                self.to_axis, self.from_axis
+            )
 
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                return dy.moveaxis(self.to_axis, self.from_axis)
-
-            self.backward = backward
-
-        self.set_y(y)
         return y

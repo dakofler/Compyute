@@ -1,7 +1,7 @@
 """Regularization layers module"""
 
 from ..module import Module
-from ....random import multinomial
+from ....random import multinulli
 from ....tensor import Tensor
 
 
@@ -29,21 +29,13 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
-            p_comp = 1 - self.p
-            choices = Tensor([0, 1], dtype=x.dtype, device=self.device)
-            probs = Tensor([self.p, p_comp], dtype=x.dtype, device=self.device)
-            d_map = multinomial(choices, probs, x.shape)
-            y = x * d_map / p_comp
+            d_map = multinulli(self.p, x.shape, device=self.device)
+            y = x * d_map / (1 - self.p)
 
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                # use d_map as mask for grads
-                return dy * d_map / p_comp
-
-            self.backward = backward
+            # use d_map as mask for grads
+            self.backward_function = lambda dy: dy * d_map / (1 - self.p)
 
         else:
             y = x
 
-        self.set_y(y)
         return y

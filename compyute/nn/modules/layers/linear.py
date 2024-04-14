@@ -74,11 +74,9 @@ class Linear(Module):
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
                 dy = dy.astype(self.dtype)
                 return linear_backward(dy, x, self.w, self.b)
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y

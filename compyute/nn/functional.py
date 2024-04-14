@@ -272,7 +272,7 @@ def __convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
     )
 
     # slicing
-    out = 1 + (x.shape[-1] - f.shape[-1])
+    out = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.ndim - 1) + [slice(-out, None)]
     stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
 
@@ -368,8 +368,8 @@ def __convolve2d(
     )
 
     # slicing
-    out_y = 1 + (x.shape[-2] - f.shape[-2])
-    out_x = 1 + (x.shape[-1] - f.shape[-1])
+    out_y = x.shape[-2] - f.shape[-2] + 1
+    out_x = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.ndim - 2) + [
         slice(-out_y, None),
         slice(-out_x, None),
@@ -382,19 +382,19 @@ def __convolve2d(
     return conv[*out_slice][*stride_slice]
 
 
-def stretch2d(
+def upsample2d(
     x: Tensor,
-    stretches: tuple[int, int],
+    scaling_factors: tuple[int, int],
     shape: ShapeLike,
     axes: tuple[int, int] = (-2, -1),
 ) -> Tensor:
-    """Stretches a tensor by repeating it's elements over given axes.
+    """Upsamples a tensor by repeating it's elements over given axes.
 
     Parameters
     ----------
     x : Tensor
         Tensor to be stretched out.
-    stretches : tuple[int, int]
+    scaling_factors : tuple[int, int]
         Number of repeating values along each axis.
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after stretching,
@@ -405,9 +405,9 @@ def stretch2d(
     Returns
     -------
     Tensor
-        Stretched out tensor.
+        Upsampled tensor.
     """
-    st1, st2 = stretches
+    sf1, sf2 = scaling_factors
     ax1, ax2 = axes
-    x_str = x.repeat(st1, ax1).repeat(st2, ax2)
+    x_str = x.repeat(sf1, ax1).repeat(sf2, ax2)
     return x_str if x_str.shape == shape else x_str.pad_to_shape(shape)

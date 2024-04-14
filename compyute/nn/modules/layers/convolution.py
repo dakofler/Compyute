@@ -2,7 +2,7 @@
 
 from typing import Literal
 from ..module import Module
-from ...functional import convolve1d, convolve2d, stretch2d
+from ...functional import convolve1d, convolve2d, upsample2d
 from ...parameter import Parameter
 from ....tensor_f import zeros
 from ....random import uniform
@@ -114,7 +114,6 @@ class Convolution1d(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                self.set_dy(dy)
 
                 Ti = x.shape[-1]
                 B, Co, To = dy.shape
@@ -172,9 +171,8 @@ class Convolution1d(Module):
 
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
 
@@ -281,7 +279,6 @@ class Convolution2d(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                self.set_dy(dy)
 
                 Yi, Xi = x.shape[-2:]
                 B, Co, Yo, Xo = dy.shape
@@ -337,9 +334,8 @@ class Convolution2d(Module):
 
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
 
@@ -364,6 +360,7 @@ class MaxPooling2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
+
         B, C, Yi, Xi = x.shape
         K = self.kernel_size
 
@@ -383,22 +380,19 @@ class MaxPooling2d(Module):
 
         if self.training:
             # create map of max value occurences for backprop
-            y_stretched = stretch2d(y, (K, K), x_crop.shape)
-            p_map = (x_crop == y_stretched).int()
+            y_ups = upsample2d(y, (K, K), x_crop.shape)
+            p_map = (x_crop == y_ups).int()
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-
-                # stretch dy tensor to original shape by duplicating values
-                dy_str = stretch2d(dy, (K, K), p_map.shape)
+                # upsample dy tensor to original shape by duplicating values
+                dy_str = upsample2d(dy, (K, K), p_map.shape)
 
                 # use p_map as mask for grads
                 dx = dy_str * p_map
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
 
@@ -426,6 +420,7 @@ class AvgPooling2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
+
         B, C, Yi, Xi = x.shape
         K = self.kernel_size
 
@@ -446,16 +441,13 @@ class AvgPooling2d(Module):
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
+                # upsample dy tensor to original shape by duplicating values
+                y_ups = upsample2d(dy, (K, K), x_crop.shape)
 
-                # stretch dy tensor to original shape by duplicating values
-                dy_str = stretch2d(dy, (K, K), x_crop.shape)
-
-                # scale gradients down
-                dx = dy_str / K**2
+                # scale gradients
+                dx = y_ups / K**2
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y

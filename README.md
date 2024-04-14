@@ -79,7 +79,6 @@ class MyCustomModel(nn.Model):
         self.lin2 = nn.Linear(16, 3)
 
     def forward(self, x):
-
         # define the forward pass
         x = self.lin1(x)
         x = self.relu(x)
@@ -93,7 +92,7 @@ class MyCustomModel(nn.Model):
             dy = self.relu.backward(dy)
             dy = self.lin1.backward(dy)
             return dy
-        self.backward = backward
+        self.backward_function = backward
         
         return x
 

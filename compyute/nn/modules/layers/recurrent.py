@@ -100,8 +100,6 @@ class Recurrent(Module):
                 else:
                     dh = dy
 
-                self.set_dy(dh)
-
                 dx_h = zeros_like(x_h)
                 self.w_h.grad = zeros_like(self.w_h)
 
@@ -128,10 +126,9 @@ class Recurrent(Module):
                 # input projection gradients
                 return linear_backward(dx_h, x, self.w_i, self.b_i)
 
-            self.backward = backward
+            self.backward_function = backward
 
         y = h if self.return_sequence else h[:, -1]
-        self.set_y(y)
         return y
 
 
@@ -250,8 +247,6 @@ class LSTM(Module):
                 else:
                     dh = dy
 
-                self.set_dy(dh)
-
                 dc = zeros_like(c)
                 difgo_preact = zeros_like(ifgo)
                 self.w_h.grad = zeros_like(self.w_h)
@@ -321,8 +316,7 @@ class LSTM(Module):
                 # input projection gradients
                 return linear_backward(difgo_preact, x, self.w_i, self.b_i)
 
-            self.backward = backward
+            self.backward_function = backward
 
         y = h if self.return_sequence else h[:, -1]
-        self.set_y(y)
         return y

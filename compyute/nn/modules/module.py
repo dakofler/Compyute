@@ -16,8 +16,9 @@ class Module(ABC):
 
     def __init__(self) -> None:
         """Module base class."""
-        self.backward: Optional[Callable[[Tensor], Tensor]] = None
         self.y: Optional[Tensor] = None
+        self.forward_function: Optional[Callable[[Tensor], Tensor]] = None
+        self.backward_function: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.__modules: Optional[list[Module]] = None
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
@@ -120,7 +121,9 @@ class Module(ABC):
         return string
 
     def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
+        y = self.forward(x)
+        self.set_y(y)
+        return y
 
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
@@ -139,16 +142,23 @@ class Module(ABC):
         Tensor
             Computed module output.
         """
-        if self.training:
-
-            def backward(dy: Tensor) -> Tensor:
-                self.set_dy(dy)
-                return dy
-
-            self.backward = backward
-
-        self.set_y(x)
         return x
+
+    def backward(self, dy: Tensor) -> Optional[Tensor]:
+        """Performs a backward pass through the module.
+
+        Parameters
+        ----------
+        dy : Tensor
+            Output gradient tensor.
+
+        Returns
+        ----------
+        Tensor, optional
+            Input gradient tensor.
+        """
+        self.set_dy(dy)
+        return dy if self.backward_function is None else self.backward_function(dy)
 
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.
@@ -175,7 +185,7 @@ class Module(ABC):
     def reset(self) -> None:
         """Resets temporary values like outputs and gradients."""
         self.y = None
-        self.backward = None
+        self.backward_function = None
 
         for p in self.parameters:
             p.grad = None

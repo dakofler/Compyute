@@ -90,7 +90,6 @@ class Batchnorm1d(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape) / x.shape[1]
@@ -113,9 +112,8 @@ class Batchnorm1d(Module):
 
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
     def to_device(self, device: str) -> None:
@@ -210,7 +208,6 @@ class Batchnorm2d(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape) / x.shape[1]
@@ -233,9 +230,8 @@ class Batchnorm2d(Module):
 
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y
 
     def to_device(self, device: str) -> None:
@@ -307,7 +303,6 @@ class Layernorm(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                self.set_dy(dy)
 
                 # input grads
                 n = prod(x.shape[1:])
@@ -330,7 +325,6 @@ class Layernorm(Module):
 
                 return dx
 
-            self.backward = backward
+            self.backward_function = backward
 
-        self.set_y(y)
         return y

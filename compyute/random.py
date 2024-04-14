@@ -141,11 +141,7 @@ def permutation(
     return Tensor(get_engine(device).random.permutation(n), dtype=dtype)
 
 
-def multinomial(
-    x: Tensor | int,
-    p: Tensor,
-    shape: ShapeLike,
-) -> Tensor:
+def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a tensor of values drawn from a given probability distribution tensor.
 
     Parameters
@@ -166,6 +162,26 @@ def multinomial(
     if isinstance(x, int):
         return Tensor(get_engine(p.device).random.choice(x, size=shape, p=p.data))
     return Tensor(get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
+
+
+def multinulli(p: float, shape: ShapeLike, device: DeviceLike = "cpu") -> Tensor:
+    """Returns a tensor of repeated bernoulli experiments using a given probability.
+
+    Parameters
+    ----------
+    p : float
+        Probability of success.
+    shape : ShapeLike
+        Shape of the new tensor.
+    device: str, optional
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Tensor of samples.
+    """
+    return Tensor(get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
