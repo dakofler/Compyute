@@ -23,6 +23,7 @@ class Module(ABC):
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
         self.__training: bool = False
+        self.__trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -107,6 +108,21 @@ class Module(ABC):
             for module in self.modules:
                 module.training = value
 
+    @property
+    def trainable(self) -> bool:
+        """Sets the module to not be trainable."""
+        return self.__trainable
+
+    @trainable.setter
+    def trainable(self, value: bool) -> None:
+        if self.__trainable == value:
+            return
+        self.__trainable = value
+
+        if self.modules is not None:
+            for module in self.modules:
+                module.trainable = value
+
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
@@ -158,7 +174,9 @@ class Module(ABC):
             Input gradient tensor.
         """
         self.set_dy(dy)
-        return dy if self.backward_function is None else self.backward_function(dy)
+        if self.trainable and self.backward_function is not None:
+            return self.backward_function(dy)
+        return dy
 
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.

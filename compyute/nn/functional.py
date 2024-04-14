@@ -3,7 +3,7 @@
 from typing import Literal, Optional
 from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
-from ..types import ShapeLike
+from ..types import AxisLike, ShapeLike
 
 
 __all__ = [
@@ -86,38 +86,68 @@ def sigmoid(x: Tensor) -> Tensor:
     return x.exp() * (1 + x.exp()) ** -1
 
 
-def softmax(x: Tensor) -> Tensor:
-    """Applies the softmax function to the last axis.
+def softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
+    """Applies the softmax function over a given axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    axis: AxisLike, optional
+        Axis over which to compute the softmax, by default -1.
 
     Returns
     -------
     Tensor
         Output tensor.
     """
-    x = (x - x.max(axis=-1, keepdims=True)).exp()
-    return x / x.sum(axis=-1, keepdims=True)
+    x = (x - x.max(axis=axis, keepdims=True)).exp()
+    return x / x.sum(axis=axis, keepdims=True)
 
 
-def log_softmax(x: Tensor) -> Tensor:
+def log_softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
     """Applies the log softmax function to the last axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    axis: AxisLike, optional
+        Axis over which to compute the softmax, by default -1.
 
     Returns
     -------
     Tensor
         Output tensor.
     """
-    x = (x - x.max(axis=-1, keepdims=True)).exp()
-    return (x / x.sum(axis=-1, keepdims=True)).log()
+    x = (x - x.max(axis=axis, keepdims=True)).exp()
+    return (x / x.sum(axis=axis, keepdims=True)).log()
+
+
+def temperature_softmax(
+    x: Tensor, temperature: float = 1, axis: AxisLike = -1
+) -> Tensor:
+    """Applies the softmax function with temperature to the last axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    temperature : float, optional
+        Temperature scaling to be applied in the calculation.
+    axis: AxisLike, optional
+        Axis over which to compute the softmax, by default -1.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    if temperature == 0:
+        raise ValueError("Temperature cannot be 0.")
+
+    x = ((x - x.max(axis=axis, keepdims=True)) / temperature).exp()
+    return x / x.sum(axis=axis, keepdims=True)
 
 
 def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
