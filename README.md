@@ -92,7 +92,7 @@ class MyCustomModel(nn.Model):
             dy = self.relu.backward(dy)
             dy = self.lin1.backward(dy)
             return dy
-        self.backward_function = backward
+        self.backward_fn = backward
         
         return x
 

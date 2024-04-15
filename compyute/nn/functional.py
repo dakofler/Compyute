@@ -441,3 +441,72 @@ def upsample2d(
     ax1, ax2 = axes
     x_str = x.repeat(sf1, ax1).repeat(sf2, ax2)
     return x_str if x_str.shape == shape else x_str.pad_to_shape(shape)
+
+
+def maxpooling2d(
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2)
+) -> tuple[Tensor, Tensor]:
+    """Performs a max pooling over the last two axes.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    kernel_size : tuple[int, int], optional
+        Size of the pooling window, by default (2, 2).
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Tensor
+        Pooling map containing the indices of max values.
+    """
+    Ky, Kx = kernel_size
+
+    # initialize output with zeros
+    Yo = (x.shape[-2] - Ky) // Ky + 1
+    Xo = (x.shape[-1] - Kx) // Kx + 1
+    y = zeros((*x.shape[:-2], Yo, Xo), dtype=x.dtype, device=x.device)
+
+    # iterate over height and width and pick highest value
+    for i in range(y.shape[-2]):
+        for j in range(y.shape[-1]):
+            chunk = x[:, :, i * Ky : i * Ky + Ky, j * Kx : j * Kx + Kx]
+            y[:, :, i, j] = chunk.max(axis=(-2, -1))
+
+    # create map of max value occurences for backprop
+    y_ups = upsample2d(y, (Ky, Kx), x.shape)
+    pooling_map = (x == y_ups).int()
+    return y, pooling_map
+
+
+def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
+    """Performs a average pooling over the last two axes.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    kernel_size : tuple[int, int], optional
+        Size of the pooling window, by default (2, 2).
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    """
+    Ky, Kx = kernel_size
+
+    # initialize output with zeros
+    Yo = (x.shape[-2] - Ky) // Ky + 1
+    Xo = (x.shape[-1] - Kx) // Kx + 1
+    y = zeros((*x.shape[:-2], Yo, Xo), dtype=x.dtype, device=x.device)
+
+    # iterate over height and width and pick average value
+    for i in range(y.shape[-2]):
+        for j in range(y.shape[-1]):
+            chunk = x[:, :, i * Ky : i * Ky + Ky, j * Kx : j * Kx + Kx]
+            y[:, :, i, j] = chunk.mean(axis=(-2, -1))
+
+    return y

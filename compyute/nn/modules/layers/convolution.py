@@ -2,7 +2,7 @@
 
 from typing import Literal
 from ..module import Module
-from ...functional import convolve1d, convolve2d, upsample2d
+from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d, upsample2d
 from ...parameter import Parameter
 from ....tensor_f import zeros
 from ....random import uniform
@@ -364,35 +364,17 @@ class MaxPooling2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
 
-        B, C, Yi, Xi = x.shape
-        K = self.kernel_size
-
-        # crop input to be a multiple of the pooling window size
-        Yo = Yi // K * K
-        Xo = Xi // K * K
-        x_crop = x[:, :, :Yo, :Xo]
-
-        # initialize with zeros
-        y = zeros((B, C, Yo // K, Xo // K), dtype=x.dtype, device=x.device)
-
-        # iterate over height and width and pick highest value
-        for i in range(y.shape[-2]):
-            for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i * K : (i + 1) * K, j * K : (j + 1) * K]
-                y[:, :, i, j] = chunk.max(axis=(-2, -1))
+        K = (self.kernel_size, self.kernel_size)
+        y, p_map = maxpooling2d(x, K)
 
         if self.training:
-            # create map of max value occurences for backprop
-            y_ups = upsample2d(y, (K, K), x_crop.shape)
-            p_map = (x_crop == y_ups).int()
 
             def backward(dy: Tensor) -> Tensor:
                 # upsample dy tensor to original shape by duplicating values
-                dy_str = upsample2d(dy, (K, K), p_map.shape)
+                dy_str = upsample2d(dy, K, x.shape)
 
                 # use p_map as mask for grads
-                dx = dy_str * p_map
-                return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
+                return dy_str * p_map
 
             self.backward_fn = backward
 
@@ -424,32 +406,17 @@ class AvgPooling2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
 
-        B, C, Yi, Xi = x.shape
-        K = self.kernel_size
-
-        # crop input to be a multiple of the pooling window size
-        Yo = Yi // K * K
-        Xo = Xi // K * K
-        x_crop = x[:, :, :Yo, :Xo]
-
-        # initialize with zeros
-        y = zeros((B, C, Yo // K, Xo // K), dtype=x.dtype, device=x.device)
-
-        # iterate over height and width and compute mean value
-        for i in range(y.shape[-2]):
-            for j in range(y.shape[-1]):
-                chunk = x.data[:, :, i * K : (i + 1) * K, j * K : (j + 1) * K]
-                y[:, :, i, j] = chunk.mean(axis=(-2, -1))
+        K = (self.kernel_size, self.kernel_size)
+        y = avgpooling2d(x, K)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 # upsample dy tensor to original shape by duplicating values
-                y_ups = upsample2d(dy, (K, K), x_crop.shape)
+                y_ups = upsample2d(dy, K, x.shape)
 
                 # scale gradients
-                dx = y_ups / K**2
-                return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
+                return y_ups / self.kernel_size**2
 
             self.backward_fn = backward
 
