@@ -65,7 +65,7 @@ class SequentialContainer(Container):
                     dy = module.backward(dy)
                 return dy
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return x
 
@@ -107,7 +107,7 @@ class ParallelConcatContainer(Container):
                     [self.modules[i].backward(s) for i, s in enumerate(dy_splits)]
                 )
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -132,11 +132,11 @@ class ParallelAddContainer(Container):
         if self.modules is None:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum([m(x) for m in self.modules])
+        y = tensorsum([module(x) for module in self.modules])
 
         if self.training:
-            self.backward_function = lambda dy: tensorsum(
-                [m.backward(dy) for m in self.modules]
+            self.backward_fn = lambda dy: tensorsum(
+                [module.backward(dy) for module in self.modules]
             )
 
         return y

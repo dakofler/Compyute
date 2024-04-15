@@ -112,7 +112,7 @@ class Batchnorm1d(Module):
 
                 return dx
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -230,7 +230,7 @@ class Batchnorm2d(Module):
 
                 return dx
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -325,6 +325,6 @@ class Layernorm(Module):
 
                 return dx
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y

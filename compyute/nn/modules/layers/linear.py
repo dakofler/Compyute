@@ -77,6 +77,6 @@ class Linear(Module):
                 dy = dy.astype(self.dtype)
                 return linear_backward(dy, x, self.w, self.b)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y

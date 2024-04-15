@@ -171,7 +171,7 @@ class Convolution1d(Module):
 
                 return dx
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -334,7 +334,7 @@ class Convolution2d(Module):
 
                 return dx
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -342,16 +342,19 @@ class Convolution2d(Module):
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2) -> None:
+    def __init__(self, kernel_size: int = 2, stride: int = 2) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         kernel_size : int, optional
              Shape of the pooling window used for the pooling operation, by default 2.
+        stride : int , optional
+            Strides used for the pooling operation, by default 2.
         """
         super().__init__()
         self.kernel_size = kernel_size
+        self.stride = stride
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -391,7 +394,7 @@ class MaxPooling2d(Module):
                 dx = dy_str * p_map
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y
 
@@ -448,6 +451,6 @@ class AvgPooling2d(Module):
                 dx = y_ups / K**2
                 return dx if dx.shape == x.shape else dx.pad_to_shape(x.shape)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y

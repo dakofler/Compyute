@@ -66,6 +66,6 @@ class Embedding(Module):
                 dy = dy.astype(self.dtype)
                 self.w.grad = (x.transpose() @ dy).sum(axis=0)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         return y

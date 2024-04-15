@@ -15,7 +15,7 @@ class ReLU(Module):
         y = relu(x)
 
         if self.training:
-            self.backward_function = lambda dy: (y > 0) * dy
+            self.backward_fn = lambda dy: (y > 0) * dy
 
         return y
 
@@ -31,7 +31,7 @@ class LeakyReLU(Module):
         y = leaky_relu(x, self.alpha)
 
         if self.training:
-            self.backward_function = (
+            self.backward_fn = (
                 lambda dy: ((y > 0).float() + (y < 0).float() * self.alpha) * dy
             )
 
@@ -50,7 +50,7 @@ class GELU(Module):
         y = 0.5 * x * (1 + tmp.tanh())
 
         if self.training:
-            self.backward_function = (
+            self.backward_fn = (
                 lambda dy: (
                     0.5 * (1 + tmp.tanh())
                     + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
@@ -68,7 +68,7 @@ class Tanh(Module):
         y = x.tanh()
 
         if self.training:
-            self.backward_function = lambda dy: (1 - y**2) * dy
+            self.backward_fn = lambda dy: (1 - y**2) * dy
 
         return y
 
@@ -80,7 +80,7 @@ class Sigmoid(Module):
         y = sigmoid(x)
 
         if self.training:
-            self.backward_function = lambda dy: (y * (1 - y)) * dy
+            self.backward_fn = lambda dy: (y * (1 - y)) * dy
 
         return y
 

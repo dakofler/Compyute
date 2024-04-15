@@ -126,7 +126,7 @@ class Recurrent(Module):
                 # input projection gradients
                 return linear_backward(dx_h, x, self.w_i, self.b_i)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         y = h if self.return_sequence else h[:, -1]
         return y
@@ -316,7 +316,7 @@ class LSTM(Module):
                 # input projection gradients
                 return linear_backward(difgo_preact, x, self.w_i, self.b_i)
 
-            self.backward_function = backward
+            self.backward_fn = backward
 
         y = h if self.return_sequence else h[:, -1]
         return y
