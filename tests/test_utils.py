@@ -16,9 +16,11 @@ def get_vals_float(
     shape: ShapeLike,
     torch_grad: bool = True,
     device: str = "cpu",
+    low: float = -1,
+    high: float = 1,
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform(shape, dtype="float32") * 0.1
+    compyute_x = uniform(shape, dtype="float32", high=high, low=low) * 0.1
     torch_x = torch.tensor(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True

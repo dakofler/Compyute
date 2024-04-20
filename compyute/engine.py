@@ -1,9 +1,9 @@
 """Engine functions module"""
 
-import os
-from types import ModuleType
-import numpy
-import cupy
+import os as __os
+from types import ModuleType as __ModuleType
+import numpy as __numpy
+import cupy as __cupy
 from .types import ArrayLike, DeviceLike, ScalarLike
 
 
@@ -12,14 +12,14 @@ __all__ = ["gpu_available"]
 
 def gpu_available() -> bool:
     """Returns True, if one or more GPUs are available."""
-    if "CUDA_PATH" not in os.environ:
+    if "CUDA_PATH" not in __os.environ:
         return False
-    return cupy.is_available()
+    return __cupy.is_available()
 
 
 # create list of available devices
 available_devices = ["cpu"] + ["cuda"] if gpu_available() else []
-print(f"Compyute: found devices {available_devices}")
+print(f"Compyute: available devices {available_devices}")
 
 
 def check_device(device: DeviceLike):
@@ -33,10 +33,10 @@ def check_device(device: DeviceLike):
         raise AttributeError(f"Device {device} is not available.")
 
 
-DEVICE_ENGINES = {"cpu": numpy, "cuda": cupy}
+DEVICE_ENGINES = {"cpu": __numpy, "cuda": __cupy}
 
 
-def get_engine(device: DeviceLike) -> ModuleType:
+def get_engine(device: DeviceLike) -> __ModuleType:
     """Selects the computation engine for a given device.
 
     Parameters
@@ -50,7 +50,7 @@ def get_engine(device: DeviceLike) -> ModuleType:
         NumPy or CuPy module.
     """
     check_device(device)
-    return DEVICE_ENGINES.get(device, numpy)
+    return DEVICE_ENGINES.get(device, __numpy)
 
 
 def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:
@@ -60,12 +60,12 @@ def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:
     -------
     DeviceLike
         The device the data is stored on."""
-    if isinstance(data, cupy.ndarray):
+    if isinstance(data, __cupy.ndarray):
         return "cuda"
     return "cpu"
 
 
-def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
+def numpy_to_cupy(np_array: __numpy.ndarray) -> __cupy.ndarray:
     """Converts a NumPy array to a CuPy array.
 
     Parameters
@@ -79,10 +79,10 @@ def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
         CuPy array.
     """
     check_device("cuda")
-    return cupy.array(np_array)
+    return __cupy.array(np_array)
 
 
-def cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
+def cupy_to_numpy(cp_array: __cupy.ndarray) -> __numpy.ndarray:
     """Converts a CuPy array to a NumPy array.
 
     Parameters
@@ -95,4 +95,4 @@ def cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
     numpy.ndarray
         NumPy array.
     """
-    return cupy.asnumpy(cp_array)
+    return __cupy.asnumpy(cp_array)

@@ -94,7 +94,7 @@ class Module(ABC):
     @property
     def training(self) -> bool:
         """Puts the module in training mode.
-        The forward behaviour might differ when in training mode."""
+        The forward behaviour might differ for some modules when in training mode."""
         return self.__training
 
     @training.setter

@@ -9,11 +9,12 @@ from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 __all__ = [
     "arange",
     "linspace",
+    "empty",
     "zeros",
     "ones",
     "zeros_like",
     "ones_like",
-    "empty",
+    "empty_like",
     "eye",
     "maximum",
     "minimum",
@@ -87,6 +88,28 @@ def linspace(
     return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
+def empty(
+    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
+) -> Tensor:
+    """Returns an tensor with uninitialized values.
+
+    Parameters
+    ----------
+    shape: ShapeLike
+        Shape of the new tensor.
+    dtype: DtypeLike, optional
+        Datatype of the tensor data, by default None.
+    device: DeviceLike, optional
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Tensor with uninitialized values.
+    """
+    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
+
+
 def zeros(
     shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
 ) -> Tensor:
@@ -94,7 +117,7 @@ def zeros(
 
     Parameters
     ----------
-    ShapeLike
+    shape: ShapeLike
         Shape of the new tensor.
     dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
@@ -116,7 +139,7 @@ def ones(
 
     Parameters
     ----------
-    ShapeLike
+    shape: ShapeLike
         Shape of the new tensor.
     dtype: DtypeLike, optional
         Datatype of the tensor data, by default None.
@@ -163,22 +186,20 @@ def ones_like(x: Tensor) -> Tensor:
     return ones(x.shape, dtype=x.dtype, device=x.device)
 
 
-def empty(dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
-    """Returns an empty tensor.
+def empty_like(x: Tensor) -> Tensor:
+    """Returns a tensor based on a given other tensor with uninitialized values.
 
     Parameters
     ----------
-    dtype: DtypeLike, optional
-        Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+    x : Tensor
+        Tensor whose shape, dtype and device is used.
 
     Returns
     -------
     Tensor
-        Empty tensor.
+        Tensor with uninitialized values.
     """
-    return Tensor(get_engine(device).empty(0, dtype=dtype))
+    return empty(x.shape, dtype=x.dtype, device=x.device)
 
 
 def eye(

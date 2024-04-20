@@ -101,7 +101,8 @@ class Recurrent(Module):
                     dh = dy
 
                 dx_h = zeros_like(x_h)
-                self.w_h.grad = zeros_like(self.w_h)
+                if self.trainable:
+                    self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
                     # hidden state gradients
@@ -115,16 +116,16 @@ class Recurrent(Module):
 
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
-                    if t > 0:
+                    if t > 0 and self.trainable:
                         self.w_h.grad += dx_h[:, t].T @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
-                if self.b_h is not None:
+                if self.b_h is not None and self.trainable:
                     self.b_h.grad = dx_h.sum((0, 1))
 
                 # input projection gradients
-                return linear_backward(dx_h, x, self.w_i, self.b_i)
+                return linear_backward(dx_h, x, self.w_i, self.b_i, self.trainable)
 
             self.backward_fn = backward
 
@@ -249,7 +250,8 @@ class LSTM(Module):
 
                 dc = zeros_like(c)
                 difgo_preact = zeros_like(ifgo)
-                self.w_h.grad = zeros_like(self.w_h)
+                if self.trainable:
+                    self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
 
@@ -305,16 +307,18 @@ class LSTM(Module):
 
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
-                    if t > 0:
+                    if t > 0 and self.trainable:
                         self.w_h.grad += difgo_preact[:, t].T @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
-                if self.b_h is not None:
+                if self.b_h is not None and self.trainable:
                     self.b_h.grad = difgo_preact.sum(axis=(0, 1))
 
                 # input projection gradients
-                return linear_backward(difgo_preact, x, self.w_i, self.b_i)
+                return linear_backward(
+                    difgo_preact, x, self.w_i, self.b_i, self.trainable
+                )
 
             self.backward_fn = backward
 

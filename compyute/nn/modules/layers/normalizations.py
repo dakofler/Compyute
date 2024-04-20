@@ -104,11 +104,9 @@ class Batchnorm1d(Module):
                     )
                 )
 
-                # gamma grads
-                self.w.grad = (x_h * dy).sum(axis=axis)
-
-                # beta grads
-                self.b.grad = dy.sum(axis=axis)
+                if self.trainable:
+                    self.w.grad = (x_h * dy).sum(axis=axis)  # gamma grads
+                    self.b.grad = dy.sum(axis=axis)  # beta grads
 
                 return dx
 
@@ -222,11 +220,9 @@ class Batchnorm2d(Module):
                     )
                 )
 
-                # gamma grads
-                self.w.grad = (x_h * dy).sum(axis=axis)
-
-                # beta grads
-                self.b.grad = dy.sum(axis=axis)
+                if self.trainable:
+                    self.w.grad = (x_h * dy).sum(axis=axis)  # gamma grads
+                    self.b.grad = dy.sum(axis=axis)  # beta grads
 
                 return dx
 
@@ -317,11 +313,9 @@ class Layernorm(Module):
                     )
                 )
 
-                # gamma grads
-                self.w.grad = (x_h * dy).sum(axis=0)
-
-                # beta grads
-                self.b.grad = dy.sum(axis=0)
+                if self.trainable:
+                    self.w.grad = (x_h * dy).sum(axis=0)  # gamma grads
+                    self.b.grad = dy.sum(axis=0)  # beta grads
 
                 return dx
 

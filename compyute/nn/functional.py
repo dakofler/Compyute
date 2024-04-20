@@ -173,7 +173,7 @@ def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
 
 
 def linear_backward(
-    dy: Tensor, x: Tensor, w: Tensor, b: Optional[Tensor] = None
+    dy: Tensor, x: Tensor, w: Tensor, b: Optional[Tensor] = None, trainable: bool = True
 ) -> Tensor:
     """Backpropagates through a linear transformation.
 
@@ -187,6 +187,8 @@ def linear_backward(
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
+    trainable: bool, optional
+        Whether to compute weight and bias grads, by default True.
 
     Returns
     -------
@@ -198,22 +200,23 @@ def linear_backward(
     # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
     dx = dy @ w
 
-    # weight grads
-    # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
-    # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-    dw = dy.transpose() @ x
-    if x.ndim > 2:
-        # sum over all batch dimensions
-        # (B, ..., Ci, Co) -> (Ci, Co)
-        dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
+    if trainable:
+        # weight grads
+        # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
+        # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
+        dw = dy.transpose() @ x
+        if x.ndim > 2:
+            # sum over all batch dimensions
+            # (B, ..., Ci, Co) -> (Ci, Co)
+            dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
 
-    w.grad = dw
+        w.grad = dw
 
-    # bias grads
-    if b is not None:
-        # sum over all batch dimensions
-        # (B, ... , Co) -> (Co,)
-        b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
+        # bias grads
+        if b is not None:
+            # sum over all batch dimensions
+            # (B, ... , Co) -> (Co,)
+            b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
 
     return dx
 

@@ -8,7 +8,7 @@ from ...preprocessing.basic import one_hot_encode
 from ...tensor import Tensor
 
 
-__all__ = ["MSE", "Crossentropy"]
+__all__ = ["BinaryCrossentropy", "Crossentropy", "MSE"]
 
 
 class Loss(ABC):
@@ -91,7 +91,40 @@ class Crossentropy(Loss):
         return -((probs + self.eps) * t).sum(-1).log().mean()
 
 
-LOSSES = {"mse": MSE, "crossentropy": Crossentropy}
+class BinaryCrossentropy(Loss):
+    """Computes the binary crossentropy loss."""
+
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
+        """Computes the binary crossentropy loss.
+
+        Parameters
+        ----------
+        y : Tensor
+            A model's logits.
+        t : Tensor
+            Target class labels.
+
+        Returns
+        -------
+        Tensor
+            Crossentropy loss.
+        """
+        loss = -(t * y.log().clip(-100, 100) + (1 - t) * (1 - y).log().clip(-100, 100))
+
+        def backward() -> Tensor:
+            """Performs a backward pass."""
+            return (-t / y + (1 - t) / (1 - y)) / prod(y.shape)
+
+        self.backward = backward
+
+        return loss.mean()
+
+
+LOSSES = {
+    "binary_crossentropy": BinaryCrossentropy,
+    "crossentropy": Crossentropy,
+    "mse": MSE,
+}
 
 
 def get_loss(loss: Loss | str) -> Loss:

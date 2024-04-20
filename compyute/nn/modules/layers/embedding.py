@@ -60,7 +60,7 @@ class Embedding(Module):
         x = one_hot_encode(x, self.w.shape[0]).astype(self.dtype)
         y = x @ self.w
 
-        if self.training:
+        if self.training and self.trainable:
 
             def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)

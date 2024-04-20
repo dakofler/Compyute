@@ -98,9 +98,7 @@ class Convolution1d(Module):
 
         # convolve
         # (B, 1, Ci, Ti) * (1, Co, Ci, K) -> (B, Co, Ci, To)
-        x_conv_w = convolve1d(
-            x, w_flip, padding=self.padding, stride=self.stride, dilation=self.dilation
-        )
+        x_conv_w = convolve1d(x, w_flip, self.padding, self.stride, self.dilation)
 
         # sum over input channels
         # (B, Co, Ci, To) -> (B, Co, To)
@@ -136,38 +134,39 @@ class Convolution1d(Module):
 
                 # convolve
                 # (B, Co, 1, To) * (1, Co, Ci, K)
-                dy_conv_w = convolve1d(dy_p_ext, w_ext, padding=padding, dilation=D)
+                dy_conv_w = convolve1d(dy_p_ext, w_ext, padding, 1, D)
 
                 # sum over output channels
                 # (B, Ci, Ti)
                 dx = dy_conv_w.sum(axis=1)
 
-                # ----------------
-                # weight grads
-                # ----------------
-                dy_p_ext = dy_p_ext.flip(-1)
+                if self.trainable:
+                    # ----------------
+                    # weight grads
+                    # ----------------
+                    dy_p_ext = dy_p_ext.flip(-1)
 
-                # convolve
-                # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
-                x_conv_dy = convolve1d(x, dy_p_ext, padding=padding)
-                if self.padding == "causal":
-                    x_conv_dy = x_conv_dy[:, :, :, -K * D :: D]
-                else:
-                    k_size = (K - 1) * D + 1
-                    k = (x_conv_dy.shape[-1] - k_size) // 2
-                    x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D]
+                    # convolve
+                    # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
+                    x_conv_dy = convolve1d(x, dy_p_ext, padding)
+                    if self.padding == "causal":
+                        x_conv_dy = x_conv_dy[:, :, :, -K * D :: D]
+                    else:
+                        k_size = (K - 1) * D + 1
+                        k = (x_conv_dy.shape[-1] - k_size) // 2
+                        x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D]
 
-                # sum over batches
-                # (B, Co, Ci, K) -> (Co, Ci, K)
-                self.w.grad = x_conv_dy.sum(axis=0)
+                    # sum over batches
+                    # (B, Co, Ci, K) -> (Co, Ci, K)
+                    self.w.grad = x_conv_dy.sum(axis=0)
 
-                # ----------------
-                # bias grads
-                # ----------------
-                if self.b is not None:
-                    # sum over batches and time
-                    # (B, Co, To) -> (Co,)
-                    self.b.grad = dy.sum(axis=(0, 2))
+                    # ----------------
+                    # bias grads
+                    # ----------------
+                    if self.b is not None:
+                        # sum over batches and time
+                        # (B, Co, To) -> (Co,)
+                        self.b.grad = dy.sum(axis=(0, 2))
 
                 return dx
 
@@ -263,9 +262,7 @@ class Convolution2d(Module):
 
         # convolve
         # (B, 1, Ci, Yi, Xi) * (1, Co, Ci, K, K) -> (B, Co, Ci, Yo, Xo)
-        x_conv_w = convolve2d(
-            x, w_flip, padding=self.padding, stride=self.stride, dilation=self.dilation
-        )
+        x_conv_w = convolve2d(x, w_flip, self.padding, self.stride, self.dilation)
 
         # sum over input channels
         # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
@@ -302,35 +299,38 @@ class Convolution2d(Module):
 
                 # convolve
                 # (B, Co, 1, Yo, Xo) * (1, Co, Ci, K, K) -> (B, Co, Ci, Yi, Xi)
-                dy_conv_w = convolve2d(dy_p_ext, w_ext, padding=padding, dilation=D)
+                dy_conv_w = convolve2d(dy_p_ext, w_ext, padding, 1, D)
 
                 # sum over c_out
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
                 dx = dy_conv_w.sum(axis=1)
 
-                # ----------------
-                # weight grads
-                # ----------------
-                dy_p_ext = dy_p_ext.flip((-2, -1))
+                if self.trainable:
+                    # ----------------
+                    # weight grads
+                    # ----------------
+                    dy_p_ext = dy_p_ext.flip((-2, -1))
 
-                # convolve
-                # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, K, K)
-                x_conv_dy = convolve2d(x, dy_p_ext, padding=padding)
-                k_size = (K - 1) * D + 1
-                k = (x_conv_dy.shape[-1] - k_size) // 2
-                x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D, k : k + k_size : D]
+                    # convolve
+                    # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, K, K)
+                    x_conv_dy = convolve2d(x, dy_p_ext, padding)
+                    k_size = (K - 1) * D + 1
+                    k = (x_conv_dy.shape[-1] - k_size) // 2
+                    x_conv_dy = x_conv_dy[
+                        :, :, :, k : k + k_size : D, k : k + k_size : D
+                    ]
 
-                # sum over batches
-                # (B, Co, Ci, K, K) -> (Co, Ci, K, K)
-                self.w.grad = x_conv_dy.sum(axis=0)
+                    # sum over batches
+                    # (B, Co, Ci, K, K) -> (Co, Ci, K, K)
+                    self.w.grad = x_conv_dy.sum(axis=0)
 
-                # ----------------
-                # bias grads
-                # ----------------
-                if self.b is not None:
-                    # sum over batches, height and width
-                    # (B, Co, Yo, Xo) -> (Co,)
-                    self.b.grad = dy.sum(axis=(0, 2, 3))
+                    # ----------------
+                    # bias grads
+                    # ----------------
+                    if self.b is not None:
+                        # sum over batches, height and width
+                        # (B, Co, Yo, Xo) -> (Co,)
+                        self.b.grad = dy.sum(axis=(0, 2, 3))
 
                 return dx
 

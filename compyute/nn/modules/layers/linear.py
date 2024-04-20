@@ -75,7 +75,7 @@ class Linear(Module):
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                return linear_backward(dy, x, self.w, self.b)
+                return linear_backward(dy, x, self.w, self.b, self.trainable)
 
             self.backward_fn = backward
 

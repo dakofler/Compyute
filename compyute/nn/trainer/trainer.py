@@ -22,7 +22,7 @@ class Trainer:
         self,
         model: Model,
         optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
-        loss: Loss | Literal["mse", "crossentropy"],
+        loss: Loss | Literal["binary_crossentropy", "crossentropy", "mse"],
         metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
         callbacks: Optional[list[Callback]] = None,
     ) -> None:
