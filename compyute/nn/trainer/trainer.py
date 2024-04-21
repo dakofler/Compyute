@@ -56,6 +56,7 @@ class Trainer:
             self.state[f"epoch_{self.metric.name}"] = []
 
         self.abort: bool = False
+        self.t: int = 0
 
     def train(
         self,
@@ -102,6 +103,7 @@ class Trainer:
             pbar = tqdm(unit=" epoch", total=epochs)
 
         for epoch in range(1, epochs + 1):
+            self.t += 1
 
             # training
             self.model.training = True
