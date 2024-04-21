@@ -205,12 +205,12 @@ class Tensor:
     def __ne__(self, other: Tensor | ScalarLike) -> Tensor:
         return Tensor(self.data != parse_data(other))
 
-    def __isub__(self, other: Tensor | ScalarLike) -> Tensor:
+    def __iadd__(self, other: Tensor | ScalarLike) -> Tensor:
         self.data += parse_data(other)
         return self
 
-    def __iadd__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data += parse_data(other)
+    def __isub__(self, other: Tensor | ScalarLike) -> Tensor:
+        self.data -= parse_data(other)
         return self
 
     def __imul__(self, other: Tensor | ScalarLike) -> Tensor:

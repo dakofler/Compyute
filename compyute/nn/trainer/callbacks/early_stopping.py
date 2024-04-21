@@ -30,7 +30,10 @@ class EarlyStopping(Callback):
         self.patience = patience
         self.use_best_params = use_best_params
         self.target = target
-        self.state: dict[str, float | list[Tensor]] = {"best_loss": float("inf")}
+        self.state: dict[str, float | list[Tensor]] = {
+            "best_epoch": 1,
+            "best_loss": float("inf"),
+        }
 
     def on_epoch(self, trainer) -> None:
         if self.target not in trainer.state.keys():
@@ -41,6 +44,7 @@ class EarlyStopping(Callback):
 
         # record best loss
         if hist[-1] < best_loss:
+            self.state["best_epoch"] = trainer.t
             self.state["best_loss"] = hist[-1]
 
             # save best parameters
@@ -56,7 +60,8 @@ class EarlyStopping(Callback):
 
             # reset model parameters to best epoch
             if self.use_best_params:
-                msg += " Resetting parameters best epoch."
+                best_epoch = self.state["best_epoch"]
+                msg += f" Resetting parameters best epoch {best_epoch}."
                 for i, p in enumerate(trainer.model.parameters):
                     p.data = self.state["best_params"][i].data
 

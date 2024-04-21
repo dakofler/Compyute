@@ -90,7 +90,7 @@ class SGD(Optimizer):
                 else:
                     g = b
 
-            p.data -= (self.lr * g).data
+            p -= self.lr * g
         self.t += 1
 
 
@@ -154,7 +154,7 @@ class Adam(Optimizer):
             m_hat = m / (1 - self.beta1**self.t)
             v_hat = v / (1 - self.beta2**self.t)
 
-            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
+            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
         self.t += 1
 
 
@@ -214,7 +214,7 @@ class AdamW(Optimizer):
             m_hat = m / (1 - self.beta1**self.t)
             v_hat = v / (1 - self.beta2**self.t)
 
-            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
+            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
         self.t += 1
 
 
@@ -290,7 +290,7 @@ class NAdam(Optimizer):
             ) * g / (1 - prod(self.state["nadam_mu"]))
             v_hat = v / (1 - self.beta2**self.t)
 
-            p.data -= (self.lr * m_hat / (v_hat**0.5 + self.eps)).data
+            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
         self.t += 1
 
 

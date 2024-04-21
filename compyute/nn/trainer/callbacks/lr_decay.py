@@ -140,7 +140,7 @@ class CosineLR(LRDecay):
 
 
 class AdaptiveLR(LRDecay):
-    """Sets an optimizers learning based on the behaviour of a specified metric."""
+    """Sets an optimizers learning rate based on the trend of a specified metric."""
 
     def __init__(
         self,
@@ -149,7 +149,7 @@ class AdaptiveLR(LRDecay):
         lr_downscale_factor: float = 0.5,
         lr_upscale_factor: float = 1.0,
     ) -> None:
-        """Sets an optimizers learning based on the behaviour of a specified metric.
+        """Sets an optimizers learning based on the trend of a specified metric.
 
         Parameters
         ----------
