@@ -1,7 +1,7 @@
 """Neural network functions module"""
 
 from typing import Literal, Optional
-from ..tensor_f import arange, maximum, minimum, zeros, zeros_like
+from ..tensor_f import arange, empty, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
@@ -465,18 +465,12 @@ def maxpooling2d(
     Tensor
         Pooling map containing the indices of max values.
     """
+    B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
 
-    # initialize output with zeros
-    Yo = (x.shape[-2] - Ky) // Ky + 1
-    Xo = (x.shape[-1] - Kx) // Kx + 1
-    y = zeros((*x.shape[:-2], Yo, Xo), dtype=x.dtype, device=x.device)
-
-    # iterate over height and width and pick highest value
-    for i in range(y.shape[-2]):
-        for j in range(y.shape[-1]):
-            chunk = x[:, :, i * Ky : i * Ky + Ky, j * Kx : j * Kx + Kx]
-            y[:, :, i, j] = chunk.max(axis=(-2, -1))
+    # maxpooling
+    x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
+    y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).max(axis=(-3, -1))
 
     # create map of max value occurences for backprop
     y_ups = upsample2d(y, (Ky, Kx), x.shape)
@@ -499,17 +493,9 @@ def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
     Tensor
         Output tensor.
     """
+    B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
 
-    # initialize output with zeros
-    Yo = (x.shape[-2] - Ky) // Ky + 1
-    Xo = (x.shape[-1] - Kx) // Kx + 1
-    y = zeros((*x.shape[:-2], Yo, Xo), dtype=x.dtype, device=x.device)
-
-    # iterate over height and width and pick average value
-    for i in range(y.shape[-2]):
-        for j in range(y.shape[-1]):
-            chunk = x[:, :, i * Ky : i * Ky + Ky, j * Kx : j * Kx + Kx]
-            y[:, :, i, j] = chunk.mean(axis=(-2, -1))
-
-    return y
+    # avgpooling
+    x = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
+    return x.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))

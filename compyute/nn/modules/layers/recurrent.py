@@ -3,7 +3,7 @@
 from ..module import Module
 from ...functional import linear, linear_backward, sigmoid
 from ...parameter import Parameter
-from ....tensor_f import zeros, zeros_like
+from ....tensor_f import empty_like, zeros, zeros_like
 from ....random import uniform
 from ....tensor import Tensor
 from ....types import DtypeLike
@@ -100,7 +100,7 @@ class Recurrent(Module):
                 else:
                     dh = dy
 
-                dx_h = zeros_like(x_h)
+                dx_h = empty_like(x_h)
                 if self.trainable:
                     self.w_h.grad = zeros_like(self.w_h)
 
@@ -213,7 +213,7 @@ class LSTM(Module):
         x_h = linear(x, self.w_i, self.b_i)
 
         # iterate over timesteps
-        ifgo = zeros_like(x_h)
+        ifgo = empty_like(x_h)
         c = zeros_like(x_h[:, :, :i1])
         h = zeros_like(c)
 
@@ -248,8 +248,8 @@ class LSTM(Module):
                 else:
                     dh = dy
 
-                dc = zeros_like(c)
-                difgo_preact = zeros_like(ifgo)
+                dc = empty_like(c)
+                difgo_preact = empty_like(ifgo)
                 if self.trainable:
                     self.w_h.grad = zeros_like(self.w_h)
 
@@ -269,7 +269,7 @@ class LSTM(Module):
                         # dc_t += f_t+1 * dc_t+1
                         dc[:, t] += ifgo[:, t + 1, i1:i2] * dc[:, t + 1]
 
-                    difgo_t = zeros_like(ifgo[:, 1])
+                    difgo_t = empty_like(ifgo[:, 1])
 
                     # input gate gradients
                     # di_t = g_t * dc_t

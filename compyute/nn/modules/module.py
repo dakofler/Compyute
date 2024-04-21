@@ -8,7 +8,7 @@ from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
 
 
-__all__ = ["Module"]
+__all__ = ["Module", "Passthrough"]
 
 
 class Module(ABC):
@@ -231,3 +231,6 @@ class Module(ABC):
                 f"{sender}: Number of input dimensions {
                     x.ndim} is not valid (valid: {vdims})"
             )
+
+class Passthrough(Module):
+    """Acts as a passthrough for data."""

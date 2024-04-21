@@ -3,4 +3,4 @@
 from .blocks import *
 from .containers import *
 from .layers import *
-from .module import Module
+from .module import *

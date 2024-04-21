@@ -1,10 +1,10 @@
 """Neural network blocks module"""
 
-from typing import Literal
+from typing import Literal, Optional
 from .containers import SequentialContainer, ParallelAddContainer
 from .layers import Convolution1d, Convolution2d, Linear
 from .layers.activations import get_act_from_str
-from .module import Module
+from .module import Module, Passthrough
 from ...types import DtypeLike
 
 
@@ -165,16 +165,21 @@ class Convolution2dBlock(SequentialContainer):
 
 
 class ResidualBlock(ParallelAddContainer):
-    """Block with residual connection."""
+    """Residual connection bypassing a block of modules."""
 
-    def __init__(self, core_module: Module) -> None:
-        """Block with residual connection bypassing the core module.
+    def __init__(
+        self, block: Module, residual_connection: Optional[Module] = None
+    ) -> None:
+        """Residual connection bypassing a block of modules.
 
         Parameters
         ----------
-        core_module : Module
-            Core module bypassed by the residual connection.
-            For multiple modules use a container as core module.
-            To ensure matching tensor shapes, you might need to use a projection layer.
+        block : Module
+            Block bypassed by the residual connection.
+            For multiple modules use a container as block.
+        residual_connection: Module, optional
+            Module used in the residual connection to make shapes match, by default None.
+
         """
-        super().__init__([core_module, Module()])  # emtpy module as residual connection
+        res = residual_connection if residual_connection is not None else Passthrough()
+        super().__init__([block, res])

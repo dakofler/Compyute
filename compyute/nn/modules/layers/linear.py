@@ -66,7 +66,7 @@ class Linear(Module):
         return f"{name}({in_channels=}, {out_channels=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [2, 3])
+        self.check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)
 
         y = linear(x, self.w, self.b)
