@@ -64,7 +64,7 @@ class Embedding(Module):
 
             def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)
-                self.w.grad = (x.transpose() @ dy).sum(axis=0)
+                self.w.grad = (x.T @ dy).sum(axis=0)
 
             self.backward_fn = backward
 

@@ -55,7 +55,7 @@ class Tensor:
         self.__device = infer_device(data) if device is None else device
         self.data = self.__engine.array(data, copy=copy, dtype=dtype)
         self.grad: Optional[Tensor] = None
-        self.__iterator = 0
+        self.__iterator: Optional[int] = None
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -72,7 +72,7 @@ class Tensor:
 
     @property
     def dtype(self) -> DtypeLike:
-        """Tensor data datatype."""
+        """Tensor datatype."""
         return str(self.data.dtype)
 
     @property
@@ -92,8 +92,8 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Tensor data transposed."""
-        return Tensor(self.data.T)
+        """Tensor transposed."""
+        return self.transpose()
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -112,9 +112,6 @@ class Tensor:
             precision=4,
         )
         return f"{prefix}{array_string}, {dtype=}, {shape=}, {device=})"
-
-    def __call__(self) -> ArrayLike:
-        return self.data
 
     def __getitem__(self, idx: Tensor | ArrayLike | int) -> Tensor:
         if isinstance(idx, Tensor):
@@ -504,16 +501,18 @@ class Tensor:
         if self.__device == "cpu":
             return self
 
-        self.to_device("cpu")
-        return self
+        t = self.copy()
+        t.to_device("cpu")
+        return t
 
     def cuda(self):
         """Returns a copy of the tensor on the gpu."""
         if self.__device == "cuda":
             return self
 
-        self.to_device("cuda")
-        return self
+        t = self.copy()
+        t.to_device("cuda")
+        return t
 
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS

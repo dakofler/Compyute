@@ -204,7 +204,7 @@ def linear_backward(
         # weight grads
         # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
         # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-        dw = dy.transpose() @ x
+        dw = dy.T @ x
         if x.ndim > 2:
             # sum over all batch dimensions
             # (B, ..., Ci, Co) -> (Ci, Co)

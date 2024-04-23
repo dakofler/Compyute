@@ -39,15 +39,12 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        dif = y.float() - t.float()
+        y = y.float()
+        t = t.float()
 
-        def backward() -> Tensor:
-            """Performs a backward pass."""
-            return (dif * 2 / prod(y.shape)).reshape(y.shape)
+        self.backward = lambda: (y - t) * 2 / prod(y.shape)
 
-        self.backward = backward
-
-        return (dif**2).mean()
+        return ((y - t) ** 2).mean()
 
 
 class Crossentropy(Loss):
@@ -79,14 +76,13 @@ class Crossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        t = one_hot_encode(t.int(), y.shape[-1])
-        probs = softmax(y.float())
+        y = y.float()
+        t = t.int()
 
-        def backward() -> Tensor:
-            """Performs a backward pass."""
-            return (probs - t) / prod(y.shape[:-1])
+        t = one_hot_encode(t, y.shape[-1])
+        probs = softmax(y)
 
-        self.backward = backward
+        self.backward = lambda: (probs - t) / prod(y.shape[:-1])
 
         return -((probs + self.eps) * t).sum(-1).log().mean()
 
@@ -109,15 +105,13 @@ class BinaryCrossentropy(Loss):
         Tensor
             Crossentropy loss.
         """
-        loss = -(t * y.log().clip(-100, 100) + (1 - t) * (1 - y).log().clip(-100, 100))
+        y = y.float()
+        t = t.float()
+        c = 100
 
-        def backward() -> Tensor:
-            """Performs a backward pass."""
-            return (-t / y + (1 - t) / (1 - y)) / prod(y.shape)
+        self.backward = lambda: (-t / y + (1 - t) / (1 - y)) / prod(y.shape)
 
-        self.backward = backward
-
-        return loss.mean()
+        return -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
 
 
 LOSSES = {
