@@ -1,7 +1,7 @@
 """Activation layers module"""
 
 from ..module import Module
-from ...functional import sigmoid, relu, leaky_relu
+from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
 from ....tensor import Tensor
 
 
@@ -12,11 +12,7 @@ class ReLU(Module):
     """Implements the ReLu activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y = relu(x)
-
-        if self.training:
-            self.backward_fn = lambda dy: (y > 0) * dy
-
+        y, self.backward_fn = relu(x, self.training)
         return y
 
 
@@ -28,36 +24,15 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y = leaky_relu(x, self.alpha)
-
-        if self.training:
-            self.backward_fn = (
-                lambda dy: ((y > 0).float() + (y < 0).float() * self.alpha) * dy
-            )
-
+        y, self.backward_fn = leaky_relu(x, self.alpha, self.training)
         return y
-
-
-GELU_S = 0.7978845608028654  # sqrt(2/pi)
-GELU_C = 0.044715
 
 
 class GELU(Module):
     """Implements the Gaussian Error Linear Unit function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        tmp = GELU_S * (x + GELU_C * x**3)
-        y = 0.5 * x * (1 + tmp.tanh())
-
-        if self.training:
-            self.backward_fn = (
-                lambda dy: (
-                    0.5 * (1 + tmp.tanh())
-                    + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
-                )
-                * dy
-            )
-
+        y, self.backward_fn = gelu(x, self.training)
         return y
 
 
@@ -65,11 +40,7 @@ class Tanh(Module):
     """Implements the Tanh activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x.tanh()
-
-        if self.training:
-            self.backward_fn = lambda dy: (1 - y**2) * dy
-
+        y, self.backward_fn = tanh(x, self.training)
         return y
 
 
@@ -77,11 +48,7 @@ class Sigmoid(Module):
     """Implements the Sigmoid activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y = sigmoid(x)
-
-        if self.training:
-            self.backward_fn = lambda dy: (y * (1 - y)) * dy
-
+        y, self.backward_fn = sigmoid(x, self.training)
         return y
 
 

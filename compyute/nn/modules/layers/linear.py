@@ -2,7 +2,7 @@
 
 from ..module import Module
 from ...parameter import Parameter
-from ...functional import linear, linear_backward
+from ...functional import linear
 from ....tensor_f import zeros
 from ....random import uniform
 from ....tensor import Tensor
@@ -68,14 +68,21 @@ class Linear(Module):
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)
-
-        y = linear(x, self.w, self.b)
+        y, linear_backward = linear(x, self.w, self.b, self.training)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                return linear_backward(dy, x, self.w, self.b, self.trainable)
+                dx, dw, db = linear_backward(dy)
+
+                if self.trainable:
+                    self.w.grad = dw
+
+                    if self.b is not None:
+                        self.b.grad = db
+
+                return dx
 
             self.backward_fn = backward
 

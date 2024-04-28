@@ -365,19 +365,7 @@ class MaxPooling2d(Module):
         self.check_dims(x, [4])
 
         K = (self.kernel_size, self.kernel_size)
-        y, p_map = maxpooling2d(x, K)
-
-        if self.training:
-
-            def backward(dy: Tensor) -> Tensor:
-                # upsample dy tensor to original shape by duplicating values
-                dy_str = upsample2d(dy, K, x.shape)
-
-                # use p_map as mask for grads
-                return dy_str * p_map
-
-            self.backward_fn = backward
-
+        y, self.backward_fn = maxpooling2d(x, K, self.training)
         return y
 
 
@@ -407,17 +395,5 @@ class AvgPooling2d(Module):
         self.check_dims(x, [4])
 
         K = (self.kernel_size, self.kernel_size)
-        y = avgpooling2d(x, K)
-
-        if self.training:
-
-            def backward(dy: Tensor) -> Tensor:
-                # upsample dy tensor to original shape by duplicating values
-                y_ups = upsample2d(dy, K, x.shape)
-
-                # scale gradients
-                return y_ups / self.kernel_size**2
-
-            self.backward_fn = backward
-
+        y, self.backward_fn = avgpooling2d(x, K, self.training)
         return y

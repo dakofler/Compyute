@@ -1,7 +1,7 @@
 """Recurrent cells module"""
 
 from ..module import Module
-from ...functional import linear, linear_backward, sigmoid
+from ...functional import linear, sigmoid
 from ...parameter import Parameter
 from ....tensor_f import empty_like, zeros, zeros_like
 from ....random import uniform
@@ -80,14 +80,15 @@ class Recurrent(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h = linear(x, self.w_i, self.b_i)
+        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
 
         # iterate over timesteps
         h = zeros_like(x_h)
         for t in range(x_h.shape[1]):
             # hidden state
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
-            h[:, t] = (x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)).tanh()
+            h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
+            h[:, t] = (x_h[:, t] + h_h).tanh()
 
         if self.training:
 
@@ -125,7 +126,15 @@ class Recurrent(Module):
                     self.b_h.grad = dx_h.sum((0, 1))
 
                 # input projection gradients
-                return linear_backward(dx_h, x, self.w_i, self.b_i, self.trainable)
+                dx, dw_i, db_i = x_h_backward(dx_h)
+
+                if self.trainable:
+                    self.w_i.grad = dw_i
+
+                    if self.b_i is not None:
+                        self.b_i.grad = db_i
+
+                return dx
 
             self.backward_fn = backward
 
@@ -210,7 +219,7 @@ class LSTM(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h = linear(x, self.w_i, self.b_i)
+        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
 
         # iterate over timesteps
         ifgo = empty_like(x_h)
@@ -220,12 +229,13 @@ class LSTM(Module):
         for t in range(x.shape[1]):
             # gates pre activation
             # (B, 4*Ch) + (B, Ch) @ (Ch, 4*Ch) + (4*Ch,) -> (B, 4*Ch)
-            ifgo_preact = x_h[:, t] + linear(h[:, t - 1], self.w_h, self.b_h)
+            h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
+            ifgo_preact = x_h[:, t] + h_h
 
             # gates post activation i_t, f_t, g_t, o_t
-            ifgo[:, t, :i2] = sigmoid(ifgo_preact[:, :i2])  # input, forget
+            ifgo[:, t, :i2] = sigmoid(ifgo_preact[:, :i2])[0]  # input, forget
             ifgo[:, t, i2:i3] = ifgo_preact[:, i2:i3].tanh()  # node
-            ifgo[:, t, i3:] = sigmoid(ifgo_preact[:, i3:])  # output
+            ifgo[:, t, i3:] = sigmoid(ifgo_preact[:, i3:])[0]  # output
 
             # cell state
             # c_t = f_t * c_t-1 + i_t * g_t
@@ -316,9 +326,15 @@ class LSTM(Module):
                     self.b_h.grad = difgo_preact.sum(axis=(0, 1))
 
                 # input projection gradients
-                return linear_backward(
-                    difgo_preact, x, self.w_i, self.b_i, self.trainable
-                )
+                dx, dw_i, db_i = x_h_backward(difgo_preact)
+
+                if self.trainable:
+                    self.w_i.grad = dw_i
+
+                    if self.b_i is not None:
+                        self.b_i.grad = db_i
+
+                return dx
 
             self.backward_fn = backward
 

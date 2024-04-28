@@ -1,7 +1,7 @@
 """Neural network functions module"""
 
-from typing import Literal, Optional
-from ..tensor_f import arange, empty, maximum, minimum, zeros
+from typing import Callable, Literal, Optional
+from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
@@ -15,26 +15,38 @@ __all__ = [
     "convolve1d",
     "convolve2d",
 ]
-pi: float = 3.141592653589793
+PI: float = 3.141592653589793
+GELU_S: float = 0.7978845608028654  # sqrt(2/pi)
+GELU_C: float = 0.044715
 
 
-def relu(x: Tensor) -> Tensor:
+def relu(
+    x: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Rectified Linear Unit function.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
-    return maximum(x, 0)
+    y = maximum(x, 0)
+    backward = (lambda dy: (y > 0) * dy) if return_backward_fn else None
+    return y, backward
 
 
-def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
+def leaky_relu(
+    x: Tensor, alpha: float = 0.01, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the leaky ReLU function.
 
     Parameters
@@ -43,47 +55,109 @@ def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
         Input tensor.
     alpha : float
         Slope of the negative output.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
-    if "int" in str(x.dtype):
-        x = x.float()
-    return maximum(x, 0) + alpha * minimum(0, x)
+    x = x.float()
+    y = maximum(x, 0) + alpha * minimum(0, x)
+    backward = (
+        (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
+        if return_backward_fn
+        else None
+    )
+    return y, backward
 
 
-def gelu(x: Tensor) -> Tensor:
+def gelu(
+    x: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Gaussian Error Linear Unit function.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
-    return 0.5 * x * (1 + ((2 / pi) ** 0.5 * (x + 0.044715 * x**3)).tanh())
+
+    tmp = GELU_S * (x + GELU_C * x**3)
+    y = 0.5 * x * (1 + tmp.tanh())
+    backward = (
+        (
+            lambda dy: (
+                0.5 * (1 + tmp.tanh())
+                + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
+            )
+            * dy
+        )
+        if return_backward_fn
+        else None
+    )
+
+    return y, backward
 
 
-def sigmoid(x: Tensor) -> Tensor:
+def sigmoid(
+    x: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the sigmoid function.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
-    return x.exp() * (1 + x.exp()) ** -1
+    y = x.exp() * (1 + x.exp()) ** -1
+    backward = (lambda dy: (y * (1 - y)) * dy) if return_backward_fn else None
+    return y, backward
+
+
+def tanh(
+    x: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Applies the hyperbolic tangent function.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
+    """
+    y = x.tanh()
+    backward = (lambda dy: (1 - y**2) * dy) if return_backward_fn else None
+    return y, backward
 
 
 def softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
@@ -150,7 +224,11 @@ def temperature_softmax(
     return x / x.sum(axis=axis, keepdims=True)
 
 
-def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
+def linear(
+    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_fn: bool = False
+) -> tuple[
+    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
+]:
     """Applies the linear transformation X @ W^T + b.
 
     Parameters
@@ -161,64 +239,46 @@ def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Linearly transformed tensor.
+    Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
+        Backward function.
     """
-    if b is None:
-        return x @ w.T
-    return x @ w.T + b
+    y = x @ w.T if b is None else x @ w.T + b
 
+    if return_backward_fn:
 
-def linear_backward(
-    dy: Tensor, x: Tensor, w: Tensor, b: Optional[Tensor] = None, trainable: bool = True
-) -> Tensor:
-    """Backpropagates through a linear transformation.
+        def backward(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
+            # input grads
+            # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
+            dx = dy @ w
 
-    Parameters
-    ----------
-    dy : Tensor
-        Output gradients.
-    x : Tensor
-        Input tensor.
-    w : Tensor
-        Weight tensor.
-    b : Tensor, optional
-        Bias tensor, by default None
-    trainable: bool, optional
-        Whether to compute weight and bias grads, by default True.
+            # weight grads
+            # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
+            # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
+            dw = dy.T @ x
+            if x.ndim > 2:
+                # sum over all batch dimensions
+                # (B, ..., Ci, Co) -> (Ci, Co)
+                dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
 
-    Returns
-    -------
-    Tensor
-        Input gradients.
-    """
+            # bias grads
+            db = None
+            if b is not None:
+                # sum over all batch dimensions
+                # (B, ... , Co) -> (Co,)
+                db = dy.sum(axis=tuple(arange(x.ndim - 1)))
 
-    # input grads
-    # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
-    dx = dy @ w
+            return dx, dw, db
 
-    if trainable:
-        # weight grads
-        # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
-        # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-        dw = dy.T @ x
-        if x.ndim > 2:
-            # sum over all batch dimensions
-            # (B, ..., Ci, Co) -> (Ci, Co)
-            dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
+        return y, backward
 
-        w.grad = dw
-
-        # bias grads
-        if b is not None:
-            # sum over all batch dimensions
-            # (B, ... , Co) -> (Co,)
-            b.grad = dy.sum(axis=tuple(arange(x.ndim - 1)))
-
-    return dx
+    return y, None
 
 
 def convolve1d(
@@ -447,8 +507,8 @@ def upsample2d(
 
 
 def maxpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2)
-) -> tuple[Tensor, Tensor]:
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a max pooling over the last two axes.
 
     Parameters
@@ -457,13 +517,15 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Tensor
-        Pooling map containing the indices of max values.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
     B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
@@ -472,13 +534,21 @@ def maxpooling2d(
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
     y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).max(axis=(-3, -1))
 
-    # create map of max value occurences for backprop
-    y_ups = upsample2d(y, (Ky, Kx), x.shape)
-    pooling_map = (x == y_ups).int()
-    return y, pooling_map
+    if return_backward_fn:
+        y_ups = upsample2d(y, kernel_size, x.shape)
+
+        def backward(dy: Tensor) -> Tensor:
+            dy_str = upsample2d(dy, kernel_size, x.shape)
+            return dy_str * (x == y_ups).int()
+
+        return y, backward
+
+    return y, None
 
 
-def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
+def avgpooling2d(
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a average pooling over the last two axes.
 
     Parameters
@@ -487,15 +557,29 @@ def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
     B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
 
     # avgpooling
-    x = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
-    return x.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))
+    x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
+    y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))
+
+    if return_backward_fn:
+
+        def backward(dy: Tensor) -> Tensor:
+            y_ups = upsample2d(dy, kernel_size, x.shape)
+            return y_ups / (Ky * Kx)
+
+        return y, backward
+
+    return y, None
