@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 from abc import ABC
+import pickle
 from typing import Callable, Optional
 from ..parameter import Parameter
 from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
 
 
-__all__ = ["Module", "Passthrough"]
+__all__ = ["Module", "Passthrough", "save_module", "load_module"]
 
 
 class Module(ABC):
@@ -18,7 +19,6 @@ class Module(ABC):
         """Module base class."""
         self.y: Optional[Tensor] = None
         self.backward_fn: Optional[Callable[[Tensor], Optional[Tensor]]] = None
-        self.__modules: Optional[list[Module]] = None
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
         self.__training: bool = False
@@ -29,21 +29,12 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def modules(self) -> Optional[list[Module]]:
-        """List of child modules."""
-        return self.__modules
-
-    @modules.setter
-    def modules(self, value: Optional[list[Module]]) -> None:
-        self.__modules = value
-
-    @property
-    def device(self) -> str:
+    def device(self) -> DeviceLike:
         """Device the module tensors are stored on."""
         return self.__device
 
     def to_device(self, device: DeviceLike) -> None:
-        """Moves the tensor to a specified device.
+        """Moves the module to a specified device.
 
         Parameters
         ----------
@@ -60,84 +51,54 @@ class Module(ABC):
         for p in self.parameters:
             p.to_device(device)
 
-        if self.modules is not None:
-            for module in self.modules:
-                module.to_device(device)
-
-    @property
-    def parameters(self) -> list[Parameter]:
-        """Returns the list of module parameters."""
-        p = [i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter)]
-
-        if self.modules is not None:
-            for module in self.modules:
-                p += module.parameters
-
-        return p
-
     @property
     def retain_values(self) -> bool:
-        """Sets the module to keep its outputs and gradients."""
+        """Whether to retain intermediate values after a forward pass."""
         return self.__retain_values
 
-    @retain_values.setter
-    def retain_values(self, value: bool) -> None:
+    def set_retain_values(self, value: bool) -> None:
+        """Whether to retain intermediate values after a forward pass."""
         if self.__retain_values == value:
             return
-
         self.__retain_values = value
-
-        if self.modules is not None:
-            for module in self.modules:
-                module.retain_values = value
 
     @property
     def training(self) -> bool:
-        """Puts the module in training mode.
-        The forward behaviour might differ for some modules when in training mode."""
+        """Training mode for the module."""
         return self.__training
 
-    @training.setter
-    def training(self, value: bool) -> None:
+    def set_training(self, value: bool) -> None:
+        """Sets the training mode for the module"""
         if self.__training == value:
             return
         self.__training = value
 
-        if self.modules is not None:
-            for module in self.modules:
-                module.training = value
-
     @property
     def trainable(self) -> bool:
-        """Sets the module to not be trainable."""
+        """Whether the module parameters are trainable."""
         return self.__trainable
 
-    @trainable.setter
-    def trainable(self, value: bool) -> None:
+    def set_trainable(self, value: bool) -> None:
+        """Whether the module parameters are trainable."""
         if self.__trainable == value:
             return
-        
         self.__trainable = value
 
         for parameter in self.parameters:
             parameter.requires_grad = value
 
-        if self.modules is not None:
-            for module in self.modules:
-                module.trainable = value
+    @property
+    def parameters(self) -> list[Parameter]:
+        """Returns the list of module parameters."""
+        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter)]
+
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        string = f"{self.__class__.__name__}()"
-
-        if self.modules is not None:
-            for module in self.modules:
-                string += "\n" + module.__repr__()
-
-        return string
+        return f"{self.__class__.__name__}()"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)
@@ -209,10 +170,6 @@ class Module(ABC):
         for p in self.parameters:
             p.grad = None
 
-        if self.modules is not None:
-            for module in self.modules:
-                module.reset()
-
     def check_dims(self, x: Tensor, valid_dims: list[int]) -> None:
         """Checks if a tensors dimensions match desired target dimensions.
 
@@ -238,3 +195,40 @@ class Module(ABC):
 
 class Passthrough(Module):
     """Acts as a passthrough for data."""
+
+def save_module(module: Module, filepath: str) -> None:
+    """Saves a model as a binary file.
+
+    Parameters
+    ----------
+    model : Model
+        Model to be saved.
+    filepath : str
+        Path to the file.
+    """
+
+    module.to_device("cpu")
+    module.reset()
+
+    file = open(filepath, "wb")
+    pickle.dump(module, file)
+    file.close()
+
+
+def load_module(filepath: str) -> Module:
+    """Load a module from a previously saved binary file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file.
+
+    Returns
+    -------
+    Model
+        Loaded model.
+    """
+    file = open(filepath, "rb")
+    obj = pickle.load(file)
+    file.close()
+    return obj

@@ -2,9 +2,9 @@
 
 import torch
 from compyute.nn.modules.containers import (
-    SequentialContainer,
-    ParallelConcatContainer,
-    ParallelAddContainer,
+    Sequential,
+    ParallelConcat,
+    ParallelAdd,
 )
 from compyute.nn.modules.layers import Linear
 from tests.test_utils import get_vals_float, get_params, validate
@@ -25,13 +25,13 @@ def test_sequential_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = SequentialContainer(
+    compyute_module = Sequential(
         [
             Linear(Cin, Cout, bias=False),
             Linear(Cout, Cout, bias=False),
         ]
     )
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
     compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
@@ -68,14 +68,14 @@ def test_parallel_concat_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = ParallelConcatContainer(
+    compyute_module = ParallelConcat(
         [
             Linear(Cin, Cout, bias=False),
             Linear(Cin, Cout, bias=False),
         ],
         -1,
     )
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
     compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)
@@ -110,13 +110,13 @@ def test_parallel_add_container() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = ParallelAddContainer(
+    compyute_module = ParallelAdd(
         [
             Linear(Cin, Cout, bias=False),
             Linear(Cin, Cout, bias=False),
         ]
     )
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
     compyute_module.modules[1].w = compyute_w2
     compyute_y = compyute_module(compyute_x)

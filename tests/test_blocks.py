@@ -2,7 +2,7 @@
 
 import torch
 from compyute.nn.modules.blocks import ResidualBlock
-from compyute.nn.modules.containers import SequentialContainer
+from compyute.nn.modules.containers import Sequential
 from compyute.nn.modules.layers import Linear, ReLU
 from tests.test_utils import get_vals_float, get_params, validate
 
@@ -23,7 +23,7 @@ def test_residual() -> None:
     compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = ResidualBlock(
-        SequentialContainer(
+        Sequential(
             [
                 Linear(Cin, Cout, bias=False),
                 ReLU(),
@@ -31,7 +31,7 @@ def test_residual() -> None:
             ]
         )
     )
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.modules[0].modules[0].w = compyute_w1
     compyute_module.modules[0].modules[2].w = compyute_w2
     compyute_y = compyute_module(compyute_x)

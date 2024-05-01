@@ -2,11 +2,13 @@
 
 from typing import Optional
 from .module import Module
-from ...tensor_f import concatenate, tensorsum
+from ..parameter import Parameter
+from ...tensor_f import concatenate, ones, tensorsum
 from ...tensor import Tensor
+from ...types import DeviceLike, DtypeLike, ShapeLike
 
 
-__all__ = ["SequentialContainer", "ParallelConcatContainer", "ParallelAddContainer"]
+__all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
 
 class Container(Module):
@@ -21,23 +23,135 @@ class Container(Module):
             List of modules used in the container.
         """
         super().__init__()
-        self.modules = modules
+        self.__modules = modules
 
-    def add(self, module: Module) -> None:
-        """Adds a module.
+    # ----------------------------------------------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------------------------------------------
+
+    @property
+    def modules(self) -> list[Module]:
+        """Returns the list of modules."""
+        if self.__modules is not None:
+            return self.__modules
+        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
+
+    def to_device(self, device: DeviceLike) -> None:
+        """Moves the module to a specified device.
 
         Parameters
         ----------
-        layer : Module
-            Module to append.
+        device : DeviceLike
+            Device to move the tensor to ("cuda" or "cpu").
         """
-        if self.modules is None:
-            self.modules = [module]
-        else:
-            self.modules.append(module)
+        if device == self.device:
+            return
+
+        super().to_device(device)
+        for module in self.modules:
+            module.to_device(device)
+
+    @property
+    def parameters(self) -> list[Parameter]:
+        """Returns the list of module parameters."""
+        p = []
+        for module in self.modules:
+            p += module.parameters
+        return p
+
+    def set_retain_values(self, value: bool) -> None:
+        if self.retain_values == value:
+            return
+
+        super().set_retain_values(value)
+        for module in self.modules:
+            module.set_retain_values(value)
+
+    def set_training(self, value: bool) -> None:
+        """Sets the training mode for the module"""
+        if self.training == value:
+            return
+
+        super().set_training(value)
+        for module in self.modules:
+            module.set_training(value)
+
+    def set_trainable(self, value: bool) -> None:
+        if self.trainable == value:
+            return
+
+        super().set_trainable(value)
+        for module in self.modules:
+            module.set_trainable(value)
+
+    # ----------------------------------------------------------------------------------------------
+    # MAGIC METHODS
+    # ----------------------------------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        string = f"{self.__class__.__name__}()"
+
+        if self.modules is not None:
+            for module in self.modules:
+                string += "\n" + module.__repr__()
+
+        return string
+
+    # ----------------------------------------------------------------------------------------------
+    # OTHER OPERATIONS
+    # ----------------------------------------------------------------------------------------------
+
+    def reset(self) -> None:
+        """Resets temporary values like outputs and gradients."""
+        super().reset()
+
+        for module in self.modules:
+            module.reset()
+
+    def summary(self, input_shape: ShapeLike, input_dtype: DtypeLike = "float32") -> None:
+        """Prints information about the container and its modules.
+
+        Parameters
+        ----------
+        root_module: Module
+            Module to get the summary from.
+        input_shape : ShapeLike
+            Shape of the model input ignoring the batch dimension.
+        input_dtype : DtypeLike
+            Data type of the expected input data.
+        """
+        n = 63
+
+        summary = [f"{self.__class__.__name__}\n{'-' * n}"]
+        summary += [f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n"]
+        summary += ["=" * n, "\n"]
+
+        x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
+        retain_values = self.retain_values
+        self.set_retain_values(True)
+        _ = self(x)
+
+        def build_summary(module, summary, depth):
+            name = " " * depth + module.__class__.__name__
+            output_shape = str((-1,) + module.y.shape[1:])
+            n_params = sum(p.size for p in module.parameters)
+            summary += [f"{name:25s} {output_shape:20s} {n_params:15d}\n"]
+
+            if isinstance(module, Container):
+                for module in module.modules:
+                    build_summary(module, summary, depth + 1)
+
+        build_summary(self, summary, 0)
+        summary += ["=" * n]
+        n_parameters = sum(p.size for p in self.parameters)
+
+        self.reset()
+        self.set_retain_values(retain_values)
+        summary = "".join(summary)
+        print(f"{summary}\n\nTotal parameters: {n_parameters}")
 
 
-class SequentialContainer(Container):
+class Sequential(Container):
     """Sequential container module. Layers are processed sequentially."""
 
     def __init__(self, layers: Optional[list[Module]] = None) -> None:
@@ -70,7 +184,7 @@ class SequentialContainer(Container):
         return x
 
 
-class ParallelConcatContainer(Container):
+class ParallelConcat(Container):
     """Parallel container module.
     Inputs are processed independently and outputs are concatinated.
     """
@@ -110,7 +224,7 @@ class ParallelConcatContainer(Container):
         return y
 
 
-class ParallelAddContainer(Container):
+class ParallelAdd(Container):
     """Parallel container module.
     Inputs are processed independently and outputs are added element-wise.
     """

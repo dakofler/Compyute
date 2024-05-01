@@ -579,9 +579,7 @@ class Tensor:
         """
         return Tensor(self.data.mean(axis=axis, keepdims=keepdims))
 
-    def var(
-        self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
-    ) -> Tensor:
+    def var(self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False) -> Tensor:
         """Variance of tensor elements over a given axis.
 
         Parameters

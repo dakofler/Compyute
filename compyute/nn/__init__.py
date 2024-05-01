@@ -6,6 +6,5 @@ from . import (
     inits,
     trainer,
 )
-from .models import *
 from .modules import *
 from .parameter import *

@@ -15,7 +15,7 @@ def test_batchnorm1d() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE3D)
     compyute_module = Batchnorm1d(SHAPE3D[1])
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_y = compyute_module(compyute_x)
     torch_module = torch.nn.BatchNorm1d(SHAPE3D[1])
     torch_y = torch_module(torch_x)
@@ -40,7 +40,7 @@ def test_batchnorm2d() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE4D)
     compyute_module = Batchnorm2d(SHAPE4D[1])
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_y = compyute_module(compyute_x)
     torch_module = torch.nn.BatchNorm2d(SHAPE4D[1])
     torch_y = torch_module(torch_x)
@@ -65,7 +65,7 @@ def test_layernorm() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE3D)
     compyute_module = Layernorm(SHAPE3D[1:])
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_y = compyute_module(compyute_x)
     torch_module = torch.nn.LayerNorm(SHAPE3D[1:])
     torch_y = torch_module(torch_x)

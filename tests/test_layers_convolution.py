@@ -29,7 +29,7 @@ def test_conv1d_valid() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -69,7 +69,7 @@ def test_conv1d_same() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -109,7 +109,7 @@ def test_conv1d_valid_dilation2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -149,7 +149,7 @@ def test_conv1d_valid_stride2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -189,7 +189,7 @@ def test_conv1d_same_dilation2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -229,7 +229,7 @@ def test_conv2d_valid() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -269,7 +269,7 @@ def test_conv2d_same() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -309,7 +309,7 @@ def test_conv2d_valid_stride2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -349,7 +349,7 @@ def test_conv2d_valid_dilation2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -389,7 +389,7 @@ def test_conv2d_same_dilation2() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -420,7 +420,7 @@ def test_maxpool2d() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(shape_x)
     compyute_module = MaxPooling2d()
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.max_pool2d(torch_x, 2)
     results.append(validate(compyute_y, torch_y))
@@ -441,7 +441,7 @@ def test_avgpool2d() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(shape_x)
     compyute_module = AvgPooling2d()
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.avg_pool2d(torch_x, (2, 2))
     results.append(validate(compyute_y, torch_y))

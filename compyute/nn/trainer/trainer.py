@@ -6,8 +6,8 @@ from .callbacks import Callback
 from .optimizers import Optimizer, get_optimizer
 from .losses import Loss, get_loss
 from .metrics import Metric, get_metric
-from ..dataloaders import DataLoader
-from ..models import Model
+from ..dataloaders import DataLoader, batched
+from ..modules import Module
 from ...tensor import Tensor
 from ...types import ScalarLike
 
@@ -20,7 +20,7 @@ class Trainer:
 
     def __init__(
         self,
-        model: Model,
+        model: Module,
         optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
         loss: Loss | Literal["binary_crossentropy", "crossentropy", "mse"],
         metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
@@ -30,7 +30,7 @@ class Trainer:
 
         Parameters
         ----------
-        model : Model
+        model : Module
             Model to be trained.
         optimizer : Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
             Optimizer algorithm used to update model parameters.
@@ -87,11 +87,11 @@ class Trainer:
         batch_size : int, optional
             Number of inputs processed in parallel, by default 32.
         """
-
-        train_dataloader = DataLoader(X_train, y_train, batch_size)
+        self.t = 0
+        train_dataloader = DataLoader(X_train, y_train, batch_size, self.model.device)
 
         if val_data:
-            val_dataloader = DataLoader(*val_data, batch_size)
+            val_dataloader = DataLoader(*val_data, batch_size, self.model.device, False, False)
             self.state["val_loss"] = []
             self.state["epoch_val_loss"] = []
 
@@ -106,7 +106,7 @@ class Trainer:
             self.t += 1
 
             # training
-            self.model.training = True
+            self.model.set_training(True)
             n_train = len(train_dataloader)
 
             if verbose == 1:
@@ -118,7 +118,7 @@ class Trainer:
                     total=n_train,
                 )
 
-            for batch in train_dataloader(drop_remaining=True):
+            for batch in train_dataloader():
                 if verbose == 2:
                     pbar.update()
 
@@ -131,14 +131,14 @@ class Trainer:
             self.__log_epoch_loss(n_train)
             self.__log_epoch_score(n_train)
 
-            self.model.training = False
+            self.model.set_training(False)
 
             # validation
             if val_data:
                 retain_values = self.model.retain_values
-                self.model.retain_values = False
+                self.model.set_retain_values(False)
 
-                for batch in val_dataloader(shuffle=False, drop_remaining=True):
+                for batch in val_dataloader():
                     self.__val_step(batch)
 
                 # statistics
@@ -146,7 +146,7 @@ class Trainer:
                 self.__log_epoch_loss(n_val, "val_")
                 self.__log_epoch_score(n_val, "val_")
 
-                self.model.retain_values = retain_values
+                self.model.set_retain_values(retain_values)
 
             # logging #n_train_steps
             if verbose in [1, 2]:
@@ -166,13 +166,13 @@ class Trainer:
             self.model.reset()
 
     def evaluate_model(
-        self, X: Tensor, y: Tensor, batch_size: int = 32
+        self, x: Tensor, y: Tensor, batch_size: int = 32
     ) -> tuple[ScalarLike, Optional[ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters
         ----------
-        X : Tensor
+        x : Tensor
             Input tensor.
         y : Tensor
             Target tensor.
@@ -186,8 +186,10 @@ class Trainer:
         ScalarLike, optional
             Metric score.
         """
+
+        # make predictions
+        y_pred = batched(self.model.forward, batch_size, self.model.device, False)(x)
         y.to_device(self.model.device)
-        y_pred = self.model.predict(X, batch_size)
         loss = self.__compute_loss(y_pred, y)
         score = self.__compute_score(y_pred, y)
         return loss, score

@@ -1,7 +1,7 @@
 """Neural network blocks module"""
 
 from typing import Literal, Optional
-from .containers import SequentialContainer, ParallelAddContainer
+from .containers import Sequential, ParallelAdd
 from .layers import Convolution1d, Convolution2d, Linear
 from .layers.activations import get_act_from_str
 from .module import Module, Passthrough
@@ -11,7 +11,7 @@ from ...types import DtypeLike
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBlock"]
 
 
-class DenseBlock(SequentialContainer):
+class DenseBlock(Sequential):
     """Dense neural network block containing a linear layer and an activation function."""
 
     def __init__(
@@ -48,7 +48,7 @@ class DenseBlock(SequentialContainer):
         super().__init__(layers)
 
 
-class Convolution1dBlock(SequentialContainer):
+class Convolution1dBlock(Sequential):
     """Convolution 1d block containing a 1d convolutional layer and an activation function."""
 
     def __init__(
@@ -106,7 +106,7 @@ class Convolution1dBlock(SequentialContainer):
         super().__init__(layers)
 
 
-class Convolution2dBlock(SequentialContainer):
+class Convolution2dBlock(Sequential):
     """Convolution 2d block containing a 2d convolutional layer and an activation function."""
 
     def __init__(
@@ -164,12 +164,10 @@ class Convolution2dBlock(SequentialContainer):
         super().__init__(layers)
 
 
-class ResidualBlock(ParallelAddContainer):
+class ResidualBlock(ParallelAdd):
     """Residual connection bypassing a block of modules."""
 
-    def __init__(
-        self, block: Module, residual_connection: Optional[Module] = None
-    ) -> None:
+    def __init__(self, block: Module, residual_connection: Optional[Module] = None) -> None:
         """Residual connection bypassing a block of modules.
 
         Parameters

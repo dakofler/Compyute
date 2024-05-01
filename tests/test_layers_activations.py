@@ -14,7 +14,7 @@ def test_relu() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
     module = ReLU()
-    module.training = True
+    module.set_training(True)
     compyute_y = module(compyute_x)
     torch_y = F.relu(torch_x)
     results.append(validate(compyute_y, torch_y))
@@ -34,7 +34,7 @@ def test_leaky_relu() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
     module = LeakyReLU(alpha=0.01)
-    module.training = True
+    module.set_training(True)
     compyute_y = module(compyute_x)
     torch_y = F.leaky_relu(torch_x, negative_slope=0.01)
     results.append(validate(compyute_y, torch_y))
@@ -54,7 +54,7 @@ def test_gelu() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
     module = GELU()
-    module.training = True
+    module.set_training(True)
     compyute_y = module(compyute_x)
     torch_y = F.gelu(torch_x, approximate="tanh")
     results.append(validate(compyute_y, torch_y))
@@ -74,7 +74,7 @@ def test_tanh() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
     module = Tanh()
-    module.training = True
+    module.set_training(True)
     compyute_y = module(compyute_x)
     torch_y = F.tanh(torch_x)
     results.append(validate(compyute_y, torch_y))
@@ -94,7 +94,7 @@ def test_sigmoid() -> None:
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE)
     module = Sigmoid()
-    module.training = True
+    module.set_training(True)
     compyute_y = module(compyute_x)
     torch_y = F.sigmoid(torch_x)
     results.append(validate(compyute_y, torch_y))
