@@ -1,8 +1,8 @@
 """Embedding layers module"""
 
 from ..module import Module
+from ...functional import lookup_embedding
 from ...parameter import Parameter
-from ....preprocessing.basic import one_hot_encode
 from ....random import normal
 from ....tensor import Tensor
 from ....types import DtypeLike
@@ -41,8 +41,7 @@ class Embedding(Module):
         self.dtype = dtype
 
         # init weights (Ci, Co)
-        w = normal((vocab_size, embedding_dim))
-        self.w = Parameter(w, dtype=dtype, label="w")
+        self.w = Parameter(normal((vocab_size, embedding_dim)), dtype=dtype, label="w")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -53,18 +52,13 @@ class Embedding(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2])
+        y, emb_backward = lookup_embedding(x, self.w, self.training)
 
-        if x.dtype not in ("int32", "int64"):
-            raise ValueError(f"Input must be int32 or int64, got {x.dtype}.")
-
-        x = one_hot_encode(x, self.w.shape[0]).astype(self.dtype)
-        y = x @ self.w
-
-        if self.training and self.trainable:
+        if self.training:
 
             def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)
-                self.w.grad = (x.T @ dy).sum(axis=0)
+                self.w.grad = emb_backward(dy)
 
             self.backward_fn = backward
 

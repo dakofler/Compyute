@@ -83,9 +83,7 @@ class Model(Module):
 
         return concatenate(outputs, axis=0)
 
-    def summary(
-        self, input_shape: ShapeLike, input_dtype: DtypeLike = "float32"
-    ) -> None:
+    def summary(self, input_shape: ShapeLike, input_dtype: DtypeLike = "float32") -> None:
         """Prints information about the model.
 
         Parameters

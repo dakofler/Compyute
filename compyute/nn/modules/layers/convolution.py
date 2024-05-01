@@ -70,9 +70,10 @@ class Convolution1d(Module):
 
         # init biases
         # (Co,)
-        self.b = (
-            Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
-        )
+        self.b = None
+        if bias:
+            b = zeros((out_channels,))
+            self.b = Parameter(b, dtype=dtype, label="b")
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -140,10 +141,10 @@ class Convolution1d(Module):
                 # (B, Ci, Ti)
                 dx = dy_conv_w.sum(axis=1)
 
-                if self.trainable:
-                    # ----------------
-                    # weight grads
-                    # ----------------
+                # ----------------
+                # weight grads
+                # ----------------
+                if self.w.requires_grad:
                     dy_p_ext = dy_p_ext.flip(-1)
 
                     # convolve
@@ -160,13 +161,13 @@ class Convolution1d(Module):
                     # (B, Co, Ci, K) -> (Co, Ci, K)
                     self.w.grad = x_conv_dy.sum(axis=0)
 
-                    # ----------------
-                    # bias grads
-                    # ----------------
-                    if self.b is not None:
-                        # sum over batches and time
-                        # (B, Co, To) -> (Co,)
-                        self.b.grad = dy.sum(axis=(0, 2))
+                # ----------------
+                # bias grads
+                # ----------------
+                if self.b is not None and self.b.requires_grad:
+                    # sum over batches and time
+                    # (B, Co, To) -> (Co,)
+                    self.b.grad = dy.sum(axis=(0, 2))
 
                 return dx
 
@@ -227,16 +228,12 @@ class Convolution2d(Module):
         # init weights
         # (Co, Ci, Ky, Kx)
         k = (in_channels * self.kernel_size**2) ** -0.5
-        w = uniform(
-            (out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k
-        )
+        w = uniform((out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k)
         self.w = Parameter(w, dtype=dtype, label="w")
 
         # init biases
         # (Co,)
-        self.b = (
-            Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
-        )
+        self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -305,10 +302,10 @@ class Convolution2d(Module):
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
                 dx = dy_conv_w.sum(axis=1)
 
-                if self.trainable:
-                    # ----------------
-                    # weight grads
-                    # ----------------
+                # ----------------
+                # weight grads
+                # ----------------
+                if self.w.requires_grad:
                     dy_p_ext = dy_p_ext.flip((-2, -1))
 
                     # convolve
@@ -316,21 +313,19 @@ class Convolution2d(Module):
                     x_conv_dy = convolve2d(x, dy_p_ext, padding)
                     k_size = (K - 1) * D + 1
                     k = (x_conv_dy.shape[-1] - k_size) // 2
-                    x_conv_dy = x_conv_dy[
-                        :, :, :, k : k + k_size : D, k : k + k_size : D
-                    ]
+                    x_conv_dy = x_conv_dy[:, :, :, k : k + k_size : D, k : k + k_size : D]
 
                     # sum over batches
                     # (B, Co, Ci, K, K) -> (Co, Ci, K, K)
                     self.w.grad = x_conv_dy.sum(axis=0)
 
-                    # ----------------
-                    # bias grads
-                    # ----------------
-                    if self.b is not None:
-                        # sum over batches, height and width
-                        # (B, Co, Yo, Xo) -> (Co,)
-                        self.b.grad = dy.sum(axis=(0, 2, 3))
+                # ----------------
+                # bias grads
+                # ----------------
+                if self.b is not None and self.b.requires_grad:
+                    # sum over batches, height and width
+                    # (B, Co, Yo, Xo) -> (Co,)
+                    self.b.grad = dy.sum(axis=(0, 2, 3))
 
                 return dx
 

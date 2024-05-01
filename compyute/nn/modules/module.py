@@ -116,7 +116,11 @@ class Module(ABC):
     def trainable(self, value: bool) -> None:
         if self.__trainable == value:
             return
+        
         self.__trainable = value
+
+        for parameter in self.parameters:
+            parameter.requires_grad = value
 
         if self.modules is not None:
             for module in self.modules:

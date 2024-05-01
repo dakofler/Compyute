@@ -37,6 +37,7 @@ class Tensor:
         dtype: Optional[DtypeLike] = None,
         copy: bool = False,
         device: Optional[DeviceLike] = None,
+        requires_grad: bool = True,
     ) -> None:
         """Tensor object.
 
@@ -50,11 +51,14 @@ class Tensor:
             If true, the data object is copied (may impact performance), by default False.
         device: DeviceLike, optional
             Device the tensor is stored on ("cuda" or "cpu"), by default None.
+        requires_grad: bool, optional
+            Whether the tensor requires gradients, by default True.
         """
 
         self.__device = infer_device(data) if device is None else device
         self.data = self.__engine.array(data, copy=copy, dtype=dtype)
         self.grad: Optional[Tensor] = None
+        self.requires_grad = requires_grad
         self.__iterator: Optional[int] = None
 
     # ----------------------------------------------------------------------------------------------

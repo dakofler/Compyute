@@ -1,6 +1,7 @@
 """Neural network functions module"""
 
 from typing import Callable, Literal, Optional
+from ..preprocessing.basic import one_hot_encode
 from ..tensor_f import arange, maximum, minimum, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
@@ -40,6 +41,7 @@ def relu(
         Backward function.
     """
     y = maximum(x, 0)
+
     backward = (lambda dy: (y > 0) * dy) if return_backward_fn else None
     return y, backward
 
@@ -198,9 +200,7 @@ def log_softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
     return (x / x.sum(axis=axis, keepdims=True)).log()
 
 
-def temperature_softmax(
-    x: Tensor, temperature: float = 1, axis: AxisLike = -1
-) -> Tensor:
+def temperature_softmax(x: Tensor, temperature: float = 1, axis: AxisLike = -1) -> Tensor:
     """Applies the softmax function with temperature to the last axis.
 
     Parameters
@@ -226,9 +226,7 @@ def temperature_softmax(
 
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_fn: bool = False
-) -> tuple[
-    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
-]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
     """Applies the linear transformation X @ W^T + b.
 
     Parameters
@@ -253,23 +251,25 @@ def linear(
 
     if return_backward_fn:
 
-        def backward(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
+        def backward(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
             # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
             dx = dy @ w
 
             # weight grads
-            # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
-            # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
-            dw = dy.T @ x
-            if x.ndim > 2:
-                # sum over all batch dimensions
-                # (B, ..., Ci, Co) -> (Ci, Co)
-                dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
+            dw = None
+            if w.requires_grad:
+                # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
+                # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
+                dw = dy.T @ x
+                if x.ndim > 2:
+                    # sum over all batch dimensions
+                    # (B, ..., Ci, Co) -> (Ci, Co)
+                    dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
 
             # bias grads
             db = None
-            if b is not None:
+            if b is not None and b.requires_grad:
                 # sum over all batch dimensions
                 # (B, ... , Co) -> (Co,)
                 db = dy.sum(axis=tuple(arange(x.ndim - 1)))
@@ -579,6 +579,48 @@ def avgpooling2d(
         def backward(dy: Tensor) -> Tensor:
             y_ups = upsample2d(dy, kernel_size, x.shape)
             return y_ups / (Ky * Kx)
+
+        return y, backward
+
+    return y, None
+
+
+def lookup_embedding(
+    x: Tensor, embedding_table: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], None]]]:
+    """Performs lookup embedding on a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor of integer dtype used for indexing into the embedding table.
+    embedding_table : Tensor
+        Tensor of embedding values.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
+    """
+    if x.dtype not in ("int32", "int64"):
+        raise ValueError(f"Input must be int32 or int64, got {x.dtype}.")
+
+    x = one_hot_encode(x, embedding_table.shape[0]).astype(embedding_table.dtype)
+    y = x @ embedding_table
+
+    if return_backward_fn:
+
+        def backward(dy: Tensor) -> Optional[Tensor]:
+            # embedding table grads
+            dembtable = None
+            if embedding_table.requires_grad:
+                dembtable = (x.T @ dy).sum(axis=0)
+
+            return dembtable
 
         return y, backward
 

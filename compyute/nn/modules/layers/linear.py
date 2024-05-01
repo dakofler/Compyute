@@ -48,14 +48,11 @@ class Linear(Module):
         # init weights
         # (Co, Ci)
         k = in_channels**-0.5
-        w = uniform((out_channels, in_channels), -k, k)
-        self.w = Parameter(w, dtype=dtype, label="w")
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k), dtype=dtype, label="w")
 
         # init biases
         # (Co,)
-        self.b = (
-            Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
-        )
+        self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
     def __repr__(self) -> str:
         name = self.__class__.__name__
@@ -68,19 +65,19 @@ class Linear(Module):
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)
+
         y, linear_backward = linear(x, self.w, self.b, self.training)
 
         if self.training:
 
             def backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                dx, dw, db = linear_backward(dy)
 
-                if self.trainable:
-                    self.w.grad = dw
+                # compute gradients
+                dx, self.w.grad, db = linear_backward(dy)
 
-                    if self.b is not None:
-                        self.b.grad = db
+                if self.b is not None:
+                    self.b.grad = db
 
                 return dx
 

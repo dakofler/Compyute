@@ -103,9 +103,7 @@ class ParallelConcatContainer(Container):
                 out_lens = [y.shape[self.concat_axis] for y in ys]
                 splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
-                return tensorsum(
-                    [self.modules[i].backward(s) for i, s in enumerate(dy_splits)]
-                )
+                return tensorsum([self.modules[i].backward(s) for i, s in enumerate(dy_splits)])
 
             self.backward_fn = backward
 
