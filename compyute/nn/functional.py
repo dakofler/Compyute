@@ -226,7 +226,7 @@ def temperature_softmax(x: Tensor, temperature: float = 1, axis: AxisLike = -1) 
 
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Applies the linear transformation X @ W^T + b.
 
     Parameters
@@ -247,7 +247,11 @@ def linear(
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
         Backward function.
     """
-    y = x @ w.T if b is None else x @ w.T + b
+
+    # (B, ... , Ci) @ (Ci, Co) -> (B, ..., Co)
+    y = x @ w.T
+    if b is not None:
+        y += b
 
     if return_backward_fn:
 
@@ -257,7 +261,6 @@ def linear(
             dx = dy @ w
 
             # weight grads
-            dw = None
             if w.requires_grad:
                 # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
                 # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
@@ -265,14 +268,19 @@ def linear(
                 if x.ndim > 2:
                     # sum over all batch dimensions
                     # (B, ..., Ci, Co) -> (Ci, Co)
-                    dw = dw.sum(axis=tuple(arange(x.ndim - 2)))
+                    axes = tuple(range(x.ndim - 2))
+                    dw = dw.sum(axis=axes)
+            else:
+                dw = None
 
             # bias grads
-            db = None
             if b is not None and b.requires_grad:
                 # sum over all batch dimensions
                 # (B, ... , Co) -> (Co,)
-                db = dy.sum(axis=tuple(arange(x.ndim - 1)))
+                axes = tuple(range(x.ndim - 1))
+                db = dy.sum(axis=axes)
+            else:
+                db = None
 
             return dx, dw, db
 
@@ -536,11 +544,11 @@ def maxpooling2d(
 
     if return_backward_fn:
         y_ups = upsample2d(y, kernel_size, x.shape)
-
-        def backward(dy: Tensor) -> Tensor:
-            dy_str = upsample2d(dy, kernel_size, x.shape)
-            return dy_str * (x == y_ups).int()
-
+        backward = (
+            (lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups).int())
+            if return_backward_fn
+            else None
+        )
         return y, backward
 
     return y, None
@@ -575,11 +583,11 @@ def avgpooling2d(
     y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))
 
     if return_backward_fn:
-
-        def backward(dy: Tensor) -> Tensor:
-            y_ups = upsample2d(dy, kernel_size, x.shape)
-            return y_ups / (Ky * Kx)
-
+        backward = (
+            (lambda dy: upsample2d(dy, kernel_size, x.shape) / (Ky * Kx))
+            if return_backward_fn
+            else None
+        )
         return y, backward
 
     return y, None
@@ -587,7 +595,7 @@ def avgpooling2d(
 
 def lookup_embedding(
     x: Tensor, embedding_table: Tensor, return_backward_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], None]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], Optional[Tensor]]]]:
     """Performs lookup embedding on a tensor.
 
     Parameters
@@ -616,11 +624,8 @@ def lookup_embedding(
 
         def backward(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
-            dembtable = None
             if embedding_table.requires_grad:
-                dembtable = (x.T @ dy).sum(axis=0)
-
-            return dembtable
+                return (x.T @ dy).sum(axis=0)
 
         return y, backward
 

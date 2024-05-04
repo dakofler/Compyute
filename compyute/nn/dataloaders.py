@@ -116,7 +116,7 @@ def batched(
         the batch_size.
     """
 
-    def inner_func(x: Tensor):
+    def inner_func(x: Tensor) -> Tensor:
         """Calls a function using batched inputs.
 
         Parameters

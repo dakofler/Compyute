@@ -50,12 +50,12 @@ tokenizer.fit(data, vocab_size=400)
 ```
 
 ### Building and training models
-Models can be built using predefined model-templates, like the `SequentialModel`.
+Models can be built using modules and containers, like `Sequential`.
 
 ```python
 import compyute.nn as nn
 
-model = nn.SequentialModel([
+model = nn.Sequential([
     nn.Linear(4, 16),
     nn.ReLU(),
     nn.Batchnorm1d(16),
@@ -63,12 +63,12 @@ model = nn.SequentialModel([
 ])
 ```
 
-Alternatively, models can also be built entirely from scratch, using custom classes that inherit from the `Model` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `SequentialModel`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. 
+Alternatively, models can also be built entirely from scratch, using custom classes that inherit from the `Container` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. 
 
 ```python
 import compyute.nn as nn
 
-class MyCustomModel(nn.Model):
+class MyCustomModel(nn.Container):
     def __init__(self):
         super().__init__()
 
@@ -99,7 +99,7 @@ class MyCustomModel(nn.Model):
 model = MyCustomModel()
 ```
 
-Defined models can be trained and updated using common optimizer algorithmes, such as SGD or Adam. Models can also be saved and loaded later on.
+Defined models can be trained and updated using common optimizer algorithms, such as SGD or Adam. Models can also be saved and loaded later on.
 
 ```python
 from compyute.nn.trainer import Trainer
@@ -111,7 +111,7 @@ trainer = Trainer(
 )
 trainer.train(X_train, y_train, epochs=10)
 
-nn.save_model(model, "my_model.cp")
+nn.save_module(model, "my_model.cp")
 ```
 
 ## License

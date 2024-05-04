@@ -92,12 +92,11 @@ class Trainer:
 
         if val_data:
             val_dataloader = DataLoader(*val_data, batch_size, self.model.device, False, False)
-            self.state["val_loss"] = []
-            self.state["epoch_val_loss"] = []
 
+            stats = ["val_loss", "epoch_val_loss"]
             if self.metric is not None:
-                self.state[f"val_{self.metric.name}"] = []
-                self.state[f"epoch_val_{self.metric.name}"] = []
+                stats += [f"val_{self.metric.name}", f"epoch_val_{self.metric.name}"]
+            self.__init_stats(stats)
 
         if verbose == 1:
             pbar = tqdm(unit=" epoch", total=epochs)
@@ -127,7 +126,7 @@ class Trainer:
                 for callback in self.callbacks:
                     callback.on_step(self)
 
-            # statistics
+            # log stats
             self.__log_epoch_loss(n_train)
             self.__log_epoch_score(n_train)
 
@@ -141,14 +140,13 @@ class Trainer:
                 for batch in val_dataloader():
                     self.__val_step(batch)
 
-                # statistics
+                # log stats
                 n_val = len(val_dataloader)
                 self.__log_epoch_loss(n_val, "val_")
                 self.__log_epoch_score(n_val, "val_")
 
                 self.model.set_retain_values(retain_values)
 
-            # logging #n_train_steps
             if verbose in [1, 2]:
                 include_val = val_data is not None
                 pbar.set_postfix_str(self.__get_pbar_postfix(include_val))
@@ -186,13 +184,15 @@ class Trainer:
         ScalarLike, optional
             Metric score.
         """
-
-        # make predictions
         y_pred = batched(self.model.forward, batch_size, self.model.device, False)(x)
         y.to_device(self.model.device)
         loss = self.__compute_loss(y_pred, y)
         score = self.__compute_score(y_pred, y)
         return loss, score
+
+    def __init_stats(self, stats: list[str]) -> None:
+        for stat in stats:
+            self.state[stat] = []
 
     def __train_step(self, batch: tuple[Tensor, Tensor]) -> None:
         """Performs one training step on a batch of data.
@@ -205,8 +205,6 @@ class Trainer:
 
         # prepare data
         X_batch, y_batch = batch
-        X_batch.to_device(self.model.device)
-        y_batch.to_device(self.model.device)
 
         # forward pass
         y_pred = self.model.forward(X_batch)
@@ -230,8 +228,6 @@ class Trainer:
 
         # prepare data
         X_batch, y_batch = batch
-        X_batch.to_device(self.model.device)
-        y_batch.to_device(self.model.device)
 
         # forward pass
         y_pred = self.model.forward(X_batch)
