@@ -1,7 +1,7 @@
 """Early stopping callback module"""
 
+from typing import Any
 from .callback import Callback
-from ....tensor import Tensor
 
 
 __all__ = ["EarlyStopping"]
@@ -30,40 +30,34 @@ class EarlyStopping(Callback):
         self.patience = patience
         self.use_best_params = use_best_params
         self.target = target
-        self.state: dict[str, float | list[Tensor]] = {
-            "best_epoch": 1,
-            "best_loss": float("inf"),
-        }
+        self.state: dict[str, Any] = {"best_epoch": 1, "best_loss": float("inf"), "history": []}
 
-    def on_epoch(self, trainer) -> None:
-        if self.target not in trainer.state.keys():
-            raise ValueError(f"{self.target} not found in trainer state.")
-
-        hist = trainer.state[f"epoch_{self.target}"]
+    def on_epoch(self, state: dict[str, Any]) -> None:
+        self.state["history"].append(state[f"stat_{self.target}"])
         best_loss = self.state["best_loss"]
 
         # record best loss
-        if hist[-1] < best_loss:
-            self.state["best_epoch"] = trainer.t
-            self.state["best_loss"] = hist[-1]
+        if self.state["history"][-1] < best_loss:
+            self.state["best_epoch"] = state["t"]
+            self.state["best_loss"] = self.state["history"][-1]
 
             # save best parameters
             if self.use_best_params:
-                self.state["best_params"] = [p.copy() for p in trainer.model.parameters]
+                self.state["best_params"] = [p.copy() for p in state["model"].parameters]
 
-        if len(hist) <= self.patience:
+        if len(self.state["history"]) <= self.patience:
             return
 
         # check if loss has decreased
-        if all([hist[-i] > best_loss for i in range(1, self.patience + 1)]):
+        if all([self.state["history"][-i] > best_loss for i in range(1, self.patience + 1)]):
             msg = f"Early stopping: no improvement over last {self.patience} epochs."
 
             # reset model parameters to best epoch
             if self.use_best_params:
                 best_epoch = self.state["best_epoch"]
                 msg += f" Resetting parameters best epoch {best_epoch}."
-                for i, p in enumerate(trainer.model.parameters):
+                for i, p in enumerate(state["model"].parameters):
                     p.data = self.state["best_params"][i].data
 
             print(msg)
-            trainer.abort = True
+            state["abort"] = True

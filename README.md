@@ -27,7 +27,7 @@ b = b.float()
 c = Tensor([1, 2, 3], device="cuda")
 
 # change devices
-c.cpu()
+c = c.cpu()
 
 # addition of tensors
 d = a + b

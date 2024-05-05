@@ -3,6 +3,7 @@
 from typing import Optional
 from .module import Module
 from ..parameter import Parameter
+from ...engine import check_device
 from ...tensor_f import concatenate, ones, tensorsum
 from ...tensor import Tensor
 from ...types import DeviceLike, DtypeLike, ShapeLike
@@ -23,33 +24,27 @@ class Container(Module):
             List of modules used in the container.
         """
         super().__init__()
-        self.__modules = modules
+        self._modules = modules
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
-    @property
-    def modules(self) -> list[Module]:
-        """Returns the list of modules."""
-        if self.__modules is not None:
-            return self.__modules
-        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
-
     def to_device(self, device: DeviceLike) -> None:
-        """Moves the module to a specified device.
-
-        Parameters
-        ----------
-        device : DeviceLike
-            Device to move the tensor to ("cuda" or "cpu").
-        """
-        if device == self.device:
+        if self._device == device:
             return
 
         super().to_device(device)
+
         for module in self.modules:
             module.to_device(device)
+
+    @property
+    def modules(self) -> list[Module]:
+        """Returns the list of modules."""
+        if self._modules is not None:
+            return self._modules
+        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -60,29 +55,31 @@ class Container(Module):
         return p
 
     def set_retain_values(self, value: bool) -> None:
-        if self.retain_values == value:
+        if self._retain_values == value:
             return
 
         super().set_retain_values(value)
+
         for module in self.modules:
             module.set_retain_values(value)
 
-    def set_training(self, value: bool) -> None:
-        """Sets the training mode for the module"""
-        if self.training == value:
-            return
-
-        super().set_training(value)
-        for module in self.modules:
-            module.set_training(value)
-
     def set_trainable(self, value: bool) -> None:
-        if self.trainable == value:
+        if self._trainable == value:
             return
 
         super().set_trainable(value)
+
         for module in self.modules:
             module.set_trainable(value)
+
+    def set_training(self, value: bool) -> None:
+        if self._training == value:
+            return
+
+        super().set_training(value)
+
+        for module in self.modules:
+            module.set_training(value)
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS

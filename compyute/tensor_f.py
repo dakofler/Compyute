@@ -1,6 +1,6 @@
 """Tensor functions module"""
 
-from typing import Optional, Sequence
+from typing import Optional
 from .engine import get_engine
 from .tensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
@@ -132,9 +132,7 @@ def zeros(
     return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 
-def ones(
-    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
-) -> Tensor:
+def ones(shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -202,9 +200,7 @@ def empty_like(x: Tensor) -> Tensor:
     return empty(x.shape, dtype=x.dtype, device=x.device)
 
 
-def eye(
-    n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
-) -> Tensor:
+def eye(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
     """Returns a diagonal tensor of shape (n, n).
 
     Parameters
@@ -288,13 +284,13 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def prod(x: Sequence[int | float]) -> int | float:
+def prod(x: list[int | float]) -> int | float:
     """Returns the product of a sequence of elements.
 
     Parameters
     ----------
-    x : Sequence[int | float]
-        Sequence of elements.
+    x : list[int | float]
+        list of elements.
 
     Returns
     -------
@@ -304,12 +300,12 @@ def prod(x: Sequence[int | float]) -> int | float:
     return get_engine("cpu").prod(x).item()
 
 
-def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
+def concatenate(tensors: list[Tensor], axis: AxisLike = -1) -> Tensor:
     """Returns a new tensor by joining a sequence of tensors along a given axis.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
+    tensors : list[Tensor]
         List of Tensors to be joined.
     axis : AxisLike, optional
         Axis along which to join the tensors, by default -1.
@@ -323,12 +319,12 @@ def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
 
 
-def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+def stack(tensors: list[Tensor], axis: AxisLike = 0) -> Tensor:
     """Returns a new tensor by stacking a sequence of tensors along a given axis.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
+    tensors : list[Tensor]
         List of Tensors to be stacked.
     axis : AxisLike, optional
         Axis along which to stack the tensors, by default 0.
@@ -342,12 +338,12 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))
 
 
-def tensorsum(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+def tensorsum(tensors: list[Tensor], axis: AxisLike = 0) -> Tensor:
     """Sums a sequence of tensors element-wise.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
+    tensors : list[Tensor]
         List of Tensors to be joined.
     axis : AxisLike, optional
         Axis along which to join the tensors, by default -1.
@@ -360,12 +356,12 @@ def tensorsum(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     return stack(tensors=tensors, axis=axis).sum(axis=axis)
 
 
-def tensorprod(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+def tensorprod(tensors: list[Tensor], axis: AxisLike = 0) -> Tensor:
     """Multiplies a sequence of tensors element-wise.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
+    tensors : list[Tensor]
         List of Tensors to be joined.
     axis : AxisLike, optional
         Axis along which to join the tensors, by default -1.

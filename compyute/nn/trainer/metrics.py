@@ -1,6 +1,7 @@
 """Evaluation metrics module"""
 
 from abc import ABC, abstractmethod
+from ..functional import accuracy_score, r2_score
 from ...tensor import Tensor
 
 
@@ -10,11 +11,6 @@ __all__ = ["Accuracy", "R2"]
 class Metric(ABC):
     """Metric base class."""
 
-    @property
-    def name(self) -> str:
-        """Metric name."""
-        return self.__class__.__name__.lower()
-
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
 
@@ -22,14 +18,14 @@ class Metric(ABC):
 class Accuracy(Metric):
     """Computes the accuracy score."""
 
-    def __call__(self, logits: Tensor, t: Tensor) -> Tensor:
+    def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the accuracy score.
 
         Parameters
         ----------
-        logits : Tensor
-            A model's logits.
-        t : Tensor
+        y_pred : Tensor
+            A model's predictions.
+        y_true : Tensor
             Target values.
 
         Returns
@@ -37,21 +33,21 @@ class Accuracy(Metric):
         Tensor
             Accuracy value.
         """
-
-        return (logits.argmax(-1) == t).sum().float() / logits.shape[0]
+        score = accuracy_score(y_pred, y_true)
+        return score
 
 
 class R2(Metric):
     """Computes the coefficient of determination (R2 score)."""
 
-    def __call__(self, logits: Tensor, t: Tensor, eps: float = 1e-8) -> Tensor:
+    def __call__(self, y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
         """Computes the coefficient of determination (R2 score).
 
         Parameters
         ----------
-        logits : Tensor
-            A model's logits.
-        t : Tensor
+        y_pred : Tensor
+            A model's predictions.
+        y_true : Tensor
             Target values.
         eps: float, optional
             Constant for numerical stability, by default 1e-8.
@@ -59,12 +55,10 @@ class R2(Metric):
         Returns
         -------
         Tensor
-            Accuracy value.
+            R2 score.
         """
-
-        ssr = ((t - logits) ** 2).sum()
-        sst = ((t - t.mean()) ** 2).sum()
-        return 1 - ssr / (sst + eps)
+        score = r2_score(y_pred, y_true)
+        return score
 
 
 METRICS = {"accuracy": Accuracy, "r2": R2}

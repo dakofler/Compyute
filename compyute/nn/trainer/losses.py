@@ -2,13 +2,11 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable, Optional
-from ..functional import softmax
-from ...tensor_f import prod
-from ...preprocessing.basic import one_hot_encode
+from ..functional import binary_cross_entropy, cross_entropy, mean_squared_error
 from ...tensor import Tensor
 
 
-__all__ = ["BinaryCrossentropy", "Crossentropy", "MSE"]
+__all__ = ["BinaryCrossEntropy", "CrossEntropy", "MSE"]
 
 
 class Loss(ABC):
@@ -39,16 +37,12 @@ class MSE(Loss):
         Tensor
             Mean squared error loss.
         """
-        y = y.float()
-        t = t.float()
-
-        self.backward = lambda: (y - t) * 2 / prod(y.shape)
-
-        return ((y - t) ** 2).mean()
+        loss, self.backward = mean_squared_error(y, t, return_backward_fn=True)
+        return loss
 
 
-class Crossentropy(Loss):
-    """Computes the crossentropy loss."""
+class CrossEntropy(Loss):
+    """Computes the cross entropy loss."""
 
     def __init__(self, eps: float = 1e-8):
         """Computes the crossentropy loss.
@@ -62,7 +56,7 @@ class Crossentropy(Loss):
         self.eps = eps
 
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
-        """Computes the crossentropy loss.
+        """Computes the cross entropy loss.
 
         Parameters
         ----------
@@ -74,24 +68,17 @@ class Crossentropy(Loss):
         Returns
         -------
         Tensor
-            Crossentropy loss.
+            Cross entropy loss.
         """
-        y = y.float()
-        t = t.int()
-
-        t = one_hot_encode(t, y.shape[-1])
-        probs = softmax(y)
-
-        self.backward = lambda: (probs - t) / prod(y.shape[:-1])
-
-        return -((probs + self.eps) * t).sum(-1).log().mean()
+        loss, self.backward = cross_entropy(y, t, return_backward_fn=True)
+        return loss
 
 
-class BinaryCrossentropy(Loss):
-    """Computes the binary crossentropy loss."""
+class BinaryCrossEntropy(Loss):
+    """Computes the binary cross entropy loss."""
 
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
-        """Computes the binary crossentropy loss.
+        """Computes the binary cross entropy loss.
 
         Parameters
         ----------
@@ -103,21 +90,16 @@ class BinaryCrossentropy(Loss):
         Returns
         -------
         Tensor
-            Crossentropy loss.
+            Binary cross entropy loss.
         """
-        y = y.float()
-        t = t.float()
-        c = 100
-
-        self.backward = lambda: (-t / y + (1 - t) / (1 - y)) / prod(y.shape)
-
-        return -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
+        loss, self.backward = binary_cross_entropy(y, t, return_backward_fn=True)
+        return loss
 
 
 LOSSES = {
-    "binary_crossentropy": BinaryCrossentropy,
-    "crossentropy": Crossentropy,
-    "mse": MSE,
+    "binary_cross_entropy": BinaryCrossEntropy,
+    "cross_entropy": CrossEntropy,
+    "mean_squared_error": MSE,
 }
 
 

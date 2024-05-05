@@ -2,7 +2,7 @@
 
 from typing import Callable, Literal, Optional
 from ..preprocessing.basic import one_hot_encode
-from ..tensor_f import arange, maximum, minimum, zeros
+from ..tensor_f import maximum, minimum, prod, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
@@ -630,3 +630,138 @@ def lookup_embedding(
         return y, backward
 
     return y, None
+
+
+def mean_squared_error(
+    y: Tensor, t: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+    """Computes the mean squared error loss.
+
+    Parameters
+    ----------
+    y : Tensor
+        A model's predictions.
+    t : Tensor
+        Target values.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
+
+    Returns
+    -------
+    Tensor
+        Mean squared error loss.
+    Callable[[], Tensor]], optional
+        Backward function.
+    """
+    dif = y.float() - t.float()
+    loss = (dif**2).mean()
+
+    backward = (lambda: dif * 2 / prod(y.shape)) if return_backward_fn else None
+
+    return loss, backward
+
+
+def cross_entropy(
+    y: Tensor, t: Tensor, eps: float = 1e-8, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+    """Computes the cross entropy loss.
+
+    Parameters
+    ----------
+    y : Tensor
+        A model's predictions.
+    t : Tensor
+        Target values.
+    eps : float, optional
+        Constant used for numerical stability, by default 1e-8.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
+
+    Returns
+    -------
+    Tensor
+        Cross entropy loss.
+    Callable[[], Tensor]], optional
+        Backward function.
+    """
+    t = t.int()
+    t = one_hot_encode(t, y.shape[-1])
+    probs = softmax(y.float())
+    loss = -((probs + eps) * t).sum(-1).log().mean()
+
+    backward = (lambda: (probs - t) / prod(y.shape[:-1])) if return_backward_fn else None
+
+    return loss, backward
+
+
+def binary_cross_entropy(
+    y: Tensor, t: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+    """Computes the cross entropy loss.
+
+    Parameters
+    ----------
+    y : Tensor
+        A model's predictions.
+    t : Tensor
+        Target values.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
+
+    Returns
+    -------
+    Tensor
+        Cross entropy loss.
+    Callable[[], Tensor]], optional
+        Backward function.
+    """
+    y = y.float()
+    t = t.int()
+    c = 100
+    loss = -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
+
+    backward = (
+        (lambda: (-t / y + (1 - t) / (1 - y)) / prod(y.shape)) if return_backward_fn else None
+    )
+
+    return loss, backward
+
+
+def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
+    """Computes the accuracy score.
+
+    Parameters
+    ----------
+    y_pred : Tensor
+        A model's predictions.
+    y_true : Tensor
+        Target values.
+
+    Returns
+    -------
+    Tensor
+        Accuracy score.
+    """
+    return (y_pred.argmax(-1) == y_true).sum().float() / prod(y_pred.shape[:-1])
+
+
+def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
+    """Computes the coefficient of determination (R2 score).
+
+    Parameters
+    ----------
+    y_pred : Tensor
+        A model's predictions.
+    y_true : Tensor
+        Target values.
+    eps: float, optional
+        Constant for numerical stability, by default 1e-8.
+
+    Returns
+    -------
+    Tensor
+        R2 score.
+    """
+    ssr = ((y_true - y_pred) ** 2).sum()
+    sst = ((y_true - y_true.mean()) ** 2).sum()
+    return 1 - ssr / (sst + eps)

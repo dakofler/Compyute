@@ -1,5 +1,6 @@
 """Dataloaders module"""
 
+from functools import wraps
 from typing import Callable, Generator, Optional
 from ..random import shuffle
 from ..tensor import Tensor
@@ -93,7 +94,7 @@ class DataLoader:
 
 
 def batched(
-    outer_func: Callable,
+    func: Callable[[Tensor], Tensor],
     batch_size: int = 1,
     device: DeviceLike = "cpu",
     shuffle_data: bool = True,
@@ -103,8 +104,6 @@ def batched(
 
     Parameters
     ----------
-    outer_func : Callable
-        Function to be called.
     batch_size : int, optional
         Size of returned batches, by default 1.
     device: DeviceLike, optional
@@ -116,14 +115,8 @@ def batched(
         the batch_size.
     """
 
-    def inner_func(x: Tensor) -> Tensor:
-        """Calls a function using batched inputs.
-
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
-        """
+    @wraps(func)
+    def wrapper(x: Tensor, *args, **kwargs) -> Tensor:
         dataloader = DataLoader(
             x,
             batch_size=batch_size,
@@ -131,11 +124,9 @@ def batched(
             shuffle_data=shuffle_data,
             drop_remaining=drop_remaining,
         )
-        outputs = []
+        ys = []
+        for x_batch, _ in dataloader():
+            ys.append(func(x_batch, *args, **kwargs))
+        return concatenate(ys, axis=0)
 
-        for batch, _ in dataloader():
-            outputs.append(outer_func(batch))
-
-        return concatenate(outputs, axis=0)
-
-    return inner_func
+    return wrapper

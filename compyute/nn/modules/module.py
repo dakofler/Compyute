@@ -5,6 +5,7 @@ from abc import ABC
 import pickle
 from typing import Callable, Optional
 from ..parameter import Parameter
+from ...engine import check_device
 from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
 
@@ -19,10 +20,10 @@ class Module(ABC):
         """Module base class."""
         self.y: Optional[Tensor] = None
         self.backward_fn: Optional[Callable[[Tensor], Optional[Tensor]]] = None
-        self.__device: DeviceLike = "cpu"
-        self.__retain_values: bool = False
-        self.__training: bool = False
-        self.__trainable: bool = True
+        self._device: DeviceLike = "cpu"
+        self._retain_values: bool = False
+        self._training: bool = False
+        self._trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -31,19 +32,15 @@ class Module(ABC):
     @property
     def device(self) -> DeviceLike:
         """Device the module tensors are stored on."""
-        return self.__device
+        return self._device
 
     def to_device(self, device: DeviceLike) -> None:
-        """Moves the module to a specified device.
-
-        Parameters
-        ----------
-        device : DeviceLike
-            Device to move the tensor to ("cuda" or "cpu").
-        """
+        """Moves the module to the specified device."""
         if device == self.device:
             return
-        self.__device = device
+
+        check_device(device)
+        self._device = device
 
         if self.y is not None:
             self.y.to_device(device)
@@ -53,39 +50,35 @@ class Module(ABC):
 
     @property
     def retain_values(self) -> bool:
-        """Whether to retain intermediate values after a forward pass."""
-        return self.__retain_values
+        """Whether module parameters are trainable."""
+        return self._retain_values
 
     def set_retain_values(self, value: bool) -> None:
-        """Whether to retain intermediate values after a forward pass."""
-        if self.__retain_values == value:
-            return
-        self.__retain_values = value
-
-    @property
-    def training(self) -> bool:
-        """Training mode for the module."""
-        return self.__training
-
-    def set_training(self, value: bool) -> None:
-        """Sets the training mode for the module"""
-        if self.__training == value:
-            return
-        self.__training = value
+        """Whether module parameters are trainable."""
+        self._retain_values = value
 
     @property
     def trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self.__trainable
+        return self._trainable
 
     def set_trainable(self, value: bool) -> None:
         """Whether the module parameters are trainable."""
-        if self.__trainable == value:
+        if self._trainable == value:
             return
-        self.__trainable = value
+        self._trainable = value
 
         for parameter in self.parameters:
             parameter.requires_grad = value
+
+    @property
+    def training(self) -> bool:
+        """Module training mode."""
+        return self._training
+
+    def set_training(self, value: bool) -> None:
+        """Module training mode."""
+        self._training = value
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -210,9 +203,8 @@ def save_module(module: Module, filepath: str) -> None:
     module.to_device("cpu")
     module.reset()
 
-    file = open(filepath, "wb")
-    pickle.dump(module, file)
-    file.close()
+    with open(filepath, "wb") as file:
+        pickle.dump(module, file)
 
 
 def load_module(filepath: str) -> Module:
@@ -228,7 +220,6 @@ def load_module(filepath: str) -> Module:
     Model
         Loaded model.
     """
-    file = open(filepath, "rb")
-    obj = pickle.load(file)
-    file.close()
+    with open(filepath, "rb") as file:
+        obj = pickle.load(file)
     return obj
