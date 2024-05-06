@@ -1,5 +1,6 @@
 """Linear transformation layers module"""
 
+from typing import Optional
 from ..module import Module
 from ...parameter import Parameter
 from ...functional import linear
@@ -21,6 +22,7 @@ class Linear(Module):
         out_channels: int,
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Fully connected layer.
         Input: (B, ... , Cin)
@@ -38,8 +40,10 @@ class Linear(Module):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = bias
@@ -55,12 +59,12 @@ class Linear(Module):
         self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         in_channels = self.in_channels
         out_channels = self.out_channels
         bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {bias=}, {dtype=})"
+        return f"{label}({in_channels=}, {out_channels=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3, 4, 5])

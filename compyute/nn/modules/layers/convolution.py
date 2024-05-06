@@ -1,8 +1,8 @@
 """Convolution layers module"""
 
-from typing import Literal
+from typing import Literal, Optional
 from ..module import Module
-from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d, upsample2d
+from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ...parameter import Parameter
 from ....tensor_f import zeros
 from ....random import uniform
@@ -26,6 +26,7 @@ class Convolution1d(Module):
         dilation: int = 1,
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Convolutional layer used for temporal information and feature extraction.
         Input: (B, Ci, Ti)
@@ -51,8 +52,10 @@ class Convolution1d(Module):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -76,7 +79,7 @@ class Convolution1d(Module):
             self.b = Parameter(b, dtype=dtype, label="b")
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         in_channels = self.in_channels
         out_channels = self.out_channels
         kernel_size = self.kernel_size
@@ -85,7 +88,7 @@ class Convolution1d(Module):
         dilation = self.dilation
         bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dilation=}, {bias=}, {dtype=})"
+        return f"{label}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dilation=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
@@ -189,6 +192,7 @@ class Convolution2d(Module):
         dilation: int = 1,
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
         Input: (B, Ci, Yi, Xi)
@@ -214,8 +218,10 @@ class Convolution2d(Module):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -236,7 +242,7 @@ class Convolution2d(Module):
         self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         in_channels = self.in_channels
         out_channels = self.out_channels
         kernel_size = self.kernel_size
@@ -245,7 +251,7 @@ class Convolution2d(Module):
         dil = self.dilation
         bias = self.bias
         dtype = self.dtype
-        return f"{name}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dil=}, {bias=}, {dtype=})"
+        return f"{label}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dil=}, {bias=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -337,7 +343,7 @@ class Convolution2d(Module):
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2, stride: int = 2) -> None:
+    def __init__(self, kernel_size: int = 2, stride: int = 2, label: Optional[str] = None) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
@@ -346,28 +352,32 @@ class MaxPooling2d(Module):
              Shape of the pooling window used for the pooling operation, by default 2.
         stride : int , optional
             Strides used for the pooling operation, by default 2.
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.kernel_size = kernel_size
         self.stride = stride
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         kernel_size = self.kernel_size
-        return f"{name}({kernel_size=})"
+        return f"{label}({kernel_size=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
 
-        K = (self.kernel_size, self.kernel_size)
-        y, self.backward_fn = maxpooling2d(x, K, self.training)
+        kernel_size = (self.kernel_size, self.kernel_size)
+        y, self.backward_fn = maxpooling2d(x, kernel_size, self.training)
         return y
 
 
 class AvgPooling2d(Module):
     """AvgPooling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2, dtype: str = "float32") -> None:
+    def __init__(
+        self, kernel_size: int = 2, dtype: str = "float32", label: Optional[str] = None
+    ) -> None:
         """AvgPooling layer used to reduce information to avoid overfitting.
 
         Parameters
@@ -376,19 +386,21 @@ class AvgPooling2d(Module):
              Shape of the pooling window used for the pooling operation, by default 2.
         dtype: str, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.kernel_size = kernel_size
         self.dtype = dtype
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         kernel_size = self.kernel_size
-        return f"{name}({kernel_size=})"
+        return f"{label}({kernel_size=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
 
-        K = (self.kernel_size, self.kernel_size)
-        y, self.backward_fn = avgpooling2d(x, K, self.training)
+        kernel_size = (self.kernel_size, self.kernel_size)
+        y, self.backward_fn = avgpooling2d(x, kernel_size, self.training)
         return y

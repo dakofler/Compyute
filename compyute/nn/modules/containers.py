@@ -3,7 +3,6 @@
 from typing import Optional
 from .module import Module
 from ..parameter import Parameter
-from ...engine import check_device
 from ...tensor_f import concatenate, ones, tensorsum
 from ...tensor import Tensor
 from ...types import DeviceLike, DtypeLike, ShapeLike
@@ -15,15 +14,17 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 class Container(Module):
     """Container base module."""
 
-    def __init__(self, modules: Optional[list[Module]] = None) -> None:
+    def __init__(self, modules: Optional[list[Module]] = None, label: Optional[str] = None) -> None:
         """Container base module.
 
         Parameters
         ----------
         modules : list[Module], optional
             List of modules used in the container.
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self._modules = modules
 
     # ----------------------------------------------------------------------------------------------
@@ -86,7 +87,7 @@ class Container(Module):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        string = f"{self.__class__.__name__}()"
+        string = f"{self.label}()"
 
         if self.modules is not None:
             for module in self.modules:
@@ -119,7 +120,7 @@ class Container(Module):
         """
         n = 63
 
-        summary = [f"{self.__class__.__name__}\n{'-' * n}"]
+        summary = [f"{self.label}\n{'-' * n}"]
         summary += [f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n"]
         summary += ["=" * n, "\n"]
 
@@ -129,7 +130,7 @@ class Container(Module):
         _ = self(x)
 
         def build_summary(module, summary, depth):
-            name = " " * depth + module.__class__.__name__
+            name = " " * depth + module.label
             output_shape = str((-1,) + module.y.shape[1:])
             n_params = sum(p.size for p in module.parameters)
             summary += [f"{name:25s} {output_shape:20s} {n_params:15d}\n"]
@@ -151,7 +152,7 @@ class Container(Module):
 class Sequential(Container):
     """Sequential container module. Layers are processed sequentially."""
 
-    def __init__(self, layers: Optional[list[Module]] = None) -> None:
+    def __init__(self, layers: Optional[list[Module]] = None, label: Optional[str] = None) -> None:
         """Sequential container module. Layers are processed sequentially.
 
         Parameters
@@ -159,8 +160,10 @@ class Sequential(Container):
         layers : list[Module], optional
             List of layers used in the container.
             These layers are processed sequentially starting at index 0.
+        label: str, optional
+            Module label.
         """
-        super().__init__(layers)
+        super().__init__(layers, label)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.modules is None:
@@ -186,7 +189,9 @@ class ParallelConcat(Container):
     Inputs are processed independently and outputs are concatinated.
     """
 
-    def __init__(self, modules: list[Module], concat_axis: int = -1) -> None:
+    def __init__(
+        self, modules: list[Module], concat_axis: int = -1, label: Optional[str] = None
+    ) -> None:
         """Parallel container module. Module output tensors are concatinated.
 
         Parameters
@@ -197,8 +202,10 @@ class ParallelConcat(Container):
         concat_axis : int, optional
             Axis along which the output of the parallel modules
             shall be concatinated, by default -1.
+        label: str, optional
+            Module label.
         """
-        super().__init__(modules)
+        super().__init__(modules, label)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
@@ -226,7 +233,7 @@ class ParallelAdd(Container):
     Inputs are processed independently and outputs are added element-wise.
     """
 
-    def __init__(self, modules: Optional[list[Module]]) -> None:
+    def __init__(self, modules: Optional[list[Module]], label: Optional[str] = None) -> None:
         """Parallel container module. Module output tensors are added.
 
         Parameters
@@ -234,8 +241,10 @@ class ParallelAdd(Container):
         modules : list[Module], optional
             List of modules used in the container.
             These modules are processed in parallel and their outputs are added.
+        label: str, optional
+            Module label.
         """
-        super().__init__(modules)
+        super().__init__(modules, label)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.modules is None:

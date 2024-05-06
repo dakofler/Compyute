@@ -1,5 +1,6 @@
 """Normalization layers module"""
 
+from typing import Optional
 from ..module import Module
 from ...parameter import Parameter
 from ....tensor_f import ones, prod, zeros
@@ -19,6 +20,7 @@ class Batchnorm1d(Module):
         eps: float = 1e-5,
         m: float = 0.1,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, T) or (B, C)
@@ -37,8 +39,10 @@ class Batchnorm1d(Module):
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.channels = channels
         self.eps = eps
         self.m = m
@@ -53,12 +57,12 @@ class Batchnorm1d(Module):
         self.rvar = ones((channels,), dtype=dtype)
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         channels = self.channels
         eps = self.eps
         m = self.m
         dtype = self.dtype
-        return f"{name}({channels=}, {eps=}, {m=}, {dtype=})"
+        return f"{label}({channels=}, {eps=}, {m=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3])
@@ -140,6 +144,7 @@ class Batchnorm2d(Module):
         eps: float = 1e-5,
         m: float = 0.1,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Implements Batch Normalization.
         Input: (B, C, Y, X)
@@ -158,8 +163,10 @@ class Batchnorm2d(Module):
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.channels = channels
         self.eps = eps
         self.m = m
@@ -174,12 +181,12 @@ class Batchnorm2d(Module):
         self.rvar = ones((channels,), dtype=dtype)
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         channels = self.channels
         eps = self.eps
         m = self.m
         dtype = self.dtype
-        return f"{name}({channels=}, {eps=}, {m=}, {dtype=})"
+        return f"{label}({channels=}, {eps=}, {m=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -262,6 +269,7 @@ class Layernorm(Module):
         normalized_shape: ShapeLike,
         eps: float = 1e-5,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Implements layer normalization.
         Input: (B, ...)
@@ -278,8 +286,10 @@ class Layernorm(Module):
             Constant for numerical stability, by default 1e-5.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.normalized_shape = normalized_shape
         self.eps = eps
         self.dtype = dtype
@@ -289,11 +299,11 @@ class Layernorm(Module):
         self.b = Parameter(zeros(normalized_shape), dtype=dtype, label="b")
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         normalized_shape = self.normalized_shape
         eps = self.eps
         dtype = self.dtype
-        return f"{name}({normalized_shape=}, {eps=}, {dtype=})"
+        return f"{label}({normalized_shape=}, {eps=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)

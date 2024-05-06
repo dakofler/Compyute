@@ -6,7 +6,7 @@ from ..functional import binary_cross_entropy, cross_entropy, mean_squared_error
 from ...tensor import Tensor
 
 
-__all__ = ["BinaryCrossEntropy", "CrossEntropy", "MSE"]
+__all__ = ["BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 
 
 class Loss(ABC):
@@ -19,7 +19,7 @@ class Loss(ABC):
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
 
 
-class MSE(Loss):
+class MeanSquaredError(Loss):
     """Computes the mean squared error loss."""
 
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
@@ -99,7 +99,7 @@ class BinaryCrossEntropy(Loss):
 LOSSES = {
     "binary_cross_entropy": BinaryCrossEntropy,
     "cross_entropy": CrossEntropy,
-    "mean_squared_error": MSE,
+    "mean_squared_error": MeanSquaredError,
 }
 
 

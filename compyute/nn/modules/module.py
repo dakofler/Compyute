@@ -10,20 +10,22 @@ from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
 
 
-__all__ = ["Module", "Passthrough", "save_module", "load_module"]
+__all__ = ["Module", "save_module", "load_module"]
 
 
 class Module(ABC):
     """Module base class."""
 
-    def __init__(self) -> None:
+    def __init__(self, label: Optional[str] = None) -> None:
         """Module base class."""
         self.y: Optional[Tensor] = None
         self.backward_fn: Optional[Callable[[Tensor], Optional[Tensor]]] = None
+        self.label = label if label is not None else self.__class__.__name__
         self._device: DeviceLike = "cpu"
         self._retain_values: bool = False
         self._training: bool = False
         self._trainable: bool = True
+
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -91,7 +93,7 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        return f"{self.label}()"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)
@@ -185,9 +187,6 @@ class Module(ABC):
                 f"{sender}: Number of input dimensions {
                     x.ndim} is not valid (valid: {vdims})"
             )
-
-class Passthrough(Module):
-    """Acts as a passthrough for data."""
 
 def save_module(module: Module, filepath: str) -> None:
     """Saves a model as a binary file.

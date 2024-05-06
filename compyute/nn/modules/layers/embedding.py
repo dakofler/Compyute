@@ -1,5 +1,6 @@
 """Embedding layers module"""
 
+from typing import Optional
 from ..module import Module
 from ...functional import lookup_embedding
 from ...parameter import Parameter
@@ -19,6 +20,7 @@ class Embedding(Module):
         vocab_size: int,
         embedding_dim: int,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Embedding layer used for token embedding.
         Input: (B, T)
@@ -34,8 +36,10 @@ class Embedding(Module):
             Embedding dimensionality.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.dtype = dtype
@@ -44,21 +48,21 @@ class Embedding(Module):
         self.w = Parameter(normal((vocab_size, embedding_dim)), dtype=dtype, label="w")
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         vocab_size = self.vocab_size
         embedding_dim = self.embedding_dim
         dtype = self.dtype
-        return f"{name}({vocab_size=}, {embedding_dim=}, {dtype=})"
+        return f"{label}({vocab_size=}, {embedding_dim=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2])
-        y, emb_backward = lookup_embedding(x, self.w, self.training)
+        y, embedding_backward = lookup_embedding(x, self.w, self.training)
 
         if self.training:
 
             def backward(dy: Tensor) -> None:
                 dy = dy.astype(self.dtype)
-                self.w.grad = emb_backward(dy)
+                self.w.grad = embedding_backward(dy)
 
             self.backward_fn = backward
 

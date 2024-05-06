@@ -1,5 +1,6 @@
 """Tensor reshaping layers module"""
 
+from typing import Optional
 from ..module import Module
 from ....tensor_f import zeros_like
 from ....tensor import Tensor
@@ -12,7 +13,7 @@ __all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]
 class Slice(Module):
     """Slices a tensor."""
 
-    def __init__(self, s: list[None | int | slice]) -> None:
+    def __init__(self, s: list[None | int | slice], label: Optional[str] = None) -> None:
         """Slices a tensor.
 
         Parameters
@@ -20,14 +21,16 @@ class Slice(Module):
         s : list[None, int, slice]
             Slice applied to a tensor not including the batch dimension.
             e.g. [slice(None), 1] is equivalent to [:, 1]
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.s = s
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         s = self.s
-        return f"{name}({s=})"
+        return f"{label}({s=})"
 
     def forward(self, x: Tensor) -> Tensor:
         s = [slice(None)] + self.s
@@ -48,21 +51,23 @@ class Slice(Module):
 class Reshape(Module):
     """Flatten layer used to reshape tensors to any shape."""
 
-    def __init__(self, output_shape: ShapeLike) -> None:
+    def __init__(self, output_shape: ShapeLike, label: Optional[str] = None) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
         ----------
         output_shape : ShapeLike
             The output's target shape not including the batch dimension.
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.output_shape = output_shape
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         output_shape = self.output_shape
-        return f"{name}({output_shape=})"
+        return f"{label}({output_shape=})"
 
     def forward(self, x: Tensor) -> Tensor:
         y = x.reshape((x.shape[0],) + self.output_shape)
@@ -88,7 +93,7 @@ class Flatten(Module):
 class Moveaxis(Module):
     """Moveaxis layer used to swap tensor dimensions."""
 
-    def __init__(self, from_axis: int, to_axis: int) -> None:
+    def __init__(self, from_axis: int, to_axis: int, label: Optional[str] = None) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
@@ -97,16 +102,18 @@ class Moveaxis(Module):
             Original positions of the axes to move. These must be unique.
         to_axis : int
             Destination positions for each of the original axes. These must also be unique.
+        label: str, optional
+            Module label.
         """
-        super().__init__()
+        super().__init__(label)
         self.from_axis = from_axis
         self.to_axis = to_axis
 
     def __repr__(self) -> str:
-        name = self.__class__.__name__
+        label = self.label
         from_axis = self.from_axis
         to_axis = self.to_axis
-        return f"{name}({from_axis=}, {to_axis=})"
+        return f"{label}({from_axis=}, {to_axis=})"
 
     def forward(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)

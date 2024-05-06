@@ -1,7 +1,7 @@
 """block tests"""
 
 import torch
-from compyute.nn.modules.blocks import ResidualBlock
+from compyute.nn.modules.blocks import SkipConnection
 from compyute.nn.modules.containers import Sequential
 from compyute.nn.modules.layers import Linear, ReLU
 from tests.test_utils import get_vals_float, get_params, validate
@@ -10,8 +10,8 @@ from tests.test_utils import get_vals_float, get_params, validate
 B, Cin, Cout, X = (10, 20, 30, 40)
 
 
-# Residual
-def test_residual() -> None:
+# Skip
+def test_skip() -> None:
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
@@ -22,7 +22,7 @@ def test_residual() -> None:
     compyute_w1, torch_w1 = get_params(w1_shape)
     compyute_w2, torch_w2 = get_params(w2_shape)
 
-    compyute_module = ResidualBlock(
+    compyute_module = SkipConnection(
         Sequential(
             [
                 Linear(Cin, Cout, bias=False),

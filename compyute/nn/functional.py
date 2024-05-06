@@ -55,8 +55,8 @@ def leaky_relu(
     ----------
     x : Tensor
         Input tensor.
-    alpha : float
-        Slope of the negative output.
+    alpha : float, optional
+        Slope of the negative output, by default 0.01.
     return_backward_fn: bool, optional
         Whether to also return the according backward function, by default False.
 
@@ -716,7 +716,7 @@ def binary_cross_entropy(
         Backward function.
     """
     y = y.float()
-    t = t.int()
+    t = t.float()
     c = 100
     loss = -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
 

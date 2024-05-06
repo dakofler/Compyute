@@ -1,6 +1,6 @@
 """Tensor functions module"""
 
-from typing import Optional
+from typing import Optional, Iterable
 from .engine import get_engine
 from .tensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
@@ -284,13 +284,13 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def prod(x: list[int | float]) -> int | float:
+def prod(x: Iterable[int | float]) -> int | float:
     """Returns the product of a sequence of elements.
 
     Parameters
     ----------
-    x : list[int | float]
-        list of elements.
+    x : Iterable[int | float]
+        Iterable of elements.
 
     Returns
     -------

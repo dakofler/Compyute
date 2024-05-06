@@ -4,11 +4,11 @@ from typing import Literal, Optional
 from .containers import Sequential, ParallelAdd
 from .layers import Convolution1d, Convolution2d, Linear
 from .layers.activations import get_act_from_str
-from .module import Module, Passthrough
+from .module import Module
 from ...types import DtypeLike
 
 
-__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBlock"]
+__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
 
 
 class DenseBlock(Sequential):
@@ -21,6 +21,7 @@ class DenseBlock(Sequential):
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Dense neural network block.
         Input: (B, ... , Cin)
@@ -40,12 +41,14 @@ class DenseBlock(Sequential):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
         layers = [
             Linear(in_channels, out_channels, bias, dtype),
             get_act_from_str(activation),
         ]
-        super().__init__(layers)
+        super().__init__(layers, label)
 
 
 class Convolution1dBlock(Sequential):
@@ -62,6 +65,7 @@ class Convolution1dBlock(Sequential):
         dilation: int = 1,
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Convolution 1d block containing a 1d convolutional layer and an activation function.
         Input: (B, Ci, Ti)
@@ -89,6 +93,8 @@ class Convolution1dBlock(Sequential):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
         layers = [
             Convolution1d(
@@ -103,7 +109,7 @@ class Convolution1dBlock(Sequential):
             ),
             get_act_from_str(activation),
         ]
-        super().__init__(layers)
+        super().__init__(layers, label)
 
 
 class Convolution2dBlock(Sequential):
@@ -120,6 +126,7 @@ class Convolution2dBlock(Sequential):
         dilation: int = 1,
         bias: bool = True,
         dtype: DtypeLike = "float32",
+        label: Optional[str] = None,
     ) -> None:
         """Convolution 2d block containing a 2d convolutional layer and an activation function.
         Input: (B, Ci, Yi, Xi)
@@ -147,6 +154,8 @@ class Convolution2dBlock(Sequential):
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default "float32".
+        label: str, optional
+            Module label.
         """
         layers = [
             Convolution2d(
@@ -161,23 +170,28 @@ class Convolution2dBlock(Sequential):
             ),
             get_act_from_str(activation),
         ]
-        super().__init__(layers)
+        super().__init__(layers, label)
 
 
-class ResidualBlock(ParallelAdd):
-    """Residual connection bypassing a block of modules."""
+class SkipConnection(ParallelAdd):
+    """Skip connection bypassing a block of modules."""
 
-    def __init__(self, block: Module, residual_connection: Optional[Module] = None) -> None:
+    def __init__(self, block: Module, skip_connection: Optional[Module] = None) -> None:
         """Residual connection bypassing a block of modules.
 
         Parameters
         ----------
         block : Module
-            Block bypassed by the residual connection.
+            Block bypassed by the skip connection.
             For multiple modules use a container as block.
-        residual_connection: Module, optional
-            Module used in the residual connection to make shapes match, by default None.
-
+        skip_connection: Module, optional
+            Module used in the skip connection for projection, by default None.
+        label: str, optional
+            Module label.
         """
-        res = residual_connection if residual_connection is not None else Passthrough()
+        res = skip_connection if skip_connection is not None else Module("ResidualConnection")
         super().__init__([block, res])
+
+
+# TODO: RNN
+# TODO: LSTM

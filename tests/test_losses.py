@@ -1,7 +1,7 @@
 """Losses tests"""
 
 import torch
-from compyute.nn.trainer.losses import MSE, BinaryCrossentropy, Crossentropy
+from compyute.nn.trainer.losses import MeanSquaredError, BinaryCrossEntropy, CrossEntropy
 from tests.test_utils import get_vals_float, validate, get_vals_int
 
 
@@ -39,7 +39,7 @@ def test_mse_3d() -> None:
     compyute_x, torch_x = get_vals_float(SHAPE3D)
     compyute_t, torch_t = get_vals_float(SHAPE3D)
 
-    compyute_loss = MSE()
+    compyute_loss = MeanSquaredError()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.MSELoss()
@@ -55,14 +55,14 @@ def test_mse_3d() -> None:
     assert all(results)
 
 
-def test_crossentropy_2d() -> None:
+def test_cross_entropy_2d() -> None:
     results = []
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE2D)
     compyute_t, torch_t = get_vals_int((SHAPE2D[0],), high=SHAPE2D[1])
 
-    compyute_loss = Crossentropy()
+    compyute_loss = CrossEntropy()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.CrossEntropyLoss()
@@ -78,7 +78,7 @@ def test_crossentropy_2d() -> None:
     assert all(results)
 
 
-def test_crossentropy_3d() -> None:
+def test_cross_entropy_3d() -> None:
     results = []
 
     # forward
@@ -86,7 +86,7 @@ def test_crossentropy_3d() -> None:
     torch_x_ma = torch.moveaxis(torch_x, -2, -1)
     compyute_t, torch_t = get_vals_int(SHAPE3D[:2], high=SHAPE3D[2])
 
-    compyute_loss = Crossentropy()
+    compyute_loss = CrossEntropy()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.CrossEntropyLoss()
@@ -102,14 +102,14 @@ def test_crossentropy_3d() -> None:
     assert all(results)
 
 
-def test_binary_crossentropy_2d() -> None:
+def test_binary_cross_entropy_2d() -> None:
     results = []
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE2D, low=0)
     compyute_t, torch_t = get_vals_float(SHAPE2D, low=0)
 
-    compyute_loss = BinaryCrossentropy()
+    compyute_loss = BinaryCrossEntropy()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.BCELoss()
@@ -125,14 +125,14 @@ def test_binary_crossentropy_2d() -> None:
     assert all(results)
 
 
-def test_binary_crossentropy_3d() -> None:
+def test_binary_cross_entropy_3d() -> None:
     results = []
 
     # forward
     compyute_x, torch_x = get_vals_float(SHAPE3D, low=0)
     compyute_t, torch_t = get_vals_float(SHAPE3D, low=0)
 
-    compyute_loss = BinaryCrossentropy()
+    compyute_loss = BinaryCrossEntropy()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.BCELoss()
