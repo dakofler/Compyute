@@ -54,14 +54,15 @@ class Trainer:
         self.loss = get_loss(loss)
         self.metric = None if metric is None else get_metric(metric)
 
-        self.callbacks = [History(), ProgressBar()] + ([] if callbacks is None else callbacks)
+        self.callbacks = [History(), ProgressBar(verbose)] + (
+            [] if callbacks is None else callbacks
+        )
 
         self.state: dict[str, Any] = {
             "t": 0,
             "model": self.model,
             "optimizer": self.optimizer,
             "abort": False,
-            "verbose": verbose,
         }
 
     def train(
@@ -71,7 +72,7 @@ class Trainer:
         epochs: int = 100,
         val_data: Optional[tuple[Tensor, Tensor]] = None,
         batch_size: int = 32,
-    ) -> None:
+    ) -> dict[str, float]:
         """Trains the model using samples and targets.
 
         Parameters
@@ -86,21 +87,27 @@ class Trainer:
             Data used for the validaton every epoch, by default None.
         batch_size : int, optional
             Number of inputs processed in parallel, by default 32.
+
+        Returns
+        ----------
+        dict[str, float]
+            Training history.
         """
         train_dataloader = DataLoader(X_train, y_train, batch_size, self.model.device)
+        self.state["epochs"] = epochs
+        self.state["steps"] = len(train_dataloader)
+        self._callback("init")
 
         for _ in range(1, epochs + 1):
             self.state["t"] += 1
+            self._callback("epoch_start")
 
             # training
             self.model.set_training(True)
 
             for batch in train_dataloader():
-                self.__train_step(batch)
-
-                # step callbacks
-                for callback in self.callbacks:
-                    callback.on_step(self.state)
+                self._train_step(batch)
+                self._callback("step")
 
             self.model.set_training(False)
 
@@ -110,14 +117,13 @@ class Trainer:
                 self.state["stat_val_loss"] = loss
                 self.state["stat_val_score"] = score
 
-            # epoch callbacks
-            for callback in self.callbacks:
-                callback.on_epoch(self.state)
-
+            self._callback("epoch_end")
             if self.state["abort"]:
                 break
 
-        self.model.reset()
+        if not self.model.retain_values:
+            self.model.reset()
+        return self.callbacks[0].state
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -162,7 +168,19 @@ class Trainer:
 
         return loss, score
 
-    def __train_step(self, batch: tuple[Tensor, Tensor]) -> None:
+    def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end"]) -> None:
+        for callback in self.callbacks:
+            match on:
+                case "init":
+                    callback.on_init(self.state)
+                case "step":
+                    callback.on_step(self.state)
+                case "epoch_start":
+                    callback.on_epoch_start(self.state)
+                case "epoch_end":
+                    callback.on_epoch_end(self.state)
+
+    def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
         # prepare data
         X_batch, y_batch = batch
 
@@ -170,9 +188,9 @@ class Trainer:
         y_pred = self.model.forward(X_batch)
 
         # compute loss
-        self.state["stat_step_loss"] = self.loss(y_pred, y_batch).item()
+        self.state["stat_loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.state["stat_step_score"] = self.metric(y_pred, y_batch).item()
+            self.state["stat_score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
         self.model.backward(self.loss.backward())

@@ -36,9 +36,7 @@ class StepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_epoch = decay_epoch
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
-        """Updates the optimizer learning rate."""
-
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         # log lr
         self.log_lr(state)
 
@@ -64,9 +62,7 @@ class MultistepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_step_size = decay_step_size
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
-        """Updates the optimizer learning rate."""
-
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         # log lr
         self.log_lr(state)
 
@@ -92,9 +88,7 @@ class ExponentialLR(LRDecay):
         self.lr_decay = lr_decay
         self.until_epoch = until_epoch
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
-        """Updates the optimizer learning rate."""
-
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         # log lr
         self.log_lr(state)
 
@@ -121,9 +115,7 @@ class CosineLR(LRDecay):
         self.until_epoch = until_epoch
         self.lr_max = 1.0
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
-        """Updates the optimizer learning rate."""
-
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         # log lr
         self.log_lr(state)
 
@@ -168,11 +160,9 @@ class AdaptiveLR(LRDecay):
         self.epoch_range = epoch_range
         self.lr_downscale_factor = lr_downscale_factor
         self.lr_upscale_factor = lr_upscale_factor
-        self.state: dict[str, Any] = {"history": []}
+        self.state["history"] = []
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
-        """Updates the optimizer learning rate."""
-
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         # log lr
         self.log_lr(state)
 

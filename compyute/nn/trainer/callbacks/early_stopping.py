@@ -32,7 +32,7 @@ class EarlyStopping(Callback):
         self.target = target
         self.state: dict[str, Any] = {"best_epoch": 1, "best_loss": float("inf"), "history": []}
 
-    def on_epoch(self, state: dict[str, Any]) -> None:
+    def on_epoch_end(self, state: dict[str, Any]) -> None:
         self.state["history"].append(state[f"stat_{self.target}"])
         best_loss = self.state["best_loss"]
 
