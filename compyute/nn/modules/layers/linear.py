@@ -58,14 +58,6 @@ class Linear(Module):
         # (Co,)
         self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
-    def __repr__(self) -> str:
-        label = self.label
-        in_channels = self.in_channels
-        out_channels = self.out_channels
-        bias = self.bias
-        dtype = self.dtype
-        return f"{label}({in_channels=}, {out_channels=}, {bias=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)

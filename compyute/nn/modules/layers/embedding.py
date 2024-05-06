@@ -47,13 +47,6 @@ class Embedding(Module):
         # init weights (Ci, Co)
         self.w = Parameter(normal((vocab_size, embedding_dim)), dtype=dtype, label="w")
 
-    def __repr__(self) -> str:
-        label = self.label
-        vocab_size = self.vocab_size
-        embedding_dim = self.embedding_dim
-        dtype = self.dtype
-        return f"{label}({vocab_size=}, {embedding_dim=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2])
         y, embedding_backward = lookup_embedding(x, self.w, self.training)

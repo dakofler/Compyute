@@ -65,15 +65,6 @@ class Recurrent(Module):
         self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
         self.b_h = Parameter(zeros((h_channels,)), dtype=dtype, label="b_h") if bias else None
 
-    def __repr__(self):
-        label = self.label
-        in_channels = self.in_channels
-        h_channels = self.h_channels
-        bias = self.bias
-        return_sequence = self.return_sequence
-        dtype = self.dtype
-        return f"{label}({in_channels=}, {h_channels=}, {bias=}, {return_sequence=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
@@ -190,15 +181,6 @@ class LSTM(Module):
         w_h = uniform((4 * h_channels, h_channels), -k, k)
         self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
         self.b_h = Parameter(zeros((4 * h_channels,)), dtype=dtype, label="b_h") if bias else None
-
-    def __repr__(self):
-        label = self.label
-        in_channels = self.in_channels
-        h_channels = self.h_channels
-        bias = self.bias
-        return_sequence = self.return_sequence
-        dtype = self.dtype
-        return f"{label}({in_channels=}, {h_channels=}, {bias=}, {return_sequence=}, {dtype=})"
 
     def forward(self, x: Tensor):
         self.check_dims(x, [3])

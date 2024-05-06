@@ -25,11 +25,6 @@ class Dropout(Module):
         super().__init__(label)
         self.p = p
 
-    def __repr__(self) -> str:
-        label = self.label
-        p = self.p
-        return f"{label}({p=})"
-
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
             d_map = multinulli(self.p, x.shape, device=self.device)

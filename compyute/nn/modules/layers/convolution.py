@@ -78,18 +78,6 @@ class Convolution1d(Module):
             b = zeros((out_channels,))
             self.b = Parameter(b, dtype=dtype, label="b")
 
-    def __repr__(self) -> str:
-        label = self.label
-        in_channels = self.in_channels
-        out_channels = self.out_channels
-        kernel_size = self.kernel_size
-        padding = self.padding
-        stride = self.stride
-        dilation = self.dilation
-        bias = self.bias
-        dtype = self.dtype
-        return f"{label}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dilation=}, {bias=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
         x = x.astype(self.dtype)
@@ -241,18 +229,6 @@ class Convolution2d(Module):
         # (Co,)
         self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
 
-    def __repr__(self) -> str:
-        label = self.label
-        in_channels = self.in_channels
-        out_channels = self.out_channels
-        kernel_size = self.kernel_size
-        padding = self.padding
-        stride = self.stride
-        dil = self.dilation
-        bias = self.bias
-        dtype = self.dtype
-        return f"{label}({in_channels=}, {out_channels=}, {kernel_size=}, {padding=}, {stride=}, {dil=}, {bias=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
         x = x.astype(self.dtype)
@@ -359,11 +335,6 @@ class MaxPooling2d(Module):
         self.kernel_size = kernel_size
         self.stride = stride
 
-    def __repr__(self) -> str:
-        label = self.label
-        kernel_size = self.kernel_size
-        return f"{label}({kernel_size=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
 
@@ -392,11 +363,6 @@ class AvgPooling2d(Module):
         super().__init__(label)
         self.kernel_size = kernel_size
         self.dtype = dtype
-
-    def __repr__(self) -> str:
-        label = self.label
-        kernel_size = self.kernel_size
-        return f"{label}({kernel_size=})"
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])

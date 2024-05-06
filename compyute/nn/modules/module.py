@@ -93,7 +93,9 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return f"{self.label}()"
+        rep = f"{self.label}("
+        attributes = [f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and key[0] != "_" and not isinstance(value, Tensor)]
+        return rep + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)

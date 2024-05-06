@@ -56,14 +56,6 @@ class Batchnorm1d(Module):
         self.rmean = zeros((channels,), dtype=dtype)
         self.rvar = ones((channels,), dtype=dtype)
 
-    def __repr__(self) -> str:
-        label = self.label
-        channels = self.channels
-        eps = self.eps
-        m = self.m
-        dtype = self.dtype
-        return f"{label}({channels=}, {eps=}, {m=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3])
         x = x.astype(self.dtype)
@@ -180,14 +172,6 @@ class Batchnorm2d(Module):
         self.rmean = zeros((channels,), dtype=dtype)
         self.rvar = ones((channels,), dtype=dtype)
 
-    def __repr__(self) -> str:
-        label = self.label
-        channels = self.channels
-        eps = self.eps
-        m = self.m
-        dtype = self.dtype
-        return f"{label}({channels=}, {eps=}, {m=}, {dtype=})"
-
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
         x = x.astype(self.dtype)
@@ -297,13 +281,6 @@ class Layernorm(Module):
         # parameters
         self.w = Parameter(ones(normalized_shape), dtype=dtype, label="w")
         self.b = Parameter(zeros(normalized_shape), dtype=dtype, label="b")
-
-    def __repr__(self) -> str:
-        label = self.label
-        normalized_shape = self.normalized_shape
-        eps = self.eps
-        dtype = self.dtype
-        return f"{label}({normalized_shape=}, {eps=}, {dtype=})"
 
     def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)

@@ -27,11 +27,6 @@ class Slice(Module):
         super().__init__(label)
         self.s = s
 
-    def __repr__(self) -> str:
-        label = self.label
-        s = self.s
-        return f"{label}({s=})"
-
     def forward(self, x: Tensor) -> Tensor:
         s = [slice(None)] + self.s
         y = x[*s]
@@ -63,11 +58,6 @@ class Reshape(Module):
         """
         super().__init__(label)
         self.output_shape = output_shape
-
-    def __repr__(self) -> str:
-        label = self.label
-        output_shape = self.output_shape
-        return f"{label}({output_shape=})"
 
     def forward(self, x: Tensor) -> Tensor:
         y = x.reshape((x.shape[0],) + self.output_shape)
@@ -108,12 +98,6 @@ class Moveaxis(Module):
         super().__init__(label)
         self.from_axis = from_axis
         self.to_axis = to_axis
-
-    def __repr__(self) -> str:
-        label = self.label
-        from_axis = self.from_axis
-        to_axis = self.to_axis
-        return f"{label}({from_axis=}, {to_axis=})"
 
     def forward(self, x: Tensor) -> Tensor:
         y = x.moveaxis(self.from_axis, self.to_axis)

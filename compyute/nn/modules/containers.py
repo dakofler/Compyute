@@ -87,13 +87,13 @@ class Container(Module):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        string = f"{self.label}()"
+        rep = super().__repr__()
 
         if self.modules is not None:
             for module in self.modules:
-                string += "\n" + module.__repr__()
+                rep += "\n" + module.__repr__()
 
-        return string
+        return rep
 
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS

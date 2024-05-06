@@ -16,7 +16,7 @@ def test_mse_2d() -> None:
     compyute_x, torch_x = get_vals_float(SHAPE2D)
     compyute_t, torch_t = get_vals_float(SHAPE2D)
 
-    compyute_loss = MSE()
+    compyute_loss = MeanSquaredError()
     compyute_y = compyute_loss(compyute_x, compyute_t)
 
     torch_loss = torch.nn.MSELoss()
