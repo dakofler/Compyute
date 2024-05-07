@@ -14,48 +14,43 @@ class History(Callback):
     def __init__(self) -> None:
         self.state: dict[str, list[float]] = {}
 
-    def on_step(self, state: dict[str, Any]) -> None:
-        for stat in state.keys():
-            if not stat.startswith("stat_step_"):
-                continue
-            s = stat.replace("stat_", "")
+    def _log_stat(self, stat: str, state: dict[str, Any]) -> None:
+        if stat not in state:
+            return
+        value = state[stat]
+        if stat in self.state:
+            self.state[stat].append(value)
+        else:
+            self.state[stat] = [value]
 
-            if s in self.state:
-                self.state[s].append(state[stat])
-            else:
-                self.state[s] = [state[stat]]
+    def on_step(self, state: dict[str, Any]) -> None:
+        self._log_stat("loss", state)
+        self._log_stat("score", state)
 
     def on_epoch_end(self, state: dict[str, Any]) -> None:
-        for stat in state.keys():
-            if not stat.startswith("stat_") or "step_" in stat:
-                continue
-            s = stat.replace("stat_", "")
-
-            if s in self.state:
-                self.state[s].append(state[stat])
-            else:
-                self.state[s] = [state[stat]]
+        self._log_stat("val_loss", state)
+        self._log_stat("val_score", state)
 
 
 class ProgressBar(Callback):
     """Progress bar."""
 
-    def __init__(self, verbose: Literal[0, 1, 2] = 2) -> None:
+    def __init__(self, mode: Literal[0, 1, 2] = 2) -> None:
         self.pbar = None
-        self.verbose = verbose
+        self.mode = mode
 
     def on_init(self, state: dict[str, Any]) -> None:
-        if self.verbose != 1:
+        if self.mode != 1:
             return
         self.pbar = tqdm(unit=" epoch", total=state["epochs"])
 
     def on_step(self, state: dict[str, Any]) -> None:
-        if self.verbose != 2:
+        if self.mode != 2:
             return
         self.pbar.update()
 
     def on_epoch_start(self, state: dict[str, Any]) -> None:
-        if self.verbose != 2:
+        if self.mode != 2:
             return
         self.pbar = tqdm(
             desc=f"Epoch {state['t']}/{state["epochs"]}",
@@ -64,7 +59,7 @@ class ProgressBar(Callback):
         )
 
     def on_epoch_end(self, state: dict[str, Any]) -> None:
-        match self.verbose:
+        match self.mode:
             case 0:
                 return
             case 1:

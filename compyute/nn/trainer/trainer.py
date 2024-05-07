@@ -2,7 +2,6 @@
 
 from typing import Any, Literal, Optional
 from .callbacks import Callback
-from .callbacks.logging import History, ProgressBar
 from .optimizers import Optimizer, get_optimizer
 from .losses import Loss, get_loss
 from .metrics import Metric, get_metric
@@ -25,7 +24,6 @@ class Trainer:
         loss: Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"],
         metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
         callbacks: Optional[list[Callback]] = None,
-        verbose: Literal[0, 1, 2] = 2,
     ) -> None:
         """Neural network model trainer.
 
@@ -41,11 +39,6 @@ class Trainer:
             Metric function used to evaluate the model, by default None.
         callbacks : list[Callback], optional
             Callback functions to be executed during training, by default None.
-        verbose : int, optional
-            Mode of reporting intermediate results during training, by default 2.
-            0: no reporting
-            1: model reports epoch statistics
-            2: model reports step statistics
         """
         super().__init__()
         self.model = model
@@ -53,10 +46,7 @@ class Trainer:
         self.optimizer.parameters = model.parameters
         self.loss = get_loss(loss)
         self.metric = None if metric is None else get_metric(metric)
-
-        self.callbacks = [History(), ProgressBar(verbose)] + (
-            [] if callbacks is None else callbacks
-        )
+        self.callbacks = [] if callbacks is None else callbacks
 
         self.state: dict[str, Any] = {
             "t": 0,
@@ -72,7 +62,7 @@ class Trainer:
         epochs: int = 100,
         val_data: Optional[tuple[Tensor, Tensor]] = None,
         batch_size: int = 32,
-    ) -> dict[str, float]:
+    ) -> None:
         """Trains the model using samples and targets.
 
         Parameters
@@ -87,11 +77,6 @@ class Trainer:
             Data used for the validaton every epoch, by default None.
         batch_size : int, optional
             Number of inputs processed in parallel, by default 32.
-
-        Returns
-        ----------
-        dict[str, float]
-            Training history.
         """
         train_dataloader = DataLoader(X_train, y_train, batch_size, self.model.device)
         self.state["epochs"] = epochs
@@ -114,8 +99,8 @@ class Trainer:
             # validation
             if val_data:
                 loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
-                self.state["stat_val_loss"] = loss
-                self.state["stat_val_score"] = score
+                self.state["val_loss"] = loss
+                self.state["val_score"] = score
 
             self._callback("epoch_end")
             if self.state["abort"]:
@@ -123,7 +108,6 @@ class Trainer:
 
         if not self.model.retain_values:
             self.model.reset()
-        return self.callbacks[0].state
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -188,9 +172,9 @@ class Trainer:
         y_pred = self.model.forward(X_batch)
 
         # compute loss
-        self.state["stat_loss"] = self.loss(y_pred, y_batch).item()
+        self.state["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.state["stat_score"] = self.metric(y_pred, y_batch).item()
+            self.state["score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
         self.model.backward(self.loss.backward())

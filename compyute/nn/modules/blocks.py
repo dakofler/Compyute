@@ -191,7 +191,3 @@ class SkipConnection(ParallelAdd):
         """
         res = skip_connection if skip_connection is not None else Module("ResidualConnection")
         super().__init__([block, res])
-
-
-# TODO: RNN
-# TODO: LSTM
