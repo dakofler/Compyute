@@ -1,6 +1,6 @@
 """Logging callbacks module"""
 
-from typing import Any, Literal
+from typing import Any, Iterable, Literal
 from tqdm.auto import tqdm
 from .callback import Callback
 
@@ -12,69 +12,70 @@ class History(Callback):
     """Training history."""
 
     def __init__(self) -> None:
-        self.state: dict[str, list[float]] = {}
+        self.cache: dict[str, list[float]] = {}
 
-    def _log_stat(self, stat: str, state: dict[str, Any]) -> None:
-        if stat not in state:
-            return
-        value = state[stat]
-        if stat in self.state:
-            self.state[stat].append(value)
-        else:
-            self.state[stat] = [value]
+    def __getitem__(self, key) -> list[float]:
+        return self.cache[key]
 
-    def on_step(self, state: dict[str, Any]) -> None:
-        self._log_stat("loss", state)
-        self._log_stat("score", state)
+    def _log_stats(self, stats: Iterable[str], trainer_cache: dict[str, Any]) -> None:
+        for stat in stats:
+            if stat not in trainer_cache:
+                return
+            if stat in self.cache:
+                self.cache[stat].append(trainer_cache[stat])
+            else:
+                self.cache[stat] = [trainer_cache[stat]]
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        self._log_stat("val_loss", state)
-        self._log_stat("val_score", state)
+    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_stats(["loss", "score"], trainer_cache)
+
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_stats(["val_loss", "val_score"], trainer_cache)
 
 
 class ProgressBar(Callback):
-    """Progress bar."""
+    """Callback used for displaying the training progress."""
 
-    def __init__(self, mode: Literal[0, 1, 2] = 2) -> None:
+    def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
+        """Callback used for displaying the training progress.
+
+        Parameters
+        ----------
+        mode : Literal["step", "epoch"], optional
+            Progress bar update mode, by default "step"
+            epoch ... one progress bar is shown and updated for each epoch.
+            step ... a progress bar is shown per epoch and updated for each step.
+        """
         self.pbar = None
         self.mode = mode
 
-    def on_init(self, state: dict[str, Any]) -> None:
-        if self.mode != 1:
-            return
-        self.pbar = tqdm(unit=" epoch", total=state["epochs"])
+    def on_init(self, trainer_cache: dict[str, Any]) -> None:
+        if self.mode == "epoch":
+            self.pbar = tqdm(unit=" epoch", total=trainer_cache["epochs"])
 
-    def on_step(self, state: dict[str, Any]) -> None:
-        if self.mode != 2:
-            return
-        self.pbar.update()
+    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+        if self.mode == "step":
+            self.pbar.update()
 
-    def on_epoch_start(self, state: dict[str, Any]) -> None:
-        if self.mode != 2:
-            return
-        self.pbar = tqdm(
-            desc=f"Epoch {state['t']}/{state["epochs"]}",
-            unit=" steps",
-            total=state["steps"],
-        )
+    def on_epoch_start(self, trainer_cache: dict[str, Any]) -> None:
+        if self.mode == "step":
+            self.pbar = tqdm(
+                desc=f"Epoch {trainer_cache['t']}/{trainer_cache["epochs"]}",
+                unit=" steps",
+                total=trainer_cache["steps"] +1,
+            )
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        match self.mode:
-            case 0:
-                return
-            case 1:
-                self._set_pbar_postfix(state)
-                self.pbar.update()
-            case 2:
-                self._set_pbar_postfix(state)
-                self.pbar.close()
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._set_pbar_postfix(trainer_cache)
+        if self.mode == "epoch":
+            self.pbar.update()
+        else:
+            self.pbar.close()
 
-
-    def _set_pbar_postfix(self, state: dict[str, Any]) -> None:
+    def _set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
         stats = []
-        for stat in state.keys():
-            if not stat.startswith("stat_"):
+        for stat in trainer_cache.keys():
+            if "loss" not in stat and "score" not in stat:
                 continue
-            s = stat.replace("stat_", "")
-            stats.append(f"{s}={state[stat]:.4f}")
+            stats.append(f"{stat}={trainer_cache[stat]:.4f}")
         self.pbar.set_postfix_str(", ".join(stats))

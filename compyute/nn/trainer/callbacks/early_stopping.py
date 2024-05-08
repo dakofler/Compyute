@@ -30,34 +30,34 @@ class EarlyStopping(Callback):
         self.patience = patience
         self.use_best_params = use_best_params
         self.target = target
-        self.state: dict[str, Any] = {"best_epoch": 1, "best_loss": float("inf"), "history": []}
+        self.cache: dict[str, Any] = {"best_epoch": 1, "best_loss": float("inf"), "history": []}
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        self.state["history"].append(state[self.target])
-        best_loss = self.state["best_loss"]
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self.cache["history"].append(trainer_cache[self.target])
+        best_loss = self.cache["best_loss"]
 
         # record best loss
-        if self.state["history"][-1] < best_loss:
-            self.state["best_epoch"] = state["t"]
-            self.state["best_loss"] = self.state["history"][-1]
+        if self.cache["history"][-1] < best_loss:
+            self.cache["best_epoch"] = trainer_cache["t"]
+            self.cache["best_loss"] = self.cache["history"][-1]
 
             # save best parameters
             if self.use_best_params:
-                self.state["best_params"] = [p.copy() for p in state["model"].parameters]
+                self.cache["best_params"] = [p.copy() for p in trainer_cache["model"].parameters]
 
-        if len(self.state["history"]) <= self.patience:
+        if len(self.cache["history"]) <= self.patience:
             return
 
         # check if loss has decreased
-        if all([self.state["history"][-i] > best_loss for i in range(1, self.patience + 1)]):
+        if all([self.cache["history"][-i] > best_loss for i in range(1, self.patience + 1)]):
             msg = f"Early stopping: no improvement over last {self.patience} epochs."
 
             # reset model parameters to best epoch
             if self.use_best_params:
-                best_epoch = self.state["best_epoch"]
+                best_epoch = self.cache["best_epoch"]
                 msg += f" Resetting parameters best epoch {best_epoch}."
-                for i, p in enumerate(state["model"].parameters):
-                    p.data = self.state["best_params"][i].data
+                for i, p in enumerate(trainer_cache["model"].parameters):
+                    p.data = self.cache["best_params"][i].data
 
             print(msg)
-            state["abort"] = True
+            trainer_cache["abort"] = True

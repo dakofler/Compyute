@@ -135,7 +135,9 @@ class Module(ABC):
             Input gradient tensor.
         """
         self.set_dy(dy)
-        return dy if self.backward_fn is None else self.backward_fn(dy)
+        if self.backward_fn is not None:
+            return self.backward_fn(dy)
+        return dy
 
     def set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.
@@ -146,7 +148,10 @@ class Module(ABC):
             Module output tensor.
         """
         if self.retain_values:
-            self.y = y.copy()
+            if self.y is None:
+                self.y = y.copy()
+            else:
+                self.y.data = y.data.copy()
 
     def set_dy(self, dy: Tensor) -> None:
         """Saves the module output gradients to y tensor.

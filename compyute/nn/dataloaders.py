@@ -126,7 +126,8 @@ def batched(
         )
         ys = []
         for x_batch, _ in dataloader():
-            ys.append(func(x_batch, *args, **kwargs))
+            y = func(x_batch, *args, **kwargs)
+            ys.append(y)
         return concatenate(ys, axis=0)
 
     return wrapper

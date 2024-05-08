@@ -271,9 +271,7 @@ class NAdam(Optimizer):
 
             mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
             self.state["nadam_mu"].append(mu)
-            mu_succ = self.beta1 * (
-                1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
-            )
+            mu_succ = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
 
             # first momentum estimate
             m_prev = self.state[p].get("nadam_m", 0)
@@ -285,9 +283,9 @@ class NAdam(Optimizer):
             v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["nadam_v"] = v
 
-            m_hat = mu * m / (1 - prod(self.state["nadam_mu"]) * mu_succ) + (
-                1 - mu
-            ) * g / (1 - prod(self.state["nadam_mu"]))
+            m_hat = mu * m / (1 - prod(self.state["nadam_mu"]) * mu_succ) + (1 - mu) * g / (
+                1 - prod(self.state["nadam_mu"])
+            )
             v_hat = v / (1 - self.beta2**self.t)
 
             p -= self.lr * m_hat / (v_hat**0.5 + self.eps)

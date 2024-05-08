@@ -5,7 +5,7 @@ from .callbacks import Callback
 from .optimizers import Optimizer, get_optimizer
 from .losses import Loss, get_loss
 from .metrics import Metric, get_metric
-from ..dataloaders import DataLoader, batched
+from ..dataloaders import DataLoader
 from ..modules import Module
 from ...tensor import Tensor
 from ...types import ScalarLike
@@ -48,11 +48,11 @@ class Trainer:
         self.metric = None if metric is None else get_metric(metric)
         self.callbacks = [] if callbacks is None else callbacks
 
-        self.state: dict[str, Any] = {
-            "t": 0,
+        self._callback_cache: dict[str, Any] = {
+            "abort": False,
             "model": self.model,
             "optimizer": self.optimizer,
-            "abort": False,
+            "t": 0,
         }
 
     def train(
@@ -79,12 +79,13 @@ class Trainer:
             Number of inputs processed in parallel, by default 32.
         """
         train_dataloader = DataLoader(X_train, y_train, batch_size, self.model.device)
-        self.state["epochs"] = epochs
-        self.state["steps"] = len(train_dataloader)
+        self._callback_cache["t"] = 0
+        self._callback_cache["epochs"] = epochs
+        self._callback_cache["steps"] = len(train_dataloader)
         self._callback("init")
 
         for _ in range(1, epochs + 1):
-            self.state["t"] += 1
+            self._callback_cache["t"] += 1
             self._callback("epoch_start")
 
             # training
@@ -99,11 +100,11 @@ class Trainer:
             # validation
             if val_data:
                 loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
-                self.state["val_loss"] = loss
-                self.state["val_score"] = score
+                self._callback_cache["val_loss"] = loss
+                self._callback_cache["val_score"] = score
 
             self._callback("epoch_end")
-            if self.state["abort"]:
+            if self._callback_cache["abort"]:
                 break
 
         if not self.model.retain_values:
@@ -130,39 +131,40 @@ class Trainer:
         ScalarLike, optional
             Metric score.
         """
-
-        # get prediction
-        y_pred = batched(
-            func=self.model.forward,
+        dataloader = DataLoader(
+            x,
+            y,
             batch_size=batch_size,
             device=self.model.device,
             shuffle_data=False,
-            drop_remaining=False,
-        )(x)
-        y.to_device(self.model.device)
+        )
 
-        # compute loss
-        loss = self.loss(y_pred, y).item()
-
-        # compute metric score
+        losses = []
         if self.metric is not None:
-            score = self.metric(y_pred, y).item()
-        else:
-            score = None
+            scores = []
 
-        return loss, score
+        for x_batch, y_batch in dataloader():
+            y_pred = self.model.forward(x_batch)
+            losses.append(self.loss(y_pred, y_batch).item())
+            if self.metric is not None:
+                scores.append(self.metric(y_pred, y_batch).item())
+
+        loss = sum(losses) / len(losses)
+        if self.metric is not None:
+            return loss, sum(scores) / len(scores)
+        return loss, None
 
     def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end"]) -> None:
         for callback in self.callbacks:
             match on:
                 case "init":
-                    callback.on_init(self.state)
+                    callback.on_init(self._callback_cache)
                 case "step":
-                    callback.on_step(self.state)
+                    callback.on_step(self._callback_cache)
                 case "epoch_start":
-                    callback.on_epoch_start(self.state)
+                    callback.on_epoch_start(self._callback_cache)
                 case "epoch_end":
-                    callback.on_epoch_end(self.state)
+                    callback.on_epoch_end(self._callback_cache)
 
     def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
         # prepare data
@@ -172,9 +174,9 @@ class Trainer:
         y_pred = self.model.forward(X_batch)
 
         # compute loss
-        self.state["loss"] = self.loss(y_pred, y_batch).item()
+        self._callback_cache["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.state["score"] = self.metric(y_pred, y_batch).item()
+            self._callback_cache["score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
         self.model.backward(self.loss.backward())

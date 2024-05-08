@@ -12,10 +12,10 @@ class LRDecay(Callback):
     """Optimizer base class"""
 
     def __init__(self) -> None:
-        self.state: dict[str, list[dict]] = {"lrs": []}
+        self.cache: dict[str, list[dict]] = {"lrs": []}
 
-    def _log_lr(self, state: dict[str, Any]) -> None:
-        self.state["lrs"].append({"epoch": state["t"], "lr": state["optimizer"].lr})
+    def _log_lr(self, trainer_cache: dict[str, Any]) -> None:
+        self.cache["lrs"].append({"epoch": trainer_cache["t"], "lr": trainer_cache["optimizer"].lr})
 
 
 class StepLR(LRDecay):
@@ -35,13 +35,10 @@ class StepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_epoch = decay_epoch
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        # log lr
-        self._log_lr(state)
-
-        # decay lr
-        if state["t"] == self.decay_epoch:
-            state["optimizer"].lr *= self.lr_decay
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_lr(trainer_cache)
+        if trainer_cache["t"] == self.decay_epoch:
+            trainer_cache["optimizer"].lr *= self.lr_decay
 
 
 class MultistepLR(LRDecay):
@@ -61,13 +58,10 @@ class MultistepLR(LRDecay):
         self.lr_decay = lr_decay
         self.decay_step_size = decay_step_size
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        # log lr
-        self._log_lr(state)
-
-        # decay lr
-        if state["t"] % self.decay_step_size == 0:
-            state["optimizer"].lr *= self.lr_decay
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_lr(trainer_cache)
+        if trainer_cache["t"] % self.decay_step_size == 0:
+            trainer_cache["optimizer"].lr *= self.lr_decay
 
 
 class ExponentialLR(LRDecay):
@@ -87,13 +81,10 @@ class ExponentialLR(LRDecay):
         self.lr_decay = lr_decay
         self.until_epoch = until_epoch
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        # log lr
-        self._log_lr(state)
-
-        # decay lr
-        if state["t"] <= self.until_epoch:
-            state["optimizer"].lr *= self.lr_decay
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_lr(trainer_cache)
+        if trainer_cache["t"] <= self.until_epoch:
+            trainer_cache["optimizer"].lr *= self.lr_decay
 
 
 class CosineLR(LRDecay):
@@ -114,21 +105,20 @@ class CosineLR(LRDecay):
         self.until_epoch = until_epoch
         self.lr_max = 1.0
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
-        # log lr
-        self._log_lr(state)
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        self._log_lr(trainer_cache)
 
         # set max lr to initial lr
-        if state["t"] == 1:
-            self.lr_max = state["optimizer"].lr
+        if trainer_cache["t"] == 1:
+            self.lr_max = trainer_cache["optimizer"].lr
 
         # decay lr
-        if state["t"] <= self.until_epoch:
-            state["optimizer"].lr = self.lr_min + 0.5 * (self.lr_max - self.lr_min) * (
-                1 + math.cos(state["t"] / self.until_epoch * math.pi)
+        if trainer_cache["t"] <= self.until_epoch:
+            trainer_cache["optimizer"].lr = self.lr_min + 0.5 * (self.lr_max - self.lr_min) * (
+                1 + math.cos(trainer_cache["t"] / self.until_epoch * math.pi)
             )
         else:
-            state["optimizer"].lr = self.lr_min
+            trainer_cache["optimizer"].lr = self.lr_min
 
 
 class AdaptiveLR(LRDecay):
@@ -159,24 +149,24 @@ class AdaptiveLR(LRDecay):
         self.epoch_range = epoch_range
         self.lr_downscale_factor = lr_downscale_factor
         self.lr_upscale_factor = lr_upscale_factor
-        self.state["history"] = []
+        self.cache["history"] = []
 
-    def on_epoch_end(self, state: dict[str, Any]) -> None:
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         # log lr
-        self._log_lr(state)
+        self._log_lr(trainer_cache)
 
         # keep target history
-        h = self.state["history"]
-        h.append(state[self.target])
+        h = self.cache["history"]
+        h.append(trainer_cache[self.target])
 
-        if state["t"] > self.epoch_range:
+        if trainer_cache["t"] > self.epoch_range:
 
             # compute target trend
             trend = sum(h[-i] - h[-i - 1] for i in range(1, self.epoch_range + 1))
 
             if trend <= 0:
                 # model is improving
-                state["optimizer"].lr *= self.lr_upscale_factor
+                trainer_cache["optimizer"].lr *= self.lr_upscale_factor
             else:
                 # model is not improving
-                state["optimizer"].lr *= self.lr_downscale_factor
+                trainer_cache["optimizer"].lr *= self.lr_downscale_factor
