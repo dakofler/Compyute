@@ -406,6 +406,25 @@ class Tensor:
         """
         return Tensor(self.data.repeat(n_repeats, axis))
 
+    def tile(self, n_repeats: int, axis: AxisLike) -> Tensor:
+        """Repeat elements of a tensor.
+
+        Parameters
+        ----------
+        n_repeats : int
+            Number of repeats.
+        axis : AxisLike
+            Axis, along which the values are repeated.
+
+        Returns
+        -------
+        Tensor
+            Tensor with repeated values.
+        """
+        repeats = [1] * self.ndim
+        repeats[axis] = n_repeats
+        return Tensor(self.__e.tile(self.data, tuple(repeats)))
+
     def pad(self, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
@@ -899,6 +918,60 @@ class Tensor:
             List of tensors containing the split data.
         """
         return [Tensor(s) for s in self.__e.split(self.data, splits, axis=axis)]
+
+    def get_diagonal(self, d: int = 0) -> Tensor:
+        """Extract a diagonal or construct a diagonal tensor.
+
+        Parameters
+        ----------
+        d : int, optional
+            Index of the diagonal, by default 0.
+            - 0 ... main diagonal
+            - >0 ... above main diagonal
+            - <0 ... below main diagonal
+
+        Returns
+        -------
+        Tensor
+            The extracted diagonal or constructed diagonal tensor.
+        """
+        return Tensor(self.__e.diag(self.data, k=d))
+
+    def tril(self, d: int = 0) -> Tensor:
+        """Returns the lower triangle of a tensor below the d-th diagonal of the last two dimensions.
+
+        Parameters
+        ----------
+        d : int, optional
+            Index of the diagonal, by default 0.
+            - 0 ... main diagonal
+            - >0 ... above main diagonal
+            - <0 ... below main diagonal
+
+        Returns
+        -------
+        Tensor
+            Lower triangle tensor.
+        """
+        return Tensor(self.__e.tril(self.data, k=d))
+
+    def triu(self, d: int = 0) -> Tensor:
+        """Returns the upper triangle of a tensor above the d-th diagonal of the last two dimensions.
+
+        Parameters
+        ----------
+        d : int, optional
+            Index of the diagonal, by default 0.
+            - 0 ... main diagonal
+            - >0 ... above main diagonal
+            - <0 ... below main diagonal
+
+        Returns
+        -------
+        Tensor
+            Upper triangle tensor.
+        """
+        return Tensor(self.__e.triu(self.data, k=d))
 
 
 def to_array_data(data: Tensor | ScalarLike) -> ArrayLike | ScalarLike:

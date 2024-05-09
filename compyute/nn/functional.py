@@ -2,7 +2,7 @@
 
 from typing import Callable, Literal, Optional
 from ..preprocessing.basic import one_hot_encode
-from ..tensor_f import maximum, minimum, prod, zeros
+from ..tensor_f import identity, maximum, minimum, prod, zeros
 from ..tensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
@@ -162,45 +162,39 @@ def tanh(
     return y, backward
 
 
-def softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
-    """Applies the softmax function over a given axis.
+def softmax(
+    x: Tensor, return_backward_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Applies the softmax function over the last axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis: AxisLike, optional
-        Axis over which to compute the softmax, by default -1.
+    return_backward_fn: bool, optional
+        Whether to also return the according backward function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Backward function.
     """
-    x = (x - x.max(axis=axis, keepdims=True)).exp()
-    return x / x.sum(axis=axis, keepdims=True)
+    x = (x - x.max(axis=-1, keepdims=True)).exp()
+    y = x / x.sum(axis=-1, keepdims=True)
+
+    if return_backward_fn:
+
+        def backward(dy: Tensor) -> Tensor:
+            sm_ = y.insert_dim(-1).tile(y.shape[-1], -1)
+            return ((sm_ * (identity(y.shape[-1]) - sm_.T)) @ dy.insert_dim(-1)).reshape(y.shape)
+
+        return y, backward
+    return y, None
 
 
-def log_softmax(x: Tensor, axis: AxisLike = -1) -> Tensor:
-    """Applies the log softmax function to the last axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    axis: AxisLike, optional
-        Axis over which to compute the softmax, by default -1.
-
-    Returns
-    -------
-    Tensor
-        Output tensor.
-    """
-    x = (x - x.max(axis=axis, keepdims=True)).exp()
-    return (x / x.sum(axis=axis, keepdims=True)).log()
-
-
-def temperature_softmax(x: Tensor, temperature: float = 1, axis: AxisLike = -1) -> Tensor:
+def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     """Applies the softmax function with temperature to the last axis.
 
     Parameters
@@ -209,8 +203,6 @@ def temperature_softmax(x: Tensor, temperature: float = 1, axis: AxisLike = -1) 
         Input tensor.
     temperature : float, optional
         Temperature scaling to be applied in the calculation.
-    axis: AxisLike, optional
-        Axis over which to compute the softmax, by default -1.
 
     Returns
     -------
@@ -220,8 +212,8 @@ def temperature_softmax(x: Tensor, temperature: float = 1, axis: AxisLike = -1) 
     if temperature == 0:
         raise ValueError("Temperature cannot be 0.")
 
-    x = ((x - x.max(axis=axis, keepdims=True)) / temperature).exp()
-    return x / x.sum(axis=axis, keepdims=True)
+    x = ((x - x.max(axis=-1, keepdims=True)) / temperature).exp()
+    return x / x.sum(axis=-1, keepdims=True)
 
 
 def linear(
@@ -248,7 +240,6 @@ def linear(
         Backward function.
     """
 
-    # (B, ... , Ci) @ (Ci, Co) -> (B, ..., Co)
     y = x @ w.T
     if b is not None:
         y += b
@@ -257,17 +248,13 @@ def linear(
 
         def backward(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
-            # (B, ... , Co) @ (Co, Ci) -> (B, ..., Ci)
             dx = dy @ w
 
             # weight grads
             if w.requires_grad:
-                # 2D: (Co, B) @ (B, Ci) -> (Co, Ci)
-                # ND: (B, ..., Co, Bn) @ (B, ... , Bn, Ci) -> (B, ..., Co, Ci)
                 dw = dy.T @ x
                 if x.ndim > 2:
                     # sum over all batch dimensions
-                    # (B, ..., Ci, Co) -> (Ci, Co)
                     axes = tuple(range(x.ndim - 2))
                     dw = dw.sum(axis=axes)
             else:
@@ -276,7 +263,6 @@ def linear(
             # bias grads
             if b is not None and b.requires_grad:
                 # sum over all batch dimensions
-                # (B, ... , Co) -> (Co,)
                 axes = tuple(range(x.ndim - 1))
                 db = dy.sum(axis=axes)
             else:
@@ -330,7 +316,11 @@ def convolve1d(
         p = __pad1d_from_str(padding, f.shape[-1])
         x = __pad1d(x, p)
 
-    return __convolve1d(x, f, stride)
+    y = __convolve1d(x, f, stride)
+
+    # TODO: extract backward from module
+
+    return y
 
 
 def __pad1d_from_str(
@@ -423,7 +413,11 @@ def convolve2d(
         p = __pad2d_from_str(padding, f.shape[-1])
         x = __pad2d(x, p)
 
-    return __convolve2d(x, f, (stride, stride))
+    y = __convolve2d(x, f, (stride, stride))
+
+    # TODO: extract backward from module
+
+    return y
 
 
 def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
@@ -688,7 +682,7 @@ def cross_entropy(
     """
     t = t.int()
     t = one_hot_encode(t, y.shape[-1])
-    probs = softmax(y.float())
+    probs, _ = softmax(y.float(), False)
     loss = -((probs + eps) * t).sum(-1).log().mean()
 
     backward = (lambda: (probs - t) / prod(y.shape[:-1])) if return_backward_fn else None

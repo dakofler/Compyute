@@ -42,10 +42,10 @@ class MeanSquaredError(Loss):
 
 
 class CrossEntropy(Loss):
-    """Computes the cross entropy loss."""
+    """Computes the cross entropy loss from model logits."""
 
     def __init__(self, eps: float = 1e-8):
-        """Computes the crossentropy loss.
+        """Computes the crossentropy loss from model logits.
 
         Parameters
         ----------
@@ -75,7 +75,7 @@ class CrossEntropy(Loss):
 
 
 class BinaryCrossEntropy(Loss):
-    """Computes the binary cross entropy loss."""
+    """Computes the binary cross entropy loss from model logits."""
 
     def __call__(self, y: Tensor, t: Tensor) -> Tensor:
         """Computes the binary cross entropy loss.

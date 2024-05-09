@@ -1,6 +1,6 @@
 """basic preprocessing module"""
 
-from ..tensor_f import eye
+from ..tensor_f import identity
 from ..random import shuffle
 from ..tensor import Tensor
 from ..types import AxisLike
@@ -112,4 +112,4 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     if x.dtype not in {"int", "int8", "int16", "int32", "int64"}:
         raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
 
-    return eye(num_classes, "int32", x.device)[x]
+    return identity(num_classes, "int32", x.device)[x]

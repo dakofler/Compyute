@@ -15,7 +15,8 @@ __all__ = [
     "zeros_like",
     "ones_like",
     "empty_like",
-    "eye",
+    "identity",
+    "diagonal",
     "maximum",
     "minimum",
     "prod",
@@ -200,7 +201,7 @@ def empty_like(x: Tensor) -> Tensor:
     return empty(x.shape, dtype=x.dtype, device=x.device)
 
 
-def eye(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
+def identity(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
     """Returns a diagonal tensor of shape (n, n).
 
     Parameters
@@ -217,7 +218,23 @@ def eye(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -
     Tensor
         Diagonal tensor.
     """
-    return Tensor(get_engine(device).eye(n, dtype=dtype))
+    return Tensor(get_engine(device).identity(n, dtype=dtype))
+
+
+def diagonal(x: Tensor) -> Tensor:
+    """Expands a tensor by turning the last dim into a diagonal matrix.
+
+    Parameters
+    ----------
+    x: Tensor
+        Tensor to diagonalize.
+
+    Returns
+    -------
+    Tensor
+        The diagonal tensor.
+    """
+    return x.insert_dim(-1) * identity(x.shape[-1])
 
 
 def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
