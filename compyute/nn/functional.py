@@ -340,11 +340,12 @@ def __pad1d_from_str(
         case "causal":
             return (kernel_size - 1, 0)
         case "full":
-            return (kernel_size - 1,) * 2
+            k = kernel_size - 1
         case "same":
-            return (kernel_size // 2,) * 2
+            k = kernel_size // 2
         case _:
-            return (0, 0)
+            k = 0
+    return (k, k)
 
 
 def __pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
@@ -428,14 +429,15 @@ def convolve2d(
 def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
     match padding:
         case "full":
-            return ((kernel_size - 1,) * 2,) * 2
+            k = kernel_size - 1
         case "same":
-            return ((kernel_size // 2,) * 2,) * 2
+            k = kernel_size // 2
         case _:
-            return ((0, 0), (0, 0))
+            k = 0
+    return ((k, k), (k, k))
 
 
-def __pad2d(x: Tensor, padding: tuple[tuple[int, int]]) -> Tensor:
+def __pad2d(x: Tensor, padding: tuple[tuple[int, int], ...]) -> Tensor:
     widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
     return x.pad(widths)
 
@@ -487,7 +489,7 @@ def upsample2d(
     x: Tensor,
     scaling_factors: tuple[int, int],
     shape: ShapeLike,
-    axes: tuple[int, int] = (-2, -1),
+    axes: AxisLike = (-2, -1),
 ) -> Tensor:
     """Upsamples a tensor by repeating it's elements over given axes.
 
@@ -500,7 +502,7 @@ def upsample2d(
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after stretching,
         remaining values are filled with zeroes.
-    axes : tuple[int, int], optional
+    axes : AxisLike, optional
         Axes along which to stretch the tensor, by default (-2, -1).
 
     Returns
@@ -742,7 +744,8 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    return (y_pred.argmax(-1) == y_true).sum().float() / prod(y_pred.shape[:-1])
+    # return (y_pred.argmax(-1) == y_true).sum().float() / prod(y_pred.shape[:-1])
+    return (y_pred.argmax(-1) == y_true).sum() / prod(y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:

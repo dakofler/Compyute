@@ -51,7 +51,7 @@ class DataLoader:
     def __call__(
         self,
     ) -> Generator[tuple[Tensor, Optional[Tensor]], None, None]:
-        """Batch of inputs or batch of inputs and targets."""
+        """Yields batched data."""
         n = self.x.shape[0]
         n_steps = len(self)
         b = min(self.batch_size, n)

@@ -10,8 +10,8 @@ from tests.test_utils import get_vals_float, get_params, validate
 B, Cin, Cout, X = (10, 20, 30, 40)
 
 
-# Skip
 def test_skip() -> None:
+    """Test for the skip connection."""
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)

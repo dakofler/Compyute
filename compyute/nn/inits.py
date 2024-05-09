@@ -57,7 +57,7 @@ def get_fan_in(shape: ShapeLike) -> int:
     int
         Fan_in value.
     """
-    return int(shape[0] * prod(shape[2:]))
+    return prod((shape[0],) + shape[2:])
 
 
 def get_fan_out(shape: ShapeLike) -> int:
@@ -73,7 +73,7 @@ def get_fan_out(shape: ShapeLike) -> int:
     int
         Fan_out value.
     """
-    return int(shape[1] * prod(shape[2:]))
+    return prod((shape[1],) + shape[2:])
 
 
 def uniform(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:

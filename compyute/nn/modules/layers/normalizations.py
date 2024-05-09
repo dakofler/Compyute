@@ -239,10 +239,9 @@ class Batchnorm2d(Module):
         """
 
         # necessary, because Module.to_device only moves parameters
+        super().to_device(device)
         self.rmean.to_device(device)
         self.rvar.to_device(device)
-
-        super().to_device(device)
 
 
 class Layernorm(Module):

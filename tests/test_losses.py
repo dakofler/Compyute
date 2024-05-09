@@ -10,6 +10,7 @@ SHAPE3D = (20, 10, 5)
 
 
 def test_mse_2d() -> None:
+    """Test for the mean squared error loss using 2d inputs."""
     results = []
 
     # forward
@@ -32,7 +33,8 @@ def test_mse_2d() -> None:
     assert all(results)
 
 
-def test_mse_3d() -> None:
+def test_mse_nd() -> None:
+    """Test for the mean squared error loss using nd inputs."""
     results = []
 
     # forward
@@ -56,6 +58,7 @@ def test_mse_3d() -> None:
 
 
 def test_cross_entropy_2d() -> None:
+    """Test for the cross entropy loss using 2d inputs."""
     results = []
 
     # forward
@@ -78,7 +81,8 @@ def test_cross_entropy_2d() -> None:
     assert all(results)
 
 
-def test_cross_entropy_3d() -> None:
+def test_cross_entropy_nd() -> None:
+    """Test for the cross entropy loss using nd inputs."""
     results = []
 
     # forward
@@ -103,6 +107,7 @@ def test_cross_entropy_3d() -> None:
 
 
 def test_binary_cross_entropy_2d() -> None:
+    """Test for the binary cross entropy loss using 2d inputs."""
     results = []
 
     # forward
@@ -125,7 +130,8 @@ def test_binary_cross_entropy_2d() -> None:
     assert all(results)
 
 
-def test_binary_cross_entropy_3d() -> None:
+def test_binary_cross_entropy_nd() -> None:
+    """Test for the binary cross entropy loss using nd inputs."""
     results = []
 
     # forward

@@ -14,6 +14,7 @@ B, Cin, Cout, Y, X, K = (10, 3, 16, 15, 15, 5)
 
 
 def test_conv1d_valid() -> None:
+    """Test for the conv 1d layer using valid padding."""
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -54,6 +55,7 @@ def test_conv1d_valid() -> None:
 
 
 def test_conv1d_same() -> None:
+    """Test for the conv 1d layer using same padding."""
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -94,6 +96,7 @@ def test_conv1d_same() -> None:
 
 
 def test_conv1d_valid_dilation2() -> None:
+    """Test for the conv 1d layer using valid padding and dilations of 2."""
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -134,6 +137,7 @@ def test_conv1d_valid_dilation2() -> None:
 
 
 def test_conv1d_valid_stride2() -> None:
+    """Test for the conv 1d layer using valid padding and strides of 2."""
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -174,6 +178,7 @@ def test_conv1d_valid_stride2() -> None:
 
 
 def test_conv1d_same_dilation2() -> None:
+    """Test for the conv 1d layer using same padding and dilations of 2."""
     results = []
     shape_x = (B, Cin, X)
     shape_w = (Cout, Cin, K)
@@ -214,6 +219,7 @@ def test_conv1d_same_dilation2() -> None:
 
 
 def test_conv2d_valid() -> None:
+    """Test for the conv 2d layer using valid padding."""
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -254,6 +260,7 @@ def test_conv2d_valid() -> None:
 
 
 def test_conv2d_same() -> None:
+    """Test for the conv 2d layer using same padding."""
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -294,6 +301,7 @@ def test_conv2d_same() -> None:
 
 
 def test_conv2d_valid_stride2() -> None:
+    """Test for the conv 2d layer using valid padding and strides of 2."""
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -334,6 +342,7 @@ def test_conv2d_valid_stride2() -> None:
 
 
 def test_conv2d_valid_dilation2() -> None:
+    """Test for the conv 2d layer using valid padding and dilations of 2."""
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -374,6 +383,7 @@ def test_conv2d_valid_dilation2() -> None:
 
 
 def test_conv2d_same_dilation2() -> None:
+    """Test for the conv 2d layer using same padding and dilations of 2."""
     results = []
     shape_x = (B, Cin, Y, X)
     shape_w = (Cout, Cin, K, K)
@@ -414,6 +424,7 @@ def test_conv2d_same_dilation2() -> None:
 
 
 def test_maxpool2d() -> None:
+    """Test for the maxpool layer."""
     results = []
     shape_x = (B, Cout, Y, X)
 
@@ -435,6 +446,7 @@ def test_maxpool2d() -> None:
 
 
 def test_avgpool2d() -> None:
+    """Test for the avgpool layer."""
     results = []
     shape_x = (B, Cout, Y, X)
 

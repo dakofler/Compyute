@@ -9,6 +9,7 @@ B, Bn, Cin, Cout = (10, 20, 30, 40)
 
 
 def test_linear_2d() -> None:
+    """Test for the linear layer using 2d inputs."""
     results = []
     shape_x = (B, Cin)
     shape_w = (Cout, Cin)
@@ -45,6 +46,7 @@ def test_linear_2d() -> None:
 
 
 def test_linear_nd() -> None:
+    """Test for the linear layer using nd inputs."""
     results = []
     shape_x = (B, Bn, Cin)
     shape_w = (Cout, Cin)

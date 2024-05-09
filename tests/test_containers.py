@@ -13,8 +13,8 @@ from tests.test_utils import get_vals_float, get_params, validate
 B, Cin, Cout = (10, 20, 30)
 
 
-# Sequential container
 def test_sequential_container() -> None:
+    """Test for the sequential container."""
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
@@ -56,8 +56,8 @@ def test_sequential_container() -> None:
     assert all(results)
 
 
-# Parallel concat container
 def test_parallel_concat_container() -> None:
+    """Test for the parallel concat container."""
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
@@ -98,8 +98,8 @@ def test_parallel_concat_container() -> None:
     assert all(results)
 
 
-# Parallel add container
 def test_parallel_add_container() -> None:
+    """Test for the parallel add container."""
     results = []
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)

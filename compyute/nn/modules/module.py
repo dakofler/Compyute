@@ -3,9 +3,9 @@
 from __future__ import annotations
 from abc import ABC
 import pickle
-from typing import Callable, Optional
+from typing import Callable, Iterable, Optional
 from ..parameter import Parameter
-from ...engine import check_device
+from ...engine import check_device_availability
 from ...tensor import Tensor, ShapeError
 from ...types import DeviceLike
 
@@ -21,10 +21,10 @@ class Module(ABC):
         self.y: Optional[Tensor] = None
         self.backward_fn: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
-        self._device: DeviceLike = "cpu"
-        self._retain_values: bool = False
-        self._training: bool = False
-        self._trainable: bool = True
+        self.__device: DeviceLike = "cpu"
+        self.__retain_values: bool = False
+        self.__training: bool = False
+        self.__trainable: bool = True
 
 
     # ----------------------------------------------------------------------------------------------
@@ -34,15 +34,15 @@ class Module(ABC):
     @property
     def device(self) -> DeviceLike:
         """Device the module tensors are stored on."""
-        return self._device
+        return self.__device
 
     def to_device(self, device: DeviceLike) -> None:
         """Moves the module to the specified device."""
-        if device == self.device:
+        if device == self.__device:
             return
 
-        check_device(device)
-        self._device = device
+        check_device_availability(device)
+        self.__device = device
 
         if self.y is not None:
             self.y.to_device(device)
@@ -53,22 +53,22 @@ class Module(ABC):
     @property
     def retain_values(self) -> bool:
         """Whether module parameters are trainable."""
-        return self._retain_values
+        return self.__retain_values
 
     def set_retain_values(self, value: bool) -> None:
         """Whether module parameters are trainable."""
-        self._retain_values = value
+        self.__retain_values = value
 
     @property
     def trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self._trainable
+        return self.__trainable
 
     def set_trainable(self, value: bool) -> None:
         """Whether the module parameters are trainable."""
-        if self._trainable == value:
+        if self.__trainable == value:
             return
-        self._trainable = value
+        self.__trainable = value
 
         for parameter in self.parameters:
             parameter.requires_grad = value
@@ -76,11 +76,11 @@ class Module(ABC):
     @property
     def training(self) -> bool:
         """Module training mode."""
-        return self._training
+        return self.__training
 
     def set_training(self, value: bool) -> None:
         """Module training mode."""
-        self._training = value
+        self.__training = value
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -94,7 +94,7 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         rep = f"{self.label}("
-        attributes = [f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and key[0] != "_" and not isinstance(value, Tensor)]
+        attributes = (f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and not key.startswith("_") and not isinstance(value, Tensor))
         return rep + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -172,14 +172,14 @@ class Module(ABC):
         for p in self.parameters:
             p.grad = None
 
-    def check_dims(self, x: Tensor, valid_dims: list[int]) -> None:
+    def check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
         """Checks if a tensors dimensions match desired target dimensions.
 
         Parameters
         ----------
         x : Tensor
             Tensor whose dimensions are checked.
-        valid_dims : int
+        valid_dims : Iterable[int]
             Valid numbers of dimension the tensor should have.
 
         Raises
@@ -188,10 +188,9 @@ class Module(ABC):
             If the tensor's dimensions do not match the target dimensions.
         """
         if x.ndim not in valid_dims:
-            sender = self.__class__.__name__
-            vdims = ", ".join([str(d) for d in valid_dims])
+            vdims = ", ".join(str(d) for d in valid_dims)
             raise ShapeError(
-                f"{sender}: Number of input dimensions {
+                f"{self.label}: Number of input dimensions {
                     x.ndim} is not valid (valid: {vdims})"
             )
 

@@ -27,10 +27,14 @@ class History(Callback):
                 self.cache[stat] = [trainer_cache[stat]]
 
     def on_step(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_stats(["loss", "score"], trainer_cache)
+        # get stats that contain scores but are not val scores
+        scores = [s for s in trainer_cache.keys() if "score" in s and "val_" not in s]
+        self._log_stats(["loss"] + scores, trainer_cache)
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_stats(["val_loss", "val_score"], trainer_cache)
+        # get all val stats
+        stats = [s for s in trainer_cache.keys() if "val_" in s]
+        self._log_stats(stats, trainer_cache)
 
 
 class ProgressBar(Callback):
@@ -51,7 +55,7 @@ class ProgressBar(Callback):
 
     def on_init(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
-            self.pbar = tqdm(unit=" epoch", total=trainer_cache["epochs"])
+            self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
 
     def on_step(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "step":
@@ -62,17 +66,17 @@ class ProgressBar(Callback):
             self.pbar = tqdm(
                 desc=f"Epoch {trainer_cache['t']}/{trainer_cache["epochs"]}",
                 unit=" steps",
-                total=trainer_cache["steps"] +1,
+                total=trainer_cache["train_steps"] +1,
             )
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._set_pbar_postfix(trainer_cache)
+        self.__set_pbar_postfix(trainer_cache)
         if self.mode == "epoch":
             self.pbar.update()
         else:
             self.pbar.close()
 
-    def _set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
+    def __set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
         stats = []
         for stat in trainer_cache.keys():
             if "loss" not in stat and "score" not in stat:

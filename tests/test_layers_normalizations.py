@@ -10,6 +10,7 @@ SHAPE4D = (10, 20, 30, 40)
 
 
 def test_batchnorm1d() -> None:
+    """Test for the batchnorm 1d layer."""
     results = []
 
     # forward
@@ -35,6 +36,7 @@ def test_batchnorm1d() -> None:
 
 
 def test_batchnorm2d() -> None:
+    """Test for the batchnorm 2d layer."""
     results = []
 
     # forward
@@ -60,6 +62,7 @@ def test_batchnorm2d() -> None:
 
 
 def test_layernorm() -> None:
+    """Test for the layernorm layer."""
     results = []
 
     # forward

@@ -10,6 +10,7 @@ B, Cin, Cout, X = (10, 20, 30, 40)
 
 
 def test_embedding() -> None:
+    """Test for the embedding layer."""
     results = []
     shape_w = (Cin, Cout)
 

@@ -11,6 +11,7 @@ B, Cin, Ch, X = (10, 20, 30, 40)
 
 # Recurrent
 def test_recurrent() -> None:
+    """Test for the recurrent layer."""
     results = []
     shape_x = (B, X, Cin)
     shape_w_in_1 = (Ch, Cin)
@@ -98,6 +99,7 @@ def test_recurrent() -> None:
 
 # LSTM
 def test_lstm() -> None:
+    """Test for the lstm layer."""
     results = []
     shape_x = (B, X, Cin)
 

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 from types import ModuleType
-from typing import Optional
+from typing import Optional, Sequence
 import numpy
 from .engine import (
-    check_device,
+    check_device_availability,
     cupy_to_numpy,
     get_engine,
     infer_device,
@@ -55,32 +55,33 @@ class Tensor:
             Whether the tensor requires gradients, by default True.
         """
 
-        self._device = infer_device(data) if device is None else device
-        self.data = self._e.array(data, copy=copy, dtype=dtype)
-        self.grad: Optional[Tensor] = None
+        self.__device = infer_device(data) if device is None else device
+        self.data = self.__e.array(data, copy=copy, dtype=dtype)
         self.requires_grad = requires_grad
-        self._iterator: Optional[int] = None
+
+        self.grad: Optional[Tensor] = None
+        self.__iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def _e(self) -> ModuleType:
-        return get_engine(self._device)
+    def __e(self) -> ModuleType:
+        return get_engine(self.__device)
 
     @property
     def device(self) -> DeviceLike:
         """Device the tensor is stored on."""
-        return self._device
+        return self.__device
 
     def to_device(self, device: DeviceLike) -> None:
         """Moves the tensor to a specified device."""
-        if self._device == device:
+        if self.__device == device:
             return
 
-        check_device(device)
-        self._device = device
+        check_device_availability(device)
+        self.__device = device
 
         if device == "cuda":
             self.data = numpy_to_cupy(self.data)
@@ -123,13 +124,14 @@ class Tensor:
         prefix = "Tensor("
         dtype = self.dtype
         shape = self.shape
-        device = self._device
+        device = self.__device
         array_string = numpy.array2string(
             self.cpu().data,
             max_line_width=100,
             prefix=prefix,
             separator=", ",
             precision=4,
+            floatmode="fixed",
         )
         return f"{prefix}{array_string}, {dtype=}, {shape=}, {device=})"
 
@@ -149,51 +151,51 @@ class Tensor:
         self.data[idx] = value
 
     def __iter__(self) -> Tensor:
-        self._iterator = 0
+        self.__iterator = 0
         return self
 
     def __next__(self) -> Tensor | ScalarLike:
-        if self._iterator < self.shape[0]:
-            data = self[self._iterator]
-            self._iterator += 1
+        if self.__iterator < self.shape[0]:
+            data = self[self.__iterator]
+            self.__iterator += 1
             return data
         raise StopIteration
 
     def __add__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data + parsedata(other))
+        return Tensor(self.data + to_array_data(other))
 
     def __radd__(self, other: ScalarLike) -> Tensor:
         return self + other
 
     def __mul__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data * parsedata(other))
+        return Tensor(self.data * to_array_data(other))
 
     def __rmul__(self, other: ScalarLike) -> Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data ** parsedata(other))
+        return Tensor(self.data ** to_array_data(other))
 
     def __rpow__(self, other: ScalarLike) -> Tensor:
-        return Tensor(other, device=self._device) ** self
+        return Tensor(other, device=self.__device) ** self
 
     def __neg__(self) -> Tensor:
         return self * -1
 
     def __sub__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data - parsedata(other))
+        return Tensor(self.data - to_array_data(other))
 
     def __rsub__(self, other: ScalarLike) -> Tensor:
         return -self + other
 
     def __truediv__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data / parsedata(other))
+        return Tensor(self.data / to_array_data(other))
 
     def __rtruediv__(self, other: ScalarLike) -> Tensor:
         return self**-1 * other
 
     def __floordiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data // parsedata(other))
+        return Tensor(self.data // to_array_data(other))
 
     def __rfloordiv__(self, other: Tensor | ScalarLike) -> Tensor:
         return (other / self).int().astype(self.dtype)
@@ -205,49 +207,49 @@ class Tensor:
         return Tensor(self.data @ other.data)
 
     def __lt__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data < parsedata(other))
+        return Tensor(self.data < to_array_data(other))
 
     def __gt__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data > parsedata(other))
+        return Tensor(self.data > to_array_data(other))
 
     def __le__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data <= parsedata(other))
+        return Tensor(self.data <= to_array_data(other))
 
     def __ge__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data >= parsedata(other))
+        return Tensor(self.data >= to_array_data(other))
 
     def __eq__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data == parsedata(other))
+        return Tensor(self.data == to_array_data(other))
 
     def __ne__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data != parsedata(other))
+        return Tensor(self.data != to_array_data(other))
 
     def __iadd__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data += parsedata(other)
+        self.data += to_array_data(other)
         return self
 
     def __isub__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data -= parsedata(other)
+        self.data -= to_array_data(other)
         return self
 
     def __imul__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data *= parsedata(other)
+        self.data *= to_array_data(other)
         return self
 
     def __idiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data /= parsedata(other)
+        self.data /= to_array_data(other)
         return self
 
     def __ifloordiv__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data //= parsedata(other)
+        self.data //= to_array_data(other)
         return self
 
     def __imod__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data %= parsedata(other)
+        self.data %= to_array_data(other)
         return self
 
     def __ipow__(self, other: Tensor | ScalarLike) -> Tensor:
-        self.data **= parsedata(other)
+        self.data **= to_array_data(other)
         return self
 
     def __len__(self) -> int:
@@ -339,7 +341,7 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
-        return self.moveaxis(*axes)
+        return self.moveaxis(from_axis=axes[0], to_axis=axes[1])
 
     def insert_dim(self, axis: AxisLike) -> Tensor:
         """Returns a view of the tensor containing an added dimension at a given axis.
@@ -354,7 +356,7 @@ class Tensor:
         Tensor
             Tensor with an added dimension.
         """
-        return Tensor(self._e.expand_dims(self.data, axis=axis))
+        return Tensor(self.__e.expand_dims(self.data, axis=axis))
 
     def add_dims(self, target_dims: int) -> Tensor:
         """Returns a view of the tensor with added trailing dimensions.
@@ -385,16 +387,16 @@ class Tensor:
         Tensor
             Resized tensor.
         """
-        return Tensor(self._e.resize(self.data, shape))
+        return Tensor(self.__e.resize(self.data, shape))
 
-    def repeat(self, n_repeats: int, axis: int) -> Tensor:
+    def repeat(self, n_repeats: int, axis: AxisLike) -> Tensor:
         """Repeat elements of a tensor.
 
         Parameters
         ----------
         n_repeats : int
             Number of repeats.
-        axis : int
+        axis : AxisLike
             Axis, along which the values are repeated.
 
         Returns
@@ -404,12 +406,12 @@ class Tensor:
         """
         return Tensor(self.data.repeat(n_repeats, axis))
 
-    def pad(self, padding: int | tuple[int, int] | tuple[tuple[int, int]]) -> Tensor:
+    def pad(self, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]) -> Tensor:
         """Returns a padded tensor using zero padding.
 
         Parameters
         ----------
-        pad_width : int | tuple[int, int] | tuple[tuple[int, int]]
+        pad_width : int | tuple[int, int] | tuple[tuple[int, int], ...]
             Padding width.
             `int`: Same padding for before and after in all dimensions.
             `tuple[int, int]`: Specific before and after padding in all dimensions.
@@ -420,7 +422,7 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        return Tensor(self._e.pad(self.data, padding))
+        return Tensor(self.__e.pad(self.data, padding))
 
     def pad_to_shape(self, shape: ShapeLike) -> Tensor:
         """Returns a padded tensor using zero padding that matches a specified shape.
@@ -435,17 +437,17 @@ class Tensor:
         Tensor
             Padded tensor.
         """
-        padding = tuple((0, shape[i] - self.shape[i]) for i in range(self.ndim))
+        padding = tuple((int(0), shape[i] - self.shape[i]) for i in range(self.ndim))
         return self.pad(padding)
 
-    def moveaxis(self, from_axis: int, to_axis: int) -> Tensor:
+    def moveaxis(self, from_axis: AxisLike, to_axis: AxisLike) -> Tensor:
         """Move axes of an array to new positions. Other axes remain in their original order.
 
         Parameters
         ----------
-        from_axis : int
+        from_axis : AxisLike
             Original positions of the axes to move. These must be unique.
-        to_axis : int
+        to_axis : AxisLike
             Destination positions for each of the original axes. These must also be unique.
 
         Returns
@@ -453,7 +455,7 @@ class Tensor:
         Tensor
             Tensor with moved axes.
         """
-        return Tensor(self._e.moveaxis(self.data, from_axis, to_axis))
+        return Tensor(self.__e.moveaxis(self.data, from_axis, to_axis))
 
     def squeeze(self) -> Tensor:
         """Removes axis with length one from the tensor."""
@@ -472,7 +474,7 @@ class Tensor:
         Tensor
             Tensor containing flipped values.
         """
-        return Tensor(self._e.flip(self.data, axis=axis))
+        return Tensor(self.__e.flip(self.data, axis=axis))
 
     # ----------------------------------------------------------------------------------------------
     # MEMORY/DEVICE METHODS
@@ -490,7 +492,7 @@ class Tensor:
 
     def cpu(self):
         """Returns a copy of the tensor on the cpu."""
-        if self._device == "cpu":
+        if self.__device == "cpu":
             return self
 
         t = self.copy()
@@ -499,7 +501,7 @@ class Tensor:
 
     def cuda(self):
         """Returns a copy of the tensor on the gpu."""
-        if self._device == "cuda":
+        if self.__device == "cuda":
             return self
 
         t = self.copy()
@@ -663,43 +665,43 @@ class Tensor:
 
     def exp(self) -> Tensor:
         """Exponential of tensor element."""
-        return Tensor(self._e.exp(self.data))
+        return Tensor(self.__e.exp(self.data))
 
     def log(self) -> Tensor:
         """Natural logarithm of tensor elements."""
-        return Tensor(self._e.log(self.data))
+        return Tensor(self.__e.log(self.data))
 
     def log10(self) -> Tensor:
         """Logarithm with base 10 of tensor elements."""
-        return Tensor(self._e.log10(self.data))
+        return Tensor(self.__e.log10(self.data))
 
     def log2(self) -> Tensor:
         """Logarithm with base 2 of tensor elements."""
-        return Tensor(self._e.log2(self.data))
+        return Tensor(self.__e.log2(self.data))
 
     def sin(self) -> Tensor:
         """Sine of tensor elements."""
-        return Tensor(self._e.sin(self.data))
+        return Tensor(self.__e.sin(self.data))
 
     def sinh(self) -> Tensor:
         """Hyperbolic sine of tensor elements."""
-        return Tensor(self._e.sinh(self.data))
+        return Tensor(self.__e.sinh(self.data))
 
     def cos(self) -> Tensor:
         """Cosine of tensor elements."""
-        return Tensor(self._e.cos(self.data))
+        return Tensor(self.__e.cos(self.data))
 
     def cosh(self) -> Tensor:
         """Hyperbolic cosine of tensor elements."""
-        return Tensor(self._e.cosh(self.data))
+        return Tensor(self.__e.cosh(self.data))
 
     def tan(self) -> Tensor:
         """Tangent of tensor elements."""
-        return Tensor(self._e.tan(self.data))
+        return Tensor(self.__e.tan(self.data))
 
     def tanh(self) -> Tensor:
         """Hyperbolical tangent of tensor elements."""
-        return Tensor(self._e.tanh(self.data))
+        return Tensor(self.__e.tanh(self.data))
 
     def sech(self) -> Tensor:
         """Hyperbolic secant of tensor elements."""
@@ -707,11 +709,11 @@ class Tensor:
 
     def abs(self) -> Tensor:
         """Absolute values of tensor elements."""
-        return Tensor(self._e.abs(self.data))
+        return Tensor(self.__e.abs(self.data))
 
     def sqrt(self) -> Tensor:
         """Square root of tensor elements."""
-        return Tensor(self._e.sqrt(self.data))
+        return Tensor(self.__e.sqrt(self.data))
 
     def fft1d(
         self,
@@ -735,7 +737,7 @@ class Tensor:
         Tensor
             Complex tensor.
         """
-        return Tensor(self._e.fft.fft(self.data, n=n, axis=axis), dtype=dtype)
+        return Tensor(self.__e.fft.fft(self.data, n=n, axis=axis), dtype=dtype)
 
     def ifft1d(
         self,
@@ -759,7 +761,7 @@ class Tensor:
         Tensor
             Float tensor.
         """
-        return Tensor(self._e.fft.ifft(self.data, n=n, axis=axis), dtype=dtype)
+        return Tensor(self.__e.fft.ifft(self.data, n=n, axis=axis), dtype=dtype)
 
     def fft2d(
         self,
@@ -783,7 +785,7 @@ class Tensor:
         Tensor
             Complex tensor.
         """
-        return Tensor(self._e.fft.fft2(self.data, s=s, axes=axes), dtype=dtype)
+        return Tensor(self.__e.fft.fft2(self.data, s=s, axes=axes), dtype=dtype)
 
     def ifft2d(
         self,
@@ -805,9 +807,9 @@ class Tensor:
         Returns
         -------
         Tensor
-            Float tensor.
+            Complex tensor.
         """
-        return Tensor(self._e.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
+        return Tensor(self.__e.fft.ifft2(self.data, s=s, axes=axes), dtype=dtype)
 
     def real(self, dtype: Optional[DtypeLike] = None) -> Tensor:
         """Returns the real parts of the complex tensor.
@@ -816,17 +818,22 @@ class Tensor:
         ----------
         dtype : DtypeLike, optional
             Datatype of the output tensor, by default None.
-        """
-        return Tensor(self._e.real(self.data), dtype=dtype)
 
-    def append(self, values: Tensor, axis: int = -1) -> Tensor:
+        Returns
+        -------
+        Tensor
+            Tensor containing real values.
+        """
+        return Tensor(self.__e.real(self.data), dtype=dtype)
+
+    def append(self, values: Tensor, axis: AxisLike = -1) -> Tensor:
         """Returns a copy of the tensor with appended values.
 
         Parameters
         ----------
         values : Tensor
             Values to append.
-        axis : int, optional
+        axis : AxisLike, optional
             Axis alowng which to append the values, by default -1.
 
         Returns
@@ -834,45 +841,47 @@ class Tensor:
         Tensor
             Tensor containing appended values.
         """
-        return Tensor(self._e.append(self.data, values.data, axis=axis))
+        return Tensor(self.__e.append(self.data, values.data, axis=axis))
 
-    def argmax(self, axis: Optional[int] = None) -> Tensor:
+    def argmax(self, axis: Optional[AxisLike] = None) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         Parameters
         ----------
-        axis : Optional[int] = None
+        axis : Optional[AxisLike] = None
             Axis, along which the maximum value is located, by default None.
 
         Returns
         -------
-        int | tuple [int, ...]
-            Index tensor.
+        Tensor
+            Tensor containing indices.
         """
-        return Tensor(self._e.argmax(self.data, axis=axis))
+        return Tensor(self.__e.argmax(self.data, axis=axis))
 
-    def clip(self, min_value: int | float, max_value: int | float) -> Tensor:
+    def clip(
+        self, min_value: Optional[ScalarLike] = None, max_value: Optional[ScalarLike] = None
+    ) -> Tensor:
         """Limits the values of a tensor.
 
         Parameters
         ----------
-        min_value : int | float
-            Lower bound of allowed values.
-        max_value : int | float
-            Upper bound of allowed values.
+        min_value : ScalarLike, optional
+            Lower bound, by default None. If None, no clipping is performed on this edge.
+        max_value : ScalarLike
+            Upper bound, by default None. If None, no clipping is performed on this edge.
 
         Returns
         -------
         Tensor
             Tensor containing clipped values.
         """
-        return Tensor(self._e.clip(self.data, min_value, max_value))
+        return Tensor(self.__e.clip(self.data, min_value, max_value))
 
     def unique(self) -> Tensor:
         """Returns the unique ordered values of the tensor."""
-        return Tensor(self._e.unique(self.data))
+        return Tensor(self.__e.unique(self.data))
 
-    def split(self, splits: int | list[int], axis: int = -1) -> list[Tensor]:
+    def split(self, splits: int | Sequence[int], axis: AxisLike = -1) -> list[Tensor]:
         """Returns a list of new tensors by splitting the tensor.
 
         Parameters
@@ -881,7 +890,7 @@ class Tensor:
             If an int is given, the tensor is split into n equally sized tensors.
             If a list of indices is given, they represent the indices at which to
             split the tensor along the given axis.
-        axis : int, optional
+        axis : AxisLike, optional
             Axis along which to split the tensor, by default -1.
 
         Returns
@@ -889,12 +898,11 @@ class Tensor:
         list[Tensor]
             List of tensors containing the split data.
         """
-        chunks = self._e.split(self.data, splits, axis=axis)
-        return [Tensor(c) for c in chunks]
+        return [Tensor(s) for s in self.__e.split(self.data, splits, axis=axis)]
 
 
-def parsedata(data: Tensor | ScalarLike) -> ArrayLike | ScalarLike:
-    """Returns data based on given data."""
+def to_array_data(data: Tensor | ScalarLike) -> ArrayLike | ScalarLike:
+    """Returns array-compatible data."""
     if isinstance(data, Tensor):
         return data.data
     return data

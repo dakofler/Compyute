@@ -9,6 +9,7 @@ SHAPE = (10, 20, 30)
 
 
 def test_relu() -> None:
+    """Test for the relu layer."""
     results = []
 
     # forward
@@ -29,6 +30,7 @@ def test_relu() -> None:
 
 
 def test_leaky_relu() -> None:
+    """Test for the leaky relu layer."""
     results = []
 
     # forward
@@ -49,6 +51,7 @@ def test_leaky_relu() -> None:
 
 
 def test_gelu() -> None:
+    """Test for the gelu layer."""
     results = []
 
     # forward
@@ -69,6 +72,7 @@ def test_gelu() -> None:
 
 
 def test_tanh() -> None:
+    """Test for the tanh layer."""
     results = []
 
     # forward
@@ -89,6 +93,7 @@ def test_tanh() -> None:
 
 
 def test_sigmoid() -> None:
+    """Test for the sigmoid layer."""
     results = []
 
     # forward

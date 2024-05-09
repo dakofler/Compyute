@@ -25,14 +25,14 @@ class Container(Module):
             Module label.
         """
         super().__init__(label)
-        self._modules = modules
+        self.__modules = modules
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
     def to_device(self, device: DeviceLike) -> None:
-        if self._device == device:
+        if self.device == device:
             return
 
         super().to_device(device)
@@ -43,8 +43,8 @@ class Container(Module):
     @property
     def modules(self) -> list[Module]:
         """Returns the list of modules."""
-        if self._modules is not None:
-            return self._modules
+        if self.__modules is not None:
+            return self.__modules
         return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
 
     @property
@@ -56,7 +56,7 @@ class Container(Module):
         return p
 
     def set_retain_values(self, value: bool) -> None:
-        if self._retain_values == value:
+        if self.retain_values == value:
             return
 
         super().set_retain_values(value)
@@ -65,7 +65,7 @@ class Container(Module):
             module.set_retain_values(value)
 
     def set_trainable(self, value: bool) -> None:
-        if self._trainable == value:
+        if self.trainable == value:
             return
 
         super().set_trainable(value)
@@ -74,7 +74,7 @@ class Container(Module):
             module.set_trainable(value)
 
     def set_training(self, value: bool) -> None:
-        if self._training == value:
+        if self.training == value:
             return
 
         super().set_training(value)

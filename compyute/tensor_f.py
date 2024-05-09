@@ -284,17 +284,17 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def prod(x: Iterable[int | float]) -> int | float:
+def prod(x: Iterable[ScalarLike]) -> ScalarLike:
     """Returns the product of a sequence of elements.
 
     Parameters
     ----------
-    x : Iterable[int | float]
+    x : Iterable[ScalarLike]
         Iterable of elements.
 
     Returns
     -------
-    int | float
+    ScalarLike
         Product of elements.
     """
     return get_engine("cpu").prod(x).item()

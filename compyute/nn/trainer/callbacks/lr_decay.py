@@ -14,7 +14,8 @@ class LRDecay(Callback):
     def __init__(self) -> None:
         self.cache: dict[str, list[dict]] = {"lrs": []}
 
-    def _log_lr(self, trainer_cache: dict[str, Any]) -> None:
+    def log_lr(self, trainer_cache: dict[str, Any]) -> None:
+        """Stores the current optimizere learning rate."""
         self.cache["lrs"].append({"epoch": trainer_cache["t"], "lr": trainer_cache["optimizer"].lr})
 
 
@@ -36,7 +37,7 @@ class StepLR(LRDecay):
         self.decay_epoch = decay_epoch
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_lr(trainer_cache)
+        self.log_lr(trainer_cache)
         if trainer_cache["t"] == self.decay_epoch:
             trainer_cache["optimizer"].lr *= self.lr_decay
 
@@ -59,7 +60,7 @@ class MultistepLR(LRDecay):
         self.decay_step_size = decay_step_size
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_lr(trainer_cache)
+        self.log_lr(trainer_cache)
         if trainer_cache["t"] % self.decay_step_size == 0:
             trainer_cache["optimizer"].lr *= self.lr_decay
 
@@ -82,7 +83,7 @@ class ExponentialLR(LRDecay):
         self.until_epoch = until_epoch
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_lr(trainer_cache)
+        self.log_lr(trainer_cache)
         if trainer_cache["t"] <= self.until_epoch:
             trainer_cache["optimizer"].lr *= self.lr_decay
 
@@ -106,7 +107,7 @@ class CosineLR(LRDecay):
         self.lr_max = 1.0
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self._log_lr(trainer_cache)
+        self.log_lr(trainer_cache)
 
         # set max lr to initial lr
         if trainer_cache["t"] == 1:
@@ -153,7 +154,7 @@ class AdaptiveLR(LRDecay):
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         # log lr
-        self._log_lr(trainer_cache)
+        self.log_lr(trainer_cache)
 
         # keep target history
         h = self.cache["history"]

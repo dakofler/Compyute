@@ -2,45 +2,11 @@
 
 from typing import Optional
 from ..module import Module
-from ....tensor_f import zeros_like
 from ....tensor import Tensor
 from ....types import ShapeLike
 
 
-__all__ = ["Slice", "Reshape", "Flatten", "Moveaxis"]
-
-
-class Slice(Module):
-    """Slices a tensor."""
-
-    def __init__(self, s: list[None | int | slice], label: Optional[str] = None) -> None:
-        """Slices a tensor.
-
-        Parameters
-        ----------
-        s : list[None, int, slice]
-            Slice applied to a tensor not including the batch dimension.
-            e.g. [slice(None), 1] is equivalent to [:, 1]
-        label: str, optional
-            Module label.
-        """
-        super().__init__(label)
-        self.s = s
-
-    def forward(self, x: Tensor) -> Tensor:
-        s = [slice(None)] + self.s
-        y = x[*s]
-
-        if self.training:
-
-            def backward(dy: Tensor) -> Tensor:
-                dx = zeros_like(x)
-                dx[*s] = dy
-                return dx
-
-            self.backward_fn = backward
-
-        return y
+__all__ = ["Reshape", "Flatten", "Moveaxis"]
 
 
 class Reshape(Module):

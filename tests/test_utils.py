@@ -38,9 +38,7 @@ def get_vals_int(
     return compyute_x, torch_x
 
 
-def get_params(
-    shape: ShapeLike, device: str = "cpu"
-) -> tuple[Parameter, torch.nn.Parameter]:
+def get_params(shape: ShapeLike, device: str = "cpu") -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape, dtype="float32") * 0.1
     compyute_x = Parameter(data)
@@ -49,8 +47,6 @@ def get_params(
     return compyute_x, torch_x
 
 
-def validate(
-    x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5
-) -> bool:
+def validate(x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
     return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)
