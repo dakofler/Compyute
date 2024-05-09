@@ -24,11 +24,9 @@ def test_skip() -> None:
 
     compyute_module = SkipConnection(
         Sequential(
-            [
-                Linear(Cin, Cout, bias=False),
-                ReLU(),
-                Linear(Cout, Cin, bias=False),
-            ]
+            Linear(Cin, Cout, bias=False),
+            ReLU(),
+            Linear(Cout, Cin, bias=False),
         )
     )
     compyute_module.set_training(True)

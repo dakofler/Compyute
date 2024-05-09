@@ -44,11 +44,11 @@ class DenseBlock(Sequential):
         label: str, optional
             Module label.
         """
-        layers = [
+        super().__init__(
             Linear(in_channels, out_channels, bias, dtype),
             get_act_from_str(activation),
-        ]
-        super().__init__(layers, label)
+            label=label,
+        )
 
 
 class Convolution1dBlock(Sequential):
@@ -96,7 +96,7 @@ class Convolution1dBlock(Sequential):
         label: str, optional
             Module label.
         """
-        layers = [
+        super().__init__(
             Convolution1d(
                 in_channels,
                 out_channels,
@@ -108,8 +108,8 @@ class Convolution1dBlock(Sequential):
                 dtype,
             ),
             get_act_from_str(activation),
-        ]
-        super().__init__(layers, label)
+            label=label,
+        )
 
 
 class Convolution2dBlock(Sequential):
@@ -157,7 +157,7 @@ class Convolution2dBlock(Sequential):
         label: str, optional
             Module label.
         """
-        layers = [
+        super().__init__(
             Convolution2d(
                 in_channels,
                 out_channels,
@@ -169,25 +169,25 @@ class Convolution2dBlock(Sequential):
                 dtype,
             ),
             get_act_from_str(activation),
-        ]
-        super().__init__(layers, label)
+            label=label,
+        )
 
 
 class SkipConnection(ParallelAdd):
     """Skip connection bypassing a block of modules."""
 
-    def __init__(self, block: Module, skip_connection: Optional[Module] = None) -> None:
+    def __init__(self, residual_block: Module, projection: Optional[Module] = None) -> None:
         """Residual connection bypassing a block of modules.
 
         Parameters
         ----------
-        block : Module
-            Block bypassed by the skip connection.
-            For multiple modules use a container as block.
-        skip_connection: Module, optional
-            Module used in the skip connection for projection, by default None.
+        residual_block : Module
+            Residual block bypassed by the skip connection.
+            For multiple modules use a container module.
+        projection: Module, optional
+            Module used for a linear projection to achieve matching dimensions, by default None.
         label: str, optional
             Module label.
         """
-        res = skip_connection if skip_connection is not None else Module("ResidualConnection")
-        super().__init__([block, res])
+        proj = projection if projection is not None else Module("Projection")
+        super().__init__(residual_block, proj)

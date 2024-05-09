@@ -1,5 +1,6 @@
 """Neural network containers module"""
 
+from abc import abstractmethod
 from typing import Optional
 from .module import Module
 from ..parameter import Parameter
@@ -14,18 +15,18 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 class Container(Module):
     """Container base module."""
 
-    def __init__(self, modules: Optional[list[Module]] = None, label: Optional[str] = None) -> None:
+    def __init__(self, *args: Module, label: Optional[str] = None) -> None:
         """Container base module.
 
         Parameters
         ----------
-        modules : list[Module], optional
-            List of modules used in the container.
+        *args : Module
+            Modules used in the container.
         label: str, optional
-            Module label.
+            Container label.
         """
         super().__init__(label)
-        self.__modules = modules
+        self.__modules = list(args) if len(args) > 0 else None
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -46,6 +47,19 @@ class Container(Module):
         if self.__modules is not None:
             return self.__modules
         return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
+
+    def add(self, module: Module) -> None:
+        """Adds a module to the container.
+
+        Parameters
+        ----------
+        module : Module
+            Module to add to the container.
+        """
+        if self.__modules is None:
+            self.__modules = [module]
+        else:
+            self.__modules.append(module)
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -89,15 +103,17 @@ class Container(Module):
     def __repr__(self) -> str:
         rep = super().__repr__()
 
-        if self.modules is not None:
-            for module in self.modules:
-                rep += "\n" + module.__repr__()
+        for module in self.modules:
+            rep += "\n" + module.__repr__()
 
         return rep
 
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
+
+    @abstractmethod
+    def forward(self, x: Tensor) -> Tensor: ...
 
     def reset(self) -> None:
         """Resets temporary values like outputs and gradients."""
@@ -150,23 +166,18 @@ class Container(Module):
 
 
 class Sequential(Container):
-    """Sequential container module. Layers are processed sequentially."""
+    """Sequential container module. Layers are processed sequentially.
 
-    def __init__(self, layers: Optional[list[Module]] = None, label: Optional[str] = None) -> None:
-        """Sequential container module. Layers are processed sequentially.
-
-        Parameters
-        ----------
-        layers : list[Module], optional
-            List of layers used in the container.
-            These layers are processed sequentially starting at index 0.
-        label: str, optional
-            Module label.
-        """
-        super().__init__(layers, label)
+    Parameters
+    ----------
+    *args : Module
+        Layers used in the sequential container.
+    label: str, optional
+        Container label.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.modules is None:
+        if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
         for module in self.modules:
@@ -185,31 +196,26 @@ class Sequential(Container):
 
 
 class ParallelConcat(Container):
-    """Parallel container module.
-    Inputs are processed independently and outputs are concatinated.
-    """
+    """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
 
-    def __init__(
-        self, modules: list[Module], concat_axis: int = -1, label: Optional[str] = None
-    ) -> None:
+    def __init__(self, *args: Module, concat_axis: int = -1, label: Optional[str] = None) -> None:
         """Parallel container module. Module output tensors are concatinated.
 
         Parameters
         ----------
-        modules : list[Module]
-            List of modules used in the container.
-            These modules are processed in parallel and their outputs are concatenated.
+        *args : Module
+            Modules used in the parallel container.
         concat_axis : int, optional
             Axis along which the output of the parallel modules
             shall be concatinated, by default -1.
         label: str, optional
-            Module label.
+            Container label.
         """
-        super().__init__(modules, label)
+        super().__init__(*args, label=label)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.modules is None:
+        if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
         ys = [m(x) for m in self.modules]
@@ -229,32 +235,23 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Parallel container module.
-    Inputs are processed independently and outputs are added element-wise.
+    """Parallel container module. Inputs are processed in parallel, outputs are added element-wise.
+
+    Parameters
+    ----------
+    *args : Module
+        Modules used in the parallel container.
+    label: str, optional
+        Container label.
     """
 
-    def __init__(self, modules: Optional[list[Module]], label: Optional[str] = None) -> None:
-        """Parallel container module. Module output tensors are added.
-
-        Parameters
-        ----------
-        modules : list[Module], optional
-            List of modules used in the container.
-            These modules are processed in parallel and their outputs are added.
-        label: str, optional
-            Module label.
-        """
-        super().__init__(modules, label)
-
     def forward(self, x: Tensor) -> Tensor:
-        if self.modules is None:
+        if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum([module(x) for module in self.modules])
+        y = tensorsum([m(x) for m in self.modules])
 
         if self.training:
-            self.backward_fn = lambda dy: tensorsum(
-                [module.backward(dy) for module in self.modules]
-            )
+            self.backward_fn = lambda dy: tensorsum([m.backward(dy) for m in self.modules])
 
         return y

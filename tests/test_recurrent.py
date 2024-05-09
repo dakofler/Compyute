@@ -38,7 +38,7 @@ def test_recurrent() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = Sequential([Recurrent(Cin, Ch), Recurrent(Ch, Ch)])
+    compyute_module = Sequential(Recurrent(Cin, Ch), Recurrent(Ch, Ch))
     compyute_module.set_training(True)
 
     compyute_module.modules[0].w_i = compyute_w_in_1
@@ -126,7 +126,7 @@ def test_lstm() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = Sequential([LSTM(Cin, Ch), LSTM(Ch, Ch)])
+    compyute_module = Sequential(LSTM(Cin, Ch), LSTM(Ch, Ch))
     compyute_module.set_training(True)
 
     compyute_module.modules[0].w_i = compyute_w_i_1

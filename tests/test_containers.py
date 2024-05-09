@@ -26,10 +26,8 @@ def test_sequential_container() -> None:
     compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = Sequential(
-        [
-            Linear(Cin, Cout, bias=False),
-            Linear(Cout, Cout, bias=False),
-        ]
+        Linear(Cin, Cout, bias=False),
+        Linear(Cout, Cout, bias=False),
     )
     compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
@@ -69,11 +67,9 @@ def test_parallel_concat_container() -> None:
     compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = ParallelConcat(
-        [
-            Linear(Cin, Cout, bias=False),
-            Linear(Cin, Cout, bias=False),
-        ],
-        -1,
+        Linear(Cin, Cout, bias=False),
+        Linear(Cin, Cout, bias=False),
+        concat_axis=-1,
     )
     compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
@@ -111,10 +107,8 @@ def test_parallel_add_container() -> None:
     compyute_w2, torch_w2 = get_params(w2_shape)
 
     compyute_module = ParallelAdd(
-        [
-            Linear(Cin, Cout, bias=False),
-            Linear(Cin, Cout, bias=False),
-        ]
+        Linear(Cin, Cout, bias=False),
+        Linear(Cin, Cout, bias=False),
     )
     compyute_module.set_training(True)
     compyute_module.modules[0].w = compyute_w1
