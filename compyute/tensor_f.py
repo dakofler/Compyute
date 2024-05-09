@@ -12,9 +12,11 @@ __all__ = [
     "empty",
     "zeros",
     "ones",
+    "full",
+    "empty_like",
     "zeros_like",
     "ones_like",
-    "empty_like",
+    "full_like",
     "identity",
     "diagonal",
     "maximum",
@@ -153,6 +155,49 @@ def ones(shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike
     return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
+def full(
+    shape: ShapeLike,
+    value: ScalarLike,
+    dtype: Optional[DtypeLike] = None,
+    device: DeviceLike = "cpu",
+) -> Tensor:
+    """Returns a tensor of a given shape with all values being one.
+
+    Parameters
+    ----------
+    shape: ShapeLike
+        Shape of the new tensor.
+    value: ScalarLike
+        Value to fill the tensor.
+    dtype: DtypeLike, optional
+        Datatype of the tensor data, by default None.
+    device: DeviceLike, optional
+        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+
+    Returns
+    -------
+    Tensor
+        Tensor with all values being one.
+    """
+    return Tensor(get_engine(device).full(shape, value, dtype=dtype))
+
+
+def empty_like(x: Tensor) -> Tensor:
+    """Returns a tensor based on a given other tensor with uninitialized values.
+
+    Parameters
+    ----------
+    x : Tensor
+        Tensor whose shape, dtype and device is used.
+
+    Returns
+    -------
+    Tensor
+        Tensor with uninitialized values.
+    """
+    return empty(x.shape, dtype=x.dtype, device=x.device)
+
+
 def zeros_like(x: Tensor) -> Tensor:
     """Returns a tensor based on a given other tensor with all values being zero.
 
@@ -185,20 +230,22 @@ def ones_like(x: Tensor) -> Tensor:
     return ones(x.shape, dtype=x.dtype, device=x.device)
 
 
-def empty_like(x: Tensor) -> Tensor:
-    """Returns a tensor based on a given other tensor with uninitialized values.
+def full_like(x: Tensor, value: ScalarLike) -> Tensor:
+    """Returns a tensor of a given shape with all values being one.
 
     Parameters
     ----------
     x : Tensor
         Tensor whose shape, dtype and device is used.
+    value: ScalarLike
+        Value to fill the tensor.
 
     Returns
     -------
     Tensor
-        Tensor with uninitialized values.
+        Tensor with all values being one.
     """
-    return empty(x.shape, dtype=x.dtype, device=x.device)
+    return full(x.shape, value=value, dtype=x.dtype, device=x.device)
 
 
 def identity(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
