@@ -3,7 +3,7 @@
 from typing import Optional
 from ..module import Module
 from ...parameter import Parameter
-from ....tensor_f import ones, prod, zeros
+from ....tensor_f import ones, tensorprod, zeros
 from ....basetensor import Tensor
 from ....types import DtypeLike, ShapeLike
 
@@ -88,7 +88,7 @@ class Batchnorm1d(Module):
                 dy = dy.astype(self.dtype)
 
                 # input grads
-                n = prod(x.shape) / x.shape[1]
+                n = tensorprod(x.shape) / x.shape[1]
                 dx = (
                     weights
                     * var_h
@@ -203,7 +203,7 @@ class Batchnorm2d(Module):
                 dy = dy.astype(self.dtype)
 
                 # input grads
-                n = prod(x.shape) / x.shape[1]
+                n = tensorprod(x.shape) / x.shape[1]
                 dx = (
                     weights
                     * var_h
@@ -295,7 +295,7 @@ class Layernorm(Module):
                 dy = dy.astype(self.dtype)
 
                 # input grads
-                n = prod(x.shape[1:])
+                n = tensorprod(x.shape[1:])
                 dx = (
                     self.w
                     * var_h

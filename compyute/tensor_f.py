@@ -1,6 +1,8 @@
 """Tensor functions module"""
 
-from typing import Optional, Sequence
+from functools import reduce
+import operator
+from typing import Iterable, Optional, Sequence
 from .engine import get_engine
 from .basetensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
@@ -21,7 +23,6 @@ __all__ = [
     "diagonal",
     "maximum",
     "minimum",
-    "prod",
     "concatenate",
     "stack",
     "tensorsum",
@@ -348,22 +349,6 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     return Tensor(get_engine(device).minimum(_a, _b))
 
 
-def prod(x: Sequence[ScalarLike]) -> ScalarLike:
-    """Returns the product of a sequence of elements.
-
-    Parameters
-    ----------
-    x : Iterable[ScalarLike]
-        Iterable of elements.
-
-    Returns
-    -------
-    ScalarLike
-        Product of elements.
-    """
-    return get_engine("cpu").prod(x).item()
-
-
 def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     """Returns a new tensor by joining a sequence of tensors along a given axis.
 
@@ -402,37 +387,33 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))
 
 
-def tensorsum(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
-    """Sums a sequence of tensors element-wise.
+def tensorsum(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
+    """Sums the elements of an iterable element-wise over the first axis.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
-        Sequence of Tensors to be summed.
-    axis : AxisLike, optional
-        Axis along which to sum tensor elements, by default -1.
+    tensors : Iterable[Tensor | ScalarLike]
+        Iterable of values to be summed.
 
     Returns
     -------
-    Tensor
-        Tensor containing element-wise sums.
+    Tensor | ScalarLike
+        Tensor containing element-wise sums or scalar.
     """
-    return stack(tensors=tensors, axis=axis).sum(axis=axis)
+    return reduce(operator.add, tensors)
 
 
-def tensorprod(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
-    """Multiplies a sequence of tensors element-wise.
+def tensorprod(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
+    """Multiplies the elements of an iterable element-wise over the first axis.
 
     Parameters
     ----------
-    tensors : Sequence[Tensor]
-        Sequence of Tensors to be multiplied.
-    axis : AxisLike, optional
-        Axis along which to multiply tensor elements, by default -1.
+    tensors : Iterable[Tensor | ScalarLike]
+        Iterable of values to be multiplied.
 
     Returns
     -------
-    Tensor
-        Tensor containing element-wise products.
+    Tensor | ScalarLike
+        Tensor containing element-wise products or scalar.
     """
-    return stack(tensors=tensors, axis=axis).prod(axis=axis)
+    return reduce(operator.mul, tensors)

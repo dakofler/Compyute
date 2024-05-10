@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 from ..parameter import Parameter
-from ...tensor_f import prod
+from ...tensor_f import tensorprod
 
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -283,9 +283,8 @@ class NAdam(Optimizer):
             v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["nadam_v"] = v
 
-            m_hat = mu * m / (1 - prod(self.state["nadam_mu"]) * mu_succ) + (1 - mu) * g / (
-                1 - prod(self.state["nadam_mu"])
-            )
+            mu_prod = tensorprod(self.state["nadam_mu"])
+            m_hat = mu_succ * m / (1 - mu_prod * mu_succ) + (1 - mu) * g / (1 - mu_prod)
             v_hat = v / (1 - self.beta2**self.t)
 
             p -= self.lr * m_hat / (v_hat**0.5 + self.eps)

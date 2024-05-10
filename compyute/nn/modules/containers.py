@@ -222,12 +222,12 @@ class ParallelConcat(Container):
         y = concatenate(ys, axis=self.concat_axis)
 
         if self.training:
+            out_lens = [y.shape[self.concat_axis] for y in ys]
+            splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
 
             def backward(dy: Tensor) -> Tensor:
-                out_lens = [y.shape[self.concat_axis] for y in ys]
-                splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
                 dy_splits = dy.split(splits, axis=self.concat_axis)
-                return tensorsum([self.modules[i].backward(s) for i, s in enumerate(dy_splits)])
+                return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
 
             self.backward_fn = backward
 
@@ -249,9 +249,9 @@ class ParallelAdd(Container):
         if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum([m(x) for m in self.modules])
+        y = tensorsum(m(x) for m in self.modules)
 
         if self.training:
-            self.backward_fn = lambda dy: tensorsum([m.backward(dy) for m in self.modules])
+            self.backward_fn = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y

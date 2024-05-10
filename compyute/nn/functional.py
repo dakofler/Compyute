@@ -2,7 +2,7 @@
 
 from typing import Callable, Literal, Optional
 from ..preprocessing.basic import one_hot_encode
-from ..tensor_f import identity, maximum, minimum, prod, zeros
+from ..tensor_f import identity, maximum, minimum, tensorprod, zeros
 from ..basetensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
@@ -652,7 +652,7 @@ def mean_squared_error(
     dif = y.float() - t.float()
     loss = (dif**2).mean()
 
-    backward = (lambda: dif * 2 / prod(y.shape)) if return_backward_fn else None
+    backward = (lambda: dif * 2 / tensorprod(y.shape)) if return_backward_fn else None
 
     return loss, backward
 
@@ -685,7 +685,7 @@ def cross_entropy(
     probs, _ = softmax(y.float(), False)
     loss = -((probs + eps) * t).sum(-1).log().mean()
 
-    backward = (lambda: (probs - t) / prod(y.shape[:-1])) if return_backward_fn else None
+    backward = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_backward_fn else None
 
     return loss, backward
 
@@ -717,7 +717,7 @@ def binary_cross_entropy(
     loss = -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
 
     backward = (
-        (lambda: (-t / y + (1 - t) / (1 - y)) / prod(y.shape)) if return_backward_fn else None
+        (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape)) if return_backward_fn else None
     )
 
     return loss, backward
@@ -738,8 +738,7 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    # return (y_pred.argmax(-1) == y_true).sum().float() / prod(y_pred.shape[:-1])
-    return (y_pred.argmax(-1) == y_true).sum() / prod(y_pred.shape[:-1])
+    return (y_pred.argmax(-1) == y_true).sum() / tensorprod(y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
