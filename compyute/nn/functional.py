@@ -3,7 +3,7 @@
 from typing import Callable, Literal, Optional
 from ..preprocessing.basic import one_hot_encode
 from ..tensor_f import identity, maximum, minimum, prod, zeros
-from ..tensor import Tensor, ShapeError
+from ..basetensor import Tensor, ShapeError
 from ..types import AxisLike, ShapeLike
 
 

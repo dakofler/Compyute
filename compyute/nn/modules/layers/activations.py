@@ -3,7 +3,7 @@
 from typing import Optional
 from ..module import Module
 from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
-from ....tensor import Tensor
+from ....basetensor import Tensor
 
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]

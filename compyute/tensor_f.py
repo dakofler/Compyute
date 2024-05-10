@@ -2,7 +2,7 @@
 
 from typing import Optional, Sequence
 from .engine import get_engine
-from .tensor import Tensor
+from .basetensor import Tensor
 from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 

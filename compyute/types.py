@@ -40,7 +40,7 @@ ComplexLike = (
 
 DtypeLike = IntLike | FloatLike | ComplexLike
 
-ScalarLike = DtypeLike | list | float | int
+ScalarLike = DtypeLike | float | int
 ShapeLike = tuple[int, ...]
 AxisLike = int | tuple[int, ...]
 DeviceLike = Literal["cpu", "cuda"]

@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from ..functional import accuracy_score, r2_score
-from ...tensor import Tensor
+from ...basetensor import Tensor
 
 
 __all__ = ["Accuracy", "R2"]

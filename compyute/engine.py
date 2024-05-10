@@ -50,7 +50,7 @@ def get_engine(device: DeviceLike) -> ModuleType:
         NumPy or CuPy module.
     """
     check_device_availability(device)
-    return DEVICE_ENGINES.get(device, numpy)
+    return DEVICE_ENGINES[device]
 
 
 def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:

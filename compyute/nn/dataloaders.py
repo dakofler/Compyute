@@ -3,7 +3,7 @@
 from functools import wraps
 from typing import Callable, Generator, Optional
 from ..random import shuffle
-from ..tensor import Tensor
+from ..basetensor import Tensor
 from ..tensor_f import concatenate
 from ..types import DeviceLike
 

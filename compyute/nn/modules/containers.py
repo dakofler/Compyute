@@ -5,7 +5,7 @@ from typing import Optional
 from .module import Module
 from ..parameter import Parameter
 from ...tensor_f import concatenate, ones, tensorsum
-from ...tensor import Tensor
+from ...basetensor import Tensor
 from ...types import DeviceLike, DtypeLike, ShapeLike
 
 

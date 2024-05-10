@@ -6,7 +6,7 @@ import pickle
 from typing import Callable, Iterable, Optional
 from ..parameter import Parameter
 from ...engine import check_device_availability
-from ...tensor import Tensor, ShapeError
+from ...basetensor import Tensor, ShapeError
 from ...types import DeviceLike
 
 
@@ -94,7 +94,7 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         rep = f"{self.label}("
-        attributes = (f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and not key.startswith("_") and not isinstance(value, Tensor))
+        attributes = (f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and not key.startswith("_") and not isinstance(value, Tensor) and value is not None)
         return rep + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:

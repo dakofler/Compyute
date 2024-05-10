@@ -2,7 +2,7 @@
 
 from typing import Optional
 from ..module import Module
-from ....tensor import Tensor
+from ....basetensor import Tensor
 from ....types import ShapeLike
 
 

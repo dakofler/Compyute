@@ -2,7 +2,7 @@
 
 from .. import random
 from ..tensor_f import prod
-from ..tensor import Tensor
+from ..basetensor import Tensor
 from ..types import ShapeLike
 
 

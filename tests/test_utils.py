@@ -5,7 +5,7 @@ import torch
 
 from compyute.nn.parameter import Parameter
 from compyute.random import uniform_int, set_seed, uniform
-from compyute.tensor import Tensor
+from compyute.basetensor import Tensor
 from compyute.types import ShapeLike
 
 

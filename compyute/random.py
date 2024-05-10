@@ -1,7 +1,7 @@
 """Random functions module"""
 
 from .engine import get_engine, gpu_available
-from .tensor import Tensor
+from .basetensor import tensor, Tensor
 from .types import DeviceLike, DtypeLike, ShapeLike
 
 
@@ -56,7 +56,7 @@ def normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    return Tensor(get_engine(device).random.normal(mean, std, shape), dtype=dtype)
+    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
 def uniform(
@@ -86,7 +86,7 @@ def uniform(
     Tensor
         Tensor of uniformly distributed samples.
     """
-    return Tensor(get_engine(device).random.uniform(low, high, shape), dtype=dtype)
+    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
 def uniform_int(
@@ -116,12 +116,10 @@ def uniform_int(
     Tensor
         Tensor of samples.
     """
-    return Tensor(get_engine(device).random.randint(low, high, shape), dtype=dtype)
+    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
-def permutation(
-    n: int, dtype: DtypeLike = "int32", device: DeviceLike = "cpu"
-) -> Tensor:
+def permutation(n: int, dtype: DtypeLike = "int32", device: DeviceLike = "cpu") -> Tensor:
     """Returns a tensor containing a permuted range of length n.
 
     Parameters
@@ -138,7 +136,7 @@ def permutation(
     Tensor
         Permuted tensor.
     """
-    return Tensor(get_engine(device).random.permutation(n), dtype=dtype)
+    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:

@@ -6,7 +6,7 @@ from ...functional import linear, sigmoid
 from ...parameter import Parameter
 from ....tensor_f import empty_like, zeros, zeros_like
 from ....random import uniform
-from ....tensor import Tensor
+from ....basetensor import Tensor
 from ....types import DtypeLike
 
 
@@ -56,14 +56,12 @@ class Recurrent(Module):
         k = h_channels**-0.5
 
         # init input weights and biases
-        w_i = uniform((h_channels, in_channels), -k, k)
-        self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
-        self.b_i = Parameter(zeros((h_channels,)), dtype=dtype, label="b_i") if bias else None
+        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="w_i")
+        self.b_i = Parameter(zeros((h_channels,), dtype), label="b_i") if bias else None
 
         # init hidden weights and biases
-        w_h = uniform((h_channels, h_channels), -k, k)
-        self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
-        self.b_h = Parameter(zeros((h_channels,)), dtype=dtype, label="b_h") if bias else None
+        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="w_h")
+        self.b_h = Parameter(zeros((h_channels,), dtype), label="b_h") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
@@ -173,14 +171,12 @@ class LSTM(Module):
         k = in_channels**-0.5
 
         # init input weights and biases (Wii, Wif, Wig, Wio concatinated)
-        w_i = uniform((4 * h_channels, in_channels), -k, k)
-        self.w_i = Parameter(w_i, dtype=dtype, label="w_i")
-        self.b_i = Parameter(zeros((4 * h_channels,)), dtype=dtype, label="b_i") if bias else None
+        self.w_i = Parameter(uniform((4 * h_channels, in_channels), -k, k, dtype), label="w_i")
+        self.b_i = Parameter(zeros((4 * h_channels,), dtype), label="b_i") if bias else None
 
         # init hidden weights and biases (Whi, Whf, Whg, Who concatinated)
-        w_h = uniform((4 * h_channels, h_channels), -k, k)
-        self.w_h = Parameter(w_h, dtype=dtype, label="w_h")
-        self.b_h = Parameter(zeros((4 * h_channels,)), dtype=dtype, label="b_h") if bias else None
+        self.w_h = Parameter(uniform((4 * h_channels, h_channels), -k, k, dtype), label="w_h")
+        self.b_h = Parameter(zeros((4 * h_channels,), dtype), label="b_h") if bias else None
 
     def forward(self, x: Tensor):
         self.check_dims(x, [3])

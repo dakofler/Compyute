@@ -6,7 +6,7 @@ from ...parameter import Parameter
 from ...functional import linear
 from ....tensor_f import zeros
 from ....random import uniform
-from ....tensor import Tensor
+from ....basetensor import Tensor
 from ....types import DtypeLike
 
 
@@ -52,11 +52,11 @@ class Linear(Module):
         # init weights
         # (Co, Ci)
         k = in_channels**-0.5
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k), dtype=dtype, label="w")
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype), label="w")
 
         # init biases
         # (Co,)
-        self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype), label="b") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3, 4, 5])

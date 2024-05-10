@@ -6,7 +6,7 @@ import pickle
 import re
 import regex
 from tqdm.auto import trange
-from ..tensor import Tensor
+from ..basetensor import tensor, Tensor
 
 
 __all__ = [
@@ -71,7 +71,7 @@ class CharacterTokenizer(Tokenizer):
             Tensor of token ids.
         """
         preprocessed = list(text)
-        return Tensor([self.vocab[s] if s in self.vocab else 0 for s in preprocessed])
+        return tensor([self.vocab[s] if s in self.vocab else 0 for s in preprocessed])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -129,7 +129,7 @@ class WordTokenizer(Tokenizer):
         """
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
-        return Tensor([self.vocab[s] if s in self.vocab else 0 for s in split])
+        return tensor([self.vocab[s] if s in self.vocab else 0 for s in split])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -155,7 +155,7 @@ class BPETokenizer(Tokenizer):
     def __init__(self) -> None:
         super().__init__()
         self.vocab: dict[int, bytes] = {}
-        self._merges = {}
+        self.__merges = {}
         self._pattern = regex.compile(GPT4_SPLIT_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
@@ -173,7 +173,7 @@ class BPETokenizer(Tokenizer):
         if vocab_size <= 256:
             return
 
-        num_merges = vocab_size - 256
+        n_merges = vocab_size - 256
 
         # split text into chunks according to a regex pattern
         text_chunks = regex.findall(self._pattern, text)
@@ -181,7 +181,7 @@ class BPETokenizer(Tokenizer):
         # encode all chunks
         token_ids = [list(chunk.encode("utf-8")) for chunk in text_chunks]
 
-        for i in trange(num_merges, desc="Merges"):
+        for i in trange(n_merges, desc="Merges", unit="merges"):
 
             # get counts for bigrams
             counts = {}
@@ -190,15 +190,15 @@ class BPETokenizer(Tokenizer):
 
             # get most occuring bigram
             if len(counts) == 0:
-                print(f"Step {i+1}/{num_merges}. No more possible merges found.")
+                print(f"Step {i+1}/{n_merges}. No more possible merges found.")
                 break
             bigram = max(counts, key=counts.get)
 
             # replace occurences of bigram with merge id
             idx = 256 + i
-            token_ids = [self._merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
+            token_ids = [self.__merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
 
-            self._merges[bigram] = idx
+            self.__merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
@@ -207,7 +207,7 @@ class BPETokenizer(Tokenizer):
             counts[bigram] = counts.get(bigram, 0) + 1
         return counts
 
-    def _merge(self, token_ids, bigram, idx):
+    def __merge(self, token_ids, bigram, idx):
         new_ids = []
         i = 0
 
@@ -226,19 +226,19 @@ class BPETokenizer(Tokenizer):
 
         return new_ids
 
-    def _encode_chunk(self, text_bytes):
+    def __encode_chunk(self, text_bytes):
         token_ids = list(text_bytes)
 
         while len(token_ids) >= 2:
             counts = self._update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))
-            if bigram not in self._merges:
+            bigram = min(counts, key=lambda p: self.__merges.get(p, float("inf")))
+            if bigram not in self.__merges:
                 break
 
-            idx = self._merges[bigram]
-            token_ids = self._merge(token_ids, bigram, idx)
+            idx = self.__merges[bigram]
+            token_ids = self.__merge(token_ids, bigram, idx)
         return token_ids
 
     def encode(self, text: str) -> Tensor:
@@ -259,10 +259,10 @@ class BPETokenizer(Tokenizer):
 
         for chunk in text_chunks:
             chunk_bytes = chunk.encode("utf-8")
-            chunk_ids = self._encode_chunk(chunk_bytes)
+            chunk_ids = self.__encode_chunk(chunk_bytes)
             token_ids.extend(chunk_ids)
 
-        return Tensor(token_ids)
+        return tensor(token_ids)
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -297,9 +297,8 @@ def save_tokenizer(tokenizer: Tokenizer, filepath: str) -> None:
     filepath : str
         Path to the file.
     """
-    file = open(filepath, "wb")
-    pickle.dump(tokenizer, file)
-    file.close()
+    with open(filepath, "wb") as file:
+        pickle.dump(tokenizer, file)
 
 
 def load_tokenizer(filepath: str) -> Tokenizer:
@@ -315,7 +314,6 @@ def load_tokenizer(filepath: str) -> Tokenizer:
     Tokenizer
         Loaded tokenizer.
     """
-    file = open(filepath, "rb")
-    obj = pickle.load(file)
-    file.close()
+    with open(filepath, "rb") as file:
+        obj = pickle.load(file)
     return obj

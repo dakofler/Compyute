@@ -3,7 +3,7 @@
 from typing import Optional
 from ..module import Module
 from ....random import multinulli
-from ....tensor import Tensor
+from ....basetensor import Tensor
 
 
 __all__ = ["Dropout"]

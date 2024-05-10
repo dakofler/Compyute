@@ -7,7 +7,7 @@ from .losses import Loss, get_loss
 from .metrics import Metric, get_metric
 from ..dataloaders import DataLoader
 from ..modules import Module
-from ...tensor import Tensor
+from ...basetensor import Tensor
 from ...types import ScalarLike
 
 

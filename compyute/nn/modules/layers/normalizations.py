@@ -4,7 +4,7 @@ from typing import Optional
 from ..module import Module
 from ...parameter import Parameter
 from ....tensor_f import ones, prod, zeros
-from ....tensor import Tensor
+from ....basetensor import Tensor
 from ....types import DtypeLike, ShapeLike
 
 
@@ -49,12 +49,12 @@ class Batchnorm1d(Module):
         self.dtype = dtype
 
         # parameters
-        self.w = Parameter(ones((channels,)), dtype=dtype, label="w")
-        self.b = Parameter(zeros((channels,)), dtype=dtype, label="b")
+        self.w = Parameter(ones((channels,), dtype), label="w")
+        self.b = Parameter(zeros((channels,), dtype), label="b")
 
         # buffers
-        self.rmean = zeros((channels,), dtype=dtype)
-        self.rvar = ones((channels,), dtype=dtype)
+        self.rmean = zeros((channels,), dtype)
+        self.rvar = ones((channels,), dtype)
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [2, 3])
@@ -165,12 +165,12 @@ class Batchnorm2d(Module):
         self.dtype = dtype
 
         # parameters
-        self.w = Parameter(ones((channels,)), dtype=dtype, label="w")
-        self.b = Parameter(zeros((channels,)), dtype=dtype, label="b")
+        self.w = Parameter(ones((channels,), dtype), label="w")
+        self.b = Parameter(zeros((channels,), dtype), label="b")
 
         # buffers
-        self.rmean = zeros((channels,), dtype=dtype)
-        self.rvar = ones((channels,), dtype=dtype)
+        self.rmean = zeros((channels,), dtype)
+        self.rvar = ones((channels,), dtype)
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -278,8 +278,8 @@ class Layernorm(Module):
         self.dtype = dtype
 
         # parameters
-        self.w = Parameter(ones(normalized_shape), dtype=dtype, label="w")
-        self.b = Parameter(zeros(normalized_shape), dtype=dtype, label="b")
+        self.w = Parameter(ones(normalized_shape, dtype), label="w")
+        self.b = Parameter(zeros(normalized_shape, dtype), label="b")
 
     def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)

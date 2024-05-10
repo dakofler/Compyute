@@ -2,7 +2,7 @@
 
 from ..tensor_f import identity
 from ..random import shuffle
-from ..tensor import Tensor
+from ..basetensor import Tensor
 from ..types import AxisLike
 
 

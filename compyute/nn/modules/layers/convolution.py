@@ -6,7 +6,7 @@ from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ...parameter import Parameter
 from ....tensor_f import zeros
 from ....random import uniform
-from ....tensor import Tensor
+from ....basetensor import Tensor
 from ....types import DtypeLike
 
 
@@ -68,15 +68,15 @@ class Convolution1d(Module):
         # init weights
         # (Co, Ci, K)
         k = (in_channels * kernel_size) ** -0.5
-        w = uniform((out_channels, in_channels, kernel_size), -k, k)
-        self.w = Parameter(w, dtype=dtype, label="w")
+        w = uniform((out_channels, in_channels, kernel_size), -k, k, dtype=dtype)
+        self.w = Parameter(w, label="w")
 
         # init biases
         # (Co,)
         self.b = None
         if bias:
-            b = zeros((out_channels,))
-            self.b = Parameter(b, dtype=dtype, label="b")
+            b = zeros((out_channels,), dtype=dtype)
+            self.b = Parameter(b, label="b")
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [3])
@@ -112,7 +112,7 @@ class Convolution1d(Module):
                 D = self.dilation
 
                 # fill elements skipped by strides with zeros
-                dy_p = zeros((B, Co, S * To), device=self.device)
+                dy_p = zeros((B, Co, S * To), dtype=self.dtype, device=self.device)
                 dy_p[:, :, ::S] = dy
                 dy_p_ti = 1 + (Ti - K) if self.padding == "valid" else Ti
                 dy_p = dy_p[:, :, :dy_p_ti]
@@ -222,12 +222,12 @@ class Convolution2d(Module):
         # init weights
         # (Co, Ci, Ky, Kx)
         k = (in_channels * self.kernel_size**2) ** -0.5
-        w = uniform((out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k)
-        self.w = Parameter(w, dtype=dtype, label="w")
+        w = uniform((out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k, dtype)
+        self.w = Parameter(w, label="w")
 
         # init biases
         # (Co,)
-        self.b = Parameter(zeros((out_channels,)), dtype=dtype, label="b") if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype), label="b") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -263,7 +263,7 @@ class Convolution2d(Module):
                 D = self.dilation
 
                 # fill elements skipped by strides with zeros
-                dy_p = zeros((B, Co, S * Yo, S * Xo), device=self.device)
+                dy_p = zeros((B, Co, S * Yo, S * Xo), dtype=self.dtype, device=self.device)
                 dy_p[:, :, ::S, ::S] = dy
                 dy_p_yi = 1 + (Yi - K) if self.padding == "valid" else Yi
                 dy_p_xi = 1 + (Xi - K) if self.padding == "valid" else Xi
@@ -319,21 +319,18 @@ class Convolution2d(Module):
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2, stride: int = 2, label: Optional[str] = None) -> None:
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         kernel_size : int, optional
              Shape of the pooling window used for the pooling operation, by default 2.
-        stride : int , optional
-            Strides used for the pooling operation, by default 2.
         label: str, optional
             Module label.
         """
         super().__init__(label)
         self.kernel_size = kernel_size
-        self.stride = stride
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
@@ -346,23 +343,18 @@ class MaxPooling2d(Module):
 class AvgPooling2d(Module):
     """AvgPooling layer used to reduce information to avoid overfitting."""
 
-    def __init__(
-        self, kernel_size: int = 2, dtype: str = "float32", label: Optional[str] = None
-    ) -> None:
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
         """AvgPooling layer used to reduce information to avoid overfitting.
 
         Parameters
         ----------
         kernel_size : int, optional
              Shape of the pooling window used for the pooling operation, by default 2.
-        dtype: str, optional
-            Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
         """
         super().__init__(label)
         self.kernel_size = kernel_size
-        self.dtype = dtype
 
     def forward(self, x: Tensor) -> Tensor:
         self.check_dims(x, [4])
