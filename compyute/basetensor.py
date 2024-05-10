@@ -17,6 +17,7 @@ from .types import (
     ComplexLike,
     DeviceLike,
     DtypeLike,
+    IntLike,
     ScalarLike,
     ShapeLike,
 )
@@ -157,26 +158,16 @@ class Tensor:
             prefix=prefix,
             separator=", ",
             precision=4,
-            floatmode="fixed",
+            floatmode="maxprec_equal",
         )
         return f"Tensor({dtype=}, {shape=}, {device=})\n{array_string}"
 
-    # TODO: check this, is Array Like really used?
-    def __getitem__(self, idx: Tensor | ArrayLike | int) -> Tensor:
-        if isinstance(idx, Tensor):
-            i = idx.data
-        elif isinstance(idx, tuple):
-            i = tuple(j.data if isinstance(j, Tensor) else j for j in idx)
-        else:
-            i = idx
-        item = self.__data[i]
-        return Tensor(item) if isinstance(item, ArrayLike) else item
+    def __getitem__(self, idx: Tensor | IntLike | slice | tuple) -> Tensor:
+        i = tuple(self.__a(j) for j in idx) if isinstance(idx, tuple) else self.__a(idx)
+        return self.__r(self.__data[i])
 
-    # TODO: aslo check this, can this be achieved easier by not accessing data??
-    def __setitem__(self, idx, value) -> None:
-        idx = idx.data if isinstance(idx, Tensor) else idx
-        value = value.data if isinstance(value, Tensor) else value
-        self.__data[idx] = value
+    def __setitem__(self, idx: Tensor | IntLike, value: Tensor | ScalarLike) -> None:
+        self.__data[self.__a(idx)] = self.__a(value)
 
     def __iter__(self) -> Tensor:
         self.__iterator = 0
@@ -226,7 +217,7 @@ class Tensor:
         return self.__r(self.__data // self.__a(other))
 
     def __rfloordiv__(self, other: ScalarLike) -> Tensor:
-        return (other / self).int().astype(self.dtype)
+        return (other // self).astype(self.dtype)
 
     def __mod__(self, other: int) -> Tensor:
         return self.__r(self.__data % other)
@@ -532,9 +523,8 @@ class Tensor:
 
     def copy(self) -> Tensor:
         """Creates a copy of the tensor."""
-        t = tensor(self.__data, self.device, self.dtype, copy=True)
+        t = Tensor(self.__data.copy(), requires_grad=self.requires_grad)
         t.grad = None if self.grad is None else self.grad.copy()
-        t.requires_grad = self.requires_grad
         return t
 
     def item(self) -> ScalarLike:
@@ -904,20 +894,23 @@ class Tensor:
         """
         return Tensor(self.__e.append(self.__data, values.data, axis=axis))
 
-    def argmax(self, axis: Optional[AxisLike] = None) -> Tensor:
+    def argmax(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         Parameters
         ----------
         axis : Optional[AxisLike] = None
             Axis, along which the maximum value is located, by default None.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions, by default False.
+            If false the tensor is collapsed along the given axis.
 
         Returns
         -------
         Tensor
             Tensor containing indices.
         """
-        return tensor(self.__e.argmax(self.__data, axis=axis), device=self.device)
+        return self.__r(self.__e.argmax(self.__data, axis=axis, keepdims=keepdims))
 
     def clip(
         self, min_value: Optional[ScalarLike] = None, max_value: Optional[ScalarLike] = None

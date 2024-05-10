@@ -86,7 +86,7 @@ class CharacterTokenizer(Tokenizer):
         str
             Text.
         """
-        return "".join([self.ivocab[i] for i in token_ids])
+        return "".join([self.ivocab[i.item()] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
@@ -144,7 +144,7 @@ class WordTokenizer(Tokenizer):
         str
             Concatenated tokens.
         """
-        text = " ".join([self.ivocab[i] for i in token_ids])
+        text = " ".join([self.ivocab[i.item()] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)
 
@@ -280,6 +280,7 @@ class BPETokenizer(Tokenizer):
         part_bytes = []
 
         for idx in token_ids:
+            idx = idx.item()
             if idx in self.vocab:
                 part_bytes.append(self.vocab[idx])
             else:
