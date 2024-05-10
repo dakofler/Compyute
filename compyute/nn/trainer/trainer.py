@@ -47,7 +47,7 @@ class Trainer:
         self.loss = get_loss(loss)
         self.metric = None if metric is None else get_metric(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
-        self.callbacks = [] if callbacks is None else callbacks
+        self.callbacks = callbacks
 
         self.__callback_cache: dict[str, Any] = {
             "abort": False,
@@ -145,6 +145,7 @@ class Trainer:
         if self.metric is not None:
             scores = []
 
+        # compute loss/score for each batch to save memory
         for x_batch, y_batch in dataloader():
             y_pred = self.model.forward(x_batch)
             losses.append(self.loss(y_pred, y_batch).item())
@@ -157,6 +158,8 @@ class Trainer:
         return loss, None
 
     def __callback(self, on: Literal["init", "step", "epoch_start", "epoch_end"]) -> None:
+        if self.callbacks is None:
+            return
         for callback in self.callbacks:
             match on:
                 case "init":

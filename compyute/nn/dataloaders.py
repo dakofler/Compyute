@@ -124,10 +124,7 @@ def batched(
             shuffle_data=shuffle_data,
             drop_remaining=drop_remaining,
         )
-        ys = []
-        for x_batch, _ in dataloader():
-            y = func(x_batch, *args, **kwargs)
-            ys.append(y)
+        ys = [func(x_batch, *args, **kwargs) for x_batch, _ in dataloader()]
         return concatenate(ys, axis=0)
 
     return wrapper

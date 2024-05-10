@@ -1,7 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Generator, Optional
 from ..parameter import Parameter
 from ...tensor_f import tensorprod
 
@@ -12,7 +12,7 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, parameters: Optional[list[Parameter]], lr: float) -> None:
+    def __init__(self, parameters: Optional[Generator[Parameter, None, None]], lr: float) -> None:
         self.lr = lr
         self.state: dict = {}
         self.t: int = 1
@@ -21,12 +21,12 @@ class Optimizer(ABC):
             self.parameters = parameters
 
     @property
-    def parameters(self) -> list[Parameter]:
+    def parameters(self) -> Generator[Parameter, None, None]:
         """Optimizer parameters"""
-        return [p for p in self.state if isinstance(p, Parameter)]
+        return (p for p in self.state if isinstance(p, Parameter))
 
     @parameters.setter
-    def parameters(self, value: list[Parameter]) -> None:
+    def parameters(self, value: Generator[Parameter, None, None]) -> None:
         for p in value:
             self.state[p] = {}
 
@@ -40,7 +40,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[list[Parameter]] = None,
+        parameters: Optional[Generator[Parameter, None, None]] = None,
         lr: float = 0.001,
         momentum: float = 0,
         nesterov: bool = False,
@@ -50,7 +50,7 @@ class SGD(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter], optional
+        parameters : Generator[Parameter, None, None], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -100,7 +100,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[list[Parameter]] = None,
+        parameters: Optional[Generator[Parameter, None, None]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -112,7 +112,7 @@ class Adam(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter], optional
+        parameters : Generator[Parameter, None, None], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -163,7 +163,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[list[Parameter]] = None,
+        parameters: Optional[Generator[Parameter, None, None]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -174,7 +174,7 @@ class AdamW(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter], optional
+        parameters : Generator[Parameter, None, None], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -223,7 +223,7 @@ class NAdam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[list[Parameter]] = None,
+        parameters: Optional[Generator[Parameter, None, None]] = None,
         lr: float = 0.002,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -235,7 +235,7 @@ class NAdam(Optimizer):
 
         Parameters
         ----------
-        parameters : list[Parameter], optional
+        parameters : Generator[Parameter, None, None], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.002.
@@ -256,10 +256,15 @@ class NAdam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.momentum_decay = momentum_decay
-
         self.state["nadam_mu"] = []
 
     def step(self) -> None:
+        # mu does not depend on the parameter
+        mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
+        self.state["nadam_mu"].append(mu)
+        mu_succ = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
+        mu_prod = tensorprod(self.state["nadam_mu"])
+
         for p in self.parameters:
             if p.grad is None:
                 continue
@@ -268,10 +273,6 @@ class NAdam(Optimizer):
 
             if self.weight_decay > 0:
                 g += self.weight_decay * p
-
-            mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
-            self.state["nadam_mu"].append(mu)
-            mu_succ = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
 
             # first momentum estimate
             m_prev = self.state[p].get("nadam_m", 0)
@@ -283,7 +284,6 @@ class NAdam(Optimizer):
             v = self.beta2 * v_prev + (1 - self.beta2) * g**2
             self.state[p]["nadam_v"] = v
 
-            mu_prod = tensorprod(self.state["nadam_mu"])
             m_hat = mu_succ * m / (1 - mu_prod * mu_succ) + (1 - mu) * g / (1 - mu_prod)
             v_hat = v / (1 - self.beta2**self.t)
 

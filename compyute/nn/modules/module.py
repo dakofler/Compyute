@@ -3,7 +3,7 @@
 from __future__ import annotations
 from abc import ABC
 import pickle
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Generator, Iterable, Optional
 from ..parameter import Parameter
 from ...engine import check_device_availability
 from ...basetensor import Tensor, ShapeError
@@ -83,18 +83,27 @@ class Module(ABC):
         self.__training = value
 
     @property
-    def parameters(self) -> list[Parameter]:
+    def parameters(self) -> Generator[Parameter, None, None]:
         """Returns the list of module parameters."""
-        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter)]
+        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
 
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
+    @staticmethod
+    def __is_repr_prop(key: str, value: Any) -> bool:
+        return all([
+            key not in ["y", "backward_fn", "label"],
+            not key.startswith("_"),
+            not isinstance(value, Tensor),
+            value is not None
+        ])
+
     def __repr__(self) -> str:
         rep = f"{self.label}("
-        attributes = (f"{key}={value}" for key, value in self.__dict__.items() if key not in ["y", "backward_fn", "label"] and not key.startswith("_") and not isinstance(value, Tensor) and value is not None)
+        attributes = [f"{k}={v}" for k, v in self.__dict__.items() if self.__is_repr_prop(k, v)]
         return rep + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:

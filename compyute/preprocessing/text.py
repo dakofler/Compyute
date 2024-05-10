@@ -281,10 +281,9 @@ class BPETokenizer(Tokenizer):
 
         for idx in token_ids:
             idx = idx.item()
-            if idx in self.vocab:
-                part_bytes.append(self.vocab[idx])
-            else:
+            if idx not in self.vocab:
                 raise ValueError(f"invalid token id: {idx}")
+            part_bytes.append(self.vocab[idx])
 
         text_bytes = b"".join(part_bytes)
         return text_bytes.decode("utf-8", errors="replace")

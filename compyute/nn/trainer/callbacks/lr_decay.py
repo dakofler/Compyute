@@ -3,6 +3,7 @@
 import math
 from typing import Any
 from .callback import Callback
+from ....tensor_f import tensorsum
 
 
 __all__ = ["ExponentialLR", "StepLR", "MultistepLR", "AdaptiveLR"]
@@ -163,7 +164,7 @@ class AdaptiveLR(LRDecay):
         if trainer_cache["t"] > self.epoch_range:
 
             # compute target trend
-            trend = sum(h[-i] - h[-i - 1] for i in range(1, self.epoch_range + 1))
+            trend = tensorsum(h[-i] - h[-i - 1] for i in range(1, self.epoch_range + 1))
 
             if trend <= 0:
                 # model is improving

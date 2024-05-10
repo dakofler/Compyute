@@ -363,6 +363,8 @@ class Tensor:
         Tensor
             Transposed tensor.
         """
+        if self.ndim < 2:
+            return self
         return self.moveaxis(from_axis=axes[0], to_axis=axes[1])
 
     def insert_dim(self, axis: AxisLike) -> Tensor:

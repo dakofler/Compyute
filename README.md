@@ -14,17 +14,19 @@ There are example-notebooks included that show how to use the toolbox and its `T
 Similar to `PyTorch`, in `Compyute` a `Tensor`-object represents the central block that keeps track of data and it's gradients. However, unlike `PyTorch`, this toolbox does not support autograd to compute gradients. Instead the computation of gradients is defined within a model's layers. The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays.
 
 ```python
+import compyute as cp
+
 # create a tensor from a list of lists, the data type is inferred automatically
-a = Tensor([[4, 5, 6], [7, 8, 9]])
+a = cp.tensor([[4, 5, 6], [7, 8, 9]])
 
 # alternatively, define data types
-b = Tensor([1, 2, 3], dtype="int64")
+b = cp.tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
 b = b.float()
 
 # define the device the tensor is stored on
-c = Tensor([1, 2, 3], device="cuda")
+c = cp.tensor([1, 2, 3], device="cuda")
 
 # change devices
 c = c.cpu()
@@ -55,30 +57,41 @@ Models can be built using modules and containers, like `Sequential`.
 ```python
 import compyute.nn as nn
 
-model = nn.Sequential([
+model = nn.Sequential(
     nn.Linear(4, 16),
     nn.ReLU(),
     nn.Batchnorm1d(16),
     nn.Linear(16, 3),
-])
+)
 ```
 
-Alternatively, models can also be built entirely from scratch, using custom classes that inherit from the `Container` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. 
+Alternatively, models can also be built entirely from scratch by using custom classes that inherit from the `Container` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. 
 
 ```python
 import compyute.nn as nn
 
-class MyCustomModel(nn.Container):
+# create a model by ineriting from 'Sequential'
+class MyModel(nn.Sequential):
+    def __init__(self):
+    super().__init__(
+        nn.Linear(4, 16)
+        nn.ReLU()
+        Batchnorm1d(16)
+    )
+
+# create a model from scratch by inheriting from 'Container'
+class MyModel(nn.Container):
     def __init__(self):
         super().__init__()
 
-        # define your layers
+        # define your modules
         self.lin1 = nn.Linear(4, 16)
         self.relu = nn.ReLU()
         self.bn = nn.Batchnorm1d(16)
         self.lin2 = nn.Linear(16, 3)
 
     def forward(self, x):
+
         # define the forward pass
         x = self.lin1(x)
         x = self.relu(x)
@@ -92,11 +105,12 @@ class MyCustomModel(nn.Container):
             dy = self.relu.backward(dy)
             dy = self.lin1.backward(dy)
             return dy
+
         self.backward_fn = backward
         
         return x
 
-model = MyCustomModel()
+my_model = MyModel()
 ```
 
 Defined models can be trained and updated using common optimizer algorithms, such as SGD or Adam. Models can also be saved and loaded later on.
@@ -104,13 +118,16 @@ Defined models can be trained and updated using common optimizer algorithms, suc
 ```python
 from compyute.nn.trainer import Trainer
 
+# train model
 trainer = Trainer(
+    model=my_model,
     optimizer="sgd",
     loss_function="crossentropy",
     metric_function="accuracy"
 )
 trainer.train(X_train, y_train, epochs=10)
 
+# save trained model
 nn.save_module(model, "my_model.cp")
 ```
 

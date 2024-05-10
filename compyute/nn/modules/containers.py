@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from abc import abstractmethod
-from typing import Optional
+from typing import Generator, Optional
 from .module import Module
 from ..parameter import Parameter
 from ...tensor_f import concatenate, ones, tensorsum
@@ -62,12 +62,9 @@ class Container(Module):
             self.__modules.append(module)
 
     @property
-    def parameters(self) -> list[Parameter]:
+    def parameters(self) -> Generator[Parameter, None, None]:
         """Returns the list of module parameters."""
-        p = []
-        for module in self.modules:
-            p += module.parameters
-        return p
+        return (p for module in self.modules for p in module.parameters)
 
     def set_retain_values(self, value: bool) -> None:
         if self.retain_values == value:
