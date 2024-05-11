@@ -31,7 +31,7 @@ class Dropout(Module):
             y = x * d_map / (1 - self.p)
 
             # use d_map as mask for grads
-            self.backward_fn = lambda dy: dy * d_map / (1 - self.p)
+            self._backward = lambda dy: dy * d_map / (1 - self.p)
 
         else:
             y = x

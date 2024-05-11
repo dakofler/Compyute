@@ -13,7 +13,7 @@ class ReLU(Module):
     """ReLu activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self.backward_fn = relu(x, self.training)
+        y, self._backward = relu(x, self.training)
         return y
 
 
@@ -38,7 +38,7 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self.backward_fn = leaky_relu(x, self.alpha, self.training)
+        y, self._backward = leaky_relu(x, self.alpha, self.training)
         return y
 
 
@@ -46,7 +46,7 @@ class GELU(Module):
     """Gaussian Error Linear Unit activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self.backward_fn = gelu(x, self.training)
+        y, self._backward = gelu(x, self.training)
         return y
 
 
@@ -54,7 +54,7 @@ class Tanh(Module):
     """Tanh activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self.backward_fn = tanh(x, self.training)
+        y, self._backward = tanh(x, self.training)
         return y
 
 
@@ -62,7 +62,7 @@ class Sigmoid(Module):
     """Sigmoid activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self.backward_fn = sigmoid(x, self.training)
+        y, self._backward = sigmoid(x, self.training)
         return y
 
 

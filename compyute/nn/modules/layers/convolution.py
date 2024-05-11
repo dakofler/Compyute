@@ -102,7 +102,7 @@ class Convolution1d(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 Ti = x.shape[-1]
@@ -162,7 +162,7 @@ class Convolution1d(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y
 
@@ -253,7 +253,7 @@ class Convolution2d(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 Yi, Xi = x.shape[-2:]
@@ -311,7 +311,7 @@ class Convolution2d(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y
 
@@ -336,7 +336,7 @@ class MaxPooling2d(Module):
         self.check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self.backward_fn = maxpooling2d(x, kernel_size, self.training)
+        y, self._backward = maxpooling2d(x, kernel_size, self.training)
         return y
 
 
@@ -360,5 +360,5 @@ class AvgPooling2d(Module):
         self.check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self.backward_fn = avgpooling2d(x, kernel_size, self.training)
+        y, self._backward = avgpooling2d(x, kernel_size, self.training)
         return y

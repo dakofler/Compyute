@@ -29,7 +29,7 @@ class Reshape(Module):
         y = x.reshape((x.shape[0],) + self.output_shape)
 
         if self.training:
-            self.backward_fn = lambda dy: dy.reshape(x.shape)
+            self._backward = lambda dy: dy.reshape(x.shape)
 
         return y
 
@@ -41,7 +41,7 @@ class Flatten(Module):
         y = x.reshape((x.shape[0], -1))
 
         if self.training:
-            self.backward_fn = lambda dy: dy.reshape(x.shape)
+            self._backward = lambda dy: dy.reshape(x.shape)
 
         return y
 
@@ -69,6 +69,6 @@ class Moveaxis(Module):
         y = x.moveaxis(self.from_axis, self.to_axis)
 
         if self.training:
-            self.backward_fn = lambda dy: dy.moveaxis(self.to_axis, self.from_axis)
+            self._backward = lambda dy: dy.moveaxis(self.to_axis, self.from_axis)
 
         return y

@@ -22,7 +22,7 @@ GELU_C: float = 0.044715
 
 
 def relu(
-    x: Tensor, return_backward_fn: bool = False
+    x: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Rectified Linear Unit function.
 
@@ -30,7 +30,7 @@ def relu(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -42,12 +42,13 @@ def relu(
     """
     y = maximum(x, 0)
 
-    backward = (lambda dy: (y > 0) * dy) if return_backward_fn else None
-    return y, backward
+    if return_backward_func:
+        return y, (lambda dy: (y > 0) * dy)
+    return y, None
 
 
 def leaky_relu(
-    x: Tensor, alpha: float = 0.01, return_backward_fn: bool = False
+    x: Tensor, alpha: float = 0.01, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the leaky ReLU function.
 
@@ -57,7 +58,7 @@ def leaky_relu(
         Input tensor.
     alpha : float, optional
         Slope of the negative output, by default 0.01.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -69,16 +70,14 @@ def leaky_relu(
     """
     x = x.float()
     y = maximum(x, 0) + alpha * minimum(0, x)
-    backward = (
-        (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
-        if return_backward_fn
-        else None
-    )
-    return y, backward
+
+    if return_backward_func:
+        return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
+    return y, None
 
 
 def gelu(
-    x: Tensor, return_backward_fn: bool = False
+    x: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Gaussian Error Linear Unit function.
 
@@ -86,7 +85,7 @@ def gelu(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -99,23 +98,20 @@ def gelu(
 
     tmp = GELU_S * (x + GELU_C * x**3)
     y = 0.5 * x * (1 + tmp.tanh())
-    backward = (
-        (
+
+    if return_backward_func:
+        return y, (
             lambda dy: (
                 0.5 * (1 + tmp.tanh())
                 + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
             )
             * dy
         )
-        if return_backward_fn
-        else None
-    )
-
-    return y, backward
+    return y, None
 
 
 def sigmoid(
-    x: Tensor, return_backward_fn: bool = False
+    x: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the sigmoid function.
 
@@ -123,7 +119,7 @@ def sigmoid(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -134,12 +130,14 @@ def sigmoid(
         Backward function.
     """
     y = x.exp() * (1 + x.exp()) ** -1
-    backward = (lambda dy: (y * (1 - y)) * dy) if return_backward_fn else None
-    return y, backward
+
+    if return_backward_func:
+        return y, (lambda dy: (y * (1 - y)) * dy)
+    return y, None
 
 
 def tanh(
-    x: Tensor, return_backward_fn: bool = False
+    x: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the hyperbolic tangent function.
 
@@ -147,7 +145,7 @@ def tanh(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -158,12 +156,14 @@ def tanh(
         Backward function.
     """
     y = x.tanh()
-    backward = (lambda dy: (1 - y**2) * dy) if return_backward_fn else None
-    return y, backward
+
+    if return_backward_func:
+        return y, (lambda dy: (1 - y**2) * dy)
+    return y, None
 
 
 def softmax(
-    x: Tensor, return_backward_fn: bool = False
+    x: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the softmax function over the last axis.
 
@@ -171,7 +171,7 @@ def softmax(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -184,7 +184,7 @@ def softmax(
     x = (x - x.max(axis=-1, keepdims=True)).exp()
     y = x / x.sum(axis=-1, keepdims=True)
 
-    if return_backward_fn:
+    if return_backward_func:
 
         def backward(dy: Tensor) -> Tensor:
             sm_ = y.insert_dim(-1).tile(y.shape[-1], -1)
@@ -217,7 +217,7 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
 
 
 def linear(
-    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_fn: bool = False
+    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Applies the linear transformation X @ W^T + b.
 
@@ -229,7 +229,7 @@ def linear(
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -244,7 +244,7 @@ def linear(
     if b is not None:
         y += b
 
-    if return_backward_fn:
+    if return_backward_func:
 
         def backward(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
@@ -253,8 +253,7 @@ def linear(
             # weight grads
             if w.requires_grad:
                 dw = dy.T @ x
-                if x.ndim > 2:
-                    # sum over all batch dimensions
+                if x.ndim > 2:  # sum over all batch dimensions
                     axes = tuple(range(x.ndim - 2))
                     dw = dw.sum(axis=axes)
             else:
@@ -262,9 +261,8 @@ def linear(
 
             # bias grads
             if b is not None and b.requires_grad:
-                # sum over all batch dimensions
                 axes = tuple(range(x.ndim - 1))
-                db = dy.sum(axis=axes)
+                db = dy.sum(axis=axes)  # sum over all batch dimensions
             else:
                 db = None
 
@@ -511,7 +509,7 @@ def upsample2d(
 
 
 def maxpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_fn: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a max pooling over the last two axes.
 
@@ -521,7 +519,7 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -538,11 +536,11 @@ def maxpooling2d(
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
     y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).max(axis=(-3, -1))
 
-    if return_backward_fn:
+    if return_backward_func:
         y_ups = upsample2d(y, kernel_size, x.shape)
         backward = (
             (lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups).int())
-            if return_backward_fn
+            if return_backward_func
             else None
         )
         return y, backward
@@ -551,7 +549,7 @@ def maxpooling2d(
 
 
 def avgpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_fn: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a average pooling over the last two axes.
 
@@ -561,7 +559,7 @@ def avgpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -578,10 +576,10 @@ def avgpooling2d(
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
     y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))
 
-    if return_backward_fn:
+    if return_backward_func:
         backward = (
             (lambda dy: upsample2d(dy, kernel_size, x.shape) / (Ky * Kx))
-            if return_backward_fn
+            if return_backward_func
             else None
         )
         return y, backward
@@ -590,7 +588,7 @@ def avgpooling2d(
 
 
 def lookup_embedding(
-    x: Tensor, embedding_table: Tensor, return_backward_fn: bool = False
+    x: Tensor, embedding_table: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Optional[Tensor]]]]:
     """Performs lookup embedding on a tensor.
 
@@ -600,7 +598,7 @@ def lookup_embedding(
         Input tensor of integer dtype used for indexing into the embedding table.
     embedding_table : Tensor
         Tensor of embedding values.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -616,7 +614,7 @@ def lookup_embedding(
     x = one_hot_encode(x, embedding_table.shape[0]).astype(embedding_table.dtype)
     y = x @ embedding_table
 
-    if return_backward_fn:
+    if return_backward_func:
 
         def backward(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
@@ -629,7 +627,7 @@ def lookup_embedding(
 
 
 def mean_squared_error(
-    y: Tensor, t: Tensor, return_backward_fn: bool = False
+    y: Tensor, t: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the mean squared error loss.
 
@@ -639,7 +637,7 @@ def mean_squared_error(
         A model's predictions.
     t : Tensor
         Target values.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -652,25 +650,25 @@ def mean_squared_error(
     dif = y.float() - t.float()
     loss = (dif**2).mean()
 
-    backward = (lambda: dif * 2 / tensorprod(y.shape)) if return_backward_fn else None
+    backward = (lambda: dif * 2 / tensorprod(y.shape)) if return_backward_func else None
 
     return loss, backward
 
 
 def cross_entropy(
-    y: Tensor, t: Tensor, eps: float = 1e-8, return_backward_fn: bool = False
+    y: Tensor, t: Tensor, eps: float = 1e-8, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the cross entropy loss.
 
     Parameters
     ----------
     y : Tensor
-        A model's predictions.
+        Model logits.
     t : Tensor
-        Target values.
+        Target integer class labels.
     eps : float, optional
         Constant used for numerical stability, by default 1e-8.
-    return_backward_fn: bool, optional
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -680,28 +678,27 @@ def cross_entropy(
     Callable[[], Tensor]], optional
         Backward function.
     """
-    t = t.int()
-    t = one_hot_encode(t, y.shape[-1])
     probs, _ = softmax(y.float(), False)
+    t = one_hot_encode(t.int(), y.shape[-1])
     loss = -((probs + eps) * t).sum(-1).log().mean()
 
-    backward = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_backward_fn else None
+    backward = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_backward_func else None
 
     return loss, backward
 
 
 def binary_cross_entropy(
-    y: Tensor, t: Tensor, return_backward_fn: bool = False
+    y: Tensor, t: Tensor, return_backward_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the cross entropy loss.
 
     Parameters
     ----------
     y : Tensor
-        A model's predictions.
+        Model logits.
     t : Tensor
-        Target values.
-    return_backward_fn: bool, optional
+        Binary target values.
+    return_backward_func: bool, optional
         Whether to also return the according backward function, by default False.
 
     Returns
@@ -711,13 +708,13 @@ def binary_cross_entropy(
     Callable[[], Tensor]], optional
         Backward function.
     """
-    y = y.float()
-    t = t.float()
     c = 100
     loss = -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
 
     backward = (
-        (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape)) if return_backward_fn else None
+        (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape))
+        if return_backward_func
+        else None
     )
 
     return loss, backward

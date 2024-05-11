@@ -84,7 +84,7 @@ class Batchnorm1d(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 # input grads
@@ -110,7 +110,7 @@ class Batchnorm1d(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y
 
@@ -199,7 +199,7 @@ class Batchnorm2d(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 # input grads
@@ -225,7 +225,7 @@ class Batchnorm2d(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y
 
@@ -291,7 +291,7 @@ class Layernorm(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 # input grads
@@ -317,6 +317,6 @@ class Layernorm(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y

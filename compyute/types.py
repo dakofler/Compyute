@@ -14,12 +14,14 @@ CupyInt: TypeAlias = cupy.int8 | cupy.int16 | cupy.int32 | cupy.int64
 CupyFloat: TypeAlias = cupy.float16 | cupy.float32 | cupy.float64
 CupyComplex: TypeAlias = cupy.complex64 | cupy.complex128
 
-IntLike: TypeAlias = NumpyInt | CupyInt | int | Literal["int8", "int16", "int32", "int64"]
-FloatLike: TypeAlias = NumpyFloat | CupyFloat | float | Literal["float16", "float32", "float64"]
-ComplexLike: TypeAlias = NumpyComplex | CupyComplex | complex | Literal["complex64", "complex128"]
+IntLike: TypeAlias = NumpyInt | CupyInt | int
+FloatLike: TypeAlias = NumpyFloat | CupyFloat | float
+ComplexLike: TypeAlias = NumpyComplex | CupyComplex | complex
 
-DtypeLike: TypeAlias = IntLike | FloatLike | ComplexLike
-ScalarLike: TypeAlias = DtypeLike
+ScalarLike: TypeAlias = IntLike | FloatLike | ComplexLike
 ShapeLike: TypeAlias = tuple[int, ...]
 AxisLike: TypeAlias = int | tuple[int, ...]
-DeviceLike: TypeAlias = Literal["cpu", "cuda"]
+DeviceLike = Literal["cpu", "cuda"]
+DtypeLike = Literal[
+    "int8", "int16", "int32", "int64", "float16", "float32", "float64", "complex64", "complex128"
+]

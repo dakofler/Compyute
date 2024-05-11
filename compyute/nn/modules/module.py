@@ -19,7 +19,7 @@ class Module(ABC):
     def __init__(self, label: Optional[str] = None) -> None:
         """Module base class."""
         self.y: Optional[Tensor] = None
-        self.backward_fn: Optional[Callable[[Tensor], Optional[Tensor]]] = None
+        self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
         self.__device: DeviceLike = "cpu"
         self.__retain_values: bool = False
@@ -95,7 +95,7 @@ class Module(ABC):
     @staticmethod
     def __is_repr_prop(key: str, value: Any) -> bool:
         return all([
-            key not in ["y", "backward_fn", "label"],
+            key not in ["y", "_backward", "label"],
             not key.startswith("_"),
             not isinstance(value, Tensor),
             value is not None
@@ -144,8 +144,8 @@ class Module(ABC):
             Input gradient tensor.
         """
         self.set_dy(dy)
-        if self.backward_fn is not None:
-            return self.backward_fn(dy)
+        if self._backward is not None:
+            return self._backward(dy)
         return dy
 
     def set_y(self, y: Tensor) -> None:
@@ -176,7 +176,7 @@ class Module(ABC):
     def reset(self) -> None:
         """Resets temporary values like outputs and gradients."""
         self.y = None
-        self.backward_fn = None
+        self._backward = None
 
         for p in self.parameters:
             p.grad = None

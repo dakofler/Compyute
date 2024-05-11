@@ -66,7 +66,7 @@ class Linear(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 # compute gradients
@@ -77,6 +77,6 @@ class Linear(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y

@@ -81,7 +81,7 @@ class Recurrent(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 if not self.return_sequence:
@@ -122,7 +122,7 @@ class Recurrent(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         y = h if self.return_sequence else h[:, -1]
         return y
@@ -217,7 +217,7 @@ class LSTM(Module):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
 
                 if not self.return_sequence:
@@ -300,7 +300,7 @@ class LSTM(Module):
 
                 return dx
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         y = h if self.return_sequence else h[:, -1]
         return y

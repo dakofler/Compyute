@@ -182,12 +182,12 @@ class Sequential(Container):
 
         if self.training:
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 for module in reversed(self.modules):
                     dy = module.backward(dy)
                 return dy
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return x
 
@@ -222,11 +222,11 @@ class ParallelConcat(Container):
             out_lens = [y.shape[self.concat_axis] for y in ys]
             splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
 
-            def backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> Tensor:
                 dy_splits = dy.split(splits, axis=self.concat_axis)
                 return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
 
-            self.backward_fn = backward
+            self._backward = _backward
 
         return y
 
@@ -249,6 +249,6 @@ class ParallelAdd(Container):
         y = tensorsum(m(x) for m in self.modules)
 
         if self.training:
-            self.backward_fn = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
+            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y
