@@ -57,7 +57,7 @@ class Batchnorm1d(Module):
         self.rvar = ones((channels,), dtype)
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [2, 3])
+        self._check_dims(x, [2, 3])
         x = x.astype(self.dtype)
 
         dim2 = x.ndim == 2
@@ -173,7 +173,7 @@ class Batchnorm2d(Module):
         self.rvar = ones((channels,), dtype)
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [4])
+        self._check_dims(x, [4])
         x = x.astype(self.dtype)
 
         axis = (0, 2, 3)

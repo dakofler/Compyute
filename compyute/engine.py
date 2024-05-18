@@ -2,10 +2,11 @@
 
 import os
 from types import ModuleType
-import numpy
-import cupy
-from .types import ArrayLike, DeviceLike, ScalarLike
 
+import cupy
+import numpy
+
+from .types import ArrayLike, DeviceLike, ScalarLike
 
 __all__ = ["gpu_available"]
 

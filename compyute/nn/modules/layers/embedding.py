@@ -48,7 +48,7 @@ class Embedding(Module):
         self.w = Parameter(normal((vocab_size, embedding_dim), dtype=dtype), label="w")
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [2])
+        self._check_dims(x, [2])
         y, embedding_backward = lookup_embedding(x, self.w, self.training)
 
         if self.training:

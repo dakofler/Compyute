@@ -1,8 +1,8 @@
 """Early stopping callback module"""
 
 from typing import Any
-from .callback import Callback
 
+from .callback import Callback
 
 __all__ = ["EarlyStopping"]
 

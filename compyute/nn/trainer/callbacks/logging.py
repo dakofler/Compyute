@@ -71,13 +71,13 @@ class ProgressBar(Callback):
             )
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
-        self.__set_pbar_postfix(trainer_cache)
+        self._set_pbar_postfix(trainer_cache)
         if self.mode == "epoch":
             self.pbar.update()
         else:
             self.pbar.close()
 
-    def __set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
+    def _set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
         stats = []
         for stat in trainer_cache.keys():
             if "loss" not in stat and "score" not in stat:

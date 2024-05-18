@@ -92,7 +92,7 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def __is_repr_prop(key: str, value: Any) -> bool:
+    def _is_repr_prop(key: str, value: Any) -> bool:
         return all(
             [
                 key not in ["y", "_backward", "label"],
@@ -104,12 +104,12 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         rep = f"{self.label}("
-        attributes = [f"{k}={v}" for k, v in self.__dict__.items() if self.__is_repr_prop(k, v)]
+        attributes = [f"{k}={v}" for k, v in self.__dict__.items() if self._is_repr_prop(k, v)]
         return rep + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)
-        self.set_y(y)
+        self._set_y(y)
         return y
 
     # ----------------------------------------------------------------------------------------------
@@ -144,12 +144,12 @@ class Module(ABC):
         Tensor, optional
             Input gradient tensor.
         """
-        self.set_dy(dy)
+        self._set_dy(dy)
         if self._backward is not None:
             return self._backward(dy)
         return dy
 
-    def set_y(self, y: Tensor) -> None:
+    def _set_y(self, y: Tensor) -> None:
         """Saves the module output to y tensor.
 
         Parameters
@@ -163,7 +163,7 @@ class Module(ABC):
             else:
                 self.y.data = y.data.copy()
 
-    def set_dy(self, dy: Tensor) -> None:
+    def _set_dy(self, dy: Tensor) -> None:
         """Saves the module output gradients to y tensor.
 
         Parameters
@@ -182,7 +182,7 @@ class Module(ABC):
         for p in self.parameters:
             p.grad = None
 
-    def check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
+    def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
         """Checks if a tensors dimensions match desired target dimensions.
 
         Parameters

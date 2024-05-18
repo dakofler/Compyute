@@ -79,7 +79,7 @@ class Convolution1d(Module):
             self.b = Parameter(b, label="b")
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [3])
+        self._check_dims(x, [3])
         x = x.astype(self.dtype)
 
         # flip weights for cross correlation
@@ -230,7 +230,7 @@ class Convolution2d(Module):
         self.b = Parameter(zeros((out_channels,), dtype), label="b") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [4])
+        self._check_dims(x, [4])
         x = x.astype(self.dtype)
 
         # rotate weights for cross correlation
@@ -333,7 +333,7 @@ class MaxPooling2d(Module):
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [4])
+        self._check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
         y, self._backward = maxpooling2d(x, kernel_size, self.training)
@@ -357,7 +357,7 @@ class AvgPooling2d(Module):
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [4])
+        self._check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
         y, self._backward = avgpooling2d(x, kernel_size, self.training)

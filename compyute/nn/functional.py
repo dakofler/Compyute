@@ -12,9 +12,21 @@ __all__ = [
     "leaky_relu",
     "gelu",
     "sigmoid",
+    "tanh",
     "softmax",
+    "temperature_softmax",
+    "linear",
     "convolve1d",
     "convolve2d",
+    "upsample2d",
+    "maxpooling2d",
+    "avgpooling2d",
+    "lookup_embedding",
+    "mean_squared_error",
+    "cross_entropy",
+    "binary_cross_entropy",
+    "accuracy_score",
+    "r2_score",
 ]
 PI: float = 3.141592653589793
 GELU_S: float = 0.7978845608028654  # sqrt(2/pi)
@@ -308,20 +320,20 @@ def convolve1d(
         raise ShapeError("Dimensions of input and filter must match.")
 
     if dilation > 1:
-        f = __dilate1d(f, dilation)
+        f = _dilate1d(f, dilation)
 
     if padding != "valid":
-        p = __pad1d_from_str(padding, f.shape[-1])
-        x = __pad1d(x, p)
+        p = _pad1d_from_str(padding, f.shape[-1])
+        x = _pad1d(x, p)
 
-    y = __convolve1d(x, f, stride)
+    y = _convolve1d(x, f, stride)
 
     # TODO: extract backward from module
 
     return y
 
 
-def __pad1d_from_str(
+def _pad1d_from_str(
     padding: Literal["causal", "full", "same", "valid"], kernel_size: int
 ) -> tuple[int, int]:
     match padding:
@@ -336,12 +348,12 @@ def __pad1d_from_str(
     return (k, k)
 
 
-def __pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
+def _pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
     widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
     return x.pad(widths)
 
 
-def __dilate1d(x: Tensor, dilation: int) -> Tensor:
+def _dilate1d(x: Tensor, dilation: int) -> Tensor:
     if dilation == 1:
         return x
 
@@ -352,7 +364,7 @@ def __dilate1d(x: Tensor, dilation: int) -> Tensor:
     return x_dilated
 
 
-def __convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
+def _convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
     # convolution
     cdtype = "complex64"
     conv = (
@@ -405,20 +417,20 @@ def convolve2d(
         raise ShapeError("Dimensions of input and filter must match.")
 
     if dilation > 1:
-        f = __dilate2d(f, (dilation, dilation))
+        f = _dilate2d(f, (dilation, dilation))
 
     if padding != "valid":
-        p = __pad2d_from_str(padding, f.shape[-1])
-        x = __pad2d(x, p)
+        p = _pad2d_from_str(padding, f.shape[-1])
+        x = _pad2d(x, p)
 
-    y = __convolve2d(x, f, (stride, stride))
+    y = _convolve2d(x, f, (stride, stride))
 
     # TODO: extract backward from module
 
     return y
 
 
-def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
+def _pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
     match padding:
         case "full":
             k = kernel_size - 1
@@ -429,12 +441,12 @@ def __pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
     return ((k, k), (k, k))
 
 
-def __pad2d(x: Tensor, padding: tuple[tuple[int, int], ...]) -> Tensor:
+def _pad2d(x: Tensor, padding: tuple[tuple[int, int], ...]) -> Tensor:
     widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
     return x.pad(widths)
 
 
-def __dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
+def _dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
     dilated_shape = (
         dilation[0] * x.shape[-2] - 1,
         dilation[1] * x.shape[-1] - 1,
@@ -449,7 +461,7 @@ def __dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
     return x_dilated
 
 
-def __convolve2d(
+def _convolve2d(
     x: Tensor,
     f: Tensor,
     strides: tuple[int, int] = (1, 1),

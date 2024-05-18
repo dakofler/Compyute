@@ -1,12 +1,12 @@
 """Neural network blocks module"""
 
 from typing import Literal, Optional
-from .containers import Sequential, ParallelAdd
+
+from ...types import DtypeLike
+from .containers import ParallelAdd, Sequential
 from .layers import Convolution1d, Convolution2d, Linear
 from .layers.activations import get_act_from_str
 from .module import Module
-from ...types import DtypeLike
-
 
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
 

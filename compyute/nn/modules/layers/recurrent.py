@@ -64,7 +64,7 @@ class Recurrent(Module):
         self.b_h = Parameter(zeros((h_channels,), dtype), label="b_h") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [3])
+        self._check_dims(x, [3])
         x = x.astype(self.dtype)
 
         # input projection
@@ -179,7 +179,7 @@ class LSTM(Module):
         self.b_h = Parameter(zeros((4 * h_channels,), dtype), label="b_h") if bias else None
 
     def forward(self, x: Tensor):
-        self.check_dims(x, [3])
+        self._check_dims(x, [3])
         x = x.astype(self.dtype)
 
         # indices used to access the concatined matrices

@@ -157,7 +157,7 @@ class BPETokenizer(Tokenizer):
     def __init__(self) -> None:
         super().__init__()
         self.vocab: dict[int, bytes] = {}
-        self.__merges = {}
+        self._merges = {}
         self._pattern = regex.compile(GPT4_SPLIT_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
@@ -198,9 +198,9 @@ class BPETokenizer(Tokenizer):
 
             # replace occurences of bigram with merge id
             idx = 256 + i
-            token_ids = [self.__merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
+            token_ids = [self._merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
 
-            self.__merges[bigram] = idx
+            self._merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
@@ -209,7 +209,7 @@ class BPETokenizer(Tokenizer):
             counts[bigram] = counts.get(bigram, 0) + 1
         return counts
 
-    def __merge(self, token_ids, bigram, idx):
+    def _merge(self, token_ids, bigram, idx):
         new_ids = []
         i = 0
 
@@ -228,19 +228,19 @@ class BPETokenizer(Tokenizer):
 
         return new_ids
 
-    def __encode_chunk(self, text_bytes):
+    def _encode_chunk(self, text_bytes):
         token_ids = list(text_bytes)
 
         while len(token_ids) >= 2:
             counts = self._update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self.__merges.get(p, float("inf")))
-            if bigram not in self.__merges:
+            bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))
+            if bigram not in self._merges:
                 break
 
-            idx = self.__merges[bigram]
-            token_ids = self.__merge(token_ids, bigram, idx)
+            idx = self._merges[bigram]
+            token_ids = self._merge(token_ids, bigram, idx)
         return token_ids
 
     def encode(self, text: str) -> Tensor:
@@ -261,7 +261,7 @@ class BPETokenizer(Tokenizer):
 
         for chunk in text_chunks:
             chunk_bytes = chunk.encode("utf-8")
-            chunk_ids = self.__encode_chunk(chunk_bytes)
+            chunk_ids = self._encode_chunk(chunk_bytes)
             token_ids.extend(chunk_ids)
 
         return tensor(token_ids)

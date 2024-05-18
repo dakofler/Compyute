@@ -59,7 +59,7 @@ class Linear(Module):
         self.b = Parameter(zeros((out_channels,), dtype), label="b") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self.check_dims(x, [2, 3, 4, 5])
+        self._check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)
 
         y, linear_backward = linear(x, self.w, self.b, self.training)
