@@ -2,10 +2,10 @@
 
 from typing import Callable, Literal, Optional
 
-from ..preprocessing.basic import one_hot_encode
-from ..tensor_functions import identity, maximum, minimum, tensorprod, zeros
+from .._tensor_functions import identity, maximum, minimum, tensorprod, zeros
+from .._types import _AxisLike, _ShapeLike
+from ..preprocessing._basic import one_hot_encode
 from ..tensors import ShapeError, Tensor
-from ..types import AxisLike, ShapeLike
 
 __all__ = [
     "relu",
@@ -492,8 +492,8 @@ def _convolve2d(
 def upsample2d(
     x: Tensor,
     scaling_factors: tuple[int, int],
-    shape: ShapeLike,
-    axes: AxisLike = (-2, -1),
+    shape: _ShapeLike,
+    axes: _AxisLike = (-2, -1),
 ) -> Tensor:
     """Upsamples a tensor by repeating it's elements over given axes.
 

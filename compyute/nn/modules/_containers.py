@@ -3,11 +3,11 @@
 from abc import abstractmethod
 from typing import Generator, Optional
 
-from ...tensor_functions import concatenate, ones, tensorsum
+from ..._tensor_functions import concatenate, ones, tensorsum
+from ..._types import _DeviceLike, _DtypeLike, _ShapeLike
 from ...tensors import Tensor
-from ...types import DeviceLike, DtypeLike, ShapeLike
 from ..parameter import Parameter
-from .module import Module
+from ._module import Module
 
 __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
@@ -32,7 +32,7 @@ class Container(Module):
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
 
-    def to_device(self, device: DeviceLike) -> None:
+    def to_device(self, device: _DeviceLike) -> None:
         if self.device == device:
             return
 
@@ -119,7 +119,7 @@ class Container(Module):
         for module in self.modules:
             module.reset()
 
-    def summary(self, input_shape: ShapeLike, input_dtype: DtypeLike = "float32") -> None:
+    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = "float32") -> None:
         """Prints information about the container and its modules.
 
         Parameters

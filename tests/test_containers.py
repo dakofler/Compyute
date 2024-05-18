@@ -1,14 +1,10 @@
 """Containers tests"""
 
 import torch
-from compyute.nn.modules.containers import (
-    Sequential,
-    ParallelConcat,
-    ParallelAdd,
-)
-from compyute.nn.modules.layers import Linear
-from tests.test_utils import get_vals_float, get_params, validate
 
+from compyute.nn.modules._containers import ParallelAdd, ParallelConcat, Sequential
+from compyute.nn.modules._layers import Linear
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout = (10, 20, 30)
 

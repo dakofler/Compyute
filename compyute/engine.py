@@ -6,7 +6,7 @@ from types import ModuleType
 import cupy
 import numpy
 
-from .types import ArrayLike, DeviceLike, ScalarLike
+from ._types import _ArrayLike, _DeviceLike, _ScalarLike
 
 __all__ = ["gpu_available"]
 
@@ -23,7 +23,7 @@ available_devices = ["cpu"] + ["cuda"] if gpu_available() else []
 print(f"Compyute: available devices {available_devices}")
 
 
-def check_device_availability(device: DeviceLike):
+def _check_device_availability(device: _DeviceLike):
     """Checks if the specified device is available.
 
     Raises
@@ -37,7 +37,7 @@ def check_device_availability(device: DeviceLike):
 DEVICE_ENGINES = {"cpu": numpy, "cuda": cupy}
 
 
-def get_engine(device: DeviceLike) -> ModuleType:
+def _get_engine(device: _DeviceLike) -> ModuleType:
     """Selects the computation engine for a given device.
 
     Parameters
@@ -50,11 +50,11 @@ def get_engine(device: DeviceLike) -> ModuleType:
     ModuleType
         NumPy or CuPy module.
     """
-    check_device_availability(device)
+    _check_device_availability(device)
     return DEVICE_ENGINES[device]
 
 
-def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:
+def _infer_device(data: _ArrayLike | _ScalarLike) -> _DeviceLike:
     """Infers the device the data is stored on.
 
     Returns
@@ -66,7 +66,7 @@ def infer_device(data: ArrayLike | ScalarLike) -> DeviceLike:
     return "cpu"
 
 
-def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
+def _numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
     """Converts a NumPy array to a CuPy array.
 
     Parameters
@@ -79,11 +79,11 @@ def numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
     cupy.ndarray
         CuPy array.
     """
-    check_device_availability("cuda")
+    _check_device_availability("cuda")
     return cupy.array(np_array)
 
 
-def cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
+def _cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
     """Converts a CuPy array to a NumPy array.
 
     Parameters

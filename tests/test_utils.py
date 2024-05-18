@@ -3,16 +3,16 @@
 import numpy
 import torch
 
+from compyute._types import _ShapeLike
 from compyute.nn.parameter import Parameter
 from compyute.random import set_seed, uniform, uniform_int
 from compyute.tensors import Tensor
-from compyute.types import ShapeLike
 
 set_seed(42)
 
 
 def get_vals_float(
-    shape: ShapeLike,
+    shape: _ShapeLike,
     torch_grad: bool = True,
     device: str = "cpu",
     low: float = -1,
@@ -28,7 +28,7 @@ def get_vals_float(
 
 
 def get_vals_int(
-    shape: ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
+    shape: _ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
     compyute_x = uniform_int(shape, low=low, high=high, dtype="int64")
@@ -37,7 +37,7 @@ def get_vals_int(
     return compyute_x, torch_x
 
 
-def get_params(shape: ShapeLike, device: str = "cpu") -> tuple[Parameter, torch.nn.Parameter]:
+def get_params(shape: _ShapeLike, device: str = "cpu") -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape, dtype="float32") * 0.1
     compyute_x = Parameter(data)

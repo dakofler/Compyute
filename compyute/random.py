@@ -1,8 +1,8 @@
 """Random functions module"""
 
-from .engine import get_engine, gpu_available
+from ._types import _DeviceLike, _DtypeLike, _ShapeLike
+from .engine import _get_engine, gpu_available
 from .tensors import Tensor, tensor
-from .types import DeviceLike, DtypeLike, ShapeLike
 
 __all__ = [
     "normal",
@@ -24,16 +24,16 @@ def set_seed(seed: int) -> None:
         Seed value.
     """
     if gpu_available():
-        get_engine("cuda").random.seed(seed)
-    get_engine("cpu").random.seed(seed)
+        _get_engine("cuda").random.seed(seed)
+    _get_engine("cpu").random.seed(seed)
 
 
 def normal(
-    shape: ShapeLike,
+    shape: _ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
-    dtype: DtypeLike = "float64",
-    device: DeviceLike = "cpu",
+    dtype: _DtypeLike = "float64",
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with values drawn from a normal distribution.
 
@@ -55,15 +55,15 @@ def normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
+    return tensor(_get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
 def uniform(
-    shape: ShapeLike,
+    shape: _ShapeLike,
     low: float = -1.0,
     high: float = 1.0,
-    dtype: DtypeLike = "float64",
-    device: DeviceLike = "cpu",
+    dtype: _DtypeLike = "float64",
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with values drawn from a uniform distribution.
 
@@ -85,15 +85,15 @@ def uniform(
     Tensor
         Tensor of uniformly distributed samples.
     """
-    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
+    return tensor(_get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
 def uniform_int(
-    shape: ShapeLike,
+    shape: _ShapeLike,
     low: int,
     high: int,
-    dtype: DtypeLike = "int32",
-    device: DeviceLike = "cpu",
+    dtype: _DtypeLike = "int32",
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor with integer values drawn from a discrete uniform distribution.
 
@@ -115,10 +115,10 @@ def uniform_int(
     Tensor
         Tensor of samples.
     """
-    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
+    return tensor(_get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
-def permutation(n: int, dtype: DtypeLike = "int32", device: DeviceLike = "cpu") -> Tensor:
+def permutation(n: int, dtype: _DtypeLike = "int32", device: _DeviceLike = "cpu") -> Tensor:
     """Returns a tensor containing a permuted range of length n.
 
     Parameters
@@ -135,10 +135,10 @@ def permutation(n: int, dtype: DtypeLike = "int32", device: DeviceLike = "cpu") 
     Tensor
         Permuted tensor.
     """
-    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
+    return tensor(_get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 
-def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
+def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
     """Returns a tensor of values drawn from a given probability distribution tensor.
 
     Parameters
@@ -157,11 +157,11 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return Tensor(get_engine(p.device).random.choice(x, size=shape, p=p.data))
-    return Tensor(get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
+        return Tensor(_get_engine(p.device).random.choice(x, size=shape, p=p.data))
+    return Tensor(_get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
 
 
-def multinulli(p: float, shape: ShapeLike, device: DeviceLike = "cpu") -> Tensor:
+def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = "cpu") -> Tensor:
     """Returns a tensor of repeated bernoulli experiments using a given probability.
 
     Parameters
@@ -178,7 +178,7 @@ def multinulli(p: float, shape: ShapeLike, device: DeviceLike = "cpu") -> Tensor
     Tensor
         Tensor of samples.
     """
-    return Tensor(get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]))
+    return Tensor(_get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:

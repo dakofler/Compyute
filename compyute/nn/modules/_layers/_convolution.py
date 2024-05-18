@@ -2,13 +2,13 @@
 
 from typing import Literal, Optional
 
+from ...._tensor_functions import zeros
+from ...._types import _DtypeLike
 from ....random import uniform
-from ....tensor_functions import zeros
 from ....tensors import Tensor
-from ....types import DtypeLike
 from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ...parameter import Parameter
-from ..module import Module
+from .._module import Module
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 
@@ -25,7 +25,7 @@ class Convolution1d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Convolutional layer used for temporal information and feature extraction.
@@ -179,7 +179,7 @@ class Convolution2d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.

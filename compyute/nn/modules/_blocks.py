@@ -2,11 +2,11 @@
 
 from typing import Literal, Optional
 
-from ...types import DtypeLike
-from .containers import ParallelAdd, Sequential
-from .layers import Convolution1d, Convolution2d, Linear
-from .layers.activations import get_act_from_str
-from .module import Module
+from ..._types import _DtypeLike
+from ._containers import ParallelAdd, Sequential
+from ._layers import Convolution1d, Convolution2d, Linear
+from ._layers._activations import get_act_from_str
+from ._module import Module
 
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
 
@@ -20,7 +20,7 @@ class DenseBlock(Sequential):
         out_channels: int,
         activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Dense neural network block.
@@ -64,7 +64,7 @@ class Convolution1dBlock(Sequential):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Convolution 1d block containing a 1d convolutional layer and an activation function.
@@ -125,7 +125,7 @@ class Convolution2dBlock(Sequential):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Convolution 2d block containing a 2d convolutional layer and an activation function.

@@ -3,27 +3,27 @@
 from functools import wraps
 from typing import Callable, Generator, Optional
 
+from .._tensor_functions import concatenate
+from .._types import _DeviceLike
 from ..random import shuffle
-from ..tensor_functions import concatenate
 from ..tensors import Tensor
-from ..types import DeviceLike
 
 __all__ = ["DataLoader"]
 
 
 class DataLoader:
-    """DataLoader base class."""
+    """DataLoader to yield batched data for training and inference."""
 
     def __init__(
         self,
         x: Tensor,
         y: Optional[Tensor] = None,
         batch_size: int = 1,
-        device: DeviceLike = "cpu",
+        device: _DeviceLike = "cpu",
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
-        """DataLoader base class.
+        """DataLoader to yield batched data for training and inference.
 
         Parameters
         ----------
@@ -96,7 +96,7 @@ class DataLoader:
 def batched(
     func: Callable[[Tensor], Tensor],
     batch_size: int = 1,
-    device: DeviceLike = "cpu",
+    device: _DeviceLike = "cpu",
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:

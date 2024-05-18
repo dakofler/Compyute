@@ -1,9 +1,9 @@
 """Parameter initializations module"""
 
 from .. import random
-from ..tensor_functions import tensorprod
+from .._tensor_functions import tensorprod
+from .._types import _ShapeLike
 from ..tensors import Tensor
-from ..types import ShapeLike
 
 __all__ = [
     "get_gain",
@@ -43,7 +43,7 @@ def get_gain(act_fn: str) -> float:
     return GAINS.get(act_fn, 1)
 
 
-def get_fan_in(shape: ShapeLike) -> int:
+def get_fan_in(shape: _ShapeLike) -> int:
     """Computes the fan_in for a given shape.
 
     Parameters
@@ -59,7 +59,7 @@ def get_fan_in(shape: ShapeLike) -> int:
     return tensorprod((shape[0],) + shape[2:])
 
 
-def get_fan_out(shape: ShapeLike) -> int:
+def get_fan_out(shape: _ShapeLike) -> int:
     """Computes the fan_out for a given shape.
 
     Parameters
@@ -75,7 +75,7 @@ def get_fan_out(shape: ShapeLike) -> int:
     return tensorprod((shape[1],) + shape[2:])
 
 
-def uniform(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
+def uniform(shape: _ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
     """Returns a tensor of a given shape with values following a uniform distribution.
 
     Parameters
@@ -95,7 +95,7 @@ def uniform(shape: ShapeLike, low: float = 0.0, high: float = 1.0) -> Tensor:
     return random.uniform(shape, low, high)
 
 
-def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
+def normal(shape: _ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     """Returns a tensor of a given shape with values following a normal distribution.
 
     Parameters
@@ -115,7 +115,7 @@ def normal(shape: ShapeLike, mean: float = 0.0, std: float = 1.0) -> Tensor:
     return random.normal(shape, mean, std)
 
 
-def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
+def xavier_uniform(shape: _ShapeLike, gain: float = 1.0) -> Tensor:
     """Returns a tensor with random values as described by Glorot, X. & Bengio, Y. (2010)
     following a uniform distribution.
 
@@ -137,7 +137,7 @@ def xavier_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     return random.uniform(shape, -bound, bound)
 
 
-def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
+def xavier_normal(shape: _ShapeLike, gain: float = 1.0) -> Tensor:
     """Returns a tensor with random values as described by Glorot, X. & Bengio, Y. (2010)
     following a normal distribution.
 
@@ -159,7 +159,7 @@ def xavier_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     return random.normal(shape, std=std)
 
 
-def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
+def kaiming_uniform(shape: _ShapeLike, gain: float = 1.0) -> Tensor:
     """Returns a tensor with random values as described by He, K. et al. (2015)
     following a uniform distribution.
 
@@ -180,7 +180,7 @@ def kaiming_uniform(shape: ShapeLike, gain: float = 1.0) -> Tensor:
     return random.uniform(shape, -bound, bound)
 
 
-def kaiming_normal(shape: ShapeLike, gain: float = 1.0) -> Tensor:
+def kaiming_normal(shape: _ShapeLike, gain: float = 1.0) -> Tensor:
     """Returns a tensor with random values as described by He, K. et al. (2015)
     following a normal distribution.
 

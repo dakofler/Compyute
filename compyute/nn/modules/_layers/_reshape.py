@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from ...._types import _ShapeLike
 from ....tensors import Tensor
-from ....types import ShapeLike
-from ..module import Module
+from .._module import Module
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]
 
@@ -12,7 +12,7 @@ __all__ = ["Reshape", "Flatten", "Moveaxis"]
 class Reshape(Module):
     """Flatten layer used to reshape tensors to any shape."""
 
-    def __init__(self, output_shape: ShapeLike, label: Optional[str] = None) -> None:
+    def __init__(self, output_shape: _ShapeLike, label: Optional[str] = None) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters

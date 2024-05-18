@@ -1,10 +1,10 @@
 """block tests"""
 
 import torch
-from compyute.nn.modules.containers import Sequential
-from compyute.nn.modules.layers import LSTM, Recurrent
-from tests.test_utils import get_vals_float, get_params, validate
 
+from compyute.nn.modules._containers import Sequential
+from compyute.nn.modules._layers import LSTM, Recurrent
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Ch, X = (10, 20, 30, 40)
 

@@ -6,9 +6,9 @@ import pickle
 from abc import ABC
 from typing import Any, Callable, Generator, Iterable, Optional
 
-from ...engine import check_device_availability
+from ..._types import _DeviceLike
+from ...engine import _check_device_availability
 from ...tensors import ShapeError, Tensor
-from ...types import DeviceLike
 from ..parameter import Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -22,7 +22,7 @@ class Module(ABC):
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
-        self.__device: DeviceLike = "cpu"
+        self.__device: _DeviceLike = "cpu"
         self.__retain_values: bool = False
         self.__training: bool = False
         self.__trainable: bool = True
@@ -32,16 +32,16 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def device(self) -> DeviceLike:
+    def device(self) -> _DeviceLike:
         """Device the module tensors are stored on."""
         return self.__device
 
-    def to_device(self, device: DeviceLike) -> None:
+    def to_device(self, device: _DeviceLike) -> None:
         """Moves the module to the specified device."""
         if device == self.__device:
             return
 
-        check_device_availability(device)
+        _check_device_availability(device)
         self.__device = device
 
         if self.y is not None:

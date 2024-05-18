@@ -4,9 +4,9 @@ import operator
 from functools import reduce
 from typing import Iterable, Optional, Sequence
 
-from .engine import get_engine
+from ._types import _AxisLike, _DeviceLike, _DtypeLike, _ScalarLike, _ShapeLike
+from .engine import _get_engine
 from .tensors import Tensor
-from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 __all__ = [
     "arange",
@@ -27,6 +27,8 @@ __all__ = [
     "stack",
     "tensorsum",
     "tensorprod",
+    "inner",
+    "outer",
 ]
 
 
@@ -34,8 +36,8 @@ def arange(
     stop: int,
     start: int = 0,
     step: int | float = 1,
-    dtype: Optional[DtypeLike] = None,
-    device: DeviceLike = "cpu",
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
     a given interval [start, stop).
@@ -58,15 +60,15 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
+    return Tensor(_get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
 def linspace(
     start: float,
     stop: float,
     num: int,
-    dtype: Optional[DtypeLike] = None,
-    device: DeviceLike = "cpu",
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
     a given interval [start, stop].
@@ -89,11 +91,11 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
+    return Tensor(_get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
 def empty(
-    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = "cpu"
 ) -> Tensor:
     """Returns an tensor with uninitialized values.
 
@@ -111,11 +113,11 @@ def empty(
     Tensor
         Tensor with uninitialized values.
     """
-    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
+    return Tensor(_get_engine(device).empty(shape=shape, dtype=dtype))
 
 
 def zeros(
-    shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu"
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = "cpu"
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
@@ -133,10 +135,12 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    return Tensor(get_engine(device).zeros(shape, dtype=dtype))
+    return Tensor(_get_engine(device).zeros(shape, dtype=dtype))
 
 
-def ones(shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
+def ones(
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = "cpu"
+) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -153,14 +157,14 @@ def ones(shape: ShapeLike, dtype: Optional[DtypeLike] = None, device: DeviceLike
     Tensor
         Tensor with all values being one.
     """
-    return Tensor(get_engine(device).ones(shape, dtype=dtype))
+    return Tensor(_get_engine(device).ones(shape, dtype=dtype))
 
 
 def full(
-    shape: ShapeLike,
-    value: ScalarLike,
-    dtype: Optional[DtypeLike] = None,
-    device: DeviceLike = "cpu",
+    shape: _ShapeLike,
+    value: _ScalarLike,
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = "cpu",
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -180,7 +184,7 @@ def full(
     Tensor
         Tensor with all values being one.
     """
-    return Tensor(get_engine(device).full(shape, value, dtype=dtype))
+    return Tensor(_get_engine(device).full(shape, value, dtype=dtype))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -231,7 +235,7 @@ def ones_like(x: Tensor) -> Tensor:
     return ones(x.shape, dtype=x.dtype, device=x.device)
 
 
-def full_like(x: Tensor, value: ScalarLike) -> Tensor:
+def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -249,7 +253,7 @@ def full_like(x: Tensor, value: ScalarLike) -> Tensor:
     return full(x.shape, value=value, dtype=x.dtype, device=x.device)
 
 
-def identity(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cpu") -> Tensor:
+def identity(n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = "cpu") -> Tensor:
     """Returns a diagonal tensor of shape (n, n).
 
     Parameters
@@ -266,7 +270,7 @@ def identity(n: int, dtype: Optional[DtypeLike] = None, device: DeviceLike = "cp
     Tensor
         Diagonal tensor.
     """
-    return Tensor(get_engine(device).identity(n, dtype=dtype))
+    return Tensor(_get_engine(device).identity(n, dtype=dtype))
 
 
 def diagonal(x: Tensor) -> Tensor:
@@ -285,7 +289,7 @@ def diagonal(x: Tensor) -> Tensor:
     return x.insert_dim(-1) * identity(x.shape[-1])
 
 
-def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
+def maximum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
     """Returns a new tensor containing the element-wise maximum of two tensors/scalars.
 
     Parameters
@@ -314,10 +318,10 @@ def maximum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     else:
         _b = b
 
-    return Tensor(get_engine(device).maximum(_a, _b))
+    return Tensor(_get_engine(device).maximum(_a, _b))
 
 
-def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
+def minimum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
     """Returns a new tensor containing the element-wise minimum of two tensors/scalars.
 
     Parameters
@@ -346,10 +350,10 @@ def minimum(a: Tensor | ScalarLike, b: Tensor | ScalarLike) -> Tensor:
     else:
         _b = b
 
-    return Tensor(get_engine(device).minimum(_a, _b))
+    return Tensor(_get_engine(device).minimum(_a, _b))
 
 
-def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
+def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
     """Returns a new tensor by joining a sequence of tensors along a given axis.
 
     Parameters
@@ -365,10 +369,10 @@ def concatenate(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
         Concatenated tensor.
     """
     device = tensors[0].device
-    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
+    return Tensor(_get_engine(device).concatenate([t.data for t in tensors], axis=axis))
 
 
-def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
+def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
     """Returns a new tensor by stacking a sequence of tensors along a given axis.
 
     Parameters
@@ -384,10 +388,10 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
         Stacked tensor.
     """
     device = tensors[0].device
-    return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))
+    return Tensor(_get_engine(device).stack([t.data for t in tensors], axis=axis))
 
 
-def tensorsum(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
+def tensorsum(tensors: Iterable[Tensor | _ScalarLike]) -> Tensor | _ScalarLike:
     """Sums the elements of an iterable element-wise over the first axis.
 
     Parameters
@@ -403,7 +407,7 @@ def tensorsum(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
     return reduce(operator.add, tensors)
 
 
-def tensorprod(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
+def tensorprod(tensors: Iterable[Tensor | _ScalarLike]) -> Tensor | _ScalarLike:
     """Multiplies the elements of an iterable element-wise over the first axis.
 
     Parameters
@@ -417,3 +421,37 @@ def tensorprod(tensors: Iterable[Tensor | ScalarLike]) -> Tensor | ScalarLike:
         Tensor containing element-wise products or scalar.
     """
     return reduce(operator.mul, tensors)
+
+
+def inner(*args: Tensor) -> Tensor:
+    """Returns the inner product of tensors.
+
+    Parameters
+    ----------
+    *args : Tensor
+        Tensors to compute the inner product of.
+
+    Returns
+    -------
+    Tensor
+        Inner product.
+    """
+    device = args[0].device
+    return Tensor(_get_engine(device).inner(*[t.data for t in args]))
+
+
+def outer(*args: Tensor) -> Tensor:
+    """Returns the outer product of tensors.
+
+    Parameters
+    ----------
+    *args : Tensor
+        Tensors to compute the outer product of.
+
+    Returns
+    -------
+    Tensor
+        Outer product.
+    """
+    device = args[0].device
+    return Tensor(_get_engine(device).outer(*[t.data for t in args]))

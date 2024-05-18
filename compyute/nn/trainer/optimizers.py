@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Generator, Optional
 
-from ...tensor_functions import tensorprod
+from ..._tensor_functions import tensorprod
 from ..parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -294,7 +294,7 @@ class NAdam(Optimizer):
 OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
 
 
-def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
+def _get_optimizer(optimizer: Optimizer | str) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer

@@ -1,9 +1,9 @@
 """basic preprocessing module"""
 
+from .._tensor_functions import identity
+from .._types import _AxisLike
 from ..random import shuffle
-from ..tensor_functions import identity
 from ..tensors import Tensor
-from ..types import AxisLike
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
@@ -38,7 +38,7 @@ def split_train_val_test(
 
 def normalize(
     x: Tensor,
-    axis: AxisLike | None = None,
+    axis: _AxisLike | None = None,
     l_bound: int = 0,
     u_bound: int = 1,
 ) -> Tensor:
@@ -67,7 +67,7 @@ def normalize(
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 
-def standardize(x: Tensor, axis: AxisLike | None = None) -> Tensor:
+def standardize(x: Tensor, axis: _AxisLike | None = None) -> Tensor:
     """Standardizes a tensor to mean 0 and variance 1.
 
     Parameters

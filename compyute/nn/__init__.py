@@ -1,10 +1,6 @@
 """Compyute neural network module"""
 
-from . import (
-    dataloaders,
-    functional,
-    inits,
-    trainer,
-)
+from . import functional, inits, modules, trainer
+from .dataloaders import *
 from .modules import *
 from .parameter import *

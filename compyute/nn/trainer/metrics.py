@@ -64,7 +64,7 @@ class R2(Metric):
 METRICS = {"accuracy": Accuracy, "r2": R2}
 
 
-def get_metric(metric: Metric | str) -> Metric:
+def _get_metric(metric: Metric | str) -> Metric:
     """Returns an instance of a metric function."""
     if isinstance(metric, Metric):
         return metric

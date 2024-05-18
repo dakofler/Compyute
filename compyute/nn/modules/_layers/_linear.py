@@ -2,13 +2,13 @@
 
 from typing import Optional
 
+from ...._tensor_functions import zeros
+from ...._types import _DtypeLike
 from ....random import uniform
-from ....tensor_functions import zeros
 from ....tensors import Tensor
-from ....types import DtypeLike
 from ...functional import linear
 from ...parameter import Parameter
-from ..module import Module
+from .._module import Module
 
 __all__ = ["Linear"]
 
@@ -21,7 +21,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Fully connected layer.

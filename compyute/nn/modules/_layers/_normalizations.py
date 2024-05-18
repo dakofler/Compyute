@@ -2,11 +2,11 @@
 
 from typing import Optional
 
-from ....tensor_functions import ones, tensorprod, zeros
+from ...._tensor_functions import ones, tensorprod, zeros
+from ...._types import _DtypeLike, _ShapeLike
 from ....tensors import Tensor
-from ....types import DtypeLike, ShapeLike
 from ...parameter import Parameter
-from ..module import Module
+from .._module import Module
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 
@@ -19,7 +19,7 @@ class Batchnorm1d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Implements Batch Normalization.
@@ -135,7 +135,7 @@ class Batchnorm2d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Implements Batch Normalization.
@@ -249,9 +249,9 @@ class Layernorm(Module):
 
     def __init__(
         self,
-        normalized_shape: ShapeLike,
+        normalized_shape: _ShapeLike,
         eps: float = 1e-5,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Implements layer normalization.

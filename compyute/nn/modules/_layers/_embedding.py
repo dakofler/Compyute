@@ -2,12 +2,12 @@
 
 from typing import Optional
 
+from ...._types import _DtypeLike
 from ....random import normal
 from ....tensors import Tensor
-from ....types import DtypeLike
 from ...functional import lookup_embedding
 from ...parameter import Parameter
-from ..module import Module
+from .._module import Module
 
 __all__ = ["Embedding"]
 
@@ -19,7 +19,7 @@ class Embedding(Module):
         self,
         vocab_size: int,
         embedding_dim: int,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Embedding layer used for token embedding.

@@ -103,7 +103,7 @@ LOSSES = {
 }
 
 
-def get_loss(loss: Loss | str) -> Loss:
+def _get_loss(loss: Loss | str) -> Loss:
     """Returns an instance of a loss function."""
     if isinstance(loss, Loss):
         return loss

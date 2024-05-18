@@ -2,13 +2,13 @@
 
 from typing import Optional
 
+from ...._tensor_functions import empty_like, zeros, zeros_like
+from ...._types import _DtypeLike
 from ....random import uniform
-from ....tensor_functions import empty_like, zeros, zeros_like
 from ....tensors import Tensor
-from ....types import DtypeLike
 from ...functional import linear, sigmoid
 from ...parameter import Parameter
-from ..module import Module
+from .._module import Module
 
 __all__ = ["LSTM", "Recurrent"]
 
@@ -22,7 +22,7 @@ class Recurrent(Module):
         h_channels: int,
         bias: bool = True,
         return_sequence: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Recurrent module.
@@ -137,7 +137,7 @@ class LSTM(Module):
         h_channels: int,
         bias: bool = True,
         return_sequence: bool = True,
-        dtype: DtypeLike = "float32",
+        dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
     ) -> None:
         """Long Short-Term Memory module.
