@@ -1,9 +1,10 @@
 """Logging callbacks module"""
 
 from typing import Any, Iterable, Literal
-from tqdm.auto import tqdm
-from .callback import Callback
 
+from tqdm.auto import tqdm
+
+from .callback import Callback
 
 __all__ = ["History", "ProgressBar"]
 
@@ -64,9 +65,9 @@ class ProgressBar(Callback):
     def on_epoch_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "step":
             self.pbar = tqdm(
-                desc=f"Epoch {trainer_cache['t']}/{trainer_cache["epochs"]}",
+                desc=f"Epoch {trainer_cache['t']}/{trainer_cache['epochs']}",
                 unit=" steps",
-                total=trainer_cache["train_steps"] +1,
+                total=trainer_cache["train_steps"] + 1,
             )
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:

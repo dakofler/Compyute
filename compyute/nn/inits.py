@@ -1,10 +1,9 @@
 """Parameter initializations module"""
 
 from .. import random
-from ..tensor_f import tensorprod
-from ..basetensor import Tensor
+from ..tensor_functions import tensorprod
+from ..tensors import Tensor
 from ..types import ShapeLike
-
 
 __all__ = [
     "get_gain",

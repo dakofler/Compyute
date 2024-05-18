@@ -1,14 +1,15 @@
 """Neural network module base module"""
 
 from __future__ import annotations
-from abc import ABC
-import pickle
-from typing import Any, Callable, Generator, Iterable, Optional
-from ..parameter import Parameter
-from ...engine import check_device_availability
-from ...basetensor import Tensor, ShapeError
-from ...types import DeviceLike
 
+import pickle
+from abc import ABC
+from typing import Any, Callable, Generator, Iterable, Optional
+
+from ...engine import check_device_availability
+from ...tensors import ShapeError, Tensor
+from ...types import DeviceLike
+from ..parameter import Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
 
@@ -25,7 +26,6 @@ class Module(ABC):
         self.__retain_values: bool = False
         self.__training: bool = False
         self.__trainable: bool = True
-
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -87,19 +87,20 @@ class Module(ABC):
         """Returns the list of module parameters."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
 
-
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
     def __is_repr_prop(key: str, value: Any) -> bool:
-        return all([
-            key not in ["y", "_backward", "label"],
-            not key.startswith("_"),
-            not isinstance(value, Tensor),
-            value is not None
-        ])
+        return all(
+            [
+                key not in ["y", "_backward", "label"],
+                not key.startswith("_"),
+                not isinstance(value, Tensor),
+                value is not None,
+            ]
+        )
 
     def __repr__(self) -> str:
         rep = f"{self.label}("
@@ -199,9 +200,9 @@ class Module(ABC):
         if x.ndim not in valid_dims:
             vdims = ", ".join(str(d) for d in valid_dims)
             raise ShapeError(
-                f"{self.label}: Number of input dimensions {
-                    x.ndim} is not valid (valid: {vdims})"
+                f"{self.label}: Number of input dimensions {x.ndim} is not valid (valid: {vdims})"
             )
+
 
 def save_module(module: Module, filepath: str) -> None:
     """Saves a model as a binary file.

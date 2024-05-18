@@ -1,10 +1,10 @@
 """Regularization layers module"""
 
 from typing import Optional
-from ..module import Module
-from ....random import multinulli
-from ....basetensor import Tensor
 
+from ....random import multinulli
+from ....tensors import Tensor
+from ..module import Module
 
 __all__ = ["Dropout"]
 

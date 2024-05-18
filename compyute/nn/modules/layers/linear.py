@@ -1,14 +1,14 @@
 """Linear transformation layers module"""
 
 from typing import Optional
-from ..module import Module
-from ...parameter import Parameter
-from ...functional import linear
-from ....tensor_f import zeros
-from ....random import uniform
-from ....basetensor import Tensor
-from ....types import DtypeLike
 
+from ....random import uniform
+from ....tensor_functions import zeros
+from ....tensors import Tensor
+from ....types import DtypeLike
+from ...functional import linear
+from ...parameter import Parameter
+from ..module import Module
 
 __all__ = ["Linear"]
 

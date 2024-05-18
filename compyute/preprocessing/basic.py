@@ -1,10 +1,9 @@
 """basic preprocessing module"""
 
-from ..tensor_f import identity
 from ..random import shuffle
-from ..basetensor import Tensor
+from ..tensor_functions import identity
+from ..tensors import Tensor
 from ..types import AxisLike
-
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 

@@ -1,13 +1,13 @@
 """Embedding layers module"""
 
 from typing import Optional
-from ..module import Module
+
+from ....random import normal
+from ....tensors import Tensor
+from ....types import DtypeLike
 from ...functional import lookup_embedding
 from ...parameter import Parameter
-from ....random import normal
-from ....basetensor import Tensor
-from ....types import DtypeLike
-
+from ..module import Module
 
 __all__ = ["Embedding"]
 

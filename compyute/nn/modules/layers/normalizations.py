@@ -1,12 +1,12 @@
 """Normalization layers module"""
 
 from typing import Optional
-from ..module import Module
-from ...parameter import Parameter
-from ....tensor_f import ones, tensorprod, zeros
-from ....basetensor import Tensor
-from ....types import DtypeLike, ShapeLike
 
+from ....tensor_functions import ones, tensorprod, zeros
+from ....tensors import Tensor
+from ....types import DtypeLike, ShapeLike
+from ...parameter import Parameter
+from ..module import Module
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 

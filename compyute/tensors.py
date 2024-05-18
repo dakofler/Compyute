@@ -1,9 +1,12 @@
 """Tensor module"""
 
 from __future__ import annotations
+
 from types import ModuleType
 from typing import Any, Optional, Sequence
+
 import numpy
+
 from .engine import (
     check_device_availability,
     cupy_to_numpy,
@@ -11,15 +14,7 @@ from .engine import (
     infer_device,
     numpy_to_cupy,
 )
-from .types import (
-    ArrayLike,
-    AxisLike,
-    ComplexLike,
-    DeviceLike,
-    DtypeLike,
-    ScalarLike,
-    ShapeLike,
-)
+from .types import ArrayLike, AxisLike, ComplexLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 __all__ = ["tensor", "Tensor"]
 

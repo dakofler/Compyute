@@ -1,11 +1,11 @@
 """Neural network functions module"""
 
 from typing import Callable, Literal, Optional
-from ..preprocessing.basic import one_hot_encode
-from ..tensor_f import identity, maximum, minimum, tensorprod, zeros
-from ..basetensor import Tensor, ShapeError
-from ..types import AxisLike, ShapeLike
 
+from ..preprocessing.basic import one_hot_encode
+from ..tensor_functions import identity, maximum, minimum, tensorprod, zeros
+from ..tensors import ShapeError, Tensor
+from ..types import AxisLike, ShapeLike
 
 __all__ = [
     "relu",

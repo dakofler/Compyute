@@ -1,10 +1,10 @@
 """Activation layers module"""
 
 from typing import Optional
-from ..module import Module
-from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
-from ....basetensor import Tensor
 
+from ....tensors import Tensor
+from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
+from ..module import Module
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
 

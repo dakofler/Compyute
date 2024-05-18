@@ -1,12 +1,12 @@
 """Tensor functions module"""
 
-from functools import reduce
 import operator
+from functools import reduce
 from typing import Iterable, Optional, Sequence
-from .engine import get_engine
-from .basetensor import Tensor
-from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
+from .engine import get_engine
+from .tensors import Tensor
+from .types import AxisLike, DeviceLike, DtypeLike, ScalarLike, ShapeLike
 
 __all__ = [
     "arange",

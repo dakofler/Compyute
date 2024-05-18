@@ -2,12 +2,12 @@
 
 from abc import abstractmethod
 from typing import Generator, Optional
-from .module import Module
-from ..parameter import Parameter
-from ...tensor_f import concatenate, ones, tensorsum
-from ...basetensor import Tensor
-from ...types import DeviceLike, DtypeLike, ShapeLike
 
+from ...tensor_functions import concatenate, ones, tensorsum
+from ...tensors import Tensor
+from ...types import DeviceLike, DtypeLike, ShapeLike
+from ..parameter import Parameter
+from .module import Module
 
 __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 

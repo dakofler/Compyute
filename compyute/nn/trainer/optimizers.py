@@ -2,9 +2,9 @@
 
 from abc import ABC, abstractmethod
 from typing import Generator, Optional
-from ..parameter import Parameter
-from ...tensor_f import tensorprod
 
+from ...tensor_functions import tensorprod
+from ..parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 

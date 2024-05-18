@@ -1,15 +1,15 @@
 """Neural network models module"""
 
 from typing import Any, Literal, Optional
-from .callbacks import Callback
-from .optimizers import Optimizer, get_optimizer
-from .losses import Loss, get_loss
-from .metrics import Metric, get_metric
+
+from ...tensors import Tensor
+from ...types import ScalarLike
 from ..dataloaders import DataLoader
 from ..modules import Module
-from ...basetensor import Tensor
-from ...types import ScalarLike
-
+from .callbacks import Callback
+from .losses import Loss, get_loss
+from .metrics import Metric, get_metric
+from .optimizers import Optimizer, get_optimizer
 
 __all__ = ["Trainer"]
 

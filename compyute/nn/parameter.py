@@ -1,8 +1,8 @@
 """Neural network parameter module"""
 
 from typing import Optional
-from ..basetensor import Tensor
 
+from ..tensors import Tensor
 
 __all__ = ["Parameter"]
 

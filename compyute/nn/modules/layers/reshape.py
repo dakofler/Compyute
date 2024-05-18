@@ -1,10 +1,10 @@
 """Tensor reshaping layers module"""
 
 from typing import Optional
-from ..module import Module
-from ....basetensor import Tensor
-from ....types import ShapeLike
 
+from ....tensors import Tensor
+from ....types import ShapeLike
+from ..module import Module
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]
 

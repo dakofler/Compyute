@@ -1,8 +1,8 @@
 __pycache__
 .pytest_cache
+.venv
 experiments
 data
 trained_models
-.vscode
-x.ipynb
 *.cp
+x.ipynb

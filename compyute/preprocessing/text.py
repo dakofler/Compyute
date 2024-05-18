@@ -1,13 +1,15 @@
 """text preprocessing module"""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
 import pickle
 import re
+from abc import ABC, abstractmethod
+
 import regex
 from tqdm.auto import trange
-from ..basetensor import tensor, Tensor
 
+from ..tensors import Tensor, tensor
 
 __all__ = [
     "CharacterTokenizer",

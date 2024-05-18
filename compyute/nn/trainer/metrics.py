@@ -1,9 +1,9 @@
 """Evaluation metrics module"""
 
 from abc import ABC, abstractmethod
-from ..functional import accuracy_score, r2_score
-from ...basetensor import Tensor
 
+from ...tensors import Tensor
+from ..functional import accuracy_score, r2_score
 
 __all__ = ["Accuracy", "R2"]
 
