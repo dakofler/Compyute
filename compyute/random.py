@@ -1,7 +1,8 @@
 """Random functions module"""
 
 from ._types import _DeviceLike, _DtypeLike, _ShapeLike
-from .engine import _get_engine, gpu_available
+from .engine import _get_engine
+from .engine import gpu_available as _gpu_available
 from .tensors import Tensor, tensor
 
 __all__ = [
@@ -23,7 +24,7 @@ def set_seed(seed: int) -> None:
     seed : int
         Seed value.
     """
-    if gpu_available():
+    if _gpu_available():
         _get_engine("cuda").random.seed(seed)
     _get_engine("cpu").random.seed(seed)
 

@@ -56,8 +56,8 @@ z = cp.inner(x, y)
 z = cp.outer(x, y)
 
 # sum all elements of a tensor
-z = x.sum(axis=0)
-z = x.mean(axis=0)
+z = cp.sum(x, axis=0)
+z = cp.mean(x, axis=0)
 
 # functions for initializing tensors
 z = cp.ones(shape=(10, 10))

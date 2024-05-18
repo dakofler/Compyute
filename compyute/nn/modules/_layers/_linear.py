@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...._tensor_functions import zeros
+from ...._tensor_functions._creating import zeros
 from ...._types import _DtypeLike
 from ....random import uniform
 from ....tensors import Tensor

@@ -2,7 +2,10 @@
 
 from typing import Optional
 
-from ...._tensor_functions import empty_like, zeros, zeros_like
+from ...._tensor_functions._creating import empty_like, zeros, zeros_like
+from ...._tensor_functions._reshaping import transpose
+from ...._tensor_functions._transforming import sum as _sum
+from ...._tensor_functions._transforming import tanh
 from ...._types import _DtypeLike
 from ....random import uniform
 from ....tensors import Tensor
@@ -77,7 +80,7 @@ class Recurrent(Module):
             # hidden state
             # (B, Ch) @ (Ch, Ch) -> (B, Ch)
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
-            h[:, t] = (x_h[:, t] + h_h).tanh()
+            h[:, t] = tanh(x_h[:, t] + h_h)
 
         if self.training:
 
@@ -107,12 +110,12 @@ class Recurrent(Module):
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += dx_h[:, t].T @ h[:, t - 1]
+                        self.w_h.grad += transpose(dx_h[:, t]) @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad = dx_h.sum((0, 1))
+                    self.b_h.grad = _sum(dx_h, axis=(0, 1))
 
                 # input projection gradients
                 dx, self.w_i.grad, db_i = x_h_backward(dx_h)
@@ -204,7 +207,7 @@ class LSTM(Module):
 
             # gates post activation i_t, f_t, g_t, o_t
             ifgo[:, t, :i2] = sigmoid(ifgo_preact[:, :i2])[0]  # input, forget
-            ifgo[:, t, i2:i3] = ifgo_preact[:, i2:i3].tanh()  # node
+            ifgo[:, t, i2:i3] = tanh(ifgo_preact[:, i2:i3])  # node
             ifgo[:, t, i3:] = sigmoid(ifgo_preact[:, i3:])[0]  # output
 
             # cell state
@@ -213,7 +216,7 @@ class LSTM(Module):
 
             # hidden state
             # h_t = o_t * tanh(c_t)
-            h[:, t] = ifgo[:, t, i3:] * c[:, t].tanh()
+            h[:, t] = ifgo[:, t, i3:] * tanh(c[:, t])
 
         if self.training:
 
@@ -242,7 +245,7 @@ class LSTM(Module):
 
                     # cell state gradients
                     # dc_t = dtanh(c_t) * do_t * output grads
-                    dc[:, t] = (1 - c[:, t].tanh() ** 2) * ifgo[:, t, i3:] * out_grad
+                    dc[:, t] = (1 - tanh(c[:, t]) ** 2) * ifgo[:, t, i3:] * out_grad
                     if t < x.shape[1] - 1:
                         # cell state gradients from next time step
                         # dc_t += f_t+1 * dc_t+1
@@ -264,7 +267,7 @@ class LSTM(Module):
 
                     # output gate gradients
                     # do_t = tanh(c_t) * output grads
-                    difgo_t[:, i3:] = c[:, t].tanh() * out_grad
+                    difgo_t[:, i3:] = tanh(c[:, t]) * out_grad
 
                     # pre actiation input and forget gate gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
@@ -285,12 +288,12 @@ class LSTM(Module):
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += difgo_preact[:, t].T @ h[:, t - 1]
+                        self.w_h.grad += transpose(difgo_preact[:, t]) @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad = difgo_preact.sum(axis=(0, 1))
+                    self.b_h.grad = _sum(difgo_preact, axis=(0, 1))
 
                 # input projection gradients
                 dx, self.w_i.grad, db_i = x_h_backward(difgo_preact)

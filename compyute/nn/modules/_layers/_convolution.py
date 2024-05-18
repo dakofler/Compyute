@@ -2,7 +2,9 @@
 
 from typing import Literal, Optional
 
-from ...._tensor_functions import zeros
+from ...._tensor_functions._creating import zeros
+from ...._tensor_functions._reshaping import add_dims, flip, insert_dim, reshape
+from ...._tensor_functions._transforming import sum as _sum
 from ...._types import _DtypeLike
 from ....random import uniform
 from ....tensors import Tensor
@@ -83,10 +85,10 @@ class Convolution1d(Module):
         x = x.astype(self.dtype)
 
         # flip weights for cross correlation
-        w_flip = self.w.flip(-1)
+        w_flip = flip(self.w, axis=-1)
 
-        x = x.insert_dim(axis=1)  # (B, 1, Ci, Ti)
-        w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, K)
+        x = insert_dim(x, axis=1)  # (B, 1, Ci, Ti)
+        w_flip = reshape(w_flip, shape=(1, *w_flip.shape))  # (1, Co, Ci, K)
 
         # convolve
         # (B, 1, Ci, Ti) * (1, Co, Ci, K) -> (B, Co, Ci, To)
@@ -94,11 +96,11 @@ class Convolution1d(Module):
 
         # sum over input channels
         # (B, Co, Ci, To) -> (B, Co, To)
-        y = x_conv_w.sum(axis=2)
+        y = _sum(x_conv_w, axis=2)
 
         if self.b is not None:
             # (B, Co, To) + (Co, 1)
-            y += self.b.reshape((*self.b.shape, 1))
+            y += reshape(self.b, shape=(*self.b.shape, 1))
 
         if self.training:
 
@@ -120,8 +122,8 @@ class Convolution1d(Module):
                 # ----------------
                 # input grads
                 # ----------------
-                dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, To)
-                w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K)
+                dy_p_ext = insert_dim(dy_p, axis=2)  # (B, Co, 1, To)
+                w_ext = reshape(self.w, shape=(1, *self.w.shape))  # (1, Co, Ci, K)
                 padding = "full" if self.padding == "valid" else self.padding
 
                 # convolve
@@ -130,13 +132,13 @@ class Convolution1d(Module):
 
                 # sum over output channels
                 # (B, Ci, Ti)
-                dx = dy_conv_w.sum(axis=1)
+                dx = _sum(dy_conv_w, axis=1)
 
                 # ----------------
                 # weight grads
                 # ----------------
                 if self.w.requires_grad:
-                    dy_p_ext = dy_p_ext.flip(-1)
+                    dy_p_ext = flip(dy_p_ext, axis=-1)
 
                     # convolve
                     # (B, 1, Ci, Ti) * (B, Co, 1, To) -> (B, Co, Ci, K)
@@ -150,7 +152,7 @@ class Convolution1d(Module):
 
                     # sum over batches
                     # (B, Co, Ci, K) -> (Co, Ci, K)
-                    self.w.grad = x_conv_dy.sum(axis=0)
+                    self.w.grad = _sum(x_conv_dy, axis=0)
 
                 # ----------------
                 # bias grads
@@ -158,7 +160,7 @@ class Convolution1d(Module):
                 if self.b is not None and self.b.requires_grad:
                     # sum over batches and time
                     # (B, Co, To) -> (Co,)
-                    self.b.grad = dy.sum(axis=(0, 2))
+                    self.b.grad = _sum(dy, axis=(0, 2))
 
                 return dx
 
@@ -234,10 +236,10 @@ class Convolution2d(Module):
         x = x.astype(self.dtype)
 
         # rotate weights for cross correlation
-        w_flip = self.w.flip((-2, -1))
+        w_flip = flip(self.w, axis=(-2, -1))
 
-        x = x.insert_dim(axis=1)  # (B, 1, Ci, Yi, Xi)
-        w_flip = w_flip.reshape((1, *w_flip.shape))  # (1, Co, Ci, K, K)
+        x = insert_dim(x, axis=1)  # (B, 1, Ci, Yi, Xi)
+        w_flip = reshape(w_flip, shape=(1, *w_flip.shape))  # (1, Co, Ci, K, K)
 
         # convolve
         # (B, 1, Ci, Yi, Xi) * (1, Co, Ci, K, K) -> (B, Co, Ci, Yo, Xo)
@@ -245,11 +247,11 @@ class Convolution2d(Module):
 
         # sum over input channels
         # (B, Co, Ci, Yo, Xo) -> (B, Co, Yo, Xo)
-        y = x_conv_w.sum(axis=2)
+        y = _sum(x_conv_w, axis=2)
 
         if self.b is not None:
             # (B, Co, Yo, Xo) + (Co, 1, 1)
-            y += self.b.add_dims(target_dims=3)
+            y += add_dims(self.b, target_dims=3)
 
         if self.training:
 
@@ -272,8 +274,8 @@ class Convolution2d(Module):
                 # ----------------
                 # input grads
                 # ----------------
-                dy_p_ext = dy_p.insert_dim(axis=2)  # (B, Co, 1, Yo, Xo)
-                w_ext = self.w.reshape((1, *self.w.shape))  # (1, Co, Ci, K, K)
+                dy_p_ext = insert_dim(dy_p, axis=2)  # (B, Co, 1, Yo, Xo)
+                w_ext = reshape(self.w, shape=(1, *self.w.shape))  # (1, Co, Ci, K, K)
                 padding = "full" if self.padding == "valid" else self.padding
 
                 # convolve
@@ -282,13 +284,13 @@ class Convolution2d(Module):
 
                 # sum over c_out
                 # (B, Co, Ci, Yi, Xi) -> (B, Ci, Yi, Xi)
-                dx = dy_conv_w.sum(axis=1)
+                dx = _sum(dy_conv_w, axis=1)
 
                 # ----------------
                 # weight grads
                 # ----------------
                 if self.w.requires_grad:
-                    dy_p_ext = dy_p_ext.flip((-2, -1))
+                    dy_p_ext = flip(dy_p_ext, axis=(-2, -1))
 
                     # convolve
                     # (B, 1, Ci, Yi, Xi) * (B, Co, 1, Yo, Xo) -> (B, Co, Ci, K, K)
@@ -299,7 +301,7 @@ class Convolution2d(Module):
 
                     # sum over batches
                     # (B, Co, Ci, K, K) -> (Co, Ci, K, K)
-                    self.w.grad = x_conv_dy.sum(axis=0)
+                    self.w.grad = _sum(x_conv_dy, axis=0)
 
                 # ----------------
                 # bias grads
@@ -307,7 +309,7 @@ class Convolution2d(Module):
                 if self.b is not None and self.b.requires_grad:
                     # sum over batches, height and width
                     # (B, Co, Yo, Xo) -> (Co,)
-                    self.b.grad = dy.sum(axis=(0, 2, 3))
+                    self.b.grad = _sum(dy, axis=(0, 2, 3))
 
                 return dx
 

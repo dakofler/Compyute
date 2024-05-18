@@ -1,6 +1,10 @@
 """basic preprocessing module"""
 
-from .._tensor_functions import identity
+from .._tensor_functions._creating import identity
+from .._tensor_functions._transforming import max as _max
+from .._tensor_functions._transforming import mean
+from .._tensor_functions._transforming import min as _min
+from .._tensor_functions._transforming import var
 from .._types import _AxisLike
 from ..random import shuffle
 from ..tensors import Tensor
@@ -62,8 +66,8 @@ def normalize(
         Normalized tensor.
     """
 
-    x_min = x.min(axis=axis)
-    x_max = x.max(axis=axis)
+    x_min = _min(x, axis=axis)
+    x_max = _max(x, axis=axis)
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 
@@ -84,7 +88,7 @@ def standardize(x: Tensor, axis: _AxisLike | None = None) -> Tensor:
         Standardized tensor with mean 0 and variance 1.
     """
 
-    return (x - x.mean(axis=axis)) / x.var(axis=axis)
+    return (x - mean(x, axis=axis)) / var(x, axis=axis)
 
 
 def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:

@@ -2,10 +2,26 @@
 
 from typing import Callable, Literal, Optional
 
-from .._tensor_functions import identity, maximum, minimum, tensorprod, zeros
-from .._types import _AxisLike, _ShapeLike
+from .._tensor_functions._computing import maximum, minimum, tensorprod
+from .._tensor_functions._creating import identity, zeros
+from .._tensor_functions._reshaping import (
+    insert_dim,
+    pad,
+    pad_to_shape,
+    repeat,
+    reshape,
+    tile,
+    transpose,
+)
+from .._tensor_functions._selecting import argmax
+from .._tensor_functions._transforming import clip, exp, fft1d, fft2d, ifft1d, ifft2d, log
+from .._tensor_functions._transforming import max as _max
+from .._tensor_functions._transforming import mean, real, sech
+from .._tensor_functions._transforming import sum as _sum
+from .._tensor_functions._transforming import tanh as _tanh
+from .._types import ShapeError, _AxisLike, _ShapeLike
 from ..preprocessing._basic import one_hot_encode
-from ..tensors import ShapeError, Tensor
+from ..tensors import Tensor
 
 __all__ = [
     "relu",
@@ -109,13 +125,12 @@ def gelu(
     """
 
     tmp = GELU_S * (x + GELU_C * x**3)
-    y = 0.5 * x * (1 + tmp.tanh())
+    y = 0.5 * x * (1 + _tanh(tmp))
 
     if return_backward_func:
         return y, (
             lambda dy: (
-                0.5 * (1 + tmp.tanh())
-                + 0.5 * x * tmp.sech() ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
+                0.5 * (1 + _tanh(tmp)) + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
             )
             * dy
         )
@@ -141,7 +156,7 @@ def sigmoid(
     Callable[[Tensor], Tensor]], optional
         Backward function.
     """
-    y = x.exp() * (1 + x.exp()) ** -1
+    y = exp(x) * (1 + exp(x)) ** -1
 
     if return_backward_func:
         return y, (lambda dy: (y * (1 - y)) * dy)
@@ -167,7 +182,7 @@ def tanh(
     Callable[[Tensor], Tensor]], optional
         Backward function.
     """
-    y = x.tanh()
+    y = _tanh(x)
 
     if return_backward_func:
         return y, (lambda dy: (1 - y**2) * dy)
@@ -193,14 +208,16 @@ def softmax(
     Callable[[Tensor], Tensor]], optional
         Backward function.
     """
-    x = (x - x.max(axis=-1, keepdims=True)).exp()
-    y = x / x.sum(axis=-1, keepdims=True)
+    x = exp(x - _max(x, axis=-1, keepdims=True))
+    y = x / _sum(x, axis=-1, keepdims=True)
 
     if return_backward_func:
 
         def backward(dy: Tensor) -> Tensor:
-            sm_ = y.insert_dim(-1).tile(y.shape[-1], -1)
-            return ((sm_ * (identity(y.shape[-1]) - sm_.T)) @ dy.insert_dim(-1)).reshape(y.shape)
+            sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
+            return reshape(
+                sm_ * (identity(y.shape[-1]) - transpose(sm_)) @ insert_dim(dy, -1), y.shape
+            )
 
         return y, backward
     return y, None
@@ -224,8 +241,8 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     if temperature == 0:
         raise ValueError("Temperature cannot be 0.")
 
-    x = ((x - x.max(axis=-1, keepdims=True)) / temperature).exp()
-    return x / x.sum(axis=-1, keepdims=True)
+    x = exp((x - _max(x, axis=-1, keepdims=True)) / temperature)
+    return x / _sum(x, axis=-1, keepdims=True)
 
 
 def linear(
@@ -252,7 +269,7 @@ def linear(
         Backward function.
     """
 
-    y = x @ w.T
+    y = x @ transpose(w)
     if b is not None:
         y += b
 
@@ -264,17 +281,17 @@ def linear(
 
             # weight grads
             if w.requires_grad:
-                dw = dy.T @ x
+                dw = transpose(dy) @ x
                 if x.ndim > 2:  # sum over all batch dimensions
                     axes = tuple(range(x.ndim - 2))
-                    dw = dw.sum(axis=axes)
+                    dw = _sum(dw, axis=axes)
             else:
                 dw = None
 
             # bias grads
             if b is not None and b.requires_grad:
                 axes = tuple(range(x.ndim - 1))
-                db = dy.sum(axis=axes)  # sum over all batch dimensions
+                db = _sum(dy, axis=axes)  # sum over all batch dimensions
             else:
                 db = None
 
@@ -350,7 +367,7 @@ def _pad1d_from_str(
 
 def _pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
     widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
-    return x.pad(widths)
+    return pad(x, widths)
 
 
 def _dilate1d(x: Tensor, dilation: int) -> Tensor:
@@ -367,10 +384,9 @@ def _dilate1d(x: Tensor, dilation: int) -> Tensor:
 def _convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
     # convolution
     cdtype = "complex64"
-    conv = (
-        (x.fft1d(dtype=cdtype) * f.fft1d(n=x.shape[-1], dtype=cdtype))
-        .ifft1d(dtype=cdtype)
-        .real(dtype=x.dtype)
+    conv = real(
+        ifft1d(fft1d(x, dtype=cdtype) * fft1d(f, n=x.shape[-1], dtype=cdtype), dtype=cdtype),
+        dtype=x.dtype,
     )
 
     # slicing
@@ -443,7 +459,7 @@ def _pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
 
 def _pad2d(x: Tensor, padding: tuple[tuple[int, int], ...]) -> Tensor:
     widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
-    return x.pad(widths)
+    return pad(x, widths)
 
 
 def _dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
@@ -468,10 +484,9 @@ def _convolve2d(
 ) -> Tensor:
     # convolution
     cdtype = "complex64"
-    conv = (
-        (x.fft2d(dtype=cdtype) * f.fft2d(s=x.shape[-2:], dtype=cdtype))
-        .ifft2d(dtype=cdtype)
-        .real(dtype=x.dtype)
+    conv = real(
+        ifft2d(fft2d(x, dtype=cdtype) * fft2d(f, s=x.shape[-2:], dtype=cdtype), dtype=cdtype),
+        dtype=x.dtype,
     )
 
     # slicing
@@ -516,8 +531,8 @@ def upsample2d(
     """
     sf1, sf2 = scaling_factors
     ax1, ax2 = axes
-    x_str = x.repeat(sf1, ax1).repeat(sf2, ax2)
-    return x_str if x_str.shape == shape else x_str.pad_to_shape(shape)
+    x_str = repeat(repeat(x, sf1, ax1), sf2, ax2)
+    return x_str if x_str.shape == shape else pad_to_shape(x_str, shape)
 
 
 def maxpooling2d(
@@ -546,7 +561,7 @@ def maxpooling2d(
 
     # maxpooling
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
-    y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).max(axis=(-3, -1))
+    y = _max(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
 
     if return_backward_func:
         y_ups = upsample2d(y, kernel_size, x.shape)
@@ -586,7 +601,7 @@ def avgpooling2d(
 
     # avgpooling
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
-    y = x_crop.reshape((B, C, Yi // Ky, Ky, Xi // Kx, Kx)).mean(axis=(-3, -1))
+    y = mean(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
 
     if return_backward_func:
         backward = (
@@ -631,7 +646,7 @@ def lookup_embedding(
         def backward(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
             if embedding_table.requires_grad:
-                return (x.T @ dy).sum(axis=0)
+                return _sum(transpose(x) @ dy, axis=0)
 
         return y, backward
 
@@ -660,7 +675,7 @@ def mean_squared_error(
         Backward function.
     """
     dif = y.float() - t.float()
-    loss = (dif**2).mean()
+    loss = mean(dif**2)
 
     backward = (lambda: dif * 2 / tensorprod(y.shape)) if return_backward_func else None
 
@@ -692,7 +707,7 @@ def cross_entropy(
     """
     probs, _ = softmax(y.float(), False)
     t = one_hot_encode(t.int(), y.shape[-1])
-    loss = -((probs + eps) * t).sum(-1).log().mean()
+    loss = -mean(log(_sum((probs + eps) * t, axis=-1)))
 
     backward = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_backward_func else None
 
@@ -721,7 +736,7 @@ def binary_cross_entropy(
         Backward function.
     """
     c = 100
-    loss = -(t * y.log().clip(-c, c) + (1 - t) * (1 - y).log().clip(-c, c)).mean()
+    loss = -mean(t * clip(log(y), -c, c) + (1 - t) * clip(log(1 - y), -c, c))
 
     backward = (
         (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape))
@@ -747,7 +762,7 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    return (y_pred.argmax(-1) == y_true).sum() / tensorprod(y_pred.shape[:-1])
+    return _sum(argmax(y_pred, -1) == y_true) / tensorprod(y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
@@ -767,6 +782,6 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
     Tensor
         R2 score.
     """
-    ssr = ((y_true - y_pred) ** 2).sum()
-    sst = ((y_true - y_true.mean()) ** 2).sum()
+    ssr = _sum((y_true - y_pred) ** 2)
+    sst = _sum((y_true - mean(y_true)) ** 2)
     return 1 - ssr / (sst + eps)

@@ -3,7 +3,9 @@
 from abc import abstractmethod
 from typing import Generator, Optional
 
-from ..._tensor_functions import concatenate, ones, tensorsum
+from ..._tensor_functions._combining import concatenate, split
+from ..._tensor_functions._computing import tensorsum
+from ..._tensor_functions._creating import ones
 from ..._types import _DeviceLike, _DtypeLike, _ShapeLike
 from ...tensors import Tensor
 from ..parameter import Parameter
@@ -223,7 +225,7 @@ class ParallelConcat(Container):
             splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
 
             def _backward(dy: Tensor) -> Tensor:
-                dy_splits = dy.split(splits, axis=self.concat_axis)
+                dy_splits = split(dy, splits=splits, axis=self.concat_axis)
                 return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
 
             self._backward = _backward

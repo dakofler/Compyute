@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from ...._tensor_functions._reshaping import moveaxis, reshape
 from ...._types import _ShapeLike
 from ....tensors import Tensor
 from .._module import Module
@@ -26,10 +27,10 @@ class Reshape(Module):
         self.output_shape = output_shape
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x.reshape((x.shape[0],) + self.output_shape)
+        y = reshape(x, shape=(x.shape[0],) + self.output_shape)
 
         if self.training:
-            self._backward = lambda dy: dy.reshape(x.shape)
+            self._backward = lambda dy: reshape(dy, shape=x.shape)
 
         return y
 
@@ -38,10 +39,10 @@ class Flatten(Module):
     """Flatten layer used to flatten tensors not including the batch dimension."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x.reshape((x.shape[0], -1))
+        y = reshape(x, shape=(x.shape[0], -1))
 
         if self.training:
-            self._backward = lambda dy: dy.reshape(x.shape)
+            self._backward = lambda dy: reshape(dy, shape=x.shape)
 
         return y
 
@@ -66,9 +67,9 @@ class Moveaxis(Module):
         self.to_axis = to_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        y = x.moveaxis(self.from_axis, self.to_axis)
+        y = moveaxis(x, from_axis=self.from_axis, to_axis=self.to_axis)
 
         if self.training:
-            self._backward = lambda dy: dy.moveaxis(self.to_axis, self.from_axis)
+            self._backward = lambda dy: moveaxis(dy, from_axis=self.from_axis, to_axis=self.to_axis)
 
         return y
