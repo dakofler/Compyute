@@ -4,7 +4,6 @@ from typing import Optional
 
 from ...._tensor import Tensor
 from ...._tensor_functions._creating import empty_like, zeros, zeros_like
-from ...._tensor_functions._reshaping import transpose
 from ...._tensor_functions._transforming import sum as _sum
 from ...._tensor_functions._transforming import tanh
 from ...._types import _DtypeLike
@@ -110,7 +109,7 @@ class Recurrent(Module):
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += transpose(dx_h[:, t]) @ h[:, t - 1]
+                        self.w_h.grad += dx_h[:, t].T @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
@@ -288,7 +287,7 @@ class LSTM(Module):
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += transpose(difgo_preact[:, t]) @ h[:, t - 1]
+                        self.w_h.grad += difgo_preact[:, t].T @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)

@@ -5,15 +5,7 @@ from typing import Callable, Literal, Optional
 from .._tensor import Tensor
 from .._tensor_functions._computing import maximum, minimum, tensorprod
 from .._tensor_functions._creating import identity, zeros
-from .._tensor_functions._reshaping import (
-    insert_dim,
-    pad,
-    pad_to_shape,
-    repeat,
-    reshape,
-    tile,
-    transpose,
-)
+from .._tensor_functions._reshaping import insert_dim, pad, pad_to_shape, repeat, reshape, tile
 from .._tensor_functions._selecting import argmax
 from .._tensor_functions._transforming import clip, exp, fft1d, fft2d, ifft1d, ifft2d, log
 from .._tensor_functions._transforming import max as _max
@@ -215,9 +207,7 @@ def softmax(
 
         def backward(dy: Tensor) -> Tensor:
             sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
-            return reshape(
-                sm_ * (identity(y.shape[-1]) - transpose(sm_)) @ insert_dim(dy, -1), y.shape
-            )
+            return reshape(sm_ * (identity(y.shape[-1]) - sm_.T) @ insert_dim(dy, -1), y.shape)
 
         return y, backward
     return y, None
@@ -269,7 +259,7 @@ def linear(
         Backward function.
     """
 
-    y = x @ transpose(w)
+    y = x @ w.T
     if b is not None:
         y += b
 
@@ -281,7 +271,7 @@ def linear(
 
             # weight grads
             if w.requires_grad:
-                dw = transpose(dy) @ x
+                dw = dy.T @ x
                 if x.ndim > 2:  # sum over all batch dimensions
                     axes = tuple(range(x.ndim - 2))
                     dw = _sum(dw, axis=axes)
@@ -646,7 +636,7 @@ def lookup_embedding(
         def backward(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
             if embedding_table.requires_grad:
-                return _sum(transpose(x) @ dy, axis=0)
+                return _sum(x.T @ dy, axis=0)
 
         return y, backward
 

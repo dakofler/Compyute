@@ -145,6 +145,11 @@ class Tensor:
         """Tensor strides."""
         return self._data.strides
 
+    @property
+    def T(self) -> Tensor:
+        """Transposed tensor."""
+        return Tensor(self._engine.moveaxis(self._data, -2, -1))
+
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
