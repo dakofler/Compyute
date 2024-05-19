@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from ...._tensor import Tensor
 from ...._types import _DtypeLike
 from ....random import normal
-from ....tensors import Tensor
 from ...functional import lookup_embedding
 from ...parameter import Parameter
 from .._module import Module

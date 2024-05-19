@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from .._tensor import Tensor
 from .._types import _AxisLike, _ShapeLike
 from ..engine import _get_engine
-from ..tensors import Tensor
 from ._creating import identity
 
 __all__ = [

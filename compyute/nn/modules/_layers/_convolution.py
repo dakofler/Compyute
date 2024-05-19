@@ -2,12 +2,12 @@
 
 from typing import Literal, Optional
 
+from ...._tensor import Tensor
 from ...._tensor_functions._creating import zeros
 from ...._tensor_functions._reshaping import add_dims, flip, insert_dim, reshape
 from ...._tensor_functions._transforming import sum as _sum
 from ...._types import _DtypeLike
 from ....random import uniform
-from ....tensors import Tensor
 from ...functional import avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ...parameter import Parameter
 from .._module import Module

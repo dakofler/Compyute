@@ -34,7 +34,8 @@ def _check_device_availability(device: _DeviceLike):
         raise AttributeError(f"Device {device} is not available.")
 
 
-DEVICE_ENGINES = {"cpu": numpy, "cuda": cupy}
+DEVICE_TO_ENGINE: dict[str, ModuleType] = {"cpu": numpy, "cuda": cupy}
+ARRAY_TO_DEVICE: dict[type, str] = {numpy.ndarray: "cpu", cupy.ndarray: "cuda"}
 
 
 def _get_engine(device: _DeviceLike) -> ModuleType:
@@ -42,8 +43,8 @@ def _get_engine(device: _DeviceLike) -> ModuleType:
 
     Parameters
     ----------
-    device : DeviceLike | None, optional
-        Computation device, options are "cpu" and "cuda". If None, "cpu" is used.
+    device : _DeviceLike
+        Computation device.
 
     Returns
     -------
@@ -51,27 +52,30 @@ def _get_engine(device: _DeviceLike) -> ModuleType:
         NumPy or CuPy module.
     """
     _check_device_availability(device)
-    return DEVICE_ENGINES[device]
+    return DEVICE_TO_ENGINE.get(device, numpy)
 
 
-def _infer_device(data: _ArrayLike | _ScalarLike) -> _DeviceLike:
+def _infer_device(array: _ArrayLike | _ScalarLike) -> _DeviceLike:
     """Infers the device the data is stored on.
+
+    Parameters
+    ----------
+    array : _ArrayLike | _ScalarLike
+        Computation device, options are "cpu" and "cuda". If None, "cpu" is used.
 
     Returns
     -------
     DeviceLike
         The device the data is stored on."""
-    if isinstance(data, cupy.ndarray):
-        return "cuda"
-    return "cpu"
+    return ARRAY_TO_DEVICE.get(type(array), "cpu")
 
 
-def _numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
+def _numpy_to_cupy(numpy_array: numpy.ndarray) -> cupy.ndarray:
     """Converts a NumPy array to a CuPy array.
 
     Parameters
     ----------
-    np_array : numpy.ndarray
+    numpy_array : numpy.ndarray
         NumPy array.
 
     Returns
@@ -80,15 +84,15 @@ def _numpy_to_cupy(np_array: numpy.ndarray) -> cupy.ndarray:
         CuPy array.
     """
     _check_device_availability("cuda")
-    return cupy.array(np_array)
+    return cupy.array(numpy_array)
 
 
-def _cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
+def _cupy_to_numpy(cupy_array: cupy.ndarray) -> numpy.ndarray:
     """Converts a CuPy array to a NumPy array.
 
     Parameters
     ----------
-    cp_array : cupy.ndarray
+    cupy_array : cupy.ndarray
         CuPy array.
 
     Returns
@@ -96,4 +100,4 @@ def _cupy_to_numpy(cp_array: cupy.ndarray) -> numpy.ndarray:
     numpy.ndarray
         NumPy array.
     """
-    return cupy.asnumpy(cp_array)
+    return cupy.asnumpy(cupy_array)

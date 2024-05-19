@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from .._tensor import Tensor, _as_tensor
 from .._types import _AxisLike
 from ..engine import _get_engine
-from ..tensors import Tensor, _as_tensor
 
 __all__ = ["argmax", "get_diagonal", "tril", "triu", "unique"]
 

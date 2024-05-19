@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ....tensors import Tensor
+from ...._tensor import Tensor
 from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
 from .._module import Module
 

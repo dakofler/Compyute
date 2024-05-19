@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from .._tensor import Tensor
 from .._types import _DeviceLike, _DtypeLike, _ScalarLike, _ShapeLike
 from ..engine import _get_engine
-from ..tensors import Tensor
 
 __all__ = [
     "arange",

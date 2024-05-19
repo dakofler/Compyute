@@ -2,6 +2,7 @@
 
 from typing import Callable, Literal, Optional
 
+from .._tensor import Tensor
 from .._tensor_functions._computing import maximum, minimum, tensorprod
 from .._tensor_functions._creating import identity, zeros
 from .._tensor_functions._reshaping import (
@@ -21,7 +22,6 @@ from .._tensor_functions._transforming import sum as _sum
 from .._tensor_functions._transforming import tanh as _tanh
 from .._types import ShapeError, _AxisLike, _ShapeLike
 from ..preprocessing._basic import one_hot_encode
-from ..tensors import Tensor
 
 __all__ = [
     "relu",

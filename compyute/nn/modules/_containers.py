@@ -3,11 +3,11 @@
 from abc import abstractmethod
 from typing import Generator, Optional
 
+from ..._tensor import Tensor
 from ..._tensor_functions._combining import concatenate, split
 from ..._tensor_functions._computing import tensorsum
 from ..._tensor_functions._creating import ones
 from ..._types import _DeviceLike, _DtypeLike, _ShapeLike
-from ...tensors import Tensor
 from ..parameter import Parameter
 from ._module import Module
 

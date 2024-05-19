@@ -2,13 +2,13 @@
 
 from typing import Optional
 
+from ...._tensor import Tensor
 from ...._tensor_functions._creating import empty_like, zeros, zeros_like
 from ...._tensor_functions._reshaping import transpose
 from ...._tensor_functions._transforming import sum as _sum
 from ...._tensor_functions._transforming import tanh
 from ...._types import _DtypeLike
 from ....random import uniform
-from ....tensors import Tensor
 from ...functional import linear, sigmoid
 from ...parameter import Parameter
 from .._module import Module

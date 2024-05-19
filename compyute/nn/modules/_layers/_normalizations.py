@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from ...._tensor import Tensor
 from ...._tensor_functions._computing import tensorprod
 from ...._tensor_functions._creating import ones, zeros
 from ...._tensor_functions._reshaping import reshape, squeeze
@@ -9,7 +10,6 @@ from ...._tensor_functions._transforming import mean as _mean
 from ...._tensor_functions._transforming import sum as _sum
 from ...._tensor_functions._transforming import var as _var
 from ...._types import _DtypeLike, _ShapeLike
-from ....tensors import Tensor
 from ...parameter import Parameter
 from .._module import Module
 

@@ -42,11 +42,11 @@ def tensor(
 
     Parameters
     ----------
-    data : ArrayLike | ScalarLike
+    data : _ArrayLike | _ScalarLike
         Data to initialize the tensor.
-    device : DeviceLike, optional
+    device : _DeviceLike, optional
         Device the tensor should be stored on. If None it is inferred from the data.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Data type of tensor data. If None it is inferred from the data.
     copy: bool, optional
         If true, the data object is copied (may impact performance), by default False.
@@ -70,7 +70,7 @@ class Tensor:
 
         Parameters
         ----------
-        data : ArrayLike
+        data : _ArrayLike
             Data to initialize the tensor.
         requires_grad: bool, optional
             Whether the tensor requires gradients, by default True.
@@ -122,12 +122,12 @@ class Tensor:
 
     @property
     def dtype(self) -> _DtypeLike:
-        """Tensor datatype."""
+        """Tensor data type."""
         return str(self._data.dtype)
 
     @property
     def ndim(self) -> int:
-        """Tensor dimensions."""
+        """Number of tensor dimensions."""
         return self._data.ndim
 
     @property
@@ -287,8 +287,8 @@ class Tensor:
 
         Parameters
         ----------
-        dtype : str
-            Datatype of tensor elements.
+        dtype : _DtypeLike
+            Datatype to convert the tensor to.
 
         Returns
         -------
@@ -330,7 +330,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def copy(self) -> Tensor:
-        """Creates a copy of the tensor."""
+        """Returns a copy of the tensor."""
         t = Tensor(self._data.copy(), requires_grad=self.requires_grad)
         t.grad = None if self.grad is None else self.grad.copy()
         return t

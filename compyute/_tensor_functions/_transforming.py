@@ -1,10 +1,10 @@
 """Tensor transformation functions module"""
 
-from typing import Optional
+from typing import Optional, Sequence
 
-from .._types import _AxisLike, _ComplexLike, _DtypeLike, _ScalarLike, _ShapeLike
+from .._tensor import Tensor, _as_tensor, tensor
+from .._types import _ArrayLike, _AxisLike, _ComplexLike, _DtypeLike, _ScalarLike, _ShapeLike
 from ..engine import _get_engine
-from ..tensors import Tensor, _as_tensor, tensor
 
 __all__ = [
     "sum",
@@ -33,6 +33,8 @@ __all__ = [
     "fft2d",
     "ifft2d",
     "real",
+    "clip",
+    "histogram",
 ]
 
 
@@ -41,7 +43,7 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the sum is computed, by default None.
@@ -63,7 +65,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the product is computed, by default None.
@@ -85,7 +87,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the mean is computed, by default None.
@@ -109,7 +111,7 @@ def var(
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the variance is computed, by default None.
@@ -134,7 +136,7 @@ def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the standard deviation is computed, by default None.
@@ -156,7 +158,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the minimum is computed, by default None.
@@ -178,7 +180,7 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis over which the maximum is computed, by default None.
@@ -200,7 +202,7 @@ def round(x: Tensor, decimals: int) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     decimals : int
         Decimal places of rounded values.
@@ -288,7 +290,7 @@ def fft1d(
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n : int, optional
         Length of the transformed axis of the output, by default None.
@@ -317,7 +319,7 @@ def ifft1d(
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n : int, optional
         Length of the transformed axis of the output, by default None.
@@ -346,7 +348,7 @@ def fft2d(
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n : ShapeLike, optional
         Shape (length of each transformed axis) of the output, by default None.
@@ -375,7 +377,7 @@ def ifft2d(
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n : ShapeLike, optional
         Shape (length of each transformed axis) of the output, by default None.
@@ -399,7 +401,7 @@ def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     dtype : DtypeLike, optional
         Datatype of the output tensor, by default None.
@@ -417,7 +419,7 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     min_value : float, optional
         Lower bound, by default None. If None, no clipping is performed on this edge.
@@ -430,3 +432,43 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
         Tensor containing clipped values.
     """
     return Tensor(_get_engine(x.device).clip(x.data, min_value, max_value))
+
+
+def histogram(
+    x: Tensor,
+    bins: int | Tensor = 10,
+    range: Optional[tuple[float, float]] = None,
+    density: bool = False,
+    weights: Optional[Tensor] = None,
+) -> tuple[Tensor, Tensor]:
+    """Compute the histogram of a dataset.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    bins : int | 1D Tensor
+        If int, defines the number of equal-width bins.
+        If tensor, defines the sequence of bin edges including the rightmost edge.
+        By default 10.
+    range : tuple[float, float], optional
+        Defines the range of the bins, by default None.
+    density : bool, optional
+        Whether to compute the density instead of the count, by default False.
+    weights: Tensor, optional
+        Each value in input contributes its associated weight
+        towards its bin’s result, by default None.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the histogram values.
+    Tensor
+        Tensor containing the bin edges.
+    """
+    b = bins.data if isinstance(bins, Tensor) else bins
+    w = weights.data if weights is not None else None
+    hist, bin_edges = _get_engine(x.device).histogram(
+        x.data, bins=b, range=range, density=density, weights=w
+    )
+    return Tensor(hist), Tensor(bin_edges)

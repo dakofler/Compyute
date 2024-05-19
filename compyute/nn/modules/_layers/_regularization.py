@@ -2,8 +2,8 @@
 
 from typing import Optional
 
+from ...._tensor import Tensor
 from ....random import multinulli
-from ....tensors import Tensor
 from .._module import Module
 
 __all__ = ["Dropout"]

@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..tensors import Tensor
+from .._tensor import Tensor
 
 __all__ = ["Parameter"]
 

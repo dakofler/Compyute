@@ -5,11 +5,12 @@ from __future__ import annotations
 import pickle
 import re
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import regex
 from tqdm.auto import trange
 
-from ..tensors import Tensor, tensor
+from .._tensor import Tensor, tensor
 
 __all__ = [
     "CharacterTokenizer",
@@ -80,7 +81,7 @@ class CharacterTokenizer(Tokenizer):
 
         Parameters
         ----------
-        tokens : Tensor
+        token_ids : Tensor
             Tensor of token_ids to be decoded.
 
         Returns
@@ -98,7 +99,7 @@ class WordTokenizer(Tokenizer):
         super().__init__()
         self.oov_token = oov_token
 
-    def fit(self, text: str, vocab_size: int | None = None) -> None:
+    def fit(self, text: str, vocab_size: Optional[int] = None) -> None:
         """Fits the tokenizer to text.
 
         Parameters

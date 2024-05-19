@@ -1,5 +1,8 @@
 """basic preprocessing module"""
 
+from typing import Optional
+
+from .._tensor import Tensor
 from .._tensor_functions._creating import identity
 from .._tensor_functions._transforming import max as _max
 from .._tensor_functions._transforming import mean
@@ -7,7 +10,6 @@ from .._tensor_functions._transforming import min as _min
 from .._tensor_functions._transforming import var
 from .._types import _AxisLike
 from ..random import shuffle
-from ..tensors import Tensor
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
@@ -15,12 +17,12 @@ __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 def split_train_val_test(
     x: Tensor, ratio_val: float = 0.1, ratio_test: float = 0.1
 ) -> tuple[Tensor, Tensor, Tensor]:
-    """Splits a tensor along axis 0 into three seperate tensor using a given ratio.
+    """Splits a tensor along axis 0 into three seperate tensors using a given ratio.
 
     Parameters
     ----------
     x : Tensor
-        Tensor to be split.
+        Input tensor.
     ratio_val : float, optional
         Size ratio of the validation split, by default 0.1.
     ratio_test : float, optional
@@ -28,8 +30,12 @@ def split_train_val_test(
 
     Returns
     -------
-    tuple[Tensor, Tensor, Tensor]
-        Train, validation and test tensors.
+    Tensor
+        Train split.
+    Tensor
+        Validation split.
+    Tensor
+        Test split.
     """
     x_shuffled = shuffle(x)[0]
     n1 = int(len(x_shuffled) * (1 - ratio_val - ratio_test))
@@ -42,7 +48,7 @@ def split_train_val_test(
 
 def normalize(
     x: Tensor,
-    axis: _AxisLike | None = None,
+    axis: Optional[_AxisLike] = None,
     l_bound: int = 0,
     u_bound: int = 1,
 ) -> Tensor:
@@ -51,8 +57,8 @@ def normalize(
     Parameters
     ----------
     x : Tensor
-        Tensor to be normalized.
-    axis : AxisLike | None, optional
+        Input tensor.
+    axis : _AxisLike, optional
         Axes over which normalization is applied, by default None.
         If None, the flattended tensor is normalized.
     l_bound : int, optional
@@ -71,14 +77,17 @@ def normalize(
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 
-def standardize(x: Tensor, axis: _AxisLike | None = None) -> Tensor:
+def standardize(
+    x: Tensor,
+    axis: Optional[_AxisLike] = None,
+) -> Tensor:
     """Standardizes a tensor to mean 0 and variance 1.
 
     Parameters
     ----------
     x : Tensor
         Tensor to be standardized.
-    axis : AxisLike | None, optional
+    axis : _AxisLike, optional
         Axes over which standardization is applied, by default None.
         If None, the flattended tensor is standardized.
 
@@ -115,4 +124,4 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     if x.dtype not in {"int", "int8", "int16", "int32", "int64"}:
         raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
 
-    return identity(num_classes, "int32", x.device)[x]
+    return identity(n=num_classes, dtype="int32", device=x.device)[x]

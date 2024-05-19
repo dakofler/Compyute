@@ -4,9 +4,9 @@ import operator
 from functools import reduce
 from typing import Iterable
 
+from .._tensor import Tensor
 from .._types import _ScalarLike
 from ..engine import _get_engine
-from ..tensors import Tensor
 
 __all__ = [
     "maximum",

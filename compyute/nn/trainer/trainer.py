@@ -2,8 +2,8 @@
 
 from typing import Any, Literal, Optional
 
+from ..._tensor import Tensor
 from ..._types import _ScalarLike
-from ...tensors import Tensor
 from ..dataloaders import DataLoader
 from ..modules._module import Module
 from .callbacks import Callback

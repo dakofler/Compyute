@@ -1,9 +1,9 @@
 """Random functions module"""
 
+from ._tensor import Tensor, tensor
 from ._types import _DeviceLike, _DtypeLike, _ShapeLike
 from .engine import _get_engine
 from .engine import gpu_available as _gpu_available
-from .tensors import Tensor, tensor
 
 __all__ = [
     "normal",
@@ -17,7 +17,7 @@ __all__ = [
 
 
 def set_seed(seed: int) -> None:
-    """Sets the seed for RNG for reproducability.
+    """Sets the seed of the random number generator for reproducability.
 
     Parameters
     ----------
@@ -40,15 +40,15 @@ def normal(
 
     Parameters
     ----------
-    ShapeLike
+    _ShapeLike
         Shape of the new tensor.
     mean : float, optional
         Mean of random values, by default 0.
     std : float, optional
         Standard deviation of random values, by default 1.
-    dtype: str, optional
+    dtype: _DtypeLike, optional
         Datatype of the tensor data, by default "float64".
-    device: str, optional
+    device: _DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -70,15 +70,15 @@ def uniform(
 
     Parameters
     ----------
-    ShapeLike
+    _ShapeLike
         Shape of the new tensor.
     low : float, optional
         Lower bound for random values, by default 0.
     high : float, optional
         Upper bound for random values, by default 1.
-    dtype: str, optional
+    dtype: _DtypeLike, optional
         Datatype of the tensor data, by default "float64".
-    device: str, optional
+    device: _DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -100,15 +100,15 @@ def uniform_int(
 
     Parameters
     ----------
-    ShapeLike
+    _ShapeLike
         Shape of the new tensor.
     low : int
         Lower bound for random values.
     high : int
         Upper bound for random values.
-    dtype: str, optional
+    dtype: _DtypeLike, optional
         Datatype of the tensor data, by default "int32".
-    device: str, optional
+    device: _DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -126,9 +126,9 @@ def permutation(n: int, dtype: _DtypeLike = "int32", device: _DeviceLike = "cpu"
     ----------
     n : int
         Length of the permuted range.
-    dtype: str, optional
+    dtype: _DtypeLike, optional
         Datatype of the tensor data, by default "int32".
-    device: str, optional
+    device: _DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
@@ -149,7 +149,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
         If an int, values are drawn from arange(x).
     p : Tensor
         Corresponding probablitity distribution.
-    shape : ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -169,9 +169,9 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = "cpu") -> Tens
     ----------
     p : float
         Probability of success.
-    shape : ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
-    device: str, optional
+    device: _DeviceLike, optional
         The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
 
     Returns
