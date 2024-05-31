@@ -78,7 +78,7 @@ class Tensor:
         self.data = data
         self.requires_grad = requires_grad
         self.grad: Optional[Tensor] = None
-        self.__iterator: int = 0
+        self._iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -173,13 +173,13 @@ class Tensor:
         self._data[_as_arraylike(key)] = _as_arraylike(value)
 
     def __iter__(self) -> Tensor:
-        self.__iterator = 0
+        self._iterator = 0
         return self
 
     def __next__(self) -> Tensor | _ScalarLike:
-        if self.__iterator < self.shape[0]:
-            data = self[self.__iterator]
-            self.__iterator += 1
+        if self._iterator < self.shape[0]:
+            data = self[self._iterator]
+            self._iterator += 1
             return data
         raise StopIteration
 

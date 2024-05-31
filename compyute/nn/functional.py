@@ -207,7 +207,9 @@ def softmax(
 
         def backward(dy: Tensor) -> Tensor:
             sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
-            return reshape(sm_ * (identity(y.shape[-1]) - sm_.T) @ insert_dim(dy, -1), y.shape)
+            return reshape(
+                sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape
+            )
 
         return y, backward
     return y, None

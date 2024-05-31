@@ -22,10 +22,10 @@ class Module(ABC):
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
-        self.__device: _DeviceLike = "cpu"
-        self.__retain_values: bool = False
-        self.__training: bool = False
-        self.__trainable: bool = True
+        self._device: _DeviceLike = "cpu"
+        self._retain_values: bool = False
+        self._training: bool = False
+        self._trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -34,15 +34,15 @@ class Module(ABC):
     @property
     def device(self) -> _DeviceLike:
         """Device the module tensors are stored on."""
-        return self.__device
+        return self._device
 
     def to_device(self, device: _DeviceLike) -> None:
         """Moves the module to the specified device."""
-        if device == self.__device:
+        if device == self._device:
             return
 
         _check_device_availability(device)
-        self.__device = device
+        self._device = device
 
         if self.y is not None:
             self.y.to_device(device)
@@ -53,22 +53,22 @@ class Module(ABC):
     @property
     def retain_values(self) -> bool:
         """Whether module parameters are trainable."""
-        return self.__retain_values
+        return self._retain_values
 
     def set_retain_values(self, value: bool) -> None:
         """Whether module parameters are trainable."""
-        self.__retain_values = value
+        self._retain_values = value
 
     @property
     def trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self.__trainable
+        return self._trainable
 
     def set_trainable(self, value: bool) -> None:
         """Whether the module parameters are trainable."""
-        if self.__trainable == value:
+        if self._trainable == value:
             return
-        self.__trainable = value
+        self._trainable = value
 
         for parameter in self.parameters:
             parameter.requires_grad = value
@@ -76,11 +76,11 @@ class Module(ABC):
     @property
     def training(self) -> bool:
         """Module training mode."""
-        return self.__training
+        return self._training
 
     def set_training(self, value: bool) -> None:
         """Module training mode."""
-        self.__training = value
+        self._training = value
 
     @property
     def parameters(self) -> Generator[Parameter, None, None]:

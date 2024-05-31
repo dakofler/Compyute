@@ -28,7 +28,7 @@ class Container(Module):
             Container label.
         """
         super().__init__(label)
-        self.__modules = list(args) if len(args) > 0 else None
+        self._modules = list(args) if len(args) > 0 else None
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -46,8 +46,8 @@ class Container(Module):
     @property
     def modules(self) -> list[Module]:
         """Returns the list of modules."""
-        if self.__modules is not None:
-            return self.__modules
+        if self._modules is not None:
+            return self._modules
         return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
 
     def add(self, module: Module) -> None:
@@ -58,10 +58,10 @@ class Container(Module):
         module : Module
             Module to add to the container.
         """
-        if self.__modules is None:
-            self.__modules = [module]
+        if self._modules is None:
+            self._modules = [module]
         else:
-            self.__modules.append(module)
+            self._modules.append(module)
 
     @property
     def parameters(self) -> Generator[Parameter, None, None]:
