@@ -2,9 +2,9 @@
 
 import torch
 
-from compyute.nn.modules._blocks import SkipConnection
-from compyute.nn.modules._containers import Sequential
-from compyute.nn.modules._layers import Linear, ReLU
+from src.compyute.nn.modules._blocks import SkipConnection
+from src.compyute.nn.modules._containers import Sequential
+from src.compyute.nn.modules._layers import Linear, ReLU
 from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout, X = (10, 20, 30, 40)

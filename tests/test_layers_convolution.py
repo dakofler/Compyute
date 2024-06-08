@@ -1,14 +1,9 @@
 """Convolutional layer tests"""
 
 import torch
-from compyute.nn import (
-    Convolution1d,
-    Convolution2d,
-    MaxPooling2d,
-    AvgPooling2d,
-)
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn import AvgPooling2d, Convolution1d, Convolution2d, MaxPooling2d
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout, Y, X, K = (10, 3, 16, 15, 15, 5)
 

@@ -1,9 +1,9 @@
 """Optimizers tests"""
 
 import torch
-from compyute.nn.trainer.optimizers import SGD, Adam, AdamW, NAdam
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn.trainer.optimizers import SGD, Adam, AdamW, NAdam
+from tests.test_utils import get_params, get_vals_float, validate
 
 SHAPE = (10, 20)
 ITER = 10

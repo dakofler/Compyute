@@ -1,10 +1,10 @@
 """Embedding layer tests"""
 
 import torch
-from compyute.nn import Embedding
-from compyute.random import uniform_int
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn import Embedding
+from src.compyute.random import uniform_int
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout, X = (10, 20, 30, 40)
 

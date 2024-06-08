@@ -2,8 +2,8 @@
 
 import torch
 
-from compyute.nn.modules._containers import Sequential
-from compyute.nn.modules._layers import LSTM, Recurrent
+from src.compyute.nn.modules._containers import Sequential
+from src.compyute.nn.modules._layers import LSTM, Recurrent
 from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Ch, X = (10, 20, 30, 40)

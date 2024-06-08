@@ -2,8 +2,8 @@
 
 import torch
 
-from compyute.nn.modules._containers import ParallelAdd, ParallelConcat, Sequential
-from compyute.nn.modules._layers import Linear
+from src.compyute.nn.modules._containers import ParallelAdd, ParallelConcat, Sequential
+from src.compyute.nn.modules._layers import Linear
 from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout = (10, 20, 30)

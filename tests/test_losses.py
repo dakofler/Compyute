@@ -1,9 +1,9 @@
 """Losses tests"""
 
 import torch
-from compyute.nn.trainer.losses import MeanSquaredError, BinaryCrossEntropy, CrossEntropy
-from tests.test_utils import get_vals_float, validate, get_vals_int
 
+from src.compyute.nn.trainer.losses import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
+from tests.test_utils import get_vals_float, get_vals_int, validate
 
 SHAPE2D = (20, 5)
 SHAPE3D = (20, 10, 5)

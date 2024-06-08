@@ -1,9 +1,9 @@
 """Normalization layer tests"""
 
 import torch
-from compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
-from tests.test_utils import get_vals_float, validate
 
+from src.compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
+from tests.test_utils import get_vals_float, validate
 
 SHAPE3D = (10, 20, 30)
 SHAPE4D = (10, 20, 30, 40)
