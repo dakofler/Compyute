@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit.
 
-## The Toolbox
+## Usage
 
 There are example-notebooks included that show how to use the toolbox and its `Tensor` object.
 
@@ -168,8 +168,11 @@ Models can also be saved and loaded later on.
 nn.save_module(model, "my_model.cp")
 ```
 
+## Author
+Daniel Kofler - AI Research Associate ([dkofler@outlook.com](mailto:dkofler@outlook.com))
+
 ## License
-This code base is available under the MIT License.
+[MIT](https://choosealicense.com/licenses/mit/)
 
 ## Final Notes
 I use this project to gain a deeper understanding of the inner workings of neural networks. Therefore, project is a work in progress and possibly will forever be, as I am planning to constantly add new features and optimizations. The code is by far not perfect, as I am still learning with every new feature that is added. If you have any suggestions or find any bugs, please don't hesitate to contact me.
