@@ -9,7 +9,7 @@ from typing import Any, Callable, Generator, Iterable, Optional
 from ..._tensor import Tensor
 from ..._types import ShapeError, _DeviceLike
 from ...engine import _check_device_availability
-from ..parameter import Parameter
+from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
 
@@ -46,6 +46,9 @@ class Module(ABC):
 
         if self.y is not None:
             self.y.to_device(device)
+
+        for b in self.buffers:
+            b.to_device(device)
 
         for p in self.parameters:
             p.to_device(device)
@@ -84,8 +87,13 @@ class Module(ABC):
 
     @property
     def parameters(self) -> Generator[Parameter, None, None]:
-        """Returns the list of module parameters."""
+        """Returns module parameters."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
+
+    @property
+    def buffers(self) -> Generator[Buffer, None, None]:
+        """Returns module buffers."""
+        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Buffer))
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS

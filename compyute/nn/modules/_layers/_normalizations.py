@@ -10,7 +10,7 @@ from ...._tensor_functions._transforming import mean as _mean
 from ...._tensor_functions._transforming import sum as _sum
 from ...._tensor_functions._transforming import var as _var
 from ...._types import _DtypeLike, _ShapeLike
-from ...parameter import Parameter
+from ...parameter import Buffer, Parameter
 from .._module import Module
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
@@ -58,8 +58,8 @@ class Batchnorm1d(Module):
         self.b = Parameter(zeros((channels,), dtype), label="b")
 
         # buffers
-        self.rmean = zeros((channels,), dtype)
-        self.rvar = ones((channels,), dtype)
+        self.rmean = Buffer(zeros((channels,), dtype), label="rmean")
+        self.rvar = Buffer(ones((channels,), dtype), label="rvar")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
@@ -119,18 +119,6 @@ class Batchnorm1d(Module):
 
         return y
 
-    def to_device(self, device: str) -> None:
-        """Moves the tensor to a specified device.
-
-        Parameters
-        ----------
-        device : str
-            Device to move the tensor to. Valid options are "cpu" and "cuda".
-        """
-        self.rmean.to_device(device)
-        self.rvar.to_device(device)
-        super().to_device(device)
-
 
 class Batchnorm2d(Module):
     """Batch Normalization."""
@@ -174,8 +162,8 @@ class Batchnorm2d(Module):
         self.b = Parameter(zeros((channels,), dtype), label="b")
 
         # buffers
-        self.rmean = zeros((channels,), dtype)
-        self.rvar = ones((channels,), dtype)
+        self.rmean = Buffer(zeros((channels,), dtype), label="rmean")
+        self.rvar = Buffer(ones((channels,), dtype), label="rvar")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
@@ -233,20 +221,6 @@ class Batchnorm2d(Module):
             self._backward = _backward
 
         return y
-
-    def to_device(self, device: str) -> None:
-        """Moves the tensor to a specified device.
-
-        Parameters
-        ----------
-        device : str
-            Device to move the tensor to. Valid options are "cpu" and "cuda".
-        """
-
-        # necessary, because Module.to_device only moves parameters
-        super().to_device(device)
-        self.rmean.to_device(device)
-        self.rvar.to_device(device)
 
 
 class Layernorm(Module):

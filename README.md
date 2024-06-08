@@ -161,7 +161,7 @@ trainer = Trainer(
 # train model
 trainer.train(X_train, y_train, epochs=10)
 ```
-# train model
+
 Models can also be saved and loaded later on.
 
 ```python

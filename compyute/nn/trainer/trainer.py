@@ -161,15 +161,12 @@ class Trainer:
         if self.callbacks is None:
             return
         for callback in self.callbacks:
-            match on:
-                case "init":
-                    callback.on_init(self._callback_cache)
-                case "step":
-                    callback.on_step(self._callback_cache)
-                case "epoch_start":
-                    callback.on_epoch_start(self._callback_cache)
-                case "epoch_end":
-                    callback.on_epoch_end(self._callback_cache)
+            {
+                "init": callback.on_init,
+                "step": callback.on_step,
+                "epoch_start": callback.on_epoch_start,
+                "epoch_end": callback.on_epoch_end,
+            }[on](self._callback_cache)
 
     def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
         # prepare data
