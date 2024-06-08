@@ -18,11 +18,6 @@ def gpu_available() -> bool:
     return cupy.is_available()
 
 
-# create list of available devices
-available_devices = ["cpu"] + ["cuda"] if gpu_available() else []
-print(f"Compyute: available devices {available_devices}")
-
-
 def _check_device_availability(device: _DeviceLike):
     """Checks if the specified device is available.
 
@@ -30,12 +25,8 @@ def _check_device_availability(device: _DeviceLike):
     -------
     AttributeError
         If the specified device is not available."""
-    if device not in available_devices:
+    if device not in ["cpu"] + (["cuda"] if gpu_available() else []):
         raise AttributeError(f"Device {device} is not available.")
-
-
-DEVICE_TO_ENGINE: dict[str, ModuleType] = {"cpu": numpy, "cuda": cupy}
-ARRAY_TO_DEVICE: dict[type, str] = {numpy.ndarray: "cpu", cupy.ndarray: "cuda"}
 
 
 def _get_engine(device: _DeviceLike) -> ModuleType:
@@ -52,7 +43,7 @@ def _get_engine(device: _DeviceLike) -> ModuleType:
         NumPy or CuPy module.
     """
     _check_device_availability(device)
-    return DEVICE_TO_ENGINE.get(device, numpy)
+    return {"cpu": numpy, "cuda": cupy}.get(device, numpy)
 
 
 def _infer_device(array: _ArrayLike | _ScalarLike) -> _DeviceLike:
@@ -67,7 +58,7 @@ def _infer_device(array: _ArrayLike | _ScalarLike) -> _DeviceLike:
     -------
     DeviceLike
         The device the data is stored on."""
-    return ARRAY_TO_DEVICE.get(type(array), "cpu")
+    return {numpy.ndarray: "cpu", cupy.ndarray: "cuda"}.get(type(array), "cpu")
 
 
 def _numpy_to_cupy(numpy_array: numpy.ndarray) -> cupy.ndarray:
