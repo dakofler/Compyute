@@ -62,20 +62,15 @@ class Linear(Module):
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3, 4, 5])
         x = x.astype(self.dtype)
-
-        y, linear_backward = linear(x, self.w, self.b, self.training)
+        y, grad_func = linear(x, self.w, self.b, self.training)
 
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-
-                # compute gradients
-                dx, self.w.grad, db = linear_backward(dy)
-
+                dx, self.w.grad, db = grad_func(dy)
                 if self.b is not None:
                     self.b.grad = db
-
                 return dx
 
             self._backward = _backward

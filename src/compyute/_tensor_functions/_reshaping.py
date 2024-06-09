@@ -22,6 +22,7 @@ __all__ = [
     "moveaxis",
     "squeeze",
     "flip",
+    "broadcast_to",
 ]
 
 
@@ -265,3 +266,21 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
         Tensor containing flipped values.
     """
     return Tensor(_get_engine(x.device).flip(x.data, axis=axis))
+
+
+def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
+    """Broadcast a tensor to a new shape.
+
+    Parameters
+    ----------
+    x: Tensor
+        Input tensor.
+    shape : _ShapeLike
+        Shape of the new tensor
+
+    Returns
+    -------
+    Tensor
+        Broadcasted tensor.
+    """
+    return Tensor(_get_engine(x.device).broadcast_to(x.data, shape=shape))

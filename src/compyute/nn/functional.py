@@ -5,14 +5,23 @@ from typing import Callable, Literal, Optional
 from .._tensor import Tensor
 from .._tensor_functions._computing import maximum, minimum, tensorprod
 from .._tensor_functions._creating import identity, zeros
-from .._tensor_functions._reshaping import insert_dim, pad, pad_to_shape, repeat, reshape, tile
+from .._tensor_functions._reshaping import (
+    broadcast_to,
+    flip,
+    insert_dim,
+    pad,
+    pad_to_shape,
+    repeat,
+    reshape,
+    tile,
+)
 from .._tensor_functions._selecting import argmax
 from .._tensor_functions._transforming import clip, exp, fft1d, fft2d, ifft1d, ifft2d, log
 from .._tensor_functions._transforming import max as _max
 from .._tensor_functions._transforming import mean, real, sech
 from .._tensor_functions._transforming import sum as _sum
 from .._tensor_functions._transforming import tanh as _tanh
-from .._types import ShapeError, _AxisLike, _ShapeLike
+from .._types import _AxisLike, _ShapeLike
 from ..preprocessing._basic import one_hot_encode
 
 __all__ = [
@@ -25,7 +34,11 @@ __all__ = [
     "temperature_softmax",
     "linear",
     "convolve1d",
+    "dilate1d",
+    "pad1d",
     "convolve2d",
+    "dilate2d",
+    "pad2d",
     "upsample2d",
     "maxpooling2d",
     "avgpooling2d",
@@ -41,8 +54,13 @@ GELU_S: float = 0.7978845608028654  # sqrt(2/pi)
 GELU_C: float = 0.044715
 
 
+# ----------------------------------------------------------------------------------------------
+# ACTIVATION FUNCTIONS
+# ----------------------------------------------------------------------------------------------
+
+
 def relu(
-    x: Tensor, return_backward_func: bool = False
+    x: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Rectified Linear Unit function.
 
@@ -50,25 +68,25 @@ def relu(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     y = maximum(x, 0)
 
-    if return_backward_func:
+    if return_grad_func:
         return y, (lambda dy: (y > 0) * dy)
     return y, None
 
 
 def leaky_relu(
-    x: Tensor, alpha: float = 0.01, return_backward_func: bool = False
+    x: Tensor, alpha: float = 0.01, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the leaky ReLU function.
 
@@ -78,26 +96,26 @@ def leaky_relu(
         Input tensor.
     alpha : float, optional
         Slope of the negative output, by default 0.01.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     x = x.float()
     y = maximum(x, 0) + alpha * minimum(0, x)
 
-    if return_backward_func:
+    if return_grad_func:
         return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
     return y, None
 
 
 def gelu(
-    x: Tensor, return_backward_func: bool = False
+    x: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Gaussian Error Linear Unit function.
 
@@ -105,21 +123,21 @@ def gelu(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
 
     tmp = GELU_S * (x + GELU_C * x**3)
     y = 0.5 * x * (1 + _tanh(tmp))
 
-    if return_backward_func:
+    if return_grad_func:
         return y, (
             lambda dy: (
                 0.5 * (1 + _tanh(tmp)) + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
@@ -130,7 +148,7 @@ def gelu(
 
 
 def sigmoid(
-    x: Tensor, return_backward_func: bool = False
+    x: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the sigmoid function.
 
@@ -138,25 +156,25 @@ def sigmoid(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     y = exp(x) * (1 + exp(x)) ** -1
 
-    if return_backward_func:
+    if return_grad_func:
         return y, (lambda dy: (y * (1 - y)) * dy)
     return y, None
 
 
 def tanh(
-    x: Tensor, return_backward_func: bool = False
+    x: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the hyperbolic tangent function.
 
@@ -164,25 +182,25 @@ def tanh(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     y = _tanh(x)
 
-    if return_backward_func:
+    if return_grad_func:
         return y, (lambda dy: (1 - y**2) * dy)
     return y, None
 
 
 def softmax(
-    x: Tensor, return_backward_func: bool = False
+    x: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the softmax function over the last axis.
 
@@ -190,28 +208,28 @@ def softmax(
     ----------
     x : Tensor
         Input tensor.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     x = exp(x - _max(x, axis=-1, keepdims=True))
     y = x / _sum(x, axis=-1, keepdims=True)
 
-    if return_backward_func:
+    if return_grad_func:
 
-        def backward(dy: Tensor) -> Tensor:
+        def grad_func(dy: Tensor) -> Tensor:
             sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
             return reshape(
                 sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape
             )
 
-        return y, backward
+        return y, grad_func
     return y, None
 
 
@@ -237,8 +255,13 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     return x / _sum(x, axis=-1, keepdims=True)
 
 
+# ----------------------------------------------------------------------------------------------
+# TRAINABLE LAYER FUNCTIONS
+# ----------------------------------------------------------------------------------------------
+
+
 def linear(
-    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_backward_func: bool = False
+    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Applies the linear transformation X @ W^T + b.
 
@@ -250,24 +273,24 @@ def linear(
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Linearly transformed tensor.
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
-        Backward function.
+        Gradient function.
     """
 
     y = x @ w.T
     if b is not None:
         y += b
 
-    if return_backward_func:
+    if return_grad_func:
 
-        def backward(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
             dx = dy @ w
 
@@ -289,7 +312,7 @@ def linear(
 
             return dx, dw, db
 
-        return y, backward
+        return y, grad_func
 
     return y, None
 
@@ -297,10 +320,12 @@ def linear(
 def convolve1d(
     x: Tensor,
     f: Tensor,
-    padding: Literal["causal", "full", "same", "valid"] = "valid",
+    b: Optional[Tensor] = None,
+    padding: Literal["valid", "same"] = "valid",
     stride: int = 1,
     dilation: int = 1,
-) -> Tensor:
+    return_grad_func: bool = False,
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Convolves two tensors over their last axis.
 
     Parameters
@@ -309,93 +334,184 @@ def convolve1d(
         Input tensor.
     f : Tensor
         Filter tensor.
-    padding: Literal["causal", "full", "same", "valid"], optional
-        Padding applied to a tensor before the convolution, by default "causal".
+    b : Tensor, optional
+        Bias tensor, by default None
+    padding: Literal["valid", "same"], optional
+        Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
     Returns
     -------
     Tensor
         Output tensor.
-
-    Raises
-    -------
-    ShapeError
-        If dimensions of input and filter do not match.
+    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+        Gradient function.
     """
-    if x.ndim != f.ndim:
-        raise ShapeError("Dimensions of input and filter must match.")
+    f, dil_grad_func = dilate1d(f, dilation, return_grad_func)  # (Co, Ci, F)
+    f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
 
-    if dilation > 1:
-        f = _dilate1d(f, dilation)
+    p = _pad1d_from_str(padding, f_.shape[-1])
+    x, pad_grad_func = pad1d(x, p, return_grad_func)  # (B, Ci, T)
+    x_ = insert_dim(x, 1)  # (B, 1, Ci, T)
 
-    if padding != "valid":
-        p = _pad1d_from_str(padding, f.shape[-1])
-        x = _pad1d(x, p)
+    conv, conv_grad_func = _convolve1d(x_, f_, stride, return_grad_func)  # (B, Co, Ci, T)
+    y = _sum(conv, 2)  # (B, Co, T)
 
-    y = _convolve1d(x, f, stride)
+    if b is not None:
+        y += reshape(b, (b.shape[0], 1))
 
-    # TODO: extract backward from module
+    if return_grad_func:
 
-    return y
+        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+            dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
+            dx, df = conv_grad_func(dy_)
+            dx = pad_grad_func(_sum(dx, 1))
 
+            if df is not None:
+                df = dil_grad_func(_sum(df, 0))
 
-def _pad1d_from_str(
-    padding: Literal["causal", "full", "same", "valid"], kernel_size: int
-) -> tuple[int, int]:
-    match padding:
-        case "causal":
-            return (kernel_size - 1, 0)
-        case "full":
-            k = kernel_size - 1
-        case "same":
-            k = kernel_size // 2
-        case _:
-            k = 0
-    return (k, k)
+            if b is not None and b.requires_grad:
+                db = _sum(dy, (0, 2))
+            else:
+                db = None
 
+            return dx, df, db
 
-def _pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
-    widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
-    return pad(x, widths)
+        return y, grad_func
+
+    return y, None
 
 
-def _dilate1d(x: Tensor, dilation: int) -> Tensor:
+def dilate1d(
+    x: Tensor, dilation: int, return_grad_func: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Dilates a tensor in its last axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    dilation : int
+        Dilation used.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+    """
     if dilation == 1:
-        return x
+        return x, (lambda dy: dy)
 
-    dilated_shape = (dilation * x.shape[-1] - 1,)
-    x_dilated = zeros(x.shape[:-1] + dilated_shape, x.dtype, x.device)
-    dilation_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
-    x_dilated[*dilation_slice] = x
-    return x_dilated
+    dil_shape = (dilation * x.shape[-1] - 1,)
+    x_dil = zeros(x.shape[:-1] + dil_shape, x.dtype, x.device)
+    dil_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
+    x_dil[*dil_slice] = x
+
+    if return_grad_func:
+        return x_dil, (lambda dy: dy[*dil_slice])
+
+    return x_dil, None
 
 
-def _convolve1d(x: Tensor, f: Tensor, stride: int = 1) -> Tensor:
-    # convolution
+def _pad1d_from_str(padding: Literal["valid", "same"], kernel_size: int) -> tuple[int, int]:
+    if padding == "valid":
+        return (0, 0)
+    p = kernel_size // 2
+    return (p, p)
+
+
+def pad1d(
+    x: Tensor, padding: tuple[int, int], return_grad_func: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Pads a tensor in its last axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    padding : tuple[int, int]
+        Padding width applied to the front and back of the last axis.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+    """
+    if padding == (0, 0):
+        return x, (lambda dy: dy)
+
+    widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
+    y = pad(x, widths)
+
+    if return_grad_func:
+        pad_grad_slice = [slice(None)] * (x.ndim - 1) + [slice(padding[0], -padding[0])]
+        return y, (lambda dy: dy[*pad_grad_slice])
+
+    return y, None
+
+
+def _convolve1d(
+    x: Tensor,
+    f: Tensor,
+    stride: int = 1,
+    return_grad_func: bool = False,
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
+    f_ = flip(f, -1)
+    conv = _fft_conv1d(x, f_)
+    stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
+    y = conv[*stride_slice]
+
+    if return_grad_func:
+
+        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+            # fill elements skipped by strides with zeros
+            dy_, _ = dilate1d(dy, stride)
+            dy_ = pad_to_shape(dy_, conv.shape)
+
+            # full pad dy
+            dy_, _ = pad1d(dy_, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
+            dx = _fft_conv1d(dy_, f)
+
+            dy_ = flip(dy_, axis=-1)
+            df = _fft_conv1d(dy_, x) if f.requires_grad else None
+
+            return dx, df
+
+        return y, grad_func
+
+    return y, None
+
+
+def _fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
     cdtype = "complex64"
     conv = real(
         ifft1d(fft1d(x, dtype=cdtype) * fft1d(f, n=x.shape[-1], dtype=cdtype), dtype=cdtype),
         dtype=x.dtype,
     )
-
-    # slicing
     out = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.ndim - 1) + [slice(-out, None)]
-    stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
-
-    return conv[*out_slice][*stride_slice]
+    return conv[*out_slice]
 
 
 def convolve2d(
     x: Tensor,
     f: Tensor,
-    padding: Literal["same", "valid"] = "valid",
+    b: Optional[Tensor] = None,
+    padding: Literal["valid", "same"] = "valid",
     stride: int = 1,
     dilation: int = 1,
-) -> Tensor:
+    return_grad_func: bool = False,
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Convolves two tensors over their last two axes.
 
     Parameters
@@ -404,96 +520,194 @@ def convolve2d(
         Input tensor.
     f : Tensor
         Filter tensor.
-    padding: Literal["same", "valid"], optional
-        Padding applied to a tensor before the convolution, by default "valid".
+    b : Tensor, optional
+        Bias tensor, by default None
+    padding: Literal["valid", "same"], optional
+        Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
-
-    Raises
-    -------
-    ShapeError
-        If dimensions of input and filter do not match.
+    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+        Gradient function.
     """
-    if x.ndim != f.ndim:
-        raise ShapeError("Dimensions of input and filter must match.")
+    d = (dilation, dilation)
+    f, dil_grad_func = dilate2d(f, d, return_grad_func)  # (Co, Ci, Fy, Fx)
+    f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
 
-    if dilation > 1:
-        f = _dilate2d(f, (dilation, dilation))
+    p = _pad2d_from_str(padding, f_.shape[-1])
+    x, pad_grad_func = pad2d(x, p, return_grad_func)  # (B, Ci, Y, X)
+    x_ = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
-    if padding != "valid":
-        p = _pad2d_from_str(padding, f.shape[-1])
-        x = _pad2d(x, p)
+    s = (stride, stride)
+    conv, conv_grad_func = _convolve2d(x_, f_, s, return_grad_func)  # (B, Co, Ci, Y, X)
+    y = _sum(conv, 2)  # (B, Co, Y, X) sum over in channels
 
-    y = _convolve2d(x, f, (stride, stride))
+    if b is not None:
+        y += reshape(b, (b.shape[0], 1, 1))
 
-    # TODO: extract backward from module
+    if return_grad_func:
 
-    return y
+        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+            dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
+            dx, df = conv_grad_func(dy_)
+            dx = pad_grad_func(_sum(dx, 1))  # sum over out channels
+
+            if df is not None:
+                df = dil_grad_func(_sum(df, 0))  # sum over batches
+
+            if b is not None and b.requires_grad:
+                db = _sum(dy, (0, 2, 3))  # sum over batches, Y and X
+            else:
+                db = None
+
+            return dx, df, db
+
+        return y, grad_func
+
+    return y, None
 
 
-def _pad2d_from_str(padding: Literal["same", "valid"], kernel_size: int):
-    match padding:
-        case "full":
-            k = kernel_size - 1
-        case "same":
-            k = kernel_size // 2
-        case _:
-            k = 0
-    return ((k, k), (k, k))
+def dilate2d(
+    x: Tensor, dilation: tuple[int, int], return_grad_func: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Dilates a tensor in its last two axes.
 
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    dilation : tuple[int, int]
+        Dilation used.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+    """
+    if dilation == (1, 1):
+        return x, (lambda dy: dy)
 
-def _pad2d(x: Tensor, padding: tuple[tuple[int, int], ...]) -> Tensor:
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
-    return pad(x, widths)
-
-
-def _dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
-    dilated_shape = (
+    dil_shape = (
         dilation[0] * x.shape[-2] - 1,
         dilation[1] * x.shape[-1] - 1,
     )
-    x_dilated = zeros(x.shape[:-2] + dilated_shape, x.dtype, x.device)
-    dilation_slice = (
+    x_dil = zeros(x.shape[:-2] + dil_shape, x.dtype, x.device)
+    dil_slice = (
         [slice(None)] * (x.ndim - 2)
         + [slice(None, None, dilation[0])]
         + [slice(None, None, dilation[1])]
     )
-    x_dilated[*dilation_slice] = x
-    return x_dilated
+    x_dil[*dil_slice] = x
+
+    if return_grad_func:
+        return x_dil, (lambda dy: dy[*dil_slice])
+
+    return x_dil, None
+
+
+def _pad2d_from_str(
+    padding: Literal["valid", "same"], kernel_size: int
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    if padding == "valid":
+        return ((0, 0), (0, 0))
+    p = kernel_size // 2
+    return ((p, p), (p, p))
+
+
+def pad2d(
+    x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]], return_grad_func: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Pads a tensor in its last two axes.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    padding : tuple[tuple[int, int], tuple[int, int]]
+        Padding width applied to the front and back of the last two axes.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+    """
+    if padding == ((0, 0), (0, 0)):
+        return x, (lambda dy: dy)
+
+    widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
+    y = pad(x, widths)
+
+    if return_grad_func:
+        pad_grad_slice = [slice(None)] * (x.ndim - 2) + [
+            slice(padding[0][0], -padding[0][1]),
+            slice(padding[1][0], -padding[1][1]),
+        ]
+        return y, (lambda dy: dy[*pad_grad_slice])
+
+    return y, None
 
 
 def _convolve2d(
-    x: Tensor,
-    f: Tensor,
-    strides: tuple[int, int] = (1, 1),
-) -> Tensor:
-    # convolution
+    x: Tensor, f: Tensor, strides: tuple[int, int] = (1, 1), return_grad_func: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
+    f_ = flip(f, (-2, -1))
+    conv = _fft_conv2d(x, f_)
+    stride_slice = [slice(None)] * (x.ndim - 2) + [
+        slice(None, None, strides[0]),
+        slice(None, None, strides[1]),
+    ]
+    y = conv[*stride_slice]
+
+    if return_grad_func:
+
+        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+            # fill elements skipped by strides with zeros
+            dy_, _ = dilate2d(dy, strides)
+            dy_ = pad_to_shape(dy_, conv.shape)
+
+            # full pad dy
+            dy_, _ = pad2d(
+                dy_, ((f.shape[-2] - 1, f.shape[-2] - 1), (f.shape[-1] - 1, f.shape[-1] - 1))
+            )
+            dx = _fft_conv2d(dy_, f)
+
+            dy_ = flip(dy_, axis=(-2, -1))
+            df = _fft_conv2d(dy_, x) if f.requires_grad else None
+
+            return dx, df
+
+        return y, grad_func
+
+    return y, None
+
+
+def _fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
     cdtype = "complex64"
     conv = real(
         ifft2d(fft2d(x, dtype=cdtype) * fft2d(f, s=x.shape[-2:], dtype=cdtype), dtype=cdtype),
         dtype=x.dtype,
     )
-
-    # slicing
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.ndim - 2) + [
         slice(-out_y, None),
         slice(-out_x, None),
     ]
-    stride_slice = [slice(None)] * (x.ndim - 2) + [
-        slice(None, None, strides[0]),
-        slice(None, None, strides[1]),
-    ]
-
-    return conv[*out_slice][*stride_slice]
+    return conv[*out_slice]
 
 
 def upsample2d(
@@ -528,7 +742,7 @@ def upsample2d(
 
 
 def maxpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_func: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a max pooling over the last two axes.
 
@@ -538,15 +752,15 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
@@ -555,20 +769,20 @@ def maxpooling2d(
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
     y = _max(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
 
-    if return_backward_func:
+    if return_grad_func:
         y_ups = upsample2d(y, kernel_size, x.shape)
-        backward = (
+        grad_func = (
             (lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups).int())
-            if return_backward_func
+            if return_grad_func
             else None
         )
-        return y, backward
+        return y, grad_func
 
     return y, None
 
 
 def avgpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_backward_func: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a average pooling over the last two axes.
 
@@ -578,15 +792,15 @@ def avgpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     B, C, Yi, Xi = x.shape
     Ky, Kx = kernel_size
@@ -595,19 +809,19 @@ def avgpooling2d(
     x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
     y = mean(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
 
-    if return_backward_func:
-        backward = (
+    if return_grad_func:
+        grad_func = (
             (lambda dy: upsample2d(dy, kernel_size, x.shape) / (Ky * Kx))
-            if return_backward_func
+            if return_grad_func
             else None
         )
-        return y, backward
+        return y, grad_func
 
     return y, None
 
 
 def lookup_embedding(
-    x: Tensor, embedding_table: Tensor, return_backward_func: bool = False
+    x: Tensor, embedding_table: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Optional[Tensor]]]]:
     """Performs lookup embedding on a tensor.
 
@@ -617,15 +831,15 @@ def lookup_embedding(
         Input tensor of integer dtype used for indexing into the embedding table.
     embedding_table : Tensor
         Tensor of embedding values.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Output tensor.
     Callable[[Tensor], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     if x.dtype not in ("int32", "int64"):
         raise ValueError(f"Input must be int32 or int64, got {x.dtype}.")
@@ -633,20 +847,25 @@ def lookup_embedding(
     x = one_hot_encode(x, embedding_table.shape[0]).astype(embedding_table.dtype)
     y = x @ embedding_table
 
-    if return_backward_func:
+    if return_grad_func:
 
-        def backward(dy: Tensor) -> Optional[Tensor]:
+        def grad_func(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
             if embedding_table.requires_grad:
                 return _sum(x.T @ dy, axis=0)
 
-        return y, backward
+        return y, grad_func
 
     return y, None
 
 
+# ----------------------------------------------------------------------------------------------
+# LOSS FUNCTIONS
+# ----------------------------------------------------------------------------------------------
+
+
 def mean_squared_error(
-    y: Tensor, t: Tensor, return_backward_func: bool = False
+    y: Tensor, t: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the mean squared error loss.
 
@@ -656,26 +875,26 @@ def mean_squared_error(
         A model's predictions.
     t : Tensor
         Target values.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Mean squared error loss.
     Callable[[], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     dif = y.float() - t.float()
     loss = mean(dif**2)
 
-    backward = (lambda: dif * 2 / tensorprod(y.shape)) if return_backward_func else None
+    grad_func = (lambda: dif * 2 / tensorprod(y.shape)) if return_grad_func else None
 
-    return loss, backward
+    return loss, grad_func
 
 
 def cross_entropy(
-    y: Tensor, t: Tensor, eps: float = 1e-8, return_backward_func: bool = False
+    y: Tensor, t: Tensor, eps: float = 1e-8, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the cross entropy loss.
 
@@ -687,27 +906,27 @@ def cross_entropy(
         Target integer class labels.
     eps : float, optional
         Constant used for numerical stability, by default 1e-8.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Cross entropy loss.
     Callable[[], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     probs, _ = softmax(y.float(), False)
     t = one_hot_encode(t.int(), y.shape[-1])
     loss = -mean(log(_sum((probs + eps) * t, axis=-1)))
 
-    backward = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_backward_func else None
+    grad_func = (lambda: (probs - t) / tensorprod(y.shape[:-1])) if return_grad_func else None
 
-    return loss, backward
+    return loss, grad_func
 
 
 def binary_cross_entropy(
-    y: Tensor, t: Tensor, return_backward_func: bool = False
+    y: Tensor, t: Tensor, return_grad_func: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the cross entropy loss.
 
@@ -717,26 +936,29 @@ def binary_cross_entropy(
         Model logits.
     t : Tensor
         Binary target values.
-    return_backward_func: bool, optional
-        Whether to also return the according backward function, by default False.
+    return_grad_func: bool, optional
+        Whether to also return the according gradient function, by default False.
 
     Returns
     -------
     Tensor
         Cross entropy loss.
     Callable[[], Tensor]], optional
-        Backward function.
+        Gradient function.
     """
     c = 100
     loss = -mean(t * clip(log(y), -c, c) + (1 - t) * clip(log(1 - y), -c, c))
 
-    backward = (
-        (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape))
-        if return_backward_func
-        else None
+    grad_func = (
+        (lambda: (-t / y + (1 - t) / (1 - y)) / tensorprod(y.shape)) if return_grad_func else None
     )
 
-    return loss, backward
+    return loss, grad_func
+
+
+# ----------------------------------------------------------------------------------------------
+# METRIC FUNCTIONS
+# ----------------------------------------------------------------------------------------------
 
 
 def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
