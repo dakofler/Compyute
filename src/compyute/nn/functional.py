@@ -353,6 +353,7 @@ def convolve1d(
     """
     f, dil_grad_func = dilate1d(f, dilation, return_grad_func)  # (Co, Ci, F)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
+    f_.requires_grad = f.requires_grad
 
     p = _pad1d_from_str(padding, f_.shape[-1])
     x, pad_grad_func = pad1d(x, p, return_grad_func)  # (B, Ci, T)
@@ -541,6 +542,7 @@ def convolve2d(
     d = (dilation, dilation)
     f, dil_grad_func = dilate2d(f, d, return_grad_func)  # (Co, Ci, Fy, Fx)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
+    f_.requires_grad = f.requires_grad
 
     p = _pad2d_from_str(padding, f_.shape[-1])
     x, pad_grad_func = pad2d(x, p, return_grad_func)  # (B, Ci, Y, X)

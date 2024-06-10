@@ -210,11 +210,11 @@ class Batchnorm2d(Module):
 
                 # gamma grads
                 if self.w.requires_grad:
-                    self.w.grad = _sum(x_h * dy, axis=axis)
+                    self.w.grad += _sum(x_h * dy, axis=axis)
 
                 # beta grads
                 if self.b.requires_grad:
-                    self.b.grad = _sum(dy, axis=axis)
+                    self.b.grad += _sum(dy, axis=axis)
 
                 return dx
 
@@ -288,11 +288,11 @@ class Layernorm(Module):
 
                 # gamma grads
                 if self.w.requires_grad:
-                    self.w.grad = _sum(x_h * dy, axis=0)
+                    self.w.grad += _sum(x_h * dy, axis=0)
 
                 # beta grads
                 if self.b.requires_grad:
-                    self.b.grad = _sum(dy, axis=0)
+                    self.b.grad += _sum(dy, axis=0)
 
                 return dx
 

@@ -68,9 +68,14 @@ class Linear(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
-                dx, self.w.grad, db = grad_func(dy)
-                if self.b is not None:
-                    self.b.grad = db
+                dx, dw, db = grad_func(dy)
+
+                if dw is not None:
+                    self.w.grad += dw
+
+                if db is not None:
+                    self.b.grad += db
+
                 return dx
 
             self._backward = _backward

@@ -187,6 +187,7 @@ class Tensor:
         return _as_tensor(self._data + _as_arraylike(other))
 
     def __radd__(self, other: _ScalarLike) -> Tensor:
+        other = 0.0 if other is None else other  # for gradient accumulation
         return self + other
 
     def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:

@@ -30,6 +30,11 @@ class Optimizer(ABC):
         for p in value:
             self.state[p] = {}
 
+    def reset_grads(self) -> None:
+        """Resets parameter gradients."""
+        for p in self.parameters:
+            p.grad = None
+
     @abstractmethod
     def step(self) -> None:
         """Updates parameters using their gradients."""

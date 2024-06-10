@@ -181,6 +181,7 @@ class Trainer:
             self._callback_cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
+        self.optimizer.reset_grads()
         self.model.backward(self.loss.backward())
 
         # update parameters

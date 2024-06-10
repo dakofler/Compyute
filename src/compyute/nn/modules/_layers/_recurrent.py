@@ -93,8 +93,6 @@ class Recurrent(Module):
                     dh = dy
 
                 dx_h = empty_like(x_h)
-                if self.w_h.requires_grad:
-                    self.w_h.grad = zeros_like(self.w_h)
 
                 for t in range(x.shape[1] - 1, -1, -1):
                     # hidden state gradients
@@ -114,13 +112,16 @@ class Recurrent(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad = _sum(dx_h, axis=(0, 1))
+                    self.b_h.grad += _sum(dx_h, axis=(0, 1))
 
                 # input projection gradients
-                dx, self.w_i.grad, db_i = x_h_backward(dx_h)
+                dx, dw_i, db_i = x_h_backward(dx_h)
 
-                if self.b_i is not None:
-                    self.b_i.grad = db_i
+                if dw_i is not None:
+                    self.w_i.grad += dw_i
+
+                if db_i is not None:
+                    self.b_i.grad += db_i
 
                 return dx
 
@@ -231,9 +232,6 @@ class LSTM(Module):
                 dc = empty_like(c)
                 difgo_preact = empty_like(ifgo)
 
-                if self.w_h.requires_grad:
-                    self.w_h.grad = zeros_like(self.w_h)
-
                 for t in range(x.shape[1] - 1, -1, -1):
 
                     # hidden state gradients
@@ -268,17 +266,17 @@ class LSTM(Module):
                     # do_t = tanh(c_t) * output grads
                     difgo_t[:, i3:] = tanh(c[:, t]) * out_grad
 
-                    # pre actiation input and forget gate gradients
+                    # pre activation input and forget gate gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
                     difgo_preact[:, t, :i2] = (
                         ifgo[:, t, :i2] * (1 - ifgo[:, t, :i2]) * difgo_t[:, :i2]
                     )
 
-                    # pre actiation node gradients
+                    # pre activation node gradients
                     # dg_t = dtanh(g_t) * dg_t
                     difgo_preact[:, t, i2:i3] = (1 - ifgo[:, t, i2:i3] ** 2) * difgo_t[:, i2:i3]
 
-                    # pre actiation output gate gradients
+                    # pre activation output gate gradients
                     # do_t = dsigmoid(o_t) * do_t
                     difgo_preact[:, t, i3:] = (
                         ifgo[:, t, i3:] * (1 - ifgo[:, t, i3:]) * difgo_t[:, i3:]
@@ -292,13 +290,16 @@ class LSTM(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad = _sum(difgo_preact, axis=(0, 1))
+                    self.b_h.grad += _sum(difgo_preact, axis=(0, 1))
 
                 # input projection gradients
-                dx, self.w_i.grad, db_i = x_h_backward(difgo_preact)
+                dx, dw_i, db_i = x_h_backward(difgo_preact)
 
-                if self.b_i is not None:
-                    self.b_i.grad = db_i
+                if dw_i is not None:
+                    self.w_i.grad += dw_i
+
+                if db_i is not None:
+                    self.b_i.grad += db_i
 
                 return dx
 

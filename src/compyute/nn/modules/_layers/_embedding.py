@@ -54,8 +54,9 @@ class Embedding(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> None:
-                dy = dy.astype(self.dtype)
-                self.w.grad = grad_func(dy)
+                if self.w.requires_grad:
+                    dy = dy.astype(self.dtype)
+                    self.w.grad += grad_func(dy)
 
             self._backward = _backward
 
