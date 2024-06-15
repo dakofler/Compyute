@@ -4,18 +4,11 @@ import operator
 from functools import reduce
 from typing import Iterable
 
-from .._tensor import Tensor
+from .._tensor import Tensor, _as_tensor
 from .._types import _ScalarLike
 from ..engine import _get_engine
 
-__all__ = [
-    "maximum",
-    "minimum",
-    "tensorsum",
-    "tensorprod",
-    "inner",
-    "outer",
-]
+__all__ = ["maximum", "minimum", "tensorsum", "tensorprod", "inner", "outer", "einsum", "dot"]
 
 
 def maximum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
@@ -114,12 +107,12 @@ def tensorprod(tensors: Iterable[Tensor | _ScalarLike]) -> Tensor | _ScalarLike:
     return reduce(operator.mul, tensors)
 
 
-def inner(*args: Tensor) -> Tensor:
+def inner(*tensors: Tensor) -> Tensor:
     """Returns the inner product of tensors.
 
     Parameters
     ----------
-    *args : Tensor
+    *tensors : Tensor
         Tensors to compute the inner product of.
 
     Returns
@@ -127,11 +120,11 @@ def inner(*args: Tensor) -> Tensor:
     Tensor
         Inner product.
     """
-    device = args[0].device
-    return Tensor(_get_engine(device).inner(*[t.data for t in args]))
+    device = tensors[0].device
+    return _as_tensor(_get_engine(device).inner(*[t.data for t in tensors]))
 
 
-def outer(*args: Tensor) -> Tensor:
+def outer(*tensors: Tensor) -> Tensor:
     """Returns the outer product of tensors.
 
     Parameters
@@ -144,5 +137,46 @@ def outer(*args: Tensor) -> Tensor:
     Tensor
         Outer product.
     """
-    device = args[0].device
-    return Tensor(_get_engine(device).outer(*[t.data for t in args]))
+    device = tensors[0].device
+    return Tensor(_get_engine(device).outer(*[t.data for t in tensors]))
+
+
+def dot(x: Tensor, y: Tensor) -> Tensor:
+    """Dot product of two tensors.
+
+    Parameters
+    ----------
+    x : Tensor
+        First tensor.
+    y : Tensor
+        Second tensor.
+
+    Returns
+    -------
+    Tensor
+        Dot product of the tensors.
+    """
+    if x.ndim != 1 or y.ndim != 1:
+        raise AttributeError("Inputs must be 1D-tensors.")
+    return inner(x, y)
+
+
+def einsum(subscripts, *tensors: Tensor) -> Tensor:
+    """Evaluates the Einstein summation.
+
+    Parameters
+    ----------
+    subscriptsstr : str
+        Specifies the subscripts for summation as comma separated list of subscript labels.
+        An implicit (classical Einstein summation) calculation is performed unless the explicit
+        indicator ‘->’ is included as well as subscript labels of the precise output form.
+    *tensors : Tensor
+        Tensors to compute the outer product of.
+
+    Returns
+    -------
+    Tensor
+        Result based on the Einstein summation.
+    """
+    device = tensors[0].device
+    return _as_tensor(_get_engine(device).einsum(subscripts, *[t.data for t in tensors]))
