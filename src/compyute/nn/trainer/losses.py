@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Optional
 
-from ..._tensor import Tensor
-from ..functional import binary_cross_entropy, cross_entropy, mean_squared_error
+from ...base_tensor import Tensor
+from ..functional.losses import binary_cross_entropy, cross_entropy, mean_squared_error
 
 __all__ = ["BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 

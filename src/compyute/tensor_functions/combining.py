@@ -2,9 +2,9 @@
 
 from typing import Sequence
 
-from .._tensor import Tensor
-from .._types import _AxisLike
+from ..base_tensor import Tensor
 from ..engine import _get_engine
+from ..types import _AxisLike
 
 __all__ = [
     "append",

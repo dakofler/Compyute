@@ -2,10 +2,10 @@
 
 from typing import Optional
 
-from ...._tensor import Tensor
-from ...._tensor_functions._reshaping import moveaxis, reshape
-from ...._types import _ShapeLike
-from .._module import Module
+from ....base_tensor import Tensor
+from ....tensor_functions.reshaping import moveaxis, reshape
+from ....types import _ShapeLike
+from ..module import Module
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]
 

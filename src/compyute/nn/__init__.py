@@ -1,6 +1,7 @@
 """Compyute neural network module"""
 
-from . import functional, inits, modules, trainer
+from . import inits, modules, trainer
 from .dataloaders import *
+from .functional import activations
 from .modules import *
 from .parameter import *

@@ -6,7 +6,7 @@ from types import ModuleType
 import cupy
 import numpy
 
-from ._types import _ArrayLike, _DeviceLike, _ScalarLike
+from .types import _ArrayLike, _DeviceLike, _ScalarLike
 
 __all__ = ["gpu_available"]
 

@@ -10,7 +10,7 @@ from typing import Optional
 import regex
 from tqdm.auto import trange
 
-from .._tensor import Tensor, tensor
+from ..base_tensor import Tensor, tensor
 
 __all__ = [
     "CharacterTokenizer",

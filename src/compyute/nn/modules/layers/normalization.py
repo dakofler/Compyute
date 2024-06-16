@@ -2,16 +2,16 @@
 
 from typing import Optional
 
-from ...._tensor import Tensor
-from ...._tensor_functions._computing import tensorprod
-from ...._tensor_functions._creating import ones, zeros
-from ...._tensor_functions._reshaping import reshape, squeeze
-from ...._tensor_functions._transforming import mean as _mean
-from ...._tensor_functions._transforming import sum as _sum
-from ...._tensor_functions._transforming import var as _var
-from ...._types import _DtypeLike, _ShapeLike
+from ....base_tensor import Tensor
+from ....tensor_functions.computing import tensorprod
+from ....tensor_functions.creating import ones, zeros
+from ....tensor_functions.reshaping import reshape, squeeze
+from ....tensor_functions.transforming import mean as _mean
+from ....tensor_functions.transforming import sum as _sum
+from ....tensor_functions.transforming import var as _var
+from ....types import _DtypeLike, _ShapeLike
 from ...parameter import Buffer, Parameter
-from .._module import Module
+from ..module import Module
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 

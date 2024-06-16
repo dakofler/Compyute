@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .._tensor import Tensor
+from ..base_tensor import Tensor
 
 __all__ = ["Buffer", "Parameter"]
 

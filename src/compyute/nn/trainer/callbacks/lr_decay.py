@@ -3,8 +3,8 @@
 import math
 from typing import Any
 
-from ...._tensor_functions._computing import tensorsum
-from ._callback import Callback
+from ....tensor_functions.computing import tensorsum
+from .callback import Callback
 
 __all__ = ["ExponentialLR", "StepLR", "MultistepLR", "AdaptiveLR"]
 

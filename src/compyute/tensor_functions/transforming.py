@@ -2,9 +2,9 @@
 
 from typing import Optional, Sequence
 
-from .._tensor import Tensor, _as_tensor, tensor
-from .._types import _ArrayLike, _AxisLike, _ComplexLike, _DtypeLike, _ScalarLike, _ShapeLike
+from ..base_tensor import Tensor, _as_tensor, tensor
 from ..engine import _get_engine
+from ..types import _ArrayLike, _AxisLike, _ComplexLike, _DtypeLike, _ScalarLike, _ShapeLike
 
 __all__ = [
     "sum",

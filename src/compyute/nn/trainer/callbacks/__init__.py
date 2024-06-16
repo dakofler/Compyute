@@ -1,6 +1,6 @@
 """Training callbacks module"""
 
-from ._callback import *
-from ._early_stopping import *
-from ._logging import *
-from ._lr_decay import *
+from .callback import *
+from .early_stopping import *
+from .logging import *
+from .lr_decay import *

@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 import numpy
 
-from ._types import _ArrayLike, _DeviceLike, _DtypeLike, _ScalarLike, _ShapeLike
 from .engine import (
     _check_device_availability,
     _cupy_to_numpy,
@@ -15,6 +14,7 @@ from .engine import (
     _infer_device,
     _numpy_to_cupy,
 )
+from .types import _ArrayLike, _DeviceLike, _DtypeLike, _ScalarLike, _ShapeLike
 
 __all__ = ["tensor", "Tensor"]
 

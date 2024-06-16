@@ -2,11 +2,11 @@
 
 from typing import Literal, Optional
 
-from ..._types import _DtypeLike
-from ._containers import ParallelAdd, Sequential
-from ._layers import Convolution1d, Convolution2d, Linear
-from ._layers._activations import get_act_from_str
-from ._module import Module
+from ...types import _DtypeLike
+from .containers import ParallelAdd, Sequential
+from .layers import Convolution1d, Convolution2d, Linear
+from .layers.activations import get_act_from_str
+from .module import Module
 
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
 

@@ -3,10 +3,10 @@
 from functools import wraps
 from typing import Callable, Generator, Optional
 
-from .._tensor import Tensor
-from .._tensor_functions._combining import concatenate
-from .._types import _DeviceLike
+from ..base_tensor import Tensor
 from ..random import shuffle
+from ..tensor_functions.combining import concatenate
+from ..types import _DeviceLike
 
 __all__ = ["DataLoader"]
 

@@ -1,9 +1,9 @@
 """Random functions module"""
 
-from ._tensor import Tensor, tensor
-from ._types import _DeviceLike, _DtypeLike, _ShapeLike
+from .base_tensor import Tensor, tensor
 from .engine import _get_engine
 from .engine import gpu_available as _gpu_available
+from .types import _DeviceLike, _DtypeLike, _ShapeLike
 
 __all__ = [
     "normal",

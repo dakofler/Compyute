@@ -6,9 +6,9 @@ import pickle
 from abc import ABC
 from typing import Any, Callable, Generator, Iterable, Optional
 
-from ..._tensor import Tensor
-from ..._types import ShapeError, _DeviceLike
+from ...base_tensor import Tensor
 from ...engine import _check_device_availability
+from ...types import ShapeError, _DeviceLike
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]

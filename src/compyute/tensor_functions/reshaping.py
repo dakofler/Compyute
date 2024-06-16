@@ -2,10 +2,10 @@
 
 from typing import Optional
 
-from .._tensor import Tensor
-from .._types import _AxisLike, _ShapeLike
+from ..base_tensor import Tensor
 from ..engine import _get_engine
-from ._creating import identity
+from ..types import _AxisLike, _ShapeLike
+from .creating import identity
 
 __all__ = [
     "diagonal",

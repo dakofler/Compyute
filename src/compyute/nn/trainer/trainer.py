@@ -2,10 +2,10 @@
 
 from typing import Any, Literal, Optional
 
-from ..._tensor import Tensor
-from ..._types import _ScalarLike
+from ...base_tensor import Tensor
+from ...types import _ScalarLike
 from ..dataloaders import DataLoader
-from ..modules._module import Module
+from ..modules.module import Module
 from .callbacks import Callback
 from .losses import Loss, _get_loss
 from .metrics import Metric, _get_metric

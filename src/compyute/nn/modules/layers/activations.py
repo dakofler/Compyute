@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from ...._tensor import Tensor
-from ...functional import gelu, leaky_relu, relu, sigmoid, tanh
-from .._module import Module
+from ....base_tensor import Tensor
+from ...functional.activations import gelu, leaky_relu, relu, sigmoid, tanh
+from ..module import Module
 
 __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
 

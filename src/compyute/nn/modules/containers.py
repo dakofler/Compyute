@@ -3,13 +3,13 @@
 from abc import abstractmethod
 from typing import Generator, Optional
 
-from ..._tensor import Tensor
-from ..._tensor_functions._combining import concatenate, split
-from ..._tensor_functions._computing import tensorsum
-from ..._tensor_functions._creating import ones
-from ..._types import _DeviceLike, _DtypeLike, _ShapeLike
+from ...base_tensor import Tensor
+from ...tensor_functions.combining import concatenate, split
+from ...tensor_functions.computing import tensorsum
+from ...tensor_functions.creating import ones
+from ...types import _DeviceLike, _DtypeLike, _ShapeLike
 from ..parameter import Parameter
-from ._module import Module
+from .module import Module
 
 __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 

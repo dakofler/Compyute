@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Generator, Optional
 
-from ..._tensor_functions._computing import tensorprod
+from ...tensor_functions.computing import tensorprod
 from ..parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]

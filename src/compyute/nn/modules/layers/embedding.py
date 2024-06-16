@@ -2,12 +2,12 @@
 
 from typing import Optional
 
-from ...._tensor import Tensor
-from ...._types import _DtypeLike
+from ....base_tensor import Tensor
 from ....random import normal
-from ...functional import lookup_embedding
+from ....types import _DtypeLike
+from ...functional.embeddings import lookup_embedding
 from ...parameter import Parameter
-from .._module import Module
+from ..module import Module
 
 __all__ = ["Embedding"]
 

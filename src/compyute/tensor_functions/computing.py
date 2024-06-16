@@ -4,9 +4,9 @@ import operator
 from functools import reduce
 from typing import Iterable
 
-from .._tensor import Tensor, _as_tensor
-from .._types import _ScalarLike
+from ..base_tensor import Tensor, _as_tensor
 from ..engine import _get_engine
+from ..types import _ScalarLike
 
 __all__ = ["maximum", "minimum", "tensorsum", "tensorprod", "inner", "outer", "einsum", "dot"]
 

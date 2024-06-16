@@ -2,14 +2,14 @@
 
 from typing import Optional
 
-from .._tensor import Tensor
-from .._tensor_functions._creating import identity
-from .._tensor_functions._transforming import max as _max
-from .._tensor_functions._transforming import mean
-from .._tensor_functions._transforming import min as _min
-from .._tensor_functions._transforming import var
-from .._types import _AxisLike
+from ..base_tensor import Tensor
 from ..random import shuffle
+from ..tensor_functions.creating import identity
+from ..tensor_functions.transforming import max as _max
+from ..tensor_functions.transforming import mean
+from ..tensor_functions.transforming import min as _min
+from ..tensor_functions.transforming import var
+from ..types import _AxisLike
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 

@@ -4,7 +4,7 @@ from typing import Any, Iterable, Literal
 
 from tqdm.auto import tqdm
 
-from ._callback import Callback
+from .callback import Callback
 
 __all__ = ["History", "ProgressBar"]
 
