@@ -3,9 +3,10 @@
 from typing import Literal, Optional
 
 from ...types import _DtypeLike
+from .activations import get_act_from_str
 from .containers import ParallelAdd, Sequential
-from .layers import Convolution1d, Convolution2d, Linear
-from .layers.activations import get_act_from_str
+from .convolution import Convolution1d, Convolution2d
+from .linear import Linear
 from .module import Module
 
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]

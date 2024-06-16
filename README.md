@@ -55,7 +55,7 @@ z = x @ y
 z = cp.inner(x, y)
 z = cp.outer(x, y)
 
-# sum all elements of a tensor
+# aggregate elements of a tensor
 z = cp.sum(x, axis=0)
 z = cp.mean(x, axis=0)
 
@@ -101,7 +101,7 @@ Alternatively, models can also be built entirely from scratch by using custom cl
 ```python
 import compyute.nn as nn
 
-# create a block or model by ineriting from the 'Sequential' container
+# create a block or model by inheriting from the 'Sequential' container
 class MyConvBlock(nn.Sequential):
     def __init__(self):
         super().__init__(

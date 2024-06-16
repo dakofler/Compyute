@@ -2,13 +2,13 @@
 
 from typing import Literal, Optional
 
-from ....base_tensor import Tensor
-from ....random import uniform
-from ....tensor_functions.creating import zeros
-from ....types import _DtypeLike
-from ...functional.convolutions import avgpooling2d, convolve1d, convolve2d, maxpooling2d
-from ...parameter import Parameter
-from ..module import Module
+from ...base_tensor import Tensor
+from ...random import uniform
+from ...tensor_functions.creating import zeros
+from ...types import _DtypeLike
+from ..functional.convolutions import avgpooling2d, convolve1d, convolve2d, maxpooling2d
+from ..parameter import Parameter
+from .module import Module
 
 __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 

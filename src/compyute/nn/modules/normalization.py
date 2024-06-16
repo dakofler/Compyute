@@ -2,16 +2,12 @@
 
 from typing import Optional
 
-from ....base_tensor import Tensor
-from ....tensor_functions.computing import tensorprod
-from ....tensor_functions.creating import ones, zeros
-from ....tensor_functions.reshaping import reshape, squeeze
-from ....tensor_functions.transforming import mean as _mean
-from ....tensor_functions.transforming import sum as _sum
-from ....tensor_functions.transforming import var as _var
-from ....types import _DtypeLike, _ShapeLike
-from ...parameter import Buffer, Parameter
-from ..module import Module
+from ...base_tensor import Tensor
+from ...tensor_functions.creating import ones, zeros
+from ...types import _DtypeLike, _ShapeLike
+from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm
+from ..parameter import Buffer, Parameter
+from .module import Module
 
 __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 
@@ -65,53 +61,21 @@ class Batchnorm1d(Module):
         self._check_dims(x, [2, 3])
         x = x.astype(self.dtype)
 
-        dim2 = x.ndim == 2
-        axis = 0 if dim2 else (0, 2)
-        if self.training:
-            mean = _mean(x, axis=axis, keepdims=True)
-            var = _var(x, axis=axis, keepdims=True)
-            var_h = (var + self.eps) ** -0.5
-            x_h = (x - mean) * var_h
-
-            # keep running stats
-            self.rmean = self.rmean * (1 - self.m) + squeeze(mean) * self.m
-            var = _var(x, axis=axis, keepdims=True, ddof=1)
-            self.rvar = self.rvar * (1 - self.m) + squeeze(var) * self.m
-        else:
-            rvar = self.rvar if dim2 else reshape(self.rvar, shape=(*self.rvar.shape, 1))
-            rmean = self.rmean if dim2 else reshape(self.rmean, shape=(*self.rmean.shape, 1))
-            var_h = (rvar + self.eps) ** -0.5
-            x_h = (x - rmean) * var_h
-
-        weights = self.w if dim2 else reshape(self.w, shape=(*self.w.shape, 1))
-        biases = self.b if dim2 else reshape(self.b, shape=(*self.b.shape, 1))
-        y = weights * x_h + biases
+        y, self.rmean, self.rvar, grad_func = batchnorm1d(
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
+        )
 
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
+                dx, dw, db = grad_func(dy)
 
-                # input grads
-                n = tensorprod(x.shape) / x.shape[1]
-                dx = (
-                    weights
-                    * var_h
-                    / n
-                    * (
-                        n * dy
-                        - _sum(dy, axis=axis, keepdims=True)
-                        - x_h * _sum(dy * x_h, axis=axis, keepdims=True)
-                    )
-                )
+                if dw is not None:
+                    self.w.grad += dw
 
-                # gamma grads
-                if self.w.requires_grad:
-                    self.w.grad = _sum(x_h * dy, axis=axis)
-
-                # beta grads
-                if self.b.requires_grad:
-                    self.b.grad = _sum(dy, axis=axis)
+                if db is not None:
+                    self.b.grad += db
 
                 return dx
 
@@ -169,52 +133,21 @@ class Batchnorm2d(Module):
         self._check_dims(x, [4])
         x = x.astype(self.dtype)
 
-        axis = (0, 2, 3)
-        if self.training:
-            mean = _mean(x, axis=axis, keepdims=True)
-            var = _var(x, axis=axis, keepdims=True)
-            var_h = (var + self.eps) ** -0.5
-            x_h = (x - mean) * var_h
-
-            # keep running stats
-            self.rmean = self.rmean * (1 - self.m) + squeeze(mean) * self.m
-            var = _var(x, axis=axis, keepdims=True, ddof=1)
-            self.rvar = self.rvar * (1 - self.m) + squeeze(var) * self.m
-        else:
-            rvar = reshape(self.rvar, shape=(*self.rvar.shape, 1, 1))
-            rmean = reshape(self.rmean, shape=(*self.rmean.shape, 1, 1))
-            var_h = (rvar + self.eps) ** -0.5
-            x_h = (x - rmean) * var_h
-
-        weights = reshape(self.w, shape=(*self.w.shape, 1, 1))
-        biases = reshape(self.b, shape=(*self.b.shape, 1, 1))
-        y = weights * x_h + biases
+        y, self.rmean, self.rvar, grad_func = batchnorm2d(
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
+        )
 
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
+                dx, dw, db = grad_func(dy)
 
-                # input grads
-                n = tensorprod(x.shape) / x.shape[1]
-                dx = (
-                    weights
-                    * var_h
-                    / n
-                    * (
-                        n * dy
-                        - _sum(dy, axis=axis, keepdims=True)
-                        - x_h * _sum(dy * x_h, axis=axis, keepdims=True)
-                    )
-                )
+                if dw is not None:
+                    self.w.grad += dw
 
-                # gamma grads
-                if self.w.requires_grad:
-                    self.w.grad += _sum(x_h * dy, axis=axis)
-
-                # beta grads
-                if self.b.requires_grad:
-                    self.b.grad += _sum(dy, axis=axis)
+                if db is not None:
+                    self.b.grad += db
 
                 return dx
 
@@ -263,36 +196,19 @@ class Layernorm(Module):
     def forward(self, x: Tensor) -> Tensor:
         x = x.astype(self.dtype)
 
-        axes = tuple([i for i in range(1, x.ndim)])
-        var_h = (_var(x, axis=axes, keepdims=True) + self.eps) ** -0.5
-        x_h = (x - _mean(x, axis=axes, keepdims=True)) * var_h
-        y = self.w * x_h + self.b
+        y, grad_func = layernorm(x, self.w, self.b, self.eps, self.training)
 
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.astype(self.dtype)
+                dx, dw, db = grad_func(dy)
 
-                # input grads
-                n = tensorprod(x.shape[1:])
-                dx = (
-                    self.w
-                    * var_h
-                    / n
-                    * (
-                        n * dy
-                        - _sum(dy, axes, keepdims=True)
-                        - x_h * _sum(dy * x_h, axes, keepdims=True)
-                    )
-                )
+                if dw is not None:
+                    self.w.grad += dw
 
-                # gamma grads
-                if self.w.requires_grad:
-                    self.w.grad += _sum(x_h * dy, axis=0)
-
-                # beta grads
-                if self.b.requires_grad:
-                    self.b.grad += _sum(dy, axis=0)
+                if db is not None:
+                    self.b.grad += db
 
                 return dx
 

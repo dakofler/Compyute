@@ -2,13 +2,13 @@
 
 from typing import Optional
 
-from ....base_tensor import Tensor
-from ....random import uniform
-from ....tensor_functions.creating import zeros
-from ....types import _DtypeLike
-from ...functional.linear import linear
-from ...parameter import Parameter
-from ..module import Module
+from ...base_tensor import Tensor
+from ...random import uniform
+from ...tensor_functions.creating import zeros
+from ...types import _DtypeLike
+from ..functional.linear import linear
+from ..parameter import Parameter
+from .module import Module
 
 __all__ = ["Linear"]
 

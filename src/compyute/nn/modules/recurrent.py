@@ -2,16 +2,16 @@
 
 from typing import Optional
 
-from ....base_tensor import Tensor
-from ....random import uniform
-from ....tensor_functions.creating import empty_like, zeros, zeros_like
-from ....tensor_functions.transforming import sum as _sum
-from ....tensor_functions.transforming import tanh
-from ....types import _DtypeLike
-from ...functional.activations import sigmoid
-from ...functional.linear import linear
-from ...parameter import Parameter
-from ..module import Module
+from ...base_tensor import Tensor
+from ...random import uniform
+from ...tensor_functions.creating import empty_like, zeros, zeros_like
+from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import tanh
+from ...types import _DtypeLike
+from ..functional.activations import sigmoid
+from ..functional.linear import linear
+from ..parameter import Parameter
+from .module import Module
 
 __all__ = ["LSTM", "Recurrent"]
 
