@@ -5,11 +5,11 @@ from typing import Any, Literal, Optional
 from ...base_tensor import Tensor
 from ...types import _ScalarLike
 from ..dataloaders import DataLoader
+from ..losses import Loss, get_loss
+from ..metrics import Metric, get_metric
 from ..modules.module import Module
+from ..optimizers import Optimizer, get_optimizer
 from .callbacks import Callback
-from .losses import Loss, get_loss
-from .metrics import Metric, get_metric
-from .optimizers import Optimizer, get_optimizer
 
 __all__ = ["Trainer"]
 
@@ -173,7 +173,7 @@ class Trainer:
         x_batch, y_batch = batch
 
         # forward pass
-        y_pred = self.model.forward(x_batch)
+        y_pred = self.model(x_batch)
 
         # compute loss and metrics
         self._callback_cache["loss"] = self.loss(y_pred, y_batch).item()

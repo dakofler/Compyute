@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from abc import abstractmethod
-from typing import Iterable, Optional
+from typing import Iterator, Optional
 
 from ...base_tensor import Tensor
 from ...tensor_functions.combining import concatenate, split
@@ -64,7 +64,7 @@ class Container(Module):
             self._modules.append(module)
 
     @property
-    def parameters(self) -> Iterable[Parameter]:
+    def parameters(self) -> Iterator[Parameter]:
         """Returns a generator of module parameters."""
         return (p for module in self.modules for p in module.parameters)
 

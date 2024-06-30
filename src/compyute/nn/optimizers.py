@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Optional
 
-from ...tensor_functions.computing import tensorprod
-from ..parameter import Parameter
+from ..tensor_functions.computing import tensorprod
+from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 
@@ -296,13 +296,11 @@ class NAdam(Optimizer):
         self.t += 1
 
 
-OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
-
-
 def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer
-    if optimizer not in OPTIMIZERS.keys():
+    optims = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
+    if optimizer not in optims.keys():
         raise ValueError(f"Unknown optimizer {optimizer}.")
-    return OPTIMIZERS[optimizer]()
+    return optims[optimizer]()

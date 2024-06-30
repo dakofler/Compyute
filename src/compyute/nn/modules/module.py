@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pickle
 from abc import ABC
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import Tensor
 from ...engine import _check_device_availability
@@ -86,12 +86,12 @@ class Module(ABC):
         self._training = value
 
     @property
-    def parameters(self) -> Iterable[Parameter]:
+    def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
 
     @property
-    def buffers(self) -> Iterable[Buffer]:
+    def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Buffer))
 
@@ -152,6 +152,8 @@ class Module(ABC):
         Tensor, optional
             Input gradient tensor.
         """
+        if not self.training:
+            raise AttributeError("Model is not in training mode.")
         self._set_dy(dy)
         if self._backward is not None:
             return self._backward(dy)

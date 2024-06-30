@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn.trainer.losses import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
+from src.compyute.nn import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
 from tests.test_utils import get_vals_float, get_vals_int, validate
 
 SHAPE2D = (20, 5)

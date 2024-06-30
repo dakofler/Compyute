@@ -1,7 +1,7 @@
 """Dataloaders module"""
 
 from functools import wraps
-from typing import Callable, Generator, Optional
+from typing import Callable, Iterator, Optional
 
 from ..base_tensor import Tensor
 from ..random import shuffle
@@ -50,7 +50,7 @@ class DataLoader:
 
     def __call__(
         self,
-    ) -> Generator[tuple[Tensor, Optional[Tensor]], None, None]:
+    ) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
         """Yields batched data."""
         n = self.x.shape[0]
         n_steps = len(self)
