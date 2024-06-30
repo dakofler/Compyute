@@ -147,7 +147,7 @@ class Trainer:
 
         # compute loss/score for each batch to save memory
         for x_batch, y_batch in dataloader():
-            y_pred = self.model.forward(x_batch)
+            y_pred = self.model(x_batch)
             losses.append(self.loss(y_pred, y_batch).item())
             if self.metric is not None:
                 scores.append(self.metric(y_pred, y_batch).item())
