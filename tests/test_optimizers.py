@@ -1,15 +1,16 @@
 """Optimizers tests"""
 
 import torch
-from compyute.nn.trainer.optimizers import SGD, Adam, AdamW, NAdam
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn.trainer.optimizers import SGD, Adam, AdamW, NAdam
+from tests.test_utils import get_params, get_vals_float, validate
 
 SHAPE = (10, 20)
 ITER = 10
 
 
 def test_sgd() -> None:
+    """Test for the stochastic gradient descent optimizer."""
     results = []
 
     # forward
@@ -34,6 +35,7 @@ def test_sgd() -> None:
 
 
 def test_sgd_m() -> None:
+    """Test for the stochastic gradient descent optimizer using momentum."""
     results = []
 
     # forward
@@ -58,6 +60,7 @@ def test_sgd_m() -> None:
 
 
 def test_sgd_m_nesterov() -> None:
+    """Test for the stochastic gradient descent optimizer using nesterov momentum."""
     results = []
 
     # forward
@@ -82,6 +85,7 @@ def test_sgd_m_nesterov() -> None:
 
 
 def test_sgd_m_wdecay() -> None:
+    """Test for the stochastic gradient descent optimizer using weight decay."""
     results = []
 
     # forward
@@ -105,6 +109,7 @@ def test_sgd_m_wdecay() -> None:
 
 
 def test_adam() -> None:
+    """Test for the adam optimizer."""
     results = []
 
     # forward
@@ -129,6 +134,7 @@ def test_adam() -> None:
 
 
 def test_adam_wdecay() -> None:
+    """Test for the adam optimizer using weight decay."""
     results = []
 
     # forward
@@ -154,6 +160,7 @@ def test_adam_wdecay() -> None:
 
 
 def test_adamw() -> None:
+    """Test for the adamW optimizer."""
     results = []
 
     # forward
@@ -178,6 +185,7 @@ def test_adamw() -> None:
 
 
 def test_adamw_wdecay() -> None:
+    """Test for the adamW optimizer using weight decay."""
     results = []
 
     # forward
@@ -204,6 +212,7 @@ def test_adamw_wdecay() -> None:
 
 
 def test_nadam() -> None:
+    """Test for the nadam optimizer."""
     results = []
 
     # forward

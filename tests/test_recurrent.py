@@ -1,16 +1,16 @@
 """block tests"""
 
 import torch
-from compyute.nn.modules.containers import SequentialContainer
-from compyute.nn.modules.layers import LSTM, Recurrent
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn import LSTM, Recurrent, Sequential
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Ch, X = (10, 20, 30, 40)
 
 
 # Recurrent
 def test_recurrent() -> None:
+    """Test for the recurrent layer."""
     results = []
     shape_x = (B, X, Cin)
     shape_w_in_1 = (Ch, Cin)
@@ -37,8 +37,8 @@ def test_recurrent() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = SequentialContainer([Recurrent(Cin, Ch), Recurrent(Ch, Ch)])
-    compyute_module.training = True
+    compyute_module = Sequential(Recurrent(Cin, Ch), Recurrent(Ch, Ch))
+    compyute_module.set_training(True)
 
     compyute_module.modules[0].w_i = compyute_w_in_1
     compyute_module.modules[0].b_i = compyute_b_in_1
@@ -98,6 +98,7 @@ def test_recurrent() -> None:
 
 # LSTM
 def test_lstm() -> None:
+    """Test for the lstm layer."""
     results = []
     shape_x = (B, X, Cin)
 
@@ -124,8 +125,8 @@ def test_lstm() -> None:
     compyute_w_h_2, torch_w_h_2 = get_params(shape_w_h_2)
     compyute_b_h_2, torch_b_h_2 = get_params(shape_b_h_2)
 
-    compyute_module = SequentialContainer([LSTM(Cin, Ch), LSTM(Ch, Ch)])
-    compyute_module.training = True
+    compyute_module = Sequential(LSTM(Cin, Ch), LSTM(Ch, Ch))
+    compyute_module.set_training(True)
 
     compyute_module.modules[0].w_i = compyute_w_i_1
     compyute_module.modules[0].b_i = compyute_b_i_1

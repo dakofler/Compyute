@@ -3,22 +3,23 @@
 import numpy
 import torch
 
-from compyute.nn.parameter import Parameter
-from compyute.random import uniform_int, set_seed, uniform
-from compyute.tensor import Tensor
-from compyute.types import ShapeLike
-
+from src.compyute import Tensor
+from src.compyute.nn import Parameter
+from src.compyute.random import set_seed, uniform, uniform_int
+from src.compyute.types import _ShapeLike
 
 set_seed(42)
 
 
 def get_vals_float(
-    shape: ShapeLike,
+    shape: _ShapeLike,
     torch_grad: bool = True,
     device: str = "cpu",
+    low: float = -1,
+    high: float = 1,
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform(shape, dtype="float32") * 0.1
+    compyute_x = uniform(shape, dtype="float32", high=high, low=low) * 0.1
     torch_x = torch.tensor(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True
@@ -27,7 +28,7 @@ def get_vals_float(
 
 
 def get_vals_int(
-    shape: ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
+    shape: _ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
     compyute_x = uniform_int(shape, low=low, high=high, dtype="int64")
@@ -36,9 +37,7 @@ def get_vals_int(
     return compyute_x, torch_x
 
 
-def get_params(
-    shape: ShapeLike, device: str = "cpu"
-) -> tuple[Parameter, torch.nn.Parameter]:
+def get_params(shape: _ShapeLike, device: str = "cpu") -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape, dtype="float32") * 0.1
     compyute_x = Parameter(data)
@@ -47,8 +46,6 @@ def get_params(
     return compyute_x, torch_x
 
 
-def validate(
-    x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5
-) -> bool:
+def validate(x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
     return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)

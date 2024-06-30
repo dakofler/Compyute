@@ -1,14 +1,15 @@
 """Linear layer tests"""
 
 import torch
-from compyute.nn import Linear
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn import Linear
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Bn, Cin, Cout = (10, 20, 30, 40)
 
 
 def test_linear_2d() -> None:
+    """Test for the linear layer using 2d inputs."""
     results = []
     shape_x = (B, Cin)
     shape_w = (Cout, Cin)
@@ -20,7 +21,7 @@ def test_linear_2d() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Linear(Cin, Cout)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)
@@ -45,6 +46,7 @@ def test_linear_2d() -> None:
 
 
 def test_linear_nd() -> None:
+    """Test for the linear layer using nd inputs."""
     results = []
     shape_x = (B, Bn, Cin)
     shape_w = (Cout, Cin)
@@ -56,7 +58,7 @@ def test_linear_nd() -> None:
     compyute_b, torch_b = get_params(shape_b)
 
     compyute_module = Linear(Cin, Cout)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
     compyute_y = compyute_module(compyute_x)

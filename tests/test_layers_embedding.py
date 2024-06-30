@@ -1,15 +1,16 @@
 """Embedding layer tests"""
 
 import torch
-from compyute.nn import Embedding
-from compyute.random import uniform_int
-from tests.test_utils import get_vals_float, get_params, validate
 
+from src.compyute.nn import Embedding
+from src.compyute.random import uniform_int
+from tests.test_utils import get_params, get_vals_float, validate
 
 B, Cin, Cout, X = (10, 20, 30, 40)
 
 
 def test_embedding() -> None:
+    """Test for the embedding layer."""
     results = []
     shape_w = (Cin, Cout)
 
@@ -19,7 +20,7 @@ def test_embedding() -> None:
     compyute_w, torch_w = get_params(shape_w)
 
     compyute_module = Embedding(Cin, Cout)
-    compyute_module.training = True
+    compyute_module.set_training(True)
     compyute_module.w = compyute_w
     compyute_y = compyute_module(compyute_x)
 
