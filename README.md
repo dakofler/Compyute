@@ -9,7 +9,7 @@ All you need is to pip install the requirements.
 git clone https://github.com/dakofler/Compyute
 pip install -r requirements.txt
 ```
-As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit.
+As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit following the installation guide of `CuPy` (https://docs.cupy.dev/en/stable/install.html).
 
 ## Usage
 

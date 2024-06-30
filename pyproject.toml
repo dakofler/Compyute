@@ -1,6 +1,6 @@
 [project]
 name = "compyute"
-version = "0.0.5"
+version = "0.0.1"
 authors = [
   { name="Daniel Kofler", email="dkofler@outlook.com" },
 ]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pickle
 from abc import ABC
-from typing import Any, Callable, Generator, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 from ...base_tensor import Tensor
 from ...engine import _check_device_availability
@@ -86,12 +86,12 @@ class Module(ABC):
         self._training = value
 
     @property
-    def parameters(self) -> Generator[Parameter, None, None]:
+    def parameters(self) -> Iterable[Parameter]:
         """Returns module parameters."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
 
     @property
-    def buffers(self) -> Generator[Buffer, None, None]:
+    def buffers(self) -> Iterable[Buffer]:
         """Returns module buffers."""
         return (i[1] for i in self.__dict__.items() if isinstance(i[1], Buffer))
 

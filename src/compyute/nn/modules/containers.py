@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from abc import abstractmethod
-from typing import Generator, Optional
+from typing import Iterable, Optional
 
 from ...base_tensor import Tensor
 from ...tensor_functions.combining import concatenate, split
@@ -47,7 +47,7 @@ class Container(Module):
     def modules(self) -> list[Module]:
         """Returns the list of modules."""
         if self._modules is not None:
-            return self._modules
+            return [m for m in self._modules]
         return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
 
     def add(self, module: Module) -> None:
@@ -64,8 +64,8 @@ class Container(Module):
             self._modules.append(module)
 
     @property
-    def parameters(self) -> Generator[Parameter, None, None]:
-        """Returns the list of module parameters."""
+    def parameters(self) -> Iterable[Parameter]:
+        """Returns a generator of module parameters."""
         return (p for module in self.modules for p in module.parameters)
 
     def set_retain_values(self, value: bool) -> None:
@@ -133,35 +133,59 @@ class Container(Module):
         input_dtype : DtypeLike
             Data type of the expected input data.
         """
-        n = 63
+        seperator = "=" * 75
 
-        summary = [f"{self.label}\n{'-' * n}"]
-        summary += [f"\n{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s}\n"]
-        summary += ["=" * n, "\n"]
+        summary = [
+            self.label,
+            seperator,
+            f"{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
+            seperator,
+        ]
 
         x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
         retain_values = self.retain_values
         self.set_retain_values(True)
         _ = self(x)
 
-        def build_summary(module, summary, depth):
-            name = " " * depth + module.label
-            output_shape = str((-1,) + module.y.shape[1:])
-            n_params = sum(p.size for p in module.parameters)
-            summary += [f"{name:25s} {output_shape:20s} {n_params:15d}\n"]
+        module_summaries = []
 
+        def build_module_summary_dict(module: Module, summaries: list[dict], depth: int) -> None:
+            # add summary of current modules
+            s = {}
+            s["name"] = " " * depth + module.label
+            s["out_shape"] = (-1,) + module.y.shape[1:]
+            s["n_params"] = sum(p.size for p in module.parameters)
+            s["trainable"] = module.trainable
+            summaries.append(s)
+
+            # get summary of child modules
             if isinstance(module, Container):
                 for module in module.modules:
-                    build_summary(module, summary, depth + 1)
+                    build_module_summary_dict(module, summaries, depth + 1)
 
-        build_summary(self, summary, 0)
-        summary += ["=" * n]
-        n_parameters = sum(p.size for p in self.parameters)
+        build_module_summary_dict(self, module_summaries, 0)
+
+        # convert dict to list of strings
+        n_parameters = 0
+        n_train_parameters = 0
+
+        for s in module_summaries:
+            name = s["name"]
+            out_shape = str(s["out_shape"])
+            n_params = s["n_params"]
+            trainable = str(s["trainable"])
+            n_parameters += s["n_params"]
+            n_train_parameters += s["n_params"] if s["trainable"] else 0
+            summary.append(f"{name:25s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.reset()
         self.set_retain_values(retain_values)
-        summary = "".join(summary)
-        print(f"{summary}\n\nTotal parameters: {n_parameters}")
+        summary.append(seperator)
+        summary.append(f"Parameters: {n_parameters}")
+        summary.append(f"Trainable parameters: {n_train_parameters}")
+
+        summary = "\n".join(summary)
+        print(summary)
 
 
 class Sequential(Container):

@@ -7,9 +7,9 @@ from ...types import _ScalarLike
 from ..dataloaders import DataLoader
 from ..modules.module import Module
 from .callbacks import Callback
-from .losses import Loss, _get_loss
-from .metrics import Metric, _get_metric
-from .optimizers import Optimizer, _get_optimizer
+from .losses import Loss, get_loss
+from .metrics import Metric, get_metric
+from .optimizers import Optimizer, get_optimizer
 
 __all__ = ["Trainer"]
 
@@ -42,10 +42,10 @@ class Trainer:
         """
         super().__init__()
         self.model = model
-        self.optimizer = _get_optimizer(optimizer)
+        self.optimizer = get_optimizer(optimizer)
         self.optimizer.parameters = model.parameters
-        self.loss = _get_loss(loss)
-        self.metric = None if metric is None else _get_metric(metric)
+        self.loss = get_loss(loss)
+        self.metric = None if metric is None else get_metric(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
         self.callbacks = callbacks
 

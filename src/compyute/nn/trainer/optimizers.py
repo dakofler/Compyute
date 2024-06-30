@@ -1,7 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-from typing import Generator, Optional
+from typing import Iterator, Optional
 
 from ...tensor_functions.computing import tensorprod
 from ..parameter import Parameter
@@ -12,7 +12,7 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, parameters: Optional[Generator[Parameter, None, None]], lr: float) -> None:
+    def __init__(self, parameters: Optional[Iterator[Parameter]], lr: float) -> None:
         self.lr = lr
         self.state: dict = {}
         self.t: int = 1
@@ -21,12 +21,12 @@ class Optimizer(ABC):
             self.parameters = parameters
 
     @property
-    def parameters(self) -> Generator[Parameter, None, None]:
+    def parameters(self) -> Iterator[Parameter]:
         """Optimizer parameters"""
         return (p for p in self.state if isinstance(p, Parameter))
 
     @parameters.setter
-    def parameters(self, value: Generator[Parameter, None, None]) -> None:
+    def parameters(self, value: Iterator[Parameter]) -> None:
         for p in value:
             self.state[p] = {}
 
@@ -45,7 +45,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Generator[Parameter, None, None]] = None,
+        parameters: Optional[Iterator[Parameter]] = None,
         lr: float = 0.001,
         momentum: float = 0,
         nesterov: bool = False,
@@ -55,7 +55,7 @@ class SGD(Optimizer):
 
         Parameters
         ----------
-        parameters : Generator[Parameter, None, None], optional
+        parameters : Iterator[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -105,7 +105,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Generator[Parameter, None, None]] = None,
+        parameters: Optional[Iterator[Parameter]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -117,7 +117,7 @@ class Adam(Optimizer):
 
         Parameters
         ----------
-        parameters : Generator[Parameter, None, None], optional
+        parameters : Iterator[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -168,7 +168,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Generator[Parameter, None, None]] = None,
+        parameters: Optional[Iterator[Parameter]] = None,
         lr: float = 0.001,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -179,7 +179,7 @@ class AdamW(Optimizer):
 
         Parameters
         ----------
-        parameters : Generator[Parameter, None, None], optional
+        parameters : Iterator[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.001.
@@ -228,7 +228,7 @@ class NAdam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Generator[Parameter, None, None]] = None,
+        parameters: Optional[Iterator[Parameter]] = None,
         lr: float = 0.002,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -240,7 +240,7 @@ class NAdam(Optimizer):
 
         Parameters
         ----------
-        parameters : Generator[Parameter, None, None], optional
+        parameters : Iterator[Parameter], optional
             Paramters to optimize, by default None.
         lr : float, optional
             Learning rate, by default 0.002.
@@ -299,7 +299,7 @@ class NAdam(Optimizer):
 OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
 
 
-def _get_optimizer(optimizer: Optimizer | str) -> Optimizer:
+def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer
