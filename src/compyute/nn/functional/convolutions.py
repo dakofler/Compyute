@@ -479,20 +479,24 @@ def maxpooling2d(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    B, C, Yi, Xi = x.shape
+    Yi, Xi = x.shape[-2:]
     Ky, Kx = kernel_size
 
     # maxpooling
-    x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
-    y = _max(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
+    crop_slice = [slice(None)] * (x.ndim - 2) + [
+        slice(None, Yi // Ky * Ky),
+        slice(None, Xi // Kx * Kx),
+    ]
+    x_crop = x[*crop_slice]
+    pool_shape = x.shape[:-2] + (Yi // Ky, Ky, Xi // Kx, Kx)
+    y = _max(reshape(x_crop, pool_shape), axis=(-3, -1))
 
     if return_grad_func:
         y_ups = upsample2d(y, kernel_size, x.shape)
-        grad_func = (
-            (lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups).int())
-            if return_grad_func
-            else None
-        )
+
+        def grad_func(dy: Tensor) -> Tensor:
+            return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
+
         return y, grad_func
 
     return y, None
@@ -519,19 +523,23 @@ def avgpooling2d(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    B, C, Yi, Xi = x.shape
+    Yi, Xi = x.shape[-2:]
     Ky, Kx = kernel_size
 
     # avgpooling
-    x_crop = x[:, :, : Yi // Ky * Ky, : Xi // Kx * Kx]
-    y = mean(reshape(x_crop, (B, C, Yi // Ky, Ky, Xi // Kx, Kx)), axis=(-3, -1))
+    crop_slice = [slice(None)] * (x.ndim - 2) + [
+        slice(None, Yi // Ky * Ky),
+        slice(None, Xi // Kx * Kx),
+    ]
+    x_crop = x[*crop_slice]
+    pool_shape = x.shape[:-2] + (Yi // Ky, Ky, Xi // Kx, Kx)
+    y = mean(reshape(x_crop, pool_shape), axis=(-3, -1))
 
     if return_grad_func:
-        grad_func = (
-            (lambda dy: upsample2d(dy, kernel_size, x.shape) / (Ky * Kx))
-            if return_grad_func
-            else None
-        )
+
+        def grad_func(dy: Tensor) -> Tensor:
+            return upsample2d(dy, kernel_size, x.shape) / (Ky * Kx)
+
         return y, grad_func
 
     return y, None

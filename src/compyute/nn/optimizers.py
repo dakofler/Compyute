@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Iterator, Optional
 
 from ..tensor_functions.computing import tensorprod
+from ..tensor_functions.transforming import clip
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -50,8 +51,9 @@ class SGD(Optimizer):
         momentum: float = 0,
         nesterov: bool = False,
         weight_decay: float = 0,
+        grad_clip_value: Optional[float] = None,
     ) -> None:
-        """Updates parameters using stochastic gradient descent.
+        """Updates parameters using stochastic gradient descent (with momentum).
 
         Parameters
         ----------
@@ -65,11 +67,14 @@ class SGD(Optimizer):
             Whether to use the neterov momentum algorithm, by default False.
         weight_deyas : float, optional
             Weight decay factor, by default 0.
+        grad_clip_value : float, optional
+            Clips the gradient of all parameter to the set value, by default None.
         """
         super().__init__(parameters, lr)
         self.momentum = momentum
         self.nesterov = nesterov
         self.weight_decay = weight_decay
+        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
@@ -77,25 +82,27 @@ class SGD(Optimizer):
             if p.grad is None:
                 continue
 
-            g = p.grad.copy()
+            # gradient clipping
+            if self.grad_clip_value is not None:
+                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
+
+            grad = p.grad.copy()
 
             if self.weight_decay > 0:
-                g += self.weight_decay * p
+                grad += self.weight_decay * p
 
-            if self.momentum > 0:
-                if self.t > 1:
-                    b_prev = self.state[p].get("sgd_b", 0)
-                    b = self.momentum * b_prev + g
-                else:
-                    b = g
-                self.state[p]["sgd_b"] = b
+            if self.momentum == 0:
+                p -= self.lr * grad
+            else:
+                prev_v = self.state[p].get("v", 0)
+                v = self.momentum * prev_v - self.lr * grad  # velocity
+                self.state[p]["v"] = v
 
                 if self.nesterov:
-                    g += self.momentum * b
+                    p += self.momentum * v - self.lr * grad
                 else:
-                    g = b
+                    p += v
 
-            p -= self.lr * g
         self.t += 1
 
 
@@ -111,6 +118,7 @@ class Adam(Optimizer):
         beta2: float = 0.999,
         eps: float = 1e-8,
         weight_decay: float = 0,
+        grad_clip_value: Optional[float] = None,
     ) -> None:
         """Updates parameters following the Adam learning algorithm
         as described by Kingma et al., 2014.
@@ -129,37 +137,45 @@ class Adam(Optimizer):
             Constant for numerical stability, by default 1e-08.
         weight_deyas : float, optional
             Weight decay factor, by default 0.
+        grad_clip_value : float, optional
+            Clips the gradient of all parameter to the set value, by default None.
         """
         super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
+        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         for p in self.parameters:
             if p.grad is None:
                 continue
 
-            g = p.grad.copy()
+            # gradient clipping
+            if self.grad_clip_value is not None:
+                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
+
+            grad = p.grad.copy()
 
             if self.weight_decay > 0:
-                g += self.weight_decay * p
+                grad += self.weight_decay * p
 
-            # first momentum estimate
-            m_prev = self.state[p].get("adam_m", 0)
-            m = self.beta1 * m_prev + (1 - self.beta1) * g
-            self.state[p]["adam_m"] = m
+            # first moment estimate (exponential moving average)
+            prev_m = self.state[p].get("m", 0)
+            m = self.beta1 * prev_m + (1 - self.beta1) * grad
+            self.state[p]["m"] = m
 
-            # second momentum estimate
-            v_prev = self.state[p].get("adam_v", 0)
-            v = self.beta2 * v_prev + (1 - self.beta2) * g**2
-            self.state[p]["adam_v"] = v
+            # second moment estimate (squared gradient)
+            prev_v = self.state[p].get("v", 0)
+            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
+            self.state[p]["v"] = v
 
-            m_hat = m / (1 - self.beta1**self.t)
-            v_hat = v / (1 - self.beta2**self.t)
+            m /= 1 - self.beta1**self.t
+            v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
+            p -= self.lr * m / (v**0.5 + self.eps)
+
         self.t += 1
 
 
@@ -174,6 +190,7 @@ class AdamW(Optimizer):
         beta2: float = 0.999,
         eps: float = 1e-8,
         weight_decay: float = 0.01,
+        grad_clip_value: Optional[float] = None,
     ) -> None:
         """Updates parameters following the AdamW learning algorithm.
 
@@ -191,35 +208,43 @@ class AdamW(Optimizer):
             Constant for numerical stability, by default 1e-08.
         weight_decay : float, optional
             Weight decay factor, by default 0.
+        grad_clip_value : float, optional
+            Clips the gradient of all parameter to the set value, by default None.
         """
         super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
+        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         for p in self.parameters:
             if p.grad is None:
                 continue
 
+            # gradient clipping
+            if self.grad_clip_value is not None:
+                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
+
             if self.weight_decay > 0:
                 p.data -= self.lr * self.weight_decay * p.data
 
-            # first momentum estimate
-            m_prev = self.state[p].get("adam_m", 0)
-            m = self.beta1 * m_prev + (1 - self.beta1) * p.grad
-            self.state[p]["adam_m"] = m
+            # first moment estimate (exponential moving average)
+            prev_m = self.state[p].get("m", 0)
+            m = self.beta1 * prev_m + (1 - self.beta1) * p.grad
+            self.state[p]["m"] = m
 
-            # second momentum estimate
-            v_prev = self.state[p].get("adam_v", 0)
-            v = self.beta2 * v_prev + (1 - self.beta2) * p.grad**2
-            self.state[p]["adam_v"] = v
+            # second moment estimate (squared gradient)
+            prev_v = self.state[p].get("v", 0)
+            v = self.beta2 * prev_v + (1 - self.beta2) * p.grad**2
+            self.state[p]["v"] = v
 
-            m_hat = m / (1 - self.beta1**self.t)
-            v_hat = v / (1 - self.beta2**self.t)
+            m /= 1 - self.beta1**self.t
+            v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
+            p -= self.lr * m / (v**0.5 + self.eps)
+
         self.t += 1
 
 
@@ -235,6 +260,7 @@ class NAdam(Optimizer):
         eps: float = 1e-8,
         weight_decay: float = 0,
         momentum_decay: float = 0.004,
+        grad_clip_value: Optional[float] = None,
     ) -> None:
         """Updates parameters following the NAdam learning algorithm.
 
@@ -254,6 +280,8 @@ class NAdam(Optimizer):
             Weight decay factor, by default 0.
         momentum_decay : float, optional
             Momentum decay factor, by default 0.004.
+        grad_clip_value : float, optional
+            Clips the gradient of all parameter to the set value, by default None.
         """
         super().__init__(parameters, lr)
         self.beta1 = beta1
@@ -261,38 +289,44 @@ class NAdam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.momentum_decay = momentum_decay
-        self.state["nadam_mu"] = []
+        self.state["mus"] = []
+        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
-        # mu does not depend on the parameter
+        # momentum coefficient
         mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
-        self.state["nadam_mu"].append(mu)
-        mu_succ = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
-        mu_prod = tensorprod(self.state["nadam_mu"])
+        self.state["mus"].append(mu)
+        mu_prod = tensorprod(self.state["mus"])
+        next_mu = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
 
         for p in self.parameters:
             if p.grad is None:
                 continue
 
-            g = p.grad.copy()
+            # gradient clipping
+            if self.grad_clip_value is not None:
+                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
+
+            grad = p.grad.copy()
 
             if self.weight_decay > 0:
-                g += self.weight_decay * p
+                grad += self.weight_decay * p
 
-            # first momentum estimate
-            m_prev = self.state[p].get("nadam_m", 0)
-            m = self.beta1 * m_prev + (1 - self.beta1) * g
-            self.state[p]["nadam_m"] = m
+            # first moment estimate (exponential moving average)
+            prev_m = self.state[p].get("m", 0)
+            m = self.beta1 * prev_m + (1 - self.beta1) * grad
+            self.state[p]["m"] = m
 
-            # second momentum estimate
-            v_prev = self.state[p].get("nadam_v", 0)
-            v = self.beta2 * v_prev + (1 - self.beta2) * g**2
-            self.state[p]["nadam_v"] = v
+            # second moment estimate (squared gradient)
+            prev_v = self.state[p].get("v", 0)
+            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
+            self.state[p]["v"] = v
 
-            m_hat = mu_succ * m / (1 - mu_prod * mu_succ) + (1 - mu) * g / (1 - mu_prod)
-            v_hat = v / (1 - self.beta2**self.t)
+            m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (1 - mu_prod)
+            v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m_hat / (v_hat**0.5 + self.eps)
+            p -= self.lr * m_hat / (v**0.5 + self.eps)
+
         self.t += 1
 
 
@@ -300,7 +334,7 @@ def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer
-    optims = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
-    if optimizer not in optims.keys():
+    optimizers = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
+    if optimizer not in optimizers.keys():
         raise ValueError(f"Unknown optimizer {optimizer}.")
-    return optims[optimizer]()
+    return optimizers[optimizer]()

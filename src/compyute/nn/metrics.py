@@ -33,8 +33,7 @@ class Accuracy(Metric):
         Tensor
             Accuracy value.
         """
-        score = accuracy_score(y_pred, y_true)
-        return score
+        return accuracy_score(y_pred, y_true)
 
 
 class R2(Metric):
@@ -57,8 +56,7 @@ class R2(Metric):
         Tensor
             R2 score.
         """
-        score = r2_score(y_pred, y_true, eps)
-        return score
+        return r2_score(y_pred, y_true, eps)
 
 
 def get_metric(metric: Metric | str) -> Metric:

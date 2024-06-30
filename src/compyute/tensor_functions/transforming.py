@@ -1,10 +1,10 @@
 """Tensor transformation functions module"""
 
-from typing import Optional, Sequence
+from typing import Optional
 
 from ..base_tensor import Tensor, _as_tensor, tensor
 from ..engine import _get_engine
-from ..types import _ArrayLike, _AxisLike, _ComplexLike, _DtypeLike, _ScalarLike, _ShapeLike
+from ..types import _AxisLike, _ComplexLike, _DtypeLike, _ShapeLike
 
 __all__ = [
     "sum",
