@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from ...base_tensor import Tensor
-from ..functional.metrics import accuracy_score, r2_score
+from ..base_tensor import Tensor
+from .functional.metrics import accuracy_score, r2_score
 
 __all__ = ["Accuracy", "R2"]
 
@@ -57,17 +57,15 @@ class R2(Metric):
         Tensor
             R2 score.
         """
-        score = r2_score(y_pred, y_true)
+        score = r2_score(y_pred, y_true, eps)
         return score
-
-
-METRICS = {"accuracy": Accuracy, "r2": R2}
 
 
 def get_metric(metric: Metric | str) -> Metric:
     """Returns an instance of a metric function."""
     if isinstance(metric, Metric):
         return metric
-    if metric not in METRICS.keys():
+    metrics = {"accuracy": Accuracy, "r2": R2}
+    if metric not in metrics.keys():
         raise ValueError(f"Unknown metric function {metric}.")
-    return METRICS[metric]()
+    return metrics[metric]()

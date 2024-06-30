@@ -6,10 +6,7 @@ from ...tensor_functions.selecting import argmax
 from ...tensor_functions.transforming import mean
 from ...tensor_functions.transforming import sum as _sum
 
-__all__ = [
-    "accuracy_score",
-    "r2_score",
-]
+__all__ = ["accuracy_score", "r2_score"]
 
 
 def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
