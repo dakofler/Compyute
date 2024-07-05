@@ -1,6 +1,6 @@
 """Activation layers module"""
 
-from typing import Optional
+from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ..functional.activations import gelu, leaky_relu, relu, sigmoid, tanh
@@ -64,7 +64,9 @@ class Sigmoid(Module):
         return y
 
 
-def get_act_from_str(activation: str) -> Module:
+def get_act_from_str(
+    activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+) -> Module:
     """Returns an instance of an actiation function."""
     activations = {
         "relu": ReLU,

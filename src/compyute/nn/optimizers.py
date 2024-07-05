@@ -1,7 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional
+from typing import Iterator, Literal, Optional
 
 from ..tensor_functions.computing import tensorprod
 from ..tensor_functions.transforming import clip
@@ -330,7 +330,7 @@ class NAdam(Optimizer):
         self.t += 1
 
 
-def get_optimizer(optimizer: Optimizer | str) -> Optimizer:
+def parse_optimizer(optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"]) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer

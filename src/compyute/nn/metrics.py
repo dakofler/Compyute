@@ -59,8 +59,8 @@ class R2(Metric):
         return r2_score(y_pred, y_true, eps)
 
 
-def get_metric(metric: Metric | str) -> Metric:
-    """Returns an instance of a metric function."""
+def parse_metric(metric: Metric | str) -> Metric:
+    """Returns an instance of a metric."""
     if isinstance(metric, Metric):
         return metric
     metrics = {"accuracy": Accuracy, "r2": R2}

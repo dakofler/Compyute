@@ -5,10 +5,10 @@ from typing import Any, Literal, Optional
 from ...base_tensor import Tensor
 from ...types import _ScalarLike
 from ..dataloaders import DataLoader
-from ..losses import Loss, get_loss
-from ..metrics import Metric, get_metric
+from ..losses import Loss, parse_loss
+from ..metrics import Metric, parse_metric
 from ..modules.module import Module
-from ..optimizers import Optimizer, get_optimizer
+from ..optimizers import Optimizer, parse_optimizer
 from .callbacks import Callback
 
 __all__ = ["Trainer"]
@@ -42,19 +42,13 @@ class Trainer:
         """
         super().__init__()
         self.model = model
-        self.optimizer = get_optimizer(optimizer)
+        self.optimizer = parse_optimizer(optimizer)
         self.optimizer.parameters = model.parameters
-        self.loss = get_loss(loss)
-        self.metric = None if metric is None else get_metric(metric)
+        self.loss = parse_loss(loss)
+        self.metric = None if metric is None else parse_metric(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
         self.callbacks = callbacks
-
-        self._callback_cache: dict[str, Any] = {
-            "abort": False,
-            "model": self.model,
-            "optimizer": self.optimizer,
-            "t": 0,
-        }
+        self._callback_cache: dict[str, Any] = {"abort": False, "t": 1}
 
     def train(
         self,

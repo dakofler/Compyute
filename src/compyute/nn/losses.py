@@ -1,7 +1,7 @@
 """Loss functions module"""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 from ..base_tensor import Tensor
 from .functional.losses import binary_cross_entropy, cross_entropy, mean_squared_error
@@ -96,8 +96,10 @@ class BinaryCrossEntropy(Loss):
         return loss
 
 
-def get_loss(loss: Loss | str) -> Loss:
-    """Returns an instance of a loss function."""
+def parse_loss(
+    loss: Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
+) -> Loss:
+    """Returns an instance of a loss."""
     if isinstance(loss, Loss):
         return loss
     losses = {

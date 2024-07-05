@@ -53,13 +53,11 @@ class Linear(Module):
         self.dtype = dtype
 
         # init weights
-        # (Co, Ci)
         k = in_channels**-0.5
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype), label="w")
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype), label="lin_w")
 
         # init biases
-        # (Co,)
-        self.b = Parameter(zeros((out_channels,), dtype), label="b") if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype), label="lin_b") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3, 4, 5])

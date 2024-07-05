@@ -62,12 +62,12 @@ class Recurrent(Module):
         k = h_channels**-0.5
 
         # init input weights and biases
-        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="w_i")
-        self.b_i = Parameter(zeros((h_channels,), dtype), label="b_i") if bias else None
+        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="rec_w_i")
+        self.b_i = Parameter(zeros((h_channels,), dtype), label="rec_b_i") if bias else None
 
         # init hidden weights and biases
-        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="w_h")
-        self.b_h = Parameter(zeros((h_channels,), dtype), label="b_h") if bias else None
+        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="rec_w_h")
+        self.b_h = Parameter(zeros((h_channels,), dtype), label="rec_b_h") if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
@@ -180,13 +180,13 @@ class LSTM(Module):
 
         k = in_channels**-0.5
 
-        # init input weights and biases (Wii, Wif, Wig, Wio concatinated)
-        self.w_i = Parameter(uniform((4 * h_channels, in_channels), -k, k, dtype), label="w_i")
-        self.b_i = Parameter(zeros((4 * h_channels,), dtype), label="b_i") if bias else None
+        # init input weights and biases
+        self.w_i = Parameter(uniform((4 * h_channels, in_channels), -k, k, dtype), label="lstm_w_i")
+        self.b_i = Parameter(zeros((4 * h_channels,), dtype), label="lstm_b_i") if bias else None
 
-        # init hidden weights and biases (Whi, Whf, Whg, Who concatinated)
-        self.w_h = Parameter(uniform((4 * h_channels, h_channels), -k, k, dtype), label="w_h")
-        self.b_h = Parameter(zeros((4 * h_channels,), dtype), label="b_h") if bias else None
+        # init hidden weights and biases
+        self.w_h = Parameter(uniform((4 * h_channels, h_channels), -k, k, dtype), label="lstm_w_h")
+        self.b_h = Parameter(zeros((4 * h_channels,), dtype), label="lstm_b_h") if bias else None
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])

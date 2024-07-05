@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from ...modules import Module
 from .callback import Callback
 
 __all__ = ["EarlyStopping"]
@@ -12,6 +13,7 @@ class EarlyStopping(Callback):
 
     def __init__(
         self,
+        model: Module,
         patience: int = 3,
         use_best_params: bool = True,
         target: str = "loss",
@@ -20,6 +22,8 @@ class EarlyStopping(Callback):
 
         Parameters
         ----------
+        model : Module
+            Model to be trained.
         patience : int, optional
             Number of epocs without improvement, before the training is aborted, by default 3.
         use_best_params : bool, optional
@@ -27,6 +31,7 @@ class EarlyStopping(Callback):
         target : str, optional
             Metric to consider, by default "loss".
         """
+        self.model = model
         self.patience = patience
         self.use_best_params = use_best_params
         self.target = target
@@ -43,7 +48,7 @@ class EarlyStopping(Callback):
 
             # save best parameters
             if self.use_best_params:
-                self.cache["best_params"] = [p.copy() for p in trainer_cache["model"].parameters]
+                self.cache["best_params"] = [p.copy() for p in self.model.parameters]
 
         if len(self.cache["history"]) <= self.patience:
             return
@@ -56,7 +61,7 @@ class EarlyStopping(Callback):
             if self.use_best_params:
                 best_epoch = self.cache["best_epoch"]
                 msg += f" Resetting parameters best epoch {best_epoch}."
-                for i, p in enumerate(trainer_cache["model"].parameters):
+                for i, p in enumerate(self.model.parameters):
                     p.data = self.cache["best_params"][i].data
 
             print(msg)

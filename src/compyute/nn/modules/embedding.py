@@ -47,8 +47,8 @@ class Embedding(Module):
         self.embedding_dim = embedding_dim
         self.dtype = dtype
 
-        # init weights (Ci, Co)
-        self.w = Parameter(normal((vocab_size, embedding_dim), dtype=dtype), label="w")
+        # init weights
+        self.w = Parameter(normal((vocab_size, embedding_dim), dtype=dtype), label="emb_w")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])
