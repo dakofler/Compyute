@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
+from compyute.nn import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
 from tests.test_utils import get_random_floats, get_random_integers, is_equal
 
 SHAPE2D = (20, 5)

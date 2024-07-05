@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import Linear, ParallelAdd, ParallelConcat, Sequential
+from compyute.nn import Linear, ParallelAdd, ParallelConcat, Sequential
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Cout = (10, 20, 30)

@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import LSTM, Recurrent, Sequential
+from compyute.nn import LSTM, Recurrent, Sequential
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Ch, X = (10, 20, 30, 40)

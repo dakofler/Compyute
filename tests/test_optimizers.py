@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn.optimizers import SGD, Adam, AdamW, NAdam
+from compyute.nn.optimizers import SGD, Adam, AdamW, NAdam
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 SHAPE = (10, 20)

@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
+from compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
 from tests.test_utils import get_random_floats, is_equal
 
 SHAPE3D = (10, 20, 30)

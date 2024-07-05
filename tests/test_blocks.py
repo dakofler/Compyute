@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import Linear, ReLU, Sequential, SkipConnection
+from compyute.nn import Linear, ReLU, Sequential, SkipConnection
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Cout, X = (10, 20, 30, 40)

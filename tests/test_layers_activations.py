@@ -2,7 +2,7 @@
 
 import torch.nn.functional as F
 
-from src.compyute.nn import GELU, LeakyReLU, ReLU, Sigmoid, Tanh
+from compyute.nn import GELU, LeakyReLU, ReLU, Sigmoid, Tanh
 from tests.test_utils import get_random_floats, is_equal
 
 SHAPE = (10, 20, 30)

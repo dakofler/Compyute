@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import Linear
+from compyute.nn import Linear
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Bn, Cin, Cout = (10, 20, 30, 40)

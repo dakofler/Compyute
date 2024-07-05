@@ -2,7 +2,7 @@
 
 import torch
 
-from src.compyute.nn import AvgPooling2d, Convolution1d, Convolution2d, MaxPooling2d
+from compyute.nn import AvgPooling2d, Convolution1d, Convolution2d, MaxPooling2d
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Cout, Y, X, K = (10, 3, 16, 15, 15, 5)

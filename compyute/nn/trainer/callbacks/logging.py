@@ -59,7 +59,7 @@ class ProgressBar(Callback):
             self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
 
     def on_step(self, trainer_cache: dict[str, Any]) -> None:
-        if self.mode == "step":
+        if self.pbar is not None and self.mode == "step":
             self.pbar.update()
 
     def on_epoch_start(self, trainer_cache: dict[str, Any]) -> None:
@@ -72,10 +72,11 @@ class ProgressBar(Callback):
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         self._set_pbar_postfix(trainer_cache)
-        if self.mode == "epoch":
-            self.pbar.update()
-        else:
-            self.pbar.close()
+        if self.pbar is not None:
+            if self.mode == "epoch":
+                self.pbar.update()
+            else:
+                self.pbar.close()
 
     def _set_pbar_postfix(self, trainer_cache: dict[str, Any]) -> None:
         stats = []
@@ -83,4 +84,5 @@ class ProgressBar(Callback):
             if "loss" not in stat and "score" not in stat:
                 continue
             stats.append(f"{stat}={trainer_cache[stat]:.4f}")
-        self.pbar.set_postfix_str(", ".join(stats))
+        if self.pbar is not None:
+            self.pbar.set_postfix_str(", ".join(stats))

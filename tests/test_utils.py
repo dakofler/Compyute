@@ -3,10 +3,10 @@
 import numpy
 import torch
 
-from src.compyute import Tensor
-from src.compyute.nn import Parameter
-from src.compyute.random import set_seed, uniform, uniform_int
-from src.compyute.types import _ShapeLike
+from compyute import Tensor
+from compyute.nn import Parameter
+from compyute.random import set_seed, uniform, uniform_int
+from compyute.types import _ShapeLike
 
 set_seed(42)
 

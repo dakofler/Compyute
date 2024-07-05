@@ -15,7 +15,7 @@ def gpu_available() -> bool:
     """Returns True, if one or more GPUs are available."""
     if "CUDA_PATH" not in os.environ:
         return False
-    return cupy.is_available()
+    return bool(cupy.is_available())
 
 
 def _check_device_availability(device: _DeviceLike):
