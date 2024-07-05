@@ -3,15 +3,15 @@
 import numpy
 import torch
 
-from src.compyute import Tensor
-from src.compyute.nn import Parameter
-from src.compyute.random import set_seed, uniform, uniform_int
-from src.compyute.types import _ShapeLike
+from compyute import Tensor
+from compyute.nn import Parameter
+from compyute.random import set_seed, uniform, uniform_int
+from compyute.types import _ShapeLike
 
 set_seed(42)
 
 
-def get_vals_float(
+def get_random_floats(
     shape: _ShapeLike,
     torch_grad: bool = True,
     device: str = "cpu",
@@ -27,7 +27,7 @@ def get_vals_float(
     return compyute_x, torch_x
 
 
-def get_vals_int(
+def get_random_integers(
     shape: _ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
@@ -37,7 +37,9 @@ def get_vals_int(
     return compyute_x, torch_x
 
 
-def get_params(shape: _ShapeLike, device: str = "cpu") -> tuple[Parameter, torch.nn.Parameter]:
+def get_random_params(
+    shape: _ShapeLike, device: str = "cpu"
+) -> tuple[Parameter, torch.nn.Parameter]:
     """Returns a compyute tensor and a torch parameter tensor initialized equally."""
     data = uniform(shape, dtype="float32") * 0.1
     compyute_x = Parameter(data)
@@ -46,6 +48,6 @@ def get_params(shape: _ShapeLike, device: str = "cpu") -> tuple[Parameter, torch
     return compyute_x, torch_x
 
 
-def validate(x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5) -> bool:
+def is_equal(x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
     return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)

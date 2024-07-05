@@ -2,244 +2,232 @@
 
 import torch
 
-from src.compyute.nn.optimizers import SGD, Adam, AdamW, NAdam
-from tests.test_utils import get_params, get_vals_float, validate
+from compyute.nn.optimizers import SGD, Adam, AdamW, NAdam
+from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 SHAPE = (10, 20)
 ITER = 10
+EPS = 1e-8
+BETA1 = 0.9
+BETA2 = 0.999
+WDECAY = 0.1
+MOMENTUM = 0.1
+MOMENTUM_DECAY = 4e-3
 
 
 def test_sgd() -> None:
     """Test for the stochastic gradient descent optimizer."""
-    results = []
+    lr = 1e-2
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2)
-    compyute_optim.parameters = [compyute_x]
+    # init compyute optimizer
+    compyute_optim = SGD([compyute_x], lr=lr)
 
-    torch_optim = torch.optim.SGD([torch_x], lr=1e-2)
+    # init torch optimizer
+    torch_optim = torch.optim.SGD([torch_x], lr=lr)
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_sgd_m() -> None:
     """Test for the stochastic gradient descent optimizer using momentum."""
-    results = []
+    lr = 1e-2
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, momentum=0.1)
-    compyute_optim.parameters = [compyute_x]
+    # init compyute optimizer
+    compyute_optim = SGD([compyute_x], lr=lr, momentum=MOMENTUM)
 
-    torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1)
+    # init torch optimizer
+    torch_optim = torch.optim.SGD([torch_x], lr=lr, momentum=MOMENTUM)
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_sgd_m_nesterov() -> None:
     """Test for the stochastic gradient descent optimizer using nesterov momentum."""
-    results = []
+    lr = 1e-2
+    nesterov = True
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, momentum=0.1, nesterov=True)
-    compyute_optim.parameters = [compyute_x]
+    # init compyute optimizer
+    compyute_optim = SGD([compyute_x], lr=lr, momentum=MOMENTUM, nesterov=nesterov)
 
-    torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, nesterov=True)
+    # init torch optimizer
+    torch_optim = torch.optim.SGD([torch_x], lr=lr, momentum=MOMENTUM, nesterov=nesterov)
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_sgd_m_wdecay() -> None:
     """Test for the stochastic gradient descent optimizer using weight decay."""
-    results = []
+    lr = 1e-2
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = SGD(lr=1e-2, momentum=0.1, weight_decay=0.1)
-    compyute_optim.parameters = [compyute_x]
-    torch_optim = torch.optim.SGD([torch_x], lr=1e-2, momentum=0.1, weight_decay=0.1)
+    # init compyute optimizer
+    compyute_optim = SGD([compyute_x], lr=lr, momentum=MOMENTUM, weight_decay=WDECAY)
 
+    # init torch optimizer
+    torch_optim = torch.optim.SGD([torch_x], lr=lr, momentum=MOMENTUM, weight_decay=WDECAY)
+
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_adam() -> None:
     """Test for the adam optimizer."""
-    results = []
+    lr = 1e-3
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = Adam(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
-    compyute_optim.parameters = [compyute_x]
+    # init compyute optimizer
+    compyute_optim = Adam([compyute_x], lr=lr, beta1=BETA1, beta2=BETA2, eps=EPS)
 
-    torch_optim = torch.optim.Adam([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    # init torch optimizer
+    torch_optim = torch.optim.Adam([torch_x], lr=lr, betas=(BETA1, BETA2), eps=EPS)
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_adam_wdecay() -> None:
     """Test for the adam optimizer using weight decay."""
-    results = []
+    lr = 1e-3
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(SHAPE, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = Adam(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1)
-    compyute_optim.parameters = [compyute_x]
-
-    torch_optim = torch.optim.Adam(
-        [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.1
+    # init compyute optimizer
+    compyute_optim = Adam(
+        [compyute_x], lr=lr, beta1=BETA1, beta2=BETA2, eps=EPS, weight_decay=WDECAY
     )
 
+    # init torch optimizer
+    torch_optim = torch.optim.Adam(
+        [torch_x], lr=lr, betas=(BETA1, BETA2), eps=EPS, weight_decay=WDECAY
+    )
+
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_adamw() -> None:
     """Test for the adamW optimizer."""
-    results = []
+    lr = 1e-3
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
-    compyute_optim = AdamW(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
-    compyute_optim.parameters = [compyute_x]
+    # init compyute optimizer
+    compyute_optim = AdamW([compyute_x], lr=lr, beta1=BETA1, beta2=BETA2, eps=EPS)
 
-    torch_optim = torch.optim.AdamW([torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    # init torch optimizer
+    torch_optim = torch.optim.AdamW([torch_x], lr=lr, betas=(BETA1, BETA2), eps=EPS)
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
-
-
-def test_adamw_wdecay() -> None:
-    """Test for the adamW optimizer using weight decay."""
-    results = []
-
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
-    compyute_x.grad = compyute_dx
-    torch_x.grad = torch_dx
-
-    compyute_optim = AdamW(lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0.1)
-    compyute_optim.parameters = [compyute_x]
-
-    torch_optim = torch.optim.AdamW(
-        [torch_x], lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.1
-    )
-
-    for _ in range(ITER):
-        compyute_optim.step()
-        torch_optim.step()
-
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
 
 
 def test_nadam() -> None:
     """Test for the nadam optimizer."""
-    results = []
+    lr = 2e-3
 
-    # forward
-    compyute_x, torch_x = get_params(SHAPE)
-    compyute_dx, torch_dx = get_vals_float(compyute_x.shape, torch_grad=False)
+    # init parameters
+    compyute_x, torch_x = get_random_params(SHAPE)
+    compyute_dx, torch_dx = get_random_floats(compyute_x.shape, torch_grad=False)
     compyute_x.grad = compyute_dx
     torch_x.grad = torch_dx
 
+    # init compyute optimizer
     compyute_optim = NAdam(
-        lr=2e-3, beta1=0.9, beta2=0.999, eps=1e-8, weight_decay=0, momentum_decay=4e-3
+        [compyute_x],
+        lr=lr,
+        beta1=BETA1,
+        beta2=BETA2,
+        eps=EPS,
+        momentum_decay=MOMENTUM_DECAY,
     )
-    compyute_optim.parameters = [compyute_x]
 
+    # init torch optimizer
     torch_optim = torch.optim.NAdam(
         [torch_x],
-        lr=2e-3,
-        betas=(0.9, 0.999),
-        eps=1e-8,
-        weight_decay=0,
-        momentum_decay=4e-3,
+        lr=lr,
+        betas=(BETA1, BETA2),
+        eps=EPS,
+        momentum_decay=MOMENTUM_DECAY,
     )
 
+    # forward
     for _ in range(ITER):
         compyute_optim.step()
         torch_optim.step()
 
-    results.append(validate(compyute_x, torch_x))
-    results.append(validate(compyute_x.grad, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_x, torch_x)
+    assert is_equal(compyute_x.grad, torch_x.grad)
