@@ -27,6 +27,7 @@ class Convolution1d(Module):
         bias: bool = True,
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Convolutional layer used for temporal information and feature extraction.
         Input: (B, Ci, Ti)
@@ -54,8 +55,10 @@ class Convolution1d(Module):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -118,6 +121,7 @@ class Convolution2d(Module):
         bias: bool = True,
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Convolutional layer used for spacial information and feature extraction.
         Input: (B, Ci, Yi, Xi)
@@ -145,8 +149,10 @@ class Convolution2d(Module):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -195,7 +201,9 @@ class Convolution2d(Module):
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+    def __init__(
+        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
+    ) -> None:
         """MaxPoling layer used to reduce information to avoid overfitting.
 
         Parameters
@@ -204,8 +212,10 @@ class MaxPooling2d(Module):
              Shape of the pooling window used for the pooling operation, by default 2.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
@@ -219,7 +229,9 @@ class MaxPooling2d(Module):
 class AvgPooling2d(Module):
     """AvgPooling layer used to reduce information to avoid overfitting."""
 
-    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+    def __init__(
+        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
+    ) -> None:
         """AvgPooling layer used to reduce information to avoid overfitting.
 
         Parameters
@@ -228,8 +240,10 @@ class AvgPooling2d(Module):
              Shape of the pooling window used for the pooling operation, by default 2.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:

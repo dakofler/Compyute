@@ -12,7 +12,7 @@ __all__ = ["Dropout"]
 class Dropout(Module):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 
-    def __init__(self, p: float = 0.5, label: Optional[str] = None) -> None:
+    def __init__(self, p: float = 0.5, label: Optional[str] = None, training: bool = False) -> None:
         """Dropout layer used to randomly reduce information and avoid overfitting.
 
         Parameters
@@ -21,8 +21,10 @@ class Dropout(Module):
             Probability of values being set to zero, by default 0.5.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.p = p
 
     def forward(self, x: Tensor) -> Tensor:

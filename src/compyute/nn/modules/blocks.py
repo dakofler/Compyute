@@ -42,6 +42,7 @@ class DenseBlock(Sequential):
         ] = "zeros",
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Dense neural network block.
         Input: (B, ... , Cin)
@@ -67,8 +68,10 @@ class DenseBlock(Sequential):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        linear = Linear(in_channels, out_channels, bias, dtype)
+        linear = Linear(in_channels, out_channels, bias, dtype, training=training)
 
         w_init = get_initializer(weight_init, dtype, activation)
         linear.w = Parameter(w_init((out_channels, in_channels)), "w")
@@ -77,11 +80,7 @@ class DenseBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             linear.b = Parameter(b_init((out_channels,)), "b")
 
-        super().__init__(
-            linear,
-            get_act_from_str(activation),
-            label=label,
-        )
+        super().__init__(linear, get_act_from_str(activation), label=label, training=training)
 
 
 class Convolution1dBlock(Sequential):
@@ -116,6 +115,7 @@ class Convolution1dBlock(Sequential):
         ] = "zeros",
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Convolution 1d block containing a 1d convolutional layer and an activation function.
         Input: (B, Ci, Ti)
@@ -149,6 +149,8 @@ class Convolution1dBlock(Sequential):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
         conv = Convolution1d(
             in_channels,
@@ -159,6 +161,7 @@ class Convolution1dBlock(Sequential):
             dilation,
             bias,
             dtype,
+            training=training,
         )
 
         w_init = get_initializer(weight_init, dtype, activation)
@@ -168,11 +171,7 @@ class Convolution1dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "b")
 
-        super().__init__(
-            conv,
-            get_act_from_str(activation),
-            label=label,
-        )
+        super().__init__(conv, get_act_from_str(activation), label=label, training=training)
 
 
 class Convolution2dBlock(Sequential):
@@ -207,6 +206,7 @@ class Convolution2dBlock(Sequential):
         ] = "zeros",
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Convolution 2d block containing a 2d convolutional layer and an activation function.
         Input: (B, Ci, Yi, Xi)
@@ -240,6 +240,8 @@ class Convolution2dBlock(Sequential):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
         conv = Convolution2d(
             in_channels,
@@ -250,6 +252,7 @@ class Convolution2dBlock(Sequential):
             dilation,
             bias,
             dtype,
+            training=training,
         )
 
         w_init = get_initializer(weight_init, dtype, activation)
@@ -259,17 +262,19 @@ class Convolution2dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "b")
 
-        super().__init__(
-            conv,
-            get_act_from_str(activation),
-            label=label,
-        )
+        super().__init__(conv, get_act_from_str(activation), label=label, training=training)
 
 
 class SkipConnection(ParallelAdd):
     """Skip connection bypassing a block of modules."""
 
-    def __init__(self, residual_block: Module, projection: Optional[Module] = None) -> None:
+    def __init__(
+        self,
+        residual_block: Module,
+        projection: Optional[Module] = None,
+        label: Optional[str] = None,
+        training: bool = False,
+    ) -> None:
         """Residual connection bypassing a block of modules.
 
         Parameters
@@ -281,6 +286,8 @@ class SkipConnection(ParallelAdd):
             Module used for a linear projection to achieve matching dimensions, by default None.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        proj = projection if projection is not None else Module("Projection")
-        super().__init__(residual_block, proj)
+        proj = projection if projection is not None else Module("Projection", training)
+        super().__init__(residual_block, proj, label=label, training=training)

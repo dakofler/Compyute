@@ -17,7 +17,7 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 class Container(Module):
     """Container base module."""
 
-    def __init__(self, *args: Module, label: Optional[str] = None) -> None:
+    def __init__(self, *args: Module, label: Optional[str] = None, training: bool = False) -> None:
         """Container base module.
 
         Parameters
@@ -26,8 +26,10 @@ class Container(Module):
             Modules used in the container.
         label: str, optional
             Container label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self._modules = list(args) if len(args) > 0 else None
 
     # ----------------------------------------------------------------------------------------------
@@ -221,7 +223,13 @@ class Sequential(Container):
 class ParallelConcat(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
 
-    def __init__(self, *args: Module, concat_axis: int = -1, label: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *args: Module,
+        concat_axis: int = -1,
+        label: Optional[str] = None,
+        training: bool = False,
+    ) -> None:
         """Parallel container module. Module output tensors are concatinated.
 
         Parameters
@@ -233,8 +241,10 @@ class ParallelConcat(Container):
             shall be concatinated, by default -1.
         label: str, optional
             Container label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(*args, label=label)
+        super().__init__(*args, label=label, training=training)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
@@ -258,15 +268,7 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Parallel container module. Inputs are processed in parallel, outputs are added element-wise.
-
-    Parameters
-    ----------
-    *args : Module
-        Modules used in the parallel container.
-    label: str, optional
-        Container label.
-    """
+    """Parallel container module. Inputs are processed in parallel, outputs are added element-wise."""
 
     def forward(self, x: Tensor) -> Tensor:
         if len(self.modules) == 0:

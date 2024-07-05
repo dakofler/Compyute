@@ -20,11 +20,7 @@ class ReLU(Module):
 class LeakyReLU(Module):
     """Leaky ReLu activation function."""
 
-    def __init__(
-        self,
-        alpha: float = 0.01,
-        label: Optional[str] = None,
-    ):
+    def __init__(self, alpha: float = 0.01, label: Optional[str] = None, training: bool = False):
         """Leaky ReLu activation function.
 
         Parameters
@@ -33,8 +29,10 @@ class LeakyReLU(Module):
             Slope of the negative output, by default 0.01.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:

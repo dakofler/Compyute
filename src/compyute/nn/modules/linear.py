@@ -23,6 +23,7 @@ class Linear(Module):
         bias: bool = True,
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Fully connected layer.
         Input: (B, ... , Cin)
@@ -42,8 +43,10 @@ class Linear(Module):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = bias

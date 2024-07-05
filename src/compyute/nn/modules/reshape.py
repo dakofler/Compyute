@@ -13,7 +13,9 @@ __all__ = ["Reshape", "Flatten", "Moveaxis"]
 class Reshape(Module):
     """Flatten layer used to reshape tensors to any shape."""
 
-    def __init__(self, output_shape: _ShapeLike, label: Optional[str] = None) -> None:
+    def __init__(
+        self, output_shape: _ShapeLike, label: Optional[str] = None, training: bool = False
+    ) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
@@ -22,8 +24,10 @@ class Reshape(Module):
             The output's target shape not including the batch dimension.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.output_shape = output_shape
 
     def forward(self, x: Tensor) -> Tensor:
@@ -50,7 +54,9 @@ class Flatten(Module):
 class Moveaxis(Module):
     """Moveaxis layer used to swap tensor dimensions."""
 
-    def __init__(self, from_axis: int, to_axis: int, label: Optional[str] = None) -> None:
+    def __init__(
+        self, from_axis: int, to_axis: int, label: Optional[str] = None, training: bool = False
+    ) -> None:
         """Reshapes a tensor to fit a given shape.
 
         Parameters
@@ -61,8 +67,10 @@ class Moveaxis(Module):
             Destination positions for each of the original axes. These must also be unique.
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.from_axis = from_axis
         self.to_axis = to_axis
 

@@ -15,16 +15,16 @@ __all__ = ["Module", "save_module", "load_module"]
 
 
 class Module(ABC):
-    """Module base class."""
+    """Neural network module."""
 
-    def __init__(self, label: Optional[str] = None) -> None:
-        """Module base class."""
+    def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
+        """Neural network module."""
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
         self._device: _DeviceLike = "cpu"
         self._retain_values: bool = False
-        self._training: bool = False
+        self._training: bool = training
         self._trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
@@ -78,11 +78,11 @@ class Module(ABC):
 
     @property
     def training(self) -> bool:
-        """Module training mode."""
+        """Whether the module is in training mode."""
         return self._training
 
     def set_training(self, value: bool) -> None:
-        """Module training mode."""
+        """Whether the module is in training mode."""
         self._training = value
 
     @property
@@ -153,7 +153,7 @@ class Module(ABC):
             Input gradient tensor.
         """
         if not self.training:
-            raise AttributeError("Model is not in training mode.")
+            raise AttributeError(f"{self.label} is not in training mode.")
         self._set_dy(dy)
         if self._backward is not None:
             return self._backward(dy)

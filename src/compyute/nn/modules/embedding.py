@@ -21,6 +21,7 @@ class Embedding(Module):
         embedding_dim: int,
         dtype: _DtypeLike = "float32",
         label: Optional[str] = None,
+        training: bool = False,
     ) -> None:
         """Embedding layer used for token embedding.
         Input: (B, T)
@@ -38,8 +39,10 @@ class Embedding(Module):
             Datatype of weights and biases, by default "float32".
         label: str, optional
             Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
         """
-        super().__init__(label)
+        super().__init__(label, training)
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.dtype = dtype
