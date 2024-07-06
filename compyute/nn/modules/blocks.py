@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from ...types import _DtypeLike
+from ...dtypes import Dtype, _DtypeLike
 from ..initializers import get_initializer
 from ..parameter import Parameter
 from .activations import get_act_from_str
@@ -40,7 +40,7 @@ class DenseBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -65,7 +65,7 @@ class DenseBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -113,7 +113,7 @@ class Convolution1dBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -146,7 +146,7 @@ class Convolution1dBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -204,7 +204,7 @@ class Convolution2dBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -237,7 +237,7 @@ class Convolution2dBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional

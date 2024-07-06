@@ -3,7 +3,7 @@
 from typing import Any, Literal, Optional
 
 from ...base_tensor import Tensor
-from ...types import _ScalarLike
+from ...dtypes import _ScalarLike
 from ..dataloaders import DataLoader
 from ..losses import Loss, parse_loss
 from ..metrics import Metric, parse_metric

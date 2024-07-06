@@ -2,9 +2,8 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor
-from ..engine import _get_engine
-from ..types import _AxisLike, _ShapeLike
+from ..base_tensor import Tensor, _AxisLike, _ShapeLike
+from ..engine import get_engine
 from .creating import identity
 
 __all__ = [
@@ -89,7 +88,7 @@ def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    return Tensor(_get_engine(x.device).expand_dims(x.data, axis=axis))
+    return Tensor(get_engine(x.device).expand_dims(x.data, axis=axis))
 
 
 def add_dims(x: Tensor, target_dims: int) -> Tensor:
@@ -126,7 +125,7 @@ def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Resized tensor.
     """
-    return Tensor(_get_engine(x.device).resize(x.data, shape))
+    return Tensor(get_engine(x.device).resize(x.data, shape))
 
 
 def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
@@ -168,7 +167,7 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     """
     repeats = [1] * x.ndim
     repeats[axis] = n_repeats
-    return Tensor(_get_engine(x.device).tile(x.data, tuple(repeats)))
+    return Tensor(get_engine(x.device).tile(x.data, tuple(repeats)))
 
 
 def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]) -> Tensor:
@@ -189,7 +188,7 @@ def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...])
     Tensor
         Padded tensor.
     """
-    return Tensor(_get_engine(x.device).pad(x.data, padding))
+    return Tensor(get_engine(x.device).pad(x.data, padding))
 
 
 def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -228,7 +227,7 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
     Tensor
         Tensor with moved axes.
     """
-    return Tensor(_get_engine(x.device).moveaxis(x.data, from_axis, to_axis))
+    return Tensor(get_engine(x.device).moveaxis(x.data, from_axis, to_axis))
 
 
 def squeeze(x: Tensor) -> Tensor:
@@ -265,7 +264,7 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(_get_engine(x.device).flip(x.data, axis=axis))
+    return Tensor(get_engine(x.device).flip(x.data, axis=axis))
 
 
 def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -283,4 +282,4 @@ def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Broadcasted tensor.
     """
-    return Tensor(_get_engine(x.device).broadcast_to(x.data, shape=shape))
+    return Tensor(get_engine(x.device).broadcast_to(x.data, shape=shape))

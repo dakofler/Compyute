@@ -2,7 +2,8 @@
 
 from typing import Callable, Literal, Optional
 
-from ...base_tensor import Tensor
+from ...base_tensor import Tensor, _AxisLike, _ShapeLike
+from ...dtypes import Dtype
 from ...tensor_functions.creating import zeros
 from ...tensor_functions.reshaping import (
     broadcast_to,
@@ -17,7 +18,6 @@ from ...tensor_functions.transforming import fft1d, fft2d, ifft1d, ifft2d
 from ...tensor_functions.transforming import max as _max
 from ...tensor_functions.transforming import mean, real
 from ...tensor_functions.transforming import sum as _sum
-from ...types import _AxisLike, _ShapeLike
 
 __all__ = [
     "convolve1d",
@@ -209,7 +209,7 @@ def _convolve1d(
 
 
 def _fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = "complex64"
+    cdtype = Dtype.COMPLEX64
     conv = real(
         ifft1d(fft1d(x, dtype=cdtype) * fft1d(f, n=x.shape[-1], dtype=cdtype), dtype=cdtype),
         dtype=x.dtype,
@@ -413,7 +413,7 @@ def _convolve2d(
 
 
 def _fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = "complex64"
+    cdtype = Dtype.COMPLEX64
     conv = real(
         ifft2d(fft2d(x, dtype=cdtype) * fft2d(f, s=x.shape[-2:], dtype=cdtype), dtype=cdtype),
         dtype=x.dtype,

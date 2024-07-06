@@ -3,11 +3,12 @@
 from abc import abstractmethod
 from typing import Iterator, Optional
 
-from ...base_tensor import Tensor
+from ...base_tensor import Tensor, _ShapeLike
+from ...dtypes import Dtype, _DtypeLike
+from ...engine import Device, _DeviceLike
 from ...tensor_functions.combining import concatenate, split
 from ...tensor_functions.computing import tensorsum
 from ...tensor_functions.creating import ones
-from ...types import _DeviceLike, _DtypeLike, _ShapeLike
 from ..parameter import Parameter
 from .module import Module
 
@@ -37,6 +38,7 @@ class Container(Module):
     # ----------------------------------------------------------------------------------------------
 
     def to_device(self, device: _DeviceLike) -> None:
+        device = Device(device)
         if self.device == device:
             return
 
@@ -123,7 +125,7 @@ class Container(Module):
         for module in self.modules:
             module.reset()
 
-    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = "float32") -> None:
+    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Prints information about the container and its modules.
 
         Parameters

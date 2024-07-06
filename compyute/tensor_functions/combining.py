@@ -2,9 +2,8 @@
 
 from typing import Sequence
 
-from ..base_tensor import Tensor
-from ..engine import _get_engine
-from ..types import _AxisLike
+from ..base_tensor import Tensor, _AxisLike
+from ..engine import get_engine
 
 __all__ = [
     "append",
@@ -31,7 +30,7 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
     Tensor
         Tensor containing appended values.
     """
-    return Tensor(_get_engine(x.device).append(x.data, values.data, axis=axis))
+    return Tensor(get_engine(x.device).append(x.data, values.data, axis=axis))
 
 
 def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
@@ -50,7 +49,7 @@ def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
         Concatenated tensor.
     """
     device = tensors[0].device
-    return Tensor(_get_engine(device).concatenate([t.data for t in tensors], axis=axis))
+    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
 
 
 def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor]:
@@ -71,7 +70,7 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     list[Tensor]
         List of tensors containing the split data.
     """
-    return [Tensor(s) for s in _get_engine(x.device).split(x.data, splits, axis=axis)]
+    return [Tensor(s) for s in get_engine(x.device).split(x.data, splits, axis=axis)]
 
 
 def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
@@ -90,4 +89,4 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
         Stacked tensor.
     """
     device = tensors[0].device
-    return Tensor(_get_engine(device).stack([t.data for t in tensors], axis=axis))
+    return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))

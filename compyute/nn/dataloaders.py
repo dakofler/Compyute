@@ -4,9 +4,9 @@ from functools import wraps
 from typing import Callable, Iterator, Optional
 
 from ..base_tensor import Tensor
+from ..engine import Device, _DeviceLike
 from ..random import shuffle
 from ..tensor_functions.combining import concatenate
-from ..types import _DeviceLike
 
 __all__ = ["DataLoader"]
 
@@ -19,7 +19,7 @@ class DataLoader:
         x: Tensor,
         y: Optional[Tensor] = None,
         batch_size: int = 1,
-        device: _DeviceLike = "cpu",
+        device: _DeviceLike = Device.CPU,
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
@@ -34,7 +34,7 @@ class DataLoader:
         batch_size : int, optional
             Size of returned batches, by default 1.
         device: DeviceLike, optional
-            Device the tensors should be loaded to ("cuda" or "cpu"), by default None.
+            Device the tensors should be loaded to, by default Device.CPU.
         shuffle_data : bool, optional
             Whether to shuffle the data each time the dataloader is called, by default True.
         drop_remaining: bool, optional
@@ -96,7 +96,7 @@ class DataLoader:
 def batched(
     func: Callable[[Tensor], Tensor],
     batch_size: int = 1,
-    device: _DeviceLike = "cpu",
+    device: _DeviceLike = Device.CPU,
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:
@@ -107,7 +107,7 @@ def batched(
     batch_size : int, optional
         Size of returned batches, by default 1.
     device: DeviceLike, optional
-        Device the tensors should be loaded to ("cuda" or "cpu"), by default None.
+        Device the tensors should be loaded to, by default Device.CPU.
     shuffle_data : bool, optional
         Whether to shuffle the data each time the dataloader is called, by default True.
     drop_remaining: bool, optional

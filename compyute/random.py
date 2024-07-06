@@ -1,9 +1,10 @@
 """Random functions module"""
 
-from .base_tensor import Tensor, tensor
-from .engine import _get_engine
-from .engine import gpu_available as _gpu_available
-from .types import _DeviceLike, _DtypeLike, _ShapeLike
+from typing import Optional
+
+from .base_tensor import Tensor, _ShapeLike, tensor
+from .dtypes import _DtypeLike, get_string_from_dtype
+from .engine import Device, _DeviceLike, get_engine
 
 __all__ = [
     "normal",
@@ -24,17 +25,19 @@ def set_seed(seed: int) -> None:
     seed : int
         Seed value.
     """
-    if _gpu_available():
-        _get_engine("cuda").random.seed(seed)
-    _get_engine("cpu").random.seed(seed)
+    try:
+        get_engine(Device.CUDA).random.seed(seed)
+    except AttributeError:
+        pass
+    get_engine(Device.CPU).random.seed(seed)
 
 
 def normal(
     shape: _ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
-    dtype: _DtypeLike = "float64",
-    device: _DeviceLike = "cpu",
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor with values drawn from a normal distribution.
 
@@ -47,24 +50,25 @@ def normal(
     std : float, optional
         Standard deviation of random values, by default 1.
     dtype: _DtypeLike, optional
-        Datatype of the tensor data, by default "float64".
+        Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        The device the tensor is stored on, by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of normally distributed samples.
     """
-    return tensor(_get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
+    dtype = get_string_from_dtype(dtype)
+    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
 def uniform(
     shape: _ShapeLike,
     low: float = -1.0,
     high: float = 1.0,
-    dtype: _DtypeLike = "float64",
-    device: _DeviceLike = "cpu",
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor with values drawn from a uniform distribution.
 
@@ -77,24 +81,25 @@ def uniform(
     high : float, optional
         Upper bound for random values, by default 1.
     dtype: _DtypeLike, optional
-        Datatype of the tensor data, by default "float64".
+        Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of uniformly distributed samples.
     """
-    return tensor(_get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
+    dtype = get_string_from_dtype(dtype)
+    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
 def uniform_int(
     shape: _ShapeLike,
     low: int,
     high: int,
-    dtype: _DtypeLike = "int32",
-    device: _DeviceLike = "cpu",
+    dtype: Optional[_DtypeLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor with integer values drawn from a discrete uniform distribution.
 
@@ -107,19 +112,22 @@ def uniform_int(
     high : int
         Upper bound for random values.
     dtype: _DtypeLike, optional
-        Datatype of the tensor data, by default "int32".
+        Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
-    return tensor(_get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
+    dtype = get_string_from_dtype(dtype)
+    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
-def permutation(n: int, dtype: _DtypeLike = "int32", device: _DeviceLike = "cpu") -> Tensor:
+def permutation(
+    n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
+) -> Tensor:
     """Returns a tensor containing a permuted range of length n.
 
     Parameters
@@ -127,16 +135,17 @@ def permutation(n: int, dtype: _DtypeLike = "int32", device: _DeviceLike = "cpu"
     n : int
         Length of the permuted range.
     dtype: _DtypeLike, optional
-        Datatype of the tensor data, by default "int32".
+        Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
 
     Returns
     -------
     Tensor
         Permuted tensor.
     """
-    return tensor(_get_engine(device).random.permutation(n), device=device, dtype=dtype)
+    dtype = get_string_from_dtype(dtype)
+    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
@@ -158,11 +167,11 @@ def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return Tensor(_get_engine(p.device).random.choice(x, size=shape, p=p.data))
-    return Tensor(_get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
+        return Tensor(get_engine(p.device).random.choice(x, size=shape, p=p.data))
+    return Tensor(get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
 
 
-def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = "cpu") -> Tensor:
+def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) -> Tensor:
     """Returns a tensor of repeated bernoulli experiments using a given probability.
 
     Parameters
@@ -172,14 +181,14 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = "cpu") -> Tens
     shape : _ShapeLike
         Shape of the new tensor.
     device: _DeviceLike, optional
-        The device the tensor is stored on ("cuda" or "cpu"), by default "cpu".
+        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
-    return Tensor(_get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]))
+    return Tensor(get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:

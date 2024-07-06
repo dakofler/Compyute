@@ -6,9 +6,8 @@ import pickle
 from abc import ABC
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from ...base_tensor import Tensor
-from ...engine import _check_device_availability
-from ...types import ShapeError, _DeviceLike
+from ...base_tensor import ShapeError, Tensor
+from ...engine import Device, _check_device_availability, _DeviceLike
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -22,7 +21,7 @@ class Module(ABC):
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
-        self._device: _DeviceLike = "cpu"
+        self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
         self._training: bool = training
         self._trainable: bool = True
@@ -38,6 +37,7 @@ class Module(ABC):
 
     def to_device(self, device: _DeviceLike) -> None:
         """Moves the module to the specified device."""
+        device = Device(device)
         if device == self._device:
             return
 
@@ -225,7 +225,7 @@ def save_module(module: Module, filepath: str) -> None:
         Path to the file.
     """
 
-    module.to_device("cpu")
+    module.to_device(Device.CPU)
     module.reset()
 
     with open(filepath, "wb") as file:

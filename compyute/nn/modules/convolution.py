@@ -3,9 +3,9 @@
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
+from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import zeros
-from ...types import _DtypeLike
 from ..functional.convolutions import avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ..parameter import Parameter
 from .module import Module
@@ -25,7 +25,7 @@ class Convolution1d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -52,7 +52,7 @@ class Convolution1d(Module):
         bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -81,7 +81,7 @@ class Convolution1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
         y, grad_func = convolve1d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self.training
         )
@@ -89,7 +89,7 @@ class Convolution1d(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_func(dy)
 
                 if dw is not None:
@@ -117,7 +117,7 @@ class Convolution2d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -144,7 +144,7 @@ class Convolution2d(Module):
         bias : bool, optional
             Whether to use bias values, by default True.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -170,7 +170,7 @@ class Convolution2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
         y, grad_func = convolve2d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self.training
         )
@@ -178,7 +178,7 @@ class Convolution2d(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_func(dy)
 
                 if dw is not None:

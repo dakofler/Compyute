@@ -3,11 +3,11 @@
 from typing import Optional
 
 from ...base_tensor import Tensor
+from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import empty_like, zeros, zeros_like
 from ...tensor_functions.transforming import sum as _sum
 from ...tensor_functions.transforming import tanh
-from ...types import _DtypeLike
 from ..functional.activations import sigmoid
 from ..functional.linear import linear
 from ..parameter import Parameter
@@ -25,7 +25,7 @@ class Recurrent(Module):
         h_channels: int,
         bias: bool = True,
         return_sequence: bool = True,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -46,7 +46,7 @@ class Recurrent(Module):
         return_sequence: bool, optional
             Whether to return the entire sequence or only the last hidden state.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -71,7 +71,7 @@ class Recurrent(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
@@ -88,7 +88,7 @@ class Recurrent(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
 
                 if not self.return_sequence:
                     dh = zeros_like(h)
@@ -144,7 +144,7 @@ class LSTM(Module):
         h_channels: int,
         bias: bool = True,
         return_sequence: bool = True,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -165,7 +165,7 @@ class LSTM(Module):
         return_sequence: bool, optional
             Whether to return the entire sequence or only the last hidden state.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -190,7 +190,7 @@ class LSTM(Module):
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
 
         # indices used to access the concatined matrices
         i1 = self.h_channels
@@ -228,7 +228,7 @@ class LSTM(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
 
                 if not self.return_sequence:
                     dh = zeros_like(h)
