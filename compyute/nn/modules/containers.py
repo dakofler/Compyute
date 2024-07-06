@@ -162,6 +162,7 @@ class Container(Module):
             s["out_shape"] = (-1,) + module.y.shape[1:]
             s["n_params"] = sum(p.size for p in module.parameters)
             s["trainable"] = module.trainable
+            s["type"] = "container" if isinstance(module, Container) else "module"
             summaries.append(s)
 
             # get summary of child modules
@@ -180,8 +181,8 @@ class Container(Module):
             out_shape = str(s["out_shape"])
             n_params = s["n_params"]
             trainable = str(s["trainable"])
-            n_parameters += s["n_params"]
-            n_train_parameters += s["n_params"] if s["trainable"] else 0
+            n_parameters += s["n_params"] if s["type"] == "module" else 0
+            n_train_parameters += s["n_params"] if s["trainable"] and s["type"] == "module" else 0
             summary.append(f"{name:25s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.reset()
@@ -260,9 +261,7 @@ class ParallelConcat(Container):
 
             def _backward(dy: Tensor) -> Tensor:
                 dy_splits = split(dy, splits=splits, axis=self.concat_axis)
-                return Tensor.as_tensor(
-                    tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
-                )
+                return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
 
             self._backward = _backward
 
@@ -278,11 +277,9 @@ class ParallelAdd(Container):
         if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
-        y = Tensor.as_tensor(tensorsum(m(x) for m in self.modules))
+        y = tensorsum(m(x) for m in self.modules)
 
         if self.training:
-            self._backward = lambda dy: Tensor.as_tensor(
-                tensorsum([m.backward(dy) for m in self.modules])
-            )
+            self._backward = lambda dy: tensorsum([m.backward(dy) for m in self.modules])
 
         return y
