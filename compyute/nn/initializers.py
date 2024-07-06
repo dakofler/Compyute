@@ -24,6 +24,8 @@ __all__ = [
 class Initializer(ABC):
     """Optimizer base class"""
 
+    __slots__ = ("dtype",)
+
     def __init__(self, dtype: _DtypeLike) -> None:
         self.dtype = Dtype(dtype)
 
@@ -45,6 +47,8 @@ class Initializer(ABC):
 
 class KaimingNormal(Initializer):
     """Normal initializer following He et al., 2015."""
+
+    __slots__ = ("gain",)
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Normal initializer following He et al., 2015.
@@ -68,6 +72,8 @@ class KaimingNormal(Initializer):
 class KaimingUniform(Initializer):
     """Uniform initializer following He et al., 2015."""
 
+    __slots__ = ("gain",)
+
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Uniform initializer following He et al., 2015.
 
@@ -89,6 +95,8 @@ class KaimingUniform(Initializer):
 
 class Normal(Initializer):
     """Initializes a tensor with values following a normal distribution."""
+
+    __slots__ = ("mean", "std")
 
     def __init__(
         self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
@@ -115,6 +123,8 @@ class Normal(Initializer):
 class Uniform(Initializer):
     """Initializes a tensor with values following a uniform distribution."""
 
+    __slots__ = ("low", "high")
+
     def __init__(
         self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
     ) -> None:
@@ -140,6 +150,8 @@ class Uniform(Initializer):
 class XavierNormal(Initializer):
     """Normal initializer following Glorot et al., 2010."""
 
+    __slots__ = ("gain",)
+
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Normal initializer following Glorot et al., 2010.
 
@@ -162,6 +174,8 @@ class XavierNormal(Initializer):
 
 class XavierUniform(Initializer):
     """Uniform initializer following Glorot et al., 2010."""
+
+    __slots__ = ("gain",)
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Uniform initializer following Glorot et al., 2010.
@@ -186,6 +200,8 @@ class XavierUniform(Initializer):
 class Ones(Initializer):
     """Initializes a tensor with ones."""
 
+    __slots__ = ()
+
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
         """Initializes a tensor with ones.
 
@@ -202,6 +218,8 @@ class Ones(Initializer):
 
 class Zeros(Initializer):
     """Initializes a tensor with zeros."""
+
+    __slots__ = ()
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
         """Initializes a tensor with zeros.

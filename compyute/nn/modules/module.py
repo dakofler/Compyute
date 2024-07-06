@@ -16,6 +16,8 @@ __all__ = ["Module", "save_module", "load_module"]
 class Module(ABC):
     """Neural network module."""
 
+    __slots__ = ("y", "_backward", "label", "_device", "_retain_values", "_training", "_trainable")
+
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
         self.y: Optional[Tensor] = None
@@ -88,32 +90,27 @@ class Module(ABC):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
-        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
+        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
-        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Buffer))
+        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def _is_repr_prop(key: str, value: Any) -> bool:
-        return all(
-            [
-                key not in ["y", "_backward", "label"],
-                not key.startswith("_"),
-                not isinstance(value, Tensor),
-                value is not None,
-            ]
-        )
+    def _reprattr(a: str, v: Any) -> bool:
+        return all([a != "label", not a.startswith("_"), not isinstance(v, Tensor), v is not None])
 
     def __repr__(self) -> str:
-        rep = f"{self.label}("
-        attributes = [f"{k}={v}" for k, v in self.__dict__.items() if self._is_repr_prop(k, v)]
-        return rep + ", ".join(attributes) + ")"
+        repr_string = f"{self.label}("
+        attributes = [
+            f"{a}={getattr(self, a)}" for a in self.__slots__ if self._reprattr(a, getattr(self, a))
+        ]
+        return repr_string + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)

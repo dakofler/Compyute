@@ -19,6 +19,18 @@ __all__ = ["LSTM", "Recurrent"]
 class Recurrent(Module):
     """Recurrent module."""
 
+    __slots__ = (
+        "in_channels",
+        "h_channels",
+        "bias",
+        "return_sequence",
+        "dtype",
+        "w_i",
+        "b_i",
+        "w_h",
+        "b_h",
+    )
+
     def __init__(
         self,
         in_channels: int,
@@ -138,6 +150,18 @@ class Recurrent(Module):
 class LSTM(Module):
     """Long Short-Term Memory module."""
 
+    __slots__ = (
+        "in_channels",
+        "h_channels",
+        "bias",
+        "return_sequence",
+        "dtype",
+        "w_i",
+        "b_i",
+        "w_h",
+        "b_h",
+    )
+
     def __init__(
         self,
         in_channels: int,
@@ -192,7 +216,7 @@ class LSTM(Module):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
 
-        # indices used to access the concatined matrices
+        # indices used to access the concatinated matrices
         i1 = self.h_channels
         i2 = 2 * i1
         i3 = 3 * i1

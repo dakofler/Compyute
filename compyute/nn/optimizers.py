@@ -13,10 +13,18 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    def __init__(self, parameters: Optional[Iterator[Parameter]], lr: float) -> None:
+    __slots__ = ("lr", "state", "t", "grad_clip_value")
+
+    def __init__(
+        self,
+        parameters: Optional[Iterator[Parameter]],
+        lr: float,
+        grad_clip_value: Optional[float] = None,
+    ) -> None:
         self.lr = lr
         self.state: dict = {}
         self.t: int = 1
+        self.grad_clip_value = grad_clip_value
 
         if parameters is not None:
             self.parameters = parameters
@@ -44,6 +52,8 @@ class Optimizer(ABC):
 class SGD(Optimizer):
     """Updates parameters using stochastic gradient descent."""
 
+    __slots__ = ("momentum", "nesterov", "weight_decay")
+
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -70,11 +80,10 @@ class SGD(Optimizer):
         grad_clip_value : float, optional
             Clips the gradient of all parameter to the set value, by default None.
         """
-        super().__init__(parameters, lr)
+        super().__init__(parameters, lr, grad_clip_value)
         self.momentum = momentum
         self.nesterov = nesterov
         self.weight_decay = weight_decay
-        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
@@ -110,6 +119,8 @@ class Adam(Optimizer):
     """Updates parameters following the Adam learning algorithm
     as described by Kingma et al., 2014."""
 
+    __slots__ = ("beta1", "beta2", "eps", "weight_decay")
+
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -140,12 +151,11 @@ class Adam(Optimizer):
         grad_clip_value : float, optional
             Clips the gradient of all parameter to the set value, by default None.
         """
-        super().__init__(parameters, lr)
+        super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
-        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         for p in self.parameters:
@@ -182,6 +192,8 @@ class Adam(Optimizer):
 class AdamW(Optimizer):
     """Updates parameters following the AdamW learning algorithm."""
 
+    __slots__ = ("beta1", "beta2", "eps", "weight_decay")
+
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -211,12 +223,11 @@ class AdamW(Optimizer):
         grad_clip_value : float, optional
             Clips the gradient of all parameter to the set value, by default None.
         """
-        super().__init__(parameters, lr)
+        super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
-        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         for p in self.parameters:
@@ -251,6 +262,8 @@ class AdamW(Optimizer):
 class NAdam(Optimizer):
     """Updates parameters following the NAdam learning algorithm."""
 
+    __slots__ = ("beta1", "beta2", "eps", "weight_decay", "momentum_decay")
+
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -283,14 +296,13 @@ class NAdam(Optimizer):
         grad_clip_value : float, optional
             Clips the gradient of all parameter to the set value, by default None.
         """
-        super().__init__(parameters, lr)
+        super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
         self.momentum_decay = momentum_decay
         self.state["mus"] = []
-        self.grad_clip_value = grad_clip_value
 
     def step(self) -> None:
         # momentum coefficient

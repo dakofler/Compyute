@@ -18,6 +18,8 @@ __all__ = [
 class LrScheduler(Callback):
     """Learning rate scheduler base class"""
 
+    __slots__ = ("optimizer", "verbose", "t", "cache")
+
     def __init__(self, optimizer: Optimizer, verbose: bool = False) -> None:
         self.optimizer = optimizer
         self.verbose = verbose
@@ -36,6 +38,8 @@ class LrScheduler(Callback):
 
 class StepLrScheduler(LrScheduler):
     """Decays an optimizers learning rate after a specified epoch."""
+
+    __slots__ = ("lr_decay", "t_decay")
 
     def __init__(
         self,
@@ -59,17 +63,19 @@ class StepLrScheduler(LrScheduler):
         """
         super().__init__(optimizer, verbose)
         self.lr_decay = lr_decay
-        self.decay_epoch = t_decay
+        self.t_decay = t_decay
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         self._update_cache(trainer_cache)
-        if trainer_cache["t"] == self.decay_epoch:
+        if trainer_cache["t"] == self.t_decay:
             self.optimizer.lr *= self.lr_decay
         self._print_lr()
 
 
 class MultistepLrScheduler(LrScheduler):
     """Decays an optimizers learning rate each time a specified number of epochs has elapsed."""
+
+    __slots__ = ("lr_decay", "t_decay_step")
 
     def __init__(
         self,
@@ -105,6 +111,8 @@ class MultistepLrScheduler(LrScheduler):
 class ExponentialLrScheduler(LrScheduler):
     """Decays an optimizers learning rate exponentially."""
 
+    __slots__ = ("lr_decay", "decay_steps")
+
     def __init__(
         self,
         optimizer: Optimizer,
@@ -127,17 +135,26 @@ class ExponentialLrScheduler(LrScheduler):
         """
         super().__init__(optimizer, verbose)
         self.lr_decay = lr_decay
-        self.t_max = decay_steps
+        self.decay_steps = decay_steps
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         self._update_cache(trainer_cache)
-        if self.t <= self.t_max:
+        if self.t <= self.decay_steps:
             self.optimizer.lr *= self.lr_decay
         self._print_lr()
 
 
 class CosineAnnealingLrScheduler(LrScheduler):
     """Sets an optimizers learning rate using a cosine schedule."""
+
+    __slots__ = (
+        "target_lr",
+        "decay_steps",
+        "warmup_steps",
+        "max_warmup_lr",
+        "_initial_lr",
+        "_warmup_lr_delta",
+    )
 
     def __init__(
         self,
@@ -197,6 +214,8 @@ class CosineAnnealingLrScheduler(LrScheduler):
 
 class AdaptiveLrScheduler(LrScheduler):
     """Sets an optimizers learning rate based on the trend of a specified metric."""
+
+    __slots__ = ("target", "trend_range", "lr_downscale_factor", "lr_upscale_factor")
 
     def __init__(
         self,

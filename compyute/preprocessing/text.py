@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pickle
 import re
+import string
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -20,16 +21,19 @@ __all__ = [
     "load_tokenizer",
 ]
 
-GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+WORD_PATTERN = r'([,.:;?_!"()\']|--|\s)'
+BPE_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
 
 
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    def __init__(self) -> None:
-        self.oov_token: str = ""
-        self.vocab: dict[str, int] = {}
-        self.ivocab: dict[int, str] = {}
+    __slots__ = ("oov_token", "vocab", "ivocab")
+
+    def __init__(self, oov_token: str = "") -> None:
+        self.oov_token = oov_token
+        self.vocab: dict[int, str | bytes] = {}
+        self.ivocab: dict[str | bytes, int] = {}
 
     @property
     def vocab_size(self) -> int:
@@ -51,14 +55,13 @@ class Tokenizer(ABC):
 class CharacterTokenizer(Tokenizer):
     """Creates character tokens."""
 
+    __slots__ = ()
+
     def __init__(self, oov_token: str = "<|unk|>") -> None:
-        super().__init__()
-        self.oov_token = oov_token
-        all_tokens = [oov_token, "\n"] + list(
-            "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ "
-        )
-        self.vocab = {t: i for i, t in enumerate(all_tokens)}
-        self.ivocab = {i: t for t, i in self.vocab.items()}
+        super().__init__(oov_token)
+        all_tokens = [oov_token, "\n"] + list(string.printable)
+        self.vocab = dict(enumerate(all_tokens))
+        self.ivocab = {token: idx for idx, token in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
         """Encodes text.
@@ -74,7 +77,7 @@ class CharacterTokenizer(Tokenizer):
             Tensor of token ids.
         """
         preprocessed = list(text)
-        return tensor([self.vocab[s] if s in self.vocab else 0 for s in preprocessed])
+        return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in preprocessed])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -89,15 +92,16 @@ class CharacterTokenizer(Tokenizer):
         str
             Text.
         """
-        return "".join([self.ivocab[i.item()] for i in token_ids])
+        return "".join([self.vocab[i.item()] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
     """Creates word tokens."""
 
+    __slots__ = ()
+
     def __init__(self, oov_token: str = "<|unk|>") -> None:
-        super().__init__()
-        self.oov_token = oov_token
+        super().__init__(oov_token)
 
     def fit(self, text: str, vocab_size: Optional[int] = None) -> None:
         """Fits the tokenizer to text.
@@ -109,13 +113,13 @@ class WordTokenizer(Tokenizer):
         vocab_size : int | None, optional
             Number of tokens to be generated, by default None.
         """
-        split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+        split = re.split(WORD_PATTERN, text)
         split = [s for s in split if s not in [" ", ""]]
         tokens = [self.oov_token, "\n"] + sorted(list(set(split)))
         if vocab_size is not None:
             tokens = tokens[: vocab_size - 1]
-        self.vocab = {t: i for i, t in enumerate(tokens)}
-        self.ivocab = {i: t for t, i in self.vocab.items()}
+        self.vocab = dict(enumerate(tokens))
+        self.ivocab = {t: i for i, t in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
         """Encodes a text.
@@ -132,7 +136,7 @@ class WordTokenizer(Tokenizer):
         """
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
-        return tensor([self.vocab[s] if s in self.vocab else 0 for s in split])
+        return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in split])
 
     def decode(self, token_ids: Tensor) -> str:
         """Decodes token ids.
@@ -147,7 +151,7 @@ class WordTokenizer(Tokenizer):
         str
             Concatenated tokens.
         """
-        text = " ".join([self.ivocab[i.item()] for i in token_ids])
+        text = " ".join([self.vocab[i.item()] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)
 
@@ -155,11 +159,12 @@ class WordTokenizer(Tokenizer):
 class BPETokenizer(Tokenizer):
     """Creates tokens using Byte-Pair-Encoding. Mostly follows the code by Andrjey Karpathy."""
 
+    __slots__ = ("_merges", "_pattern")
+
     def __init__(self) -> None:
         super().__init__()
-        self.vocab: dict[int, bytes] = {}
         self._merges = {}
-        self._pattern = regex.compile(GPT4_SPLIT_PATTERN)
+        self._pattern = regex.compile(BPE_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
         """Fits the tokenizer to text.

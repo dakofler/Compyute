@@ -18,6 +18,8 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 class Container(Module):
     """Container base module."""
 
+    __slots__ = ("_modules",)
+
     def __init__(self, *args: Module, label: Optional[str] = None, training: bool = False) -> None:
         """Container base module.
 
@@ -52,7 +54,7 @@ class Container(Module):
         """Returns the list of modules."""
         if self._modules is not None:
             return [m for m in self._modules]
-        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
+        return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
 
     def add(self, module: Module) -> None:
         """Adds a module to the container.
@@ -193,15 +195,9 @@ class Container(Module):
 
 
 class Sequential(Container):
-    """Sequential container module. Layers are processed sequentially.
+    """Sequential container module. Layers are processed sequentially."""
 
-    Parameters
-    ----------
-    *args : Module
-        Layers used in the sequential container.
-    label: str, optional
-        Container label.
-    """
+    __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
         if len(self.modules) == 0:
@@ -224,6 +220,8 @@ class Sequential(Container):
 
 class ParallelConcat(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
+
+    __slots__ = ("concat_axis",)
 
     def __init__(
         self,
@@ -262,7 +260,9 @@ class ParallelConcat(Container):
 
             def _backward(dy: Tensor) -> Tensor:
                 dy_splits = split(dy, splits=splits, axis=self.concat_axis)
-                return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
+                return Tensor.as_tensor(
+                    tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
+                )
 
             self._backward = _backward
 
@@ -272,13 +272,17 @@ class ParallelConcat(Container):
 class ParallelAdd(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are added element-wise."""
 
+    __slots__ = ()
+
     def forward(self, x: Tensor) -> Tensor:
         if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
 
-        y = tensorsum(m(x) for m in self.modules)
+        y = Tensor.as_tensor(tensorsum(m(x) for m in self.modules))
 
         if self.training:
-            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
+            self._backward = lambda dy: Tensor.as_tensor(
+                tensorsum([m.backward(dy) for m in self.modules])
+            )
 
         return y

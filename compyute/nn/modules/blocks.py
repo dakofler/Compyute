@@ -17,6 +17,8 @@ __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnec
 class DenseBlock(Sequential):
     """Dense neural network block containing a linear layer and an activation function."""
 
+    __slots__ = ()
+
     def __init__(
         self,
         in_channels: int,
@@ -85,6 +87,8 @@ class DenseBlock(Sequential):
 
 class Convolution1dBlock(Sequential):
     """Convolution 1d block containing a 1d convolutional layer and an activation function."""
+
+    __slots__ = ()
 
     def __init__(
         self,
@@ -176,6 +180,8 @@ class Convolution1dBlock(Sequential):
 
 class Convolution2dBlock(Sequential):
     """Convolution 2d block containing a 2d convolutional layer and an activation function."""
+
+    __slots__ = ()
 
     def __init__(
         self,
@@ -269,6 +275,8 @@ class Convolution2dBlock(Sequential):
 
 class SkipConnection(ParallelAdd):
     """Skip connection bypassing a block of modules."""
+
+    __slots__ = ()
 
     def __init__(
         self,

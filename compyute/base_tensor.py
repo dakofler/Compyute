@@ -61,6 +61,8 @@ def tensor(
 class Tensor:
     """Tensor object."""
 
+    __slots__ = ("_data", "requires_grad", "grad", "_iterator")
+
     def __init__(
         self,
         data: _ArrayLike,

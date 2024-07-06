@@ -10,6 +10,8 @@ __all__ = ["Buffer", "Parameter"]
 class Parameter(Tensor):
     """Trainable neural network parameter."""
 
+    __slots__ = ("label",)
+
     def __init__(self, data: Tensor, label: Optional[str] = None) -> None:
         """Trainable neural network parameter.
 
@@ -27,6 +29,8 @@ class Parameter(Tensor):
 
 class Buffer(Tensor):
     """Non-trainable neural network buffer variable."""
+
+    __slots__ = ("label",)
 
     def __init__(self, data: Tensor, label: Optional[str] = None) -> None:
         """Neural network buffer.
