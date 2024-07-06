@@ -26,16 +26,20 @@ import compyute as cp
 x = cp.tensor([[4, 5, 6], [7, 8, 9]])
 
 # alternatively, define data types
+x = cp.tensor([1, 2, 3], dtype=cp.int32)
 x = cp.tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
+y = x.as_type(cp.float32)
 y = x.float()
 y = x.int()
 
 # define the device the tensor is stored on
+c = cp.tensor([1, 2, 3], device=cp.cuda)
 c = cp.tensor([1, 2, 3], device="cuda")
 
 # change devices
+c.to_device(cp.cpu)
 c.to_device("cpu")
 c = c.cpu()
 ```

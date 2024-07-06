@@ -3,7 +3,7 @@
 from typing import Any, Literal, Optional
 
 from ...base_tensor import Tensor
-from ...types import _ScalarLike
+from ...dtypes import _ScalarLike
 from ..dataloaders import DataLoader
 from ..losses import Loss, parse_loss
 from ..metrics import Metric, parse_metric
@@ -16,6 +16,16 @@ __all__ = ["Trainer"]
 
 class Trainer:
     """Neural network model trainer."""
+
+    __slots__ = (
+        "model",
+        "optimizer",
+        "loss",
+        "metric",
+        "metric_name",
+        "callbacks",
+        "_callback_cache",
+    )
 
     def __init__(
         self,

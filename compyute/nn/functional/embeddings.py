@@ -3,6 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
+from ...dtypes import Dtype
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_functions.transforming import sum as _sum
 
@@ -30,10 +31,10 @@ def lookup_embedding(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    if x.dtype not in ("int32", "int64"):
-        raise ValueError(f"Input must be int32 or int64, got {x.dtype}.")
+    if x.dtype not in (Dtype.INT8, Dtype.INT16, Dtype.INT32, Dtype.INT64):
+        raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
-    x = one_hot_encode(x, embedding_table.shape[0]).astype(embedding_table.dtype)
+    x = one_hot_encode(x, embedding_table.shape[0]).as_type(embedding_table.dtype)
     y = x @ embedding_table
 
     if return_grad_func:

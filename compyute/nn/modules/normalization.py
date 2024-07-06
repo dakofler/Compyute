@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor
+from ...base_tensor import Tensor, _ShapeLike
+from ...dtypes import Dtype, _DtypeLike
 from ...tensor_functions.creating import ones, zeros
-from ...types import _DtypeLike, _ShapeLike
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm
 from ..parameter import Buffer, Parameter
 from .module import Module
@@ -15,12 +15,14 @@ __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 class Batchnorm1d(Module):
     """Batch Normalization."""
 
+    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
+
     def __init__(
         self,
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -40,7 +42,7 @@ class Batchnorm1d(Module):
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -62,7 +64,7 @@ class Batchnorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_func = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
@@ -71,7 +73,7 @@ class Batchnorm1d(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_func(dy)
 
                 if dw is not None:
@@ -90,12 +92,14 @@ class Batchnorm1d(Module):
 class Batchnorm2d(Module):
     """Batch Normalization."""
 
+    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
+
     def __init__(
         self,
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -115,7 +119,7 @@ class Batchnorm2d(Module):
         m : float, optional
             Momentum used for running mean and variance computation, by default 0.1.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -137,7 +141,7 @@ class Batchnorm2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_func = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
@@ -146,7 +150,7 @@ class Batchnorm2d(Module):
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_func(dy)
 
                 if dw is not None:
@@ -165,11 +169,13 @@ class Batchnorm2d(Module):
 class Layernorm(Module):
     """Normalizes values per sample."""
 
+    __slots__ = ("normalized_shape", "eps", "dtype", "w", "b")
+
     def __init__(
         self,
         normalized_shape: _ShapeLike,
         eps: float = 1e-5,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -187,7 +193,7 @@ class Layernorm(Module):
         eps : float, optional
             Constant for numerical stability, by default 1e-5.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -203,14 +209,14 @@ class Layernorm(Module):
         self.b = Parameter(zeros(normalized_shape, dtype), label="ln_b")
 
     def forward(self, x: Tensor) -> Tensor:
-        x = x.astype(self.dtype)
+        x = x.as_type(self.dtype)
 
         y, grad_func = layernorm(x, self.w, self.b, self.eps, self.training)
 
         if self.training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.astype(self.dtype)
+                dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_func(dy)
 
                 if dw is not None:

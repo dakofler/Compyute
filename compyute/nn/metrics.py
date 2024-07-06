@@ -11,12 +11,16 @@ __all__ = ["Accuracy", "R2"]
 class Metric(ABC):
     """Metric base class."""
 
+    __slots__ = ()
+
     @abstractmethod
     def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
 
 
 class Accuracy(Metric):
     """Computes the accuracy score."""
+
+    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the accuracy score.
@@ -38,6 +42,8 @@ class Accuracy(Metric):
 
 class R2(Metric):
     """Computes the coefficient of determination (R2 score)."""
+
+    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
         """Computes the coefficient of determination (R2 score).

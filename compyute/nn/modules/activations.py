@@ -12,6 +12,8 @@ __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
 class ReLU(Module):
     """ReLu activation function."""
 
+    __slots__ = ()
+
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = relu(x, self.training)
         return y
@@ -19,6 +21,8 @@ class ReLU(Module):
 
 class LeakyReLU(Module):
     """Leaky ReLu activation function."""
+
+    __slots__ = ("alpha",)
 
     def __init__(self, alpha: float = 0.01, label: Optional[str] = None, training: bool = False):
         """Leaky ReLu activation function.
@@ -43,6 +47,8 @@ class LeakyReLU(Module):
 class GELU(Module):
     """Gaussian Error Linear Unit activation function."""
 
+    __slots__ = ()
+
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = gelu(x, self.training)
         return y
@@ -58,6 +64,8 @@ class Tanh(Module):
 
 class Sigmoid(Module):
     """Sigmoid activation function."""
+
+    __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = sigmoid(x, self.training)

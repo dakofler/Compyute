@@ -2,9 +2,8 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor
+from ...base_tensor import Tensor, _ShapeLike
 from ...tensor_functions.reshaping import moveaxis, reshape
-from ...types import _ShapeLike
 from .module import Module
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]
@@ -12,6 +11,8 @@ __all__ = ["Reshape", "Flatten", "Moveaxis"]
 
 class Reshape(Module):
     """Flatten layer used to reshape tensors to any shape."""
+
+    __slots__ = ("output_shape",)
 
     def __init__(
         self, output_shape: _ShapeLike, label: Optional[str] = None, training: bool = False
@@ -42,6 +43,8 @@ class Reshape(Module):
 class Flatten(Module):
     """Flatten layer used to flatten tensors not including the batch dimension."""
 
+    __slots__ = ()
+
     def forward(self, x: Tensor) -> Tensor:
         y = reshape(x, shape=(x.shape[0], -1))
 
@@ -53,6 +56,8 @@ class Flatten(Module):
 
 class Moveaxis(Module):
     """Moveaxis layer used to swap tensor dimensions."""
+
+    __slots__ = ("from_axis", "to_axis")
 
     def __init__(
         self, from_axis: int, to_axis: int, label: Optional[str] = None, training: bool = False

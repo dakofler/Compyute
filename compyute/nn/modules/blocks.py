@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from ...types import _DtypeLike
+from ...dtypes import Dtype, _DtypeLike
 from ..initializers import get_initializer
 from ..parameter import Parameter
 from .activations import get_act_from_str
@@ -16,6 +16,8 @@ __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnec
 
 class DenseBlock(Sequential):
     """Dense neural network block containing a linear layer and an activation function."""
+
+    __slots__ = ()
 
     def __init__(
         self,
@@ -40,7 +42,7 @@ class DenseBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -65,7 +67,7 @@ class DenseBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -85,6 +87,8 @@ class DenseBlock(Sequential):
 
 class Convolution1dBlock(Sequential):
     """Convolution 1d block containing a 1d convolutional layer and an activation function."""
+
+    __slots__ = ()
 
     def __init__(
         self,
@@ -113,7 +117,7 @@ class Convolution1dBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -146,7 +150,7 @@ class Convolution1dBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -177,6 +181,8 @@ class Convolution1dBlock(Sequential):
 class Convolution2dBlock(Sequential):
     """Convolution 2d block containing a 2d convolutional layer and an activation function."""
 
+    __slots__ = ()
+
     def __init__(
         self,
         in_channels: int,
@@ -204,7 +210,7 @@ class Convolution2dBlock(Sequential):
             "xavier_uniform",
             "zeros",
         ] = "zeros",
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -237,7 +243,7 @@ class Convolution2dBlock(Sequential):
         bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -269,6 +275,8 @@ class Convolution2dBlock(Sequential):
 
 class SkipConnection(ParallelAdd):
     """Skip connection bypassing a block of modules."""
+
+    __slots__ = ()
 
     def __init__(
         self,

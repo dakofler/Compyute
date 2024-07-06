@@ -2,9 +2,8 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _as_tensor
-from ..engine import _get_engine
-from ..types import _AxisLike
+from ..base_tensor import Tensor, _AxisLike
+from ..engine import get_engine
 
 __all__ = ["argmax", "get_diagonal", "tril", "triu", "unique"]
 
@@ -28,7 +27,7 @@ def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) 
     Tensor
         Tensor containing indices.
     """
-    return _as_tensor(_get_engine(x.device).argmax(x.data, axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(get_engine(x.device).argmax(x.data, axis=axis, keepdims=keepdims))
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
@@ -49,7 +48,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         The extracted diagonal or constructed diagonal tensor.
     """
-    return Tensor(_get_engine(x.device).diag(x.data, k=d))
+    return Tensor(get_engine(x.device).diag(x.data, k=d))
 
 
 def tril(x: Tensor, d: int = 0) -> Tensor:
@@ -71,7 +70,7 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         Lower triangle tensor.
     """
-    return Tensor(_get_engine(x.device).tril(x.data, k=d))
+    return Tensor(get_engine(x.device).tril(x.data, k=d))
 
 
 def triu(x: Tensor, d: int = 0) -> Tensor:
@@ -93,9 +92,9 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         Upper triangle tensor.
     """
-    return Tensor(_get_engine(x.device).triu(x.data, k=d))
+    return Tensor(get_engine(x.device).triu(x.data, k=d))
 
 
 def unique(x: Tensor) -> Tensor:
     """Returns the unique ordered values of the tensor."""
-    return Tensor(_get_engine(x.device).unique(x.data))
+    return Tensor(get_engine(x.device).unique(x.data))

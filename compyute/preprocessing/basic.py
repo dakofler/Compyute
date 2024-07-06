@@ -2,14 +2,14 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor
+from ..base_tensor import Tensor, _AxisLike
+from ..dtypes import Dtype
 from ..random import shuffle
 from ..tensor_functions.creating import identity
 from ..tensor_functions.transforming import max as _max
 from ..tensor_functions.transforming import mean
 from ..tensor_functions.transforming import min as _min
 from ..tensor_functions.transforming import var
-from ..types import _AxisLike
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
@@ -121,7 +121,7 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     ValueError
         If the tensor dtype is not int.
     """
-    if x.dtype not in {"int", "int8", "int16", "int32", "int64"}:
-        raise ValueError(f'Invalid datatype {x.dtype}. Must be "int".')
+    if x.dtype not in {Dtype.INT8, Dtype.INT16, Dtype.INT32, Dtype.INT64}:
+        raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
     return identity(n=num_classes, dtype="int32", device=x.device)[x]

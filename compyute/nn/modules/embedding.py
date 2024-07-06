@@ -3,8 +3,8 @@
 from typing import Optional
 
 from ...base_tensor import Tensor
+from ...dtypes import Dtype, _DtypeLike
 from ...random import normal
-from ...types import _DtypeLike
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter
 from .module import Module
@@ -15,11 +15,13 @@ __all__ = ["Embedding"]
 class Embedding(Module):
     """Layer used for token embedding."""
 
+    __slots__ = ("vocab_size", "embedding_dim", "dtype", "w")
+
     def __init__(
         self,
         vocab_size: int,
         embedding_dim: int,
-        dtype: _DtypeLike = "float32",
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -36,7 +38,7 @@ class Embedding(Module):
         embedding_dim : int
             Embedding dimensionality.
         dtype: DtypeLike, optional
-            Datatype of weights and biases, by default "float32".
+            Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
             Module label.
         training: bool, optional
@@ -58,7 +60,7 @@ class Embedding(Module):
 
             def _backward(dy: Tensor) -> None:
                 if self.w.requires_grad:
-                    dy = dy.astype(self.dtype)
+                    dy = dy.as_type(self.dtype)
                     self.w.grad += grad_func(dy)
 
             self._backward = _backward

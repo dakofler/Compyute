@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _as_tensor, tensor
-from ..engine import _get_engine
-from ..types import _AxisLike, _ComplexLike, _DtypeLike, _ShapeLike
+from ..base_tensor import Tensor, _AxisLike, _ShapeLike, tensor
+from ..dtypes import _DtypeLike
+from ..engine import get_engine
 
 __all__ = [
     "sum",
@@ -57,7 +57,7 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the sum of elements.
     """
-    return _as_tensor(x.data.sum(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.sum(axis=axis, keepdims=keepdims))
 
 
 def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -79,7 +79,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     Tensor
         Tensor containing the product of elements.
     """
-    return _as_tensor(x.data.prod(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.prod(axis=axis, keepdims=keepdims))
 
 
 def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -101,7 +101,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     Tensor
         Tensor containing the mean of elements.
     """
-    return _as_tensor(x.data.mean(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.mean(axis=axis, keepdims=keepdims))
 
 
 def var(
@@ -128,7 +128,7 @@ def var(
     Tensor
         Tensor containing the variance of elements.
     """
-    return _as_tensor(x.data.var(axis=axis, ddof=ddof, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.var(axis=axis, ddof=ddof, keepdims=keepdims))
 
 
 def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -150,7 +150,7 @@ def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the standard deviation of elements.
     """
-    return _as_tensor(x.data.std(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.std(axis=axis, keepdims=keepdims))
 
 
 def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -172,7 +172,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the minimum of elements.
     """
-    return _as_tensor(x.data.min(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.min(axis=axis, keepdims=keepdims))
 
 
 def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -194,7 +194,7 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the maximum of elements.
     """
-    return _as_tensor(x.data.max(axis=axis, keepdims=keepdims))
+    return Tensor.as_tensor(x.data.max(axis=axis, keepdims=keepdims))
 
 
 def round(x: Tensor, decimals: int) -> Tensor:
@@ -217,52 +217,52 @@ def round(x: Tensor, decimals: int) -> Tensor:
 
 def exp(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise exponential values."""
-    return Tensor(_get_engine(x.device).exp(x.data))
+    return Tensor(get_engine(x.device).exp(x.data))
 
 
 def log(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise log values."""
-    return Tensor(_get_engine(x.device).log(x.data))
+    return Tensor(get_engine(x.device).log(x.data))
 
 
 def log10(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise log base 10 values."""
-    return Tensor(_get_engine(x.device).log10(x.data))
+    return Tensor(get_engine(x.device).log10(x.data))
 
 
 def log2(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise log base 2 values."""
-    return Tensor(_get_engine(x.device).log2(x.data))
+    return Tensor(get_engine(x.device).log2(x.data))
 
 
 def sin(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise sine values."""
-    return Tensor(_get_engine(x.device).sin(x.data))
+    return Tensor(get_engine(x.device).sin(x.data))
 
 
 def sinh(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise hyperbolic sine values."""
-    return Tensor(_get_engine(x.device).sinh(x.data))
+    return Tensor(get_engine(x.device).sinh(x.data))
 
 
 def cos(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise cosine values."""
-    return Tensor(_get_engine(x.device).cos(x.data))
+    return Tensor(get_engine(x.device).cos(x.data))
 
 
 def cosh(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise hyperbolic cosine values."""
-    return Tensor(_get_engine(x.device).cosh(x.data))
+    return Tensor(get_engine(x.device).cosh(x.data))
 
 
 def tan(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise tangent values."""
-    return Tensor(_get_engine(x.device).tan(x.data))
+    return Tensor(get_engine(x.device).tan(x.data))
 
 
 def tanh(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise hyperbolic tangent values."""
-    return Tensor(_get_engine(x.device).tanh(x.data))
+    return Tensor(get_engine(x.device).tanh(x.data))
 
 
 def sech(x: Tensor) -> Tensor:
@@ -272,19 +272,19 @@ def sech(x: Tensor) -> Tensor:
 
 def abs(x: Tensor) -> Tensor:
     """Returns a new tensor containing the absolute values."""
-    return Tensor(_get_engine(x.device).abs(x.data))
+    return Tensor(get_engine(x.device).abs(x.data))
 
 
 def sqrt(x: Tensor) -> Tensor:
     """Returns a new tensor containing the square root values."""
-    return Tensor(_get_engine(x.device).sqrt(x.data))
+    return Tensor(get_engine(x.device).sqrt(x.data))
 
 
 def fft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: Optional[_ComplexLike] = None,
+    dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
     """Computes the 1D Fast Fourier Transform over a specified axis.
 
@@ -296,8 +296,8 @@ def fft1d(
         Length of the transformed axis of the output, by default None.
     axis : int, optional
         Axis over which to compute the FFT, by default -1.
-    dtype : ComplexLike, optional
-        Datatype of the output tensor, by default None.
+    dtype : _DtypeLike, optional
+        Complex datatype of the output tensor, by default None.
 
     Returns
     -------
@@ -305,7 +305,7 @@ def fft1d(
         Complex tensor.
     """
     return tensor(
-        _get_engine(x.device).fft.fft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
+        get_engine(x.device).fft.fft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
     )
 
 
@@ -313,7 +313,7 @@ def ifft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: Optional[_ComplexLike] = None,
+    dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
     """Computes the inverse 1D Fast Fourier Transform over a specified axis.
 
@@ -325,8 +325,8 @@ def ifft1d(
         Length of the transformed axis of the output, by default None.
     axis : int, optional
         Axis over which to compute the inverse FFT, by default -1.
-    dtype : FloatLike, optional
-        Datatype of the output tensor, by default None.
+    dtype : _DtypeLike, optional
+        Complex datatype of the output tensor, by default None.
 
     Returns
     -------
@@ -334,7 +334,7 @@ def ifft1d(
         Float tensor.
     """
     return tensor(
-        _get_engine(x.device).fft.ifft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
+        get_engine(x.device).fft.ifft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
     )
 
 
@@ -342,7 +342,7 @@ def fft2d(
     x: Tensor,
     s: Optional[_ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: Optional[_ComplexLike] = None,
+    dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
     """Computes the 2D Fast Fourier Transform over two specified axes.
 
@@ -354,8 +354,8 @@ def fft2d(
         Shape (length of each transformed axis) of the output, by default None.
     axes : tuple[int, int], optional
         Axes over which to compute the FFT, by default (-2, -1).
-    dtype : ComplexLike, optional
-        Datatype of the output tensor, by default None.
+    dtype : _DtypeLike, optional
+        Complex datatype of the output tensor, by default None.
 
     Returns
     -------
@@ -363,7 +363,7 @@ def fft2d(
         Complex tensor.
     """
     return tensor(
-        _get_engine(x.device).fft.fft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
+        get_engine(x.device).fft.fft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
     )
 
 
@@ -371,7 +371,7 @@ def ifft2d(
     x: Tensor,
     s: Optional[_ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: Optional[_ComplexLike] = None,
+    dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
     """Applies the inverse 1D Fast Fourier Transform to the tensor.
 
@@ -383,8 +383,8 @@ def ifft2d(
         Shape (length of each transformed axis) of the output, by default None.
     axes : tuple[int, int], optional
         Axes over which to compute the inverse FFT, by default (-2, -1).
-    dtype : ComplexLike, optional
-        Datatype of the output tensor, by default None.
+    dtype : _DtypeLike, optional
+        Complex datatype of the output tensor, by default None.
 
     Returns
     -------
@@ -392,7 +392,7 @@ def ifft2d(
         Complex tensor.
     """
     return tensor(
-        _get_engine(x.device).fft.ifft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
+        get_engine(x.device).fft.ifft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
     )
 
 
@@ -411,7 +411,7 @@ def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
     Tensor
         Tensor containing real values.
     """
-    return tensor(_get_engine(x.device).real(x.data), device=x.device, dtype=dtype)
+    return tensor(get_engine(x.device).real(x.data), device=x.device, dtype=dtype)
 
 
 def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None) -> Tensor:
@@ -431,7 +431,7 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
     Tensor
         Tensor containing clipped values.
     """
-    return Tensor(_get_engine(x.device).clip(x.data, min_value, max_value))
+    return Tensor(get_engine(x.device).clip(x.data, min_value, max_value))
 
 
 def histogram(
@@ -468,7 +468,7 @@ def histogram(
     """
     b = bins.data if isinstance(bins, Tensor) else bins
     w = weights.data if weights is not None else None
-    hist, bin_edges = _get_engine(x.device).histogram(
+    hist, bin_edges = get_engine(x.device).histogram(
         x.data, bins=b, range=range, density=density, weights=w
     )
     return Tensor(hist), Tensor(bin_edges)

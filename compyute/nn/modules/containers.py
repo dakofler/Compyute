@@ -3,11 +3,12 @@
 from abc import abstractmethod
 from typing import Iterator, Optional
 
-from ...base_tensor import Tensor
+from ...base_tensor import Tensor, _ShapeLike
+from ...dtypes import Dtype, _DtypeLike
+from ...engine import Device, _DeviceLike
 from ...tensor_functions.combining import concatenate, split
 from ...tensor_functions.computing import tensorsum
 from ...tensor_functions.creating import ones
-from ...types import _DeviceLike, _DtypeLike, _ShapeLike
 from ..parameter import Parameter
 from .module import Module
 
@@ -16,6 +17,8 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
 class Container(Module):
     """Container base module."""
+
+    __slots__ = ("_modules",)
 
     def __init__(self, *args: Module, label: Optional[str] = None, training: bool = False) -> None:
         """Container base module.
@@ -37,6 +40,7 @@ class Container(Module):
     # ----------------------------------------------------------------------------------------------
 
     def to_device(self, device: _DeviceLike) -> None:
+        device = Device(device)
         if self.device == device:
             return
 
@@ -50,7 +54,7 @@ class Container(Module):
         """Returns the list of modules."""
         if self._modules is not None:
             return [m for m in self._modules]
-        return [i[1] for i in self.__dict__.items() if isinstance(i[1], Module)]
+        return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
 
     def add(self, module: Module) -> None:
         """Adds a module to the container.
@@ -123,7 +127,7 @@ class Container(Module):
         for module in self.modules:
             module.reset()
 
-    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = "float32") -> None:
+    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Prints information about the container and its modules.
 
         Parameters
@@ -158,6 +162,7 @@ class Container(Module):
             s["out_shape"] = (-1,) + module.y.shape[1:]
             s["n_params"] = sum(p.size for p in module.parameters)
             s["trainable"] = module.trainable
+            s["type"] = "container" if isinstance(module, Container) else "module"
             summaries.append(s)
 
             # get summary of child modules
@@ -176,8 +181,8 @@ class Container(Module):
             out_shape = str(s["out_shape"])
             n_params = s["n_params"]
             trainable = str(s["trainable"])
-            n_parameters += s["n_params"]
-            n_train_parameters += s["n_params"] if s["trainable"] else 0
+            n_parameters += s["n_params"] if s["type"] == "module" else 0
+            n_train_parameters += s["n_params"] if s["trainable"] and s["type"] == "module" else 0
             summary.append(f"{name:25s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.reset()
@@ -191,15 +196,9 @@ class Container(Module):
 
 
 class Sequential(Container):
-    """Sequential container module. Layers are processed sequentially.
+    """Sequential container module. Layers are processed sequentially."""
 
-    Parameters
-    ----------
-    *args : Module
-        Layers used in the sequential container.
-    label: str, optional
-        Container label.
-    """
+    __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
         if len(self.modules) == 0:
@@ -222,6 +221,8 @@ class Sequential(Container):
 
 class ParallelConcat(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
+
+    __slots__ = ("concat_axis",)
 
     def __init__(
         self,
@@ -270,6 +271,8 @@ class ParallelConcat(Container):
 class ParallelAdd(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are added element-wise."""
 
+    __slots__ = ()
+
     def forward(self, x: Tensor) -> Tensor:
         if len(self.modules) == 0:
             raise ValueError("No modules have been added yet.")
@@ -277,6 +280,6 @@ class ParallelAdd(Container):
         y = tensorsum(m(x) for m in self.modules)
 
         if self.training:
-            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
+            self._backward = lambda dy: tensorsum([m.backward(dy) for m in self.modules])
 
         return y

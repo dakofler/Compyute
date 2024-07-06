@@ -6,9 +6,8 @@ import pickle
 from abc import ABC
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from ...base_tensor import Tensor
-from ...engine import _check_device_availability
-from ...types import ShapeError, _DeviceLike
+from ...base_tensor import ShapeError, Tensor
+from ...engine import Device, _check_device_availability, _DeviceLike
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -17,12 +16,14 @@ __all__ = ["Module", "save_module", "load_module"]
 class Module(ABC):
     """Neural network module."""
 
+    __slots__ = ("y", "_backward", "label", "_device", "_retain_values", "_training", "_trainable")
+
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
         self.label = label if label is not None else self.__class__.__name__
-        self._device: _DeviceLike = "cpu"
+        self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
         self._training: bool = training
         self._trainable: bool = True
@@ -38,6 +39,7 @@ class Module(ABC):
 
     def to_device(self, device: _DeviceLike) -> None:
         """Moves the module to the specified device."""
+        device = Device(device)
         if device == self._device:
             return
 
@@ -88,32 +90,27 @@ class Module(ABC):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
-        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Parameter))
+        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
-        return (i[1] for i in self.__dict__.items() if isinstance(i[1], Buffer))
+        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def _is_repr_prop(key: str, value: Any) -> bool:
-        return all(
-            [
-                key not in ["y", "_backward", "label"],
-                not key.startswith("_"),
-                not isinstance(value, Tensor),
-                value is not None,
-            ]
-        )
+    def _reprattr(a: str, v: Any) -> bool:
+        return all([a != "label", not a.startswith("_"), not isinstance(v, Tensor), v is not None])
 
     def __repr__(self) -> str:
-        rep = f"{self.label}("
-        attributes = [f"{k}={v}" for k, v in self.__dict__.items() if self._is_repr_prop(k, v)]
-        return rep + ", ".join(attributes) + ")"
+        repr_string = f"{self.label}("
+        attributes = [
+            f"{a}={getattr(self, a)}" for a in self.__slots__ if self._reprattr(a, getattr(self, a))
+        ]
+        return repr_string + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
         y = self.forward(x)
@@ -225,7 +222,7 @@ def save_module(module: Module, filepath: str) -> None:
         Path to the file.
     """
 
-    module.to_device("cpu")
+    module.to_device(Device.CPU)
     module.reset()
 
     with open(filepath, "wb") as file:
