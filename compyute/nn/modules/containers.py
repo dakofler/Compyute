@@ -53,7 +53,9 @@ class Container(Module):
     def modules(self) -> list[Module]:
         """Returns the list of modules."""
         if self._modules is not None:
-            return [m for m in self._modules]
+            return self._modules
+        if "__dict__" in dir(self):
+            return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
         return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
 
     def add(self, module: Module) -> None:
