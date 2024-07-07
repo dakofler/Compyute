@@ -235,42 +235,51 @@ class Zeros(Initializer):
         return zeros(shape, self.dtype)
 
 
+_InitializerLike = (
+    Initializer
+    | Literal[
+        "kaiming_normal",
+        "kaiming_uniform",
+        "normal",
+        "uniform",
+        "xavier_normal",
+        "xavier_uniform",
+        "zeros",
+        "ones",
+    ]
+)
+
+INITIALIZERS = {
+    "kaiming_normal": KaimingNormal,
+    "kaiming_uniform": KaimingUniform,
+    "normal": Normal,
+    "uniform": Uniform,
+    "xavier_normal": XavierNormal,
+    "xavier_uniform": XavierUniform,
+    "zeros": Zeros,
+    "ones": Ones,
+}
+GAINS = {
+    "sigmoid": 1,
+    "tanh": 5 / 3,
+    "relu": 2**0.5,
+    "leaky_relu": (2 / (1 + 0.1**2)) ** 0.5,
+    "selu": 3 / 4,
+}
+
+
 def get_initializer(
-    initializer: str,
+    initializer: _InitializerLike,
     dtype: _DtypeLike,
-    activation_function: Optional[Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]] = None,
+    activation: Optional[Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]] = None,
 ) -> Initializer:
     """Returns an instance of an initializer."""
     if isinstance(initializer, Initializer):
         return initializer
-
-    initializers = {
-        "kaiming_normal": KaimingNormal,
-        "kaiming_uniform": KaimingUniform,
-        "normal": Normal,
-        "uniform": Uniform,
-        "xavier_normal": XavierNormal,
-        "xavier_uniform": XavierUniform,
-        "zeros": Zeros,
-        "ones": Ones,
-    }
-
-    if initializer not in initializers.keys():
-        raise ValueError(f"Unknown initializer {initializer}.")
-
-    gains = {
-        "sigmoid": 1,
-        "tanh": 5 / 3,
-        "relu": 2**0.5,
-        "leaky_relu": (2 / (1 + 0.1**2)) ** 0.5,
-        "selu": 3 / 4,
-    }
-    if activation_function is not None:
-        gain = gains.get(activation_function, 1)
-    else:
-        gain = 1
-
-    return initializers[initializer](dtype=dtype, gain=gain)
+    if initializer not in INITIALIZERS:
+        raise ValueError(f"Unknown initializer: {initializer}.")
+    gain = GAINS.get(activation, 1) if activation is not None else 1
+    return INITIALIZERS[initializer](dtype=dtype, gain=gain)
 
 
 def _get_fan_in(shape: _ShapeLike) -> int:

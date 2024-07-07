@@ -1,5 +1,6 @@
 """Activation layers module"""
 
+from enum import Enum
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
@@ -72,17 +73,19 @@ class Sigmoid(Module):
         return y
 
 
-def get_act_from_str(
-    activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
-) -> Module:
+_ActivationLike = Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+ACTIVATIONS = {
+    "relu": ReLU,
+    "leaky_relu": LeakyReLU,
+    "gelu": GELU,
+    "sigmoid": Sigmoid,
+    "tanh": Tanh,
+}
+
+
+def get_activation(activation: _ActivationLike) -> Module:
     """Returns an instance of an actiation function."""
-    activations = {
-        "relu": ReLU,
-        "leaky_relu": LeakyReLU,
-        "gelu": GELU,
-        "sigmoid": Sigmoid,
-        "tanh": Tanh,
-    }
-    if activation not in activations.keys():
-        raise ValueError(f"Unknown activation function {activation}.")
-    return activations[activation]()
+
+    if activation not in ACTIVATIONS:
+        raise ValueError(f"Unknown activation function: {activation}.")
+    return ACTIVATIONS[activation]()

@@ -1,6 +1,5 @@
 """Engine functions module"""
 
-import os
 from enum import Enum
 from functools import cache
 from types import ModuleType

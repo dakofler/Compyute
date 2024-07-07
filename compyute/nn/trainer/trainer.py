@@ -5,10 +5,10 @@ from typing import Any, Literal, Optional
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
 from ..dataloaders import DataLoader
-from ..losses import Loss, parse_loss
-from ..metrics import Metric, parse_metric
+from ..losses import _LossLike, get_loss_function
+from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
-from ..optimizers import Optimizer, parse_optimizer
+from ..optimizers import _OptimizerLike, get_optimizer
 from .callbacks import Callback
 
 __all__ = ["Trainer"]
@@ -30,9 +30,9 @@ class Trainer:
     def __init__(
         self,
         model: Module,
-        optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
-        loss: Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"],
-        metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
+        optimizer: _OptimizerLike,
+        loss: _LossLike,
+        metric: Optional[_MetricLike] = None,
         callbacks: Optional[list[Callback]] = None,
     ) -> None:
         """Neural network model trainer.
@@ -41,21 +41,21 @@ class Trainer:
         ----------
         model : Module
             Model to be trained.
-        optimizer : Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
+        optimizer : _OptimizerLike
             Optimizer algorithm used to update model parameters.
-        loss : Loss | Literal["mse", "crossentropy"]
+        loss : _LossLike
             Loss function used to evaluate the model.
-        metric : Metric | Literal["accuracy", "r2"], optional
+        metric : _MetricLike, optional
             Metric function used to evaluate the model, by default None.
         callbacks : list[Callback], optional
             Callback functions to be executed during training, by default None.
         """
         super().__init__()
         self.model = model
-        self.optimizer = parse_optimizer(optimizer)
+        self.optimizer = get_optimizer(optimizer)
         self.optimizer.parameters = model.parameters
-        self.loss = parse_loss(loss)
-        self.metric = None if metric is None else parse_metric(metric)
+        self.loss = get_loss_function(loss)
+        self.metric = None if metric is None else get_metric_function(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
         self.callbacks = callbacks
         self.cache: dict[str, Any] = {"abort": False, "t": 1}

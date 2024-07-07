@@ -1,6 +1,7 @@
 """Evaluation metrics module"""
 
 from abc import ABC, abstractmethod
+from typing import Literal
 
 from ..base_tensor import Tensor
 from .functional.metrics import accuracy_score, r2_score
@@ -65,11 +66,14 @@ class R2(Metric):
         return r2_score(y_pred, y_true, eps)
 
 
-def parse_metric(metric: Metric | str) -> Metric:
-    """Returns an instance of a metric."""
+_MetricLike = Metric | Literal["accuracy", "r2"]
+METRICS = {"accuracy": Accuracy, "r2": R2}
+
+
+def get_metric_function(metric: _MetricLike) -> Metric:
+    """Returns an instance of a metric function."""
     if isinstance(metric, Metric):
         return metric
-    metrics = {"accuracy": Accuracy, "r2": R2}
-    if metric not in metrics.keys():
-        raise ValueError(f"Unknown metric function {metric}.")
-    return metrics[metric]()
+    if metric not in METRICS:
+        raise ValueError(f"Unknown metric function: {metric}.")
+    return METRICS[metric]()
