@@ -94,13 +94,10 @@ class Trainer:
             self._callback("epoch_start")
 
             # training
-            self.model.set_training(True)
-
-            for batch in train_dataloader():
-                self._train_step(batch)
-                self._callback("step")
-
-            self.model.set_training(False)
+            with self.model.training():
+                for batch in train_dataloader():
+                    self._train_step(batch)
+                    self._callback("step")
 
             # validation
             if val_data:
@@ -113,8 +110,8 @@ class Trainer:
             if self.cache["abort"]:
                 break
 
-        if not self.model.retain_values:
-            self.model.reset()
+        if not self.model._retain_values:
+            self.model.cleanup()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -145,9 +142,7 @@ class Trainer:
             shuffle_data=False,
         )
 
-        losses = []
-        if self.metric is not None:
-            scores = []
+        losses, scores = [], []
 
         # compute loss/score for each batch to save memory
         for x_batch, y_batch in dataloader():

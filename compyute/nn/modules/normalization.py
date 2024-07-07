@@ -67,10 +67,10 @@ class Batchnorm1d(Module):
         x = x.as_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_func = batchnorm1d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -144,10 +144,10 @@ class Batchnorm2d(Module):
         x = x.as_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_func = batchnorm2d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self.training
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -211,9 +211,9 @@ class Layernorm(Module):
     def forward(self, x: Tensor) -> Tensor:
         x = x.as_type(self.dtype)
 
-        y, grad_func = layernorm(x, self.w, self.b, self.eps, self.training)
+        y, grad_func = layernorm(x, self.w, self.b, self.eps, self._training)
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)

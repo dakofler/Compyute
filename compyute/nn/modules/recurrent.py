@@ -87,7 +87,7 @@ class Recurrent(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
+        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         h = zeros_like(x_h)
@@ -97,7 +97,7 @@ class Recurrent(Module):
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
             h[:, t] = tanh(x_h[:, t] + h_h)
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -223,7 +223,7 @@ class LSTM(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
+        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         ifgo = empty_like(x_h)
@@ -249,7 +249,7 @@ class LSTM(Module):
             # h_t = o_t * tanh(c_t)
             h[:, t] = ifgo[:, t, i3:] * tanh(c[:, t])
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)

@@ -30,7 +30,7 @@ class Dropout(Module):
         self.p = p
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.training:
+        if self._training:
             d_map = multinulli(self.p, x.shape, device=self.device)
             y = x * d_map / (1 - self.p)
 

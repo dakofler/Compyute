@@ -96,10 +96,10 @@ class Convolution1d(Module):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
         y, grad_func = convolve1d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self.training
+            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -198,10 +198,10 @@ class Convolution2d(Module):
         self._check_dims(x, [4])
         x = x.as_type(self.dtype)
         y, grad_func = convolve2d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self.training
+            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self.training:
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -246,7 +246,7 @@ class MaxPooling2d(Module):
         self._check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = maxpooling2d(x, kernel_size, self.training)
+        y, self._backward = maxpooling2d(x, kernel_size, self._training)
         return y
 
 
@@ -276,5 +276,5 @@ class AvgPooling2d(Module):
         self._check_dims(x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = avgpooling2d(x, kernel_size, self.training)
+        y, self._backward = avgpooling2d(x, kernel_size, self._training)
         return y

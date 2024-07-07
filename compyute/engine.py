@@ -1,7 +1,6 @@
 """Engine functions module"""
 
 import os
-from contextlib import contextmanager
 from enum import Enum
 from functools import cache
 from types import ModuleType
