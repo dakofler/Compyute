@@ -13,9 +13,11 @@ __all__ = ["cpu", "cuda"]
 
 
 def _cuda_available() -> bool:
-    if "CUDA_PATH" not in os.environ:
+    try:
+        return cupy.is_available()
+    except Exception as e:
+        print(e)
         return False
-    return bool(cupy.is_available())
 
 
 class Device(Enum):

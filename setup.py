@@ -1,7 +1,5 @@
 """Setup file for compyute."""
 
-# template by https://github.com/rochacbruno/python-project-template/blob/main/setup.py
-
 import pathlib
 
 from setuptools import find_packages, setup
