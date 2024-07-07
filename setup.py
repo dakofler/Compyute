@@ -25,12 +25,11 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Topic :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.10,<3.12",
+    python_requires=">=3.11,<3.12",
     install_requires=[
         "cupy_cuda12x>=13.0.0",
         "ipywidgets>=8.1.2",
