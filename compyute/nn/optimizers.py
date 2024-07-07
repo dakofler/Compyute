@@ -1,7 +1,7 @@
 """Parameter optimizers module"""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, Literal, Optional
+from typing import Any, Iterator, Literal, Optional
 
 from ..tensor_functions.computing import tensorprod
 from ..tensor_functions.transforming import clip
@@ -22,7 +22,7 @@ class Optimizer(ABC):
         grad_clip_value: Optional[float] = None,
     ) -> None:
         self.lr = lr
-        self.state: dict = {}
+        self.state: dict[Parameter, Any] = {}
         self.t: int = 1
         self.grad_clip_value = grad_clip_value
 

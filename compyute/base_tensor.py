@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partialmethod
 from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
@@ -11,13 +12,11 @@ from .dtypes import Dtype, _DtypeLike, _ScalarLike, get_string_from_dtype
 from .engine import (
     Device,
     _ArrayLike,
-    _check_device_availability,
     _DeviceLike,
-    cupy_to_numpy,
     get_array_string,
     get_engine,
     infer_device,
-    numpy_to_cupy,
+    move_data_to_device,
 )
 
 __all__ = ["tensor", "Tensor"]
@@ -52,7 +51,7 @@ def tensor(
     requires_grad: bool, optional
         Whether the tensor requires gradients, by default True.
     """
-    device = infer_device(data) if device is None else device
+    device = infer_device(type(data)) if device is None else device
     dtype = get_string_from_dtype(dtype)
     data = get_engine(device).array(data, copy=copy, dtype=dtype)
     return Tensor(data, requires_grad)
@@ -120,20 +119,11 @@ class Tensor:
     @property
     def device(self) -> Device:
         """Device the tensor is stored on."""
-        return infer_device(self._data)
+        return infer_device(type(self._data))
 
     def to_device(self, device: _DeviceLike) -> None:
         """Moves the tensor to a specified device."""
-        device = Device(device)
-        if self.device == device:
-            return
-        _check_device_availability(device)
-
-        if device == Device.CUDA:
-            self._data = numpy_to_cupy(self._data)
-        else:
-            self._data = cupy_to_numpy(self._data)
-
+        self._data = move_data_to_device(self._data, Device(device))
         if self.grad is not None:
             self.grad.to_device(device)
 
@@ -188,9 +178,8 @@ class Tensor:
 
     def __next__(self) -> Tensor | _ScalarLike:
         if self._iterator < self.shape[0]:
-            data = self[self._iterator]
             self._iterator += 1
-            return data
+            return self[self._iterator - 1]
         raise StopIteration
 
     def __add__(self, other: Tensor | _ScalarLike) -> Tensor:
@@ -313,29 +302,12 @@ class Tensor:
         """
         return tensor(self._data, self.device, dtype=dtype)
 
-    def int(self) -> Tensor:
-        """Returns a copy of the tensor with int values."""
-        return self.as_type(Dtype.INT32)
-
-    def long(self) -> Tensor:
-        """Returns a copy of the tensor with long values."""
-        return self.as_type(Dtype.INT16)
-
-    def half(self) -> Tensor:
-        """Returns a copy of the tensor with half precision values."""
-        return self.as_type(Dtype.FLOAT16)
-
-    def float(self) -> Tensor:
-        """Returns a copy of the tensor with float values."""
-        return self.as_type(Dtype.FLOAT32)
-
-    def double(self) -> Tensor:
-        """Returns a copy of the tensor with double precision values."""
-        return self.as_type(Dtype.FLOAT64)
-
-    def complex(self) -> Tensor:
-        """Returns a copy of the tensor with complex values."""
-        return self.as_type(Dtype.COMPLEX64)
+    int = partialmethod(as_type, dtype=Dtype.INT32)
+    long = partialmethod(as_type, dtype=Dtype.INT64)
+    half = partialmethod(as_type, dtype=Dtype.FLOAT16)
+    float = partialmethod(as_type, dtype=Dtype.FLOAT32)
+    double = partialmethod(as_type, dtype=Dtype.FLOAT64)
+    complex = partialmethod(as_type, dtype=Dtype.COMPLEX64)
 
     def to_numpy(self) -> numpy.ndarray:
         """Returns the tensor data as a NumPy array."""
@@ -347,9 +319,9 @@ class Tensor:
 
     def copy(self) -> Tensor:
         """Returns a copy of the tensor."""
-        t = Tensor(self._data.copy(), requires_grad=self.requires_grad)
-        t.grad = None if self.grad is None else self.grad.copy()
-        return t
+        new_tensor = Tensor(self._data.copy(), requires_grad=self.requires_grad)
+        new_tensor.grad = None if self.grad is None else self.grad.copy()
+        return new_tensor
 
     def item(self) -> _ScalarLike:
         """Returns the scalar value of the tensor data."""

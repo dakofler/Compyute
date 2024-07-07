@@ -1,14 +1,16 @@
 """Engine functions module"""
 
 import os
+from contextlib import contextmanager
 from enum import Enum
+from functools import cache
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
 import cupy
 import numpy
 
-__all__ = ["gpu_available"]
+__all__ = ["cpu", "cuda"]
 
 
 def _cuda_available() -> bool:
@@ -30,11 +32,15 @@ class Device(Enum):
         return self.__repr__()
 
 
+cpu = Device.CPU
+cuda = Device.CUDA
+
+
 _ArrayLike: TypeAlias = numpy.ndarray | cupy.ndarray
 _DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
 _AVAILABLE_DEVICES = {Device.CPU}.union({Device.CUDA} if _cuda_available() else {})
 _DEVICE_TO_ENGINE: dict[Device, ModuleType] = {Device.CPU: numpy, Device.CUDA: cupy}
-_ENGINE_TO_DEVICE: dict[_ArrayLike, Device] = {numpy.ndarray: Device.CPU, cupy.ndarray: Device.CUDA}
+_ENGINE_TO_DEVICE: dict[type, Device] = {numpy.ndarray: Device.CPU, cupy.ndarray: Device.CUDA}
 
 
 def gpu_available() -> bool:
@@ -42,33 +48,35 @@ def gpu_available() -> bool:
     return Device.CUDA in _AVAILABLE_DEVICES
 
 
-def _check_device_availability(device: Device):
+@cache
+def check_device_availability(device: Device):
     """Checks if the specified device is available."""
     if device not in _AVAILABLE_DEVICES:
         raise AttributeError(f"Device {device} is not available.")
 
 
+@cache
 def get_engine(device: _DeviceLike) -> ModuleType:
     """Returns the computation engine for a given device."""
     device = Device(device)
-    _check_device_availability(device)
+    check_device_availability(device)
     return _DEVICE_TO_ENGINE.get(device, numpy)
 
 
-def infer_device(data: Any) -> Device:
-    """Infers the device the data is stored on."""
-    return _ENGINE_TO_DEVICE.get(type(data), Device.CPU)
+@cache
+def infer_device(data_type: type) -> Device:
+    """Infers the device by type."""
+    return _ENGINE_TO_DEVICE.get(data_type, Device.CPU)
 
 
-def numpy_to_cupy(numpy_array: numpy.ndarray) -> cupy.ndarray:
-    """Converts a NumPy array to a CuPy array."""
-    _check_device_availability(Device.CUDA)
-    return cupy.array(numpy_array)
-
-
-def cupy_to_numpy(cupy_array: cupy.ndarray) -> numpy.ndarray:
-    """Converts a CuPy array to a NumPy array."""
-    return cupy.asnumpy(cupy_array)
+def move_data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
+    """Moves the data to the specified device."""
+    if device == infer_device(type(data)):
+        return data
+    if device == Device.CPU:
+        return cupy.asnumpy(data)
+    check_device_availability(device)
+    return cupy.array(data)
 
 
 def get_array_string(array: _ArrayLike) -> str:

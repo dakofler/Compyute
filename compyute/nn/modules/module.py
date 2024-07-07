@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import pickle
 from abc import ABC
+from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _check_device_availability, _DeviceLike
+from ...engine import Device, _DeviceLike, check_device_availability
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -43,17 +44,14 @@ class Module(ABC):
         if device == self._device:
             return
 
-        _check_device_availability(device)
+        check_device_availability(device)
         self._device = device
 
         if self.y is not None:
             self.y.to_device(device)
 
-        for b in self.buffers:
-            b.to_device(device)
-
-        for p in self.parameters:
-            p.to_device(device)
+        for i in chain(self.buffers, self.parameters):
+            i.to_device(device)
 
     @property
     def retain_values(self) -> bool:

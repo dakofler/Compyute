@@ -40,12 +40,9 @@ class Container(Module):
     # ----------------------------------------------------------------------------------------------
 
     def to_device(self, device: _DeviceLike) -> None:
-        device = Device(device)
-        if self.device == device:
+        if self.device == Device(device):
             return
-
         super().to_device(device)
-
         for module in self.modules:
             module.to_device(device)
 
@@ -58,7 +55,7 @@ class Container(Module):
             return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
         return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
 
-    def add(self, module: Module) -> None:
+    def add_module(self, module: Module) -> None:
         """Adds a module to the container.
 
         Parameters

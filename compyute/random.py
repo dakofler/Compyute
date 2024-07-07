@@ -1,6 +1,7 @@
 """Random functions module"""
 
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
 from .base_tensor import Tensor, _ShapeLike, tensor
 from .dtypes import _DtypeLike, get_string_from_dtype
@@ -17,19 +18,29 @@ __all__ = [
 ]
 
 
-def set_seed(seed: int) -> None:
+def set_seed(value: Optional[int] = None) -> None:
     """Sets the seed of the random number generator for reproducability.
 
     Parameters
     ----------
-    seed : int
+    value : int, optional
         Seed value.
     """
     try:
-        get_engine(Device.CUDA).random.seed(seed)
-    except AttributeError:
-        pass
-    get_engine(Device.CPU).random.seed(seed)
+        get_engine(Device.CUDA).random.seed(value)
+    except Exception:
+        ...
+    get_engine(Device.CPU).random.seed(value)
+
+
+@contextmanager
+def seed(value: Optional[int] = None) -> Iterator[None]:
+    """Sets the seed of the random number generator for reproducability."""
+    set_seed(value)
+    try:
+        yield
+    finally:
+        set_seed()
 
 
 def normal(
