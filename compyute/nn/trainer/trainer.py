@@ -1,6 +1,6 @@
 """Neural network models module"""
 
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
@@ -58,7 +58,7 @@ class Trainer:
         self.metric = None if metric is None else get_metric_function(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
         self.callbacks = callbacks
-        self.cache: dict[str, Any] = {"abort": False, "t": 1}
+        self.cache: dict = {"abort": False, "t": 1}
 
     def train(
         self,

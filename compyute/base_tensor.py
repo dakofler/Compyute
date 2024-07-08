@@ -162,7 +162,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        array_string = get_array_string(self.cpu().data)
+        array_string = get_array_string(self.to_numpy())
         return f"Tensor({array_string})"
 
     def __getitem__(self, key: Any) -> Tensor:

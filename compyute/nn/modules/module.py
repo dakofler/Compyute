@@ -164,7 +164,9 @@ class Module(ABC):
         """
         if not self._training:
             raise AttributeError(f"{self.label} is not in training mode.")
+
         self._set_dy(dy)
+
         if self._backward is not None:
             return self._backward(dy)
         return dy
@@ -220,11 +222,10 @@ class Module(ABC):
         ShapeError
             If the tensor's dimensions do not match the target dimensions.
         """
-        if x.ndim not in valid_dims:
-            vdims = ", ".join(str(d) for d in valid_dims)
-            raise ShapeError(
-                f"{self.label}: Number of input dimensions {x.ndim} is not valid (valid: {vdims})"
-            )
+        if x.ndim in valid_dims:
+            return
+        vdims = ", ".join(str(d) for d in valid_dims)
+        raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
 
 
 def save_module(module: Module, filepath: str) -> None:

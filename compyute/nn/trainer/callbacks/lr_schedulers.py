@@ -1,9 +1,8 @@
 """Learning rate decay callbacks module"""
 
 import math
-from functools import reduce
-from operator import add
-from typing import Any
+from itertools import pairwise
+from typing import Any, NotRequired, TypedDict
 
 from ...optimizers import Optimizer
 from .callback import Callback
@@ -16,6 +15,21 @@ __all__ = [
 ]
 
 
+class LrCacheEntry(TypedDict):
+    """Learning rate cache entry"""
+
+    epoch: int
+    lr: float
+
+
+class LrSchedulerCache(TypedDict):
+    """Learning rate scheduler cache"""
+
+    t: int
+    lrs: list[LrCacheEntry]
+    target_history: NotRequired[list[float]]
+
+
 class LrScheduler(Callback):
     """Learning rate scheduler base class"""
 
@@ -25,7 +39,7 @@ class LrScheduler(Callback):
         self.optimizer = optimizer
         self.verbose = verbose
         self.t: int = 0
-        self.cache: dict[str, list[dict]] = {"lrs": []}
+        self.cache: LrSchedulerCache = {"t": 0, "lrs": []}
 
     def _update_cache(self, trainer_cache: dict[str, Any]) -> None:
         """Stores the current optimizere learning rate and time step."""
@@ -216,13 +230,13 @@ class CosineAnnealingLrScheduler(LrScheduler):
 class AdaptiveLrScheduler(LrScheduler):
     """Sets an optimizers learning rate based on the trend of a specified metric."""
 
-    __slots__ = ("target", "trend_range", "lr_downscale_factor", "lr_upscale_factor")
+    __slots__ = ("target", "scope", "lr_downscale_factor", "lr_upscale_factor")
 
     def __init__(
         self,
         optimizer: Optimizer,
         target: str = "loss",
-        trend_range: int = 10,
+        scope: int = 10,
         lr_downscale_factor: float = 0.5,
         lr_upscale_factor: float = 1.0,
         verbose: bool = False,
@@ -235,7 +249,7 @@ class AdaptiveLrScheduler(LrScheduler):
             Optimizer, whose learning rate will be adapted.
         target : str, optional
             Metric to consider, by default "loss".
-        trend_range : int, optional
+        scope : int, optional
             Number of past epochs to consider when computing the trend, by default 10.
         lr_downscale_factor : float, optional
             Factor to scale the learning rate down by if the metric is not improing, by default 0.5.
@@ -246,7 +260,7 @@ class AdaptiveLrScheduler(LrScheduler):
         """
         super().__init__(optimizer, verbose)
         self.target = target
-        self.trend_range = trend_range
+        self.scope = scope
         self.lr_downscale_factor = lr_downscale_factor
         self.lr_upscale_factor = lr_upscale_factor
         self.cache["target_history"] = []
@@ -255,11 +269,11 @@ class AdaptiveLrScheduler(LrScheduler):
         self._update_cache(trainer_cache)
 
         # keep target history
-        hist: list[float] = self.cache["target_history"]
+        hist = self.cache.get("target_history", [])
         hist.append(trainer_cache[self.target])
 
-        if self.t > self.trend_range:
-            trend = reduce(add, (hist[-i] - hist[-i - 1] for i in range(1, self.trend_range + 1)))
+        if self.t > self.scope:
+            trend = sum(j - i for i, j in pairwise(hist[-self.scope - 1 :]))
             if trend <= 0:
                 self.optimizer.lr *= self.lr_upscale_factor  # model is improving
             else:

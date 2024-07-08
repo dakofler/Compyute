@@ -1,6 +1,7 @@
 """Neural network containers module"""
 
 from abc import abstractmethod
+from itertools import accumulate
 from typing import Iterator, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
@@ -113,12 +114,12 @@ class Container(Module):
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor: ...
 
-    def cleanup(self) -> None:
+    def cleanup(self, force: bool = False) -> None:
         """Resets temporary values like outputs and gradients."""
-        super().cleanup()
+        super().cleanup(force)
 
         for module in self.modules:
-            module.cleanup()
+            module.cleanup(force)
 
     def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> None:
         """Prints information about the container and its modules.
@@ -250,12 +251,11 @@ class ParallelConcat(Container):
         y = concatenate(ys, axis=self.concat_axis)
 
         if self._training:
-            out_lens = [y.shape[self.concat_axis] for y in ys]
-            splits = [sum(out_lens[: i + 1]) for i in range(len(out_lens) - 1)]
+            splits = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
 
             def _backward(dy: Tensor) -> Tensor:
                 dy_splits = split(dy, splits=splits, axis=self.concat_axis)
-                return tensorsum(self.modules[i].backward(s) for i, s in enumerate(dy_splits))
+                return tensorsum(m.backward(s) for m, s in zip(self.modules, dy_splits))
 
             self._backward = _backward
 
@@ -275,6 +275,6 @@ class ParallelAdd(Container):
         y = tensorsum(m(x) for m in self.modules)
 
         if self._training:
-            self._backward = lambda dy: tensorsum([m.backward(dy) for m in self.modules])
+            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y

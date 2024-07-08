@@ -46,13 +46,11 @@ class DataLoader:
         self.x = x
         self.y = y
         self.batch_size = batch_size
-        self.device = device
+        self.device = Device(device)
         self.drop_remaining = drop_remaining
         self.shuffle = shuffle_data
 
-    def __call__(
-        self,
-    ) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
+    def __call__(self) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
         """Yields batched data."""
         n = self.x.shape[0]
         n_steps = len(self)
@@ -62,34 +60,31 @@ class DataLoader:
         # shuffle data
         if self.shuffle:
             self.x, idx = shuffle(self.x)
+            self.y = self.y[idx] if self.y is not None else None
+
+        # yield batches
+        for i in range(n_steps):
+            x_batch = self.x[i * b : (i + 1) * b]
+            x_batch.to_device(self.device)
+
             if self.y is not None:
-                self.y = self.y[idx]
-
-        if self.y is None:
-            for i in range(n_steps):
-                x_batch = self.x[i * b : (i + 1) * b]
-                x_batch.to_device(self.device)
-                yield x_batch, None
-
-            if not self.drop_remaining and n_trunc < n:
-                x_batch = self.x[n_trunc:]
-                x_batch.to_device(self.device)
-                yield x_batch, None
-
-        else:
-            for i in range(n_steps):
-                x_batch = self.x[i * b : (i + 1) * b]
                 y_batch = self.y[i * b : (i + 1) * b]
-                x_batch.to_device(self.device)
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
 
-            if not self.drop_remaining and n_trunc < n:
-                x_batch = self.x[n_trunc:]
+            yield x_batch, None
+
+        # yield remaining
+        if not self.drop_remaining and n_trunc < n:
+            x_batch = self.x[n_trunc:]
+            x_batch.to_device(self.device)
+
+            if self.y is not None:
                 y_batch = self.y[n_trunc:]
-                x_batch.to_device(self.device)
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
+
+            yield x_batch, None
 
     def __len__(self) -> int:
         return max(1, self.x.shape[0] // self.batch_size)
