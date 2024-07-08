@@ -1,7 +1,6 @@
 """Loss functions module"""
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Callable, Literal, Optional
 
 from ..base_tensor import Tensor

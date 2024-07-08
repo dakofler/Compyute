@@ -9,7 +9,7 @@ from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _DeviceLike, check_device_availability
+from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -23,7 +23,7 @@ class Module(ABC):
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
         self.y: Optional[Tensor] = None
-        self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
+        self._backward: Optional[Callable[[Tensor], Tensor]] = None
         self.label = label if label is not None else self.__class__.__name__
         self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
@@ -45,7 +45,7 @@ class Module(ABC):
         if device == self._device:
             return
 
-        check_device_availability(device)
+        available(device)
         self._device = device
 
         if self.y is not None:
@@ -149,7 +149,7 @@ class Module(ABC):
         """
         return x
 
-    def backward(self, dy: Tensor) -> Optional[Tensor]:
+    def backward(self, dy: Tensor) -> Tensor:
         """Performs a backward pass through the module.
 
         Parameters
@@ -159,7 +159,7 @@ class Module(ABC):
 
         Returns
         ----------
-        Tensor, optional
+        Tensor
             Input gradient tensor.
         """
         if not self._training:
@@ -195,8 +195,10 @@ class Module(ABC):
         if self._retain_values and self.y is not None:
             self.y.grad = dy.copy()
 
-    def cleanup(self) -> None:
+    def cleanup(self, force: bool = False) -> None:
         """Resets temporary values like outputs and gradients."""
+        if self._retain_values and not force:
+            return
         self.y = None
         self._backward = None
 
@@ -237,7 +239,7 @@ def save_module(module: Module, filepath: str) -> None:
     """
 
     module.to_device(Device.CPU)
-    module.cleanup()
+    module.cleanup(force=True)
 
     with open(filepath, "wb") as file:
         pickle.dump(module, file)

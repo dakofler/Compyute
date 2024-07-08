@@ -1,6 +1,5 @@
 """Activation layers module"""
 
-from enum import Enum
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor

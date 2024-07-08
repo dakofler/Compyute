@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = ["linear"]
 
@@ -47,14 +47,14 @@ def linear(
                 dw = dy.T @ x
                 if x.ndim > 2:  # sum over all batch dimensions
                     axes = tuple(range(x.ndim - 2))
-                    dw = _sum(dw, axis=axes)
+                    dw = cpsum(dw, axis=axes)
             else:
                 dw = None
 
             # bias grads
             if b is not None and b.requires_grad:
                 axes = tuple(range(x.ndim - 1))
-                db = _sum(dy, axis=axes)  # sum over all batch dimensions
+                db = cpsum(dy, axis=axes)  # sum over all batch dimensions
             else:
                 db = None
 

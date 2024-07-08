@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = ["lookup_embedding"]
 
@@ -42,7 +42,7 @@ def lookup_embedding(
         def grad_func(dy: Tensor) -> Optional[Tensor]:
             # embedding table grads
             if embedding_table.requires_grad:
-                return _sum(x.T @ dy, axis=0)
+                return cpsum(x.T @ dy, axis=0)
 
         return y, grad_func
 

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ..base_tensor import Tensor, _ShapeLike
-from ..dtypes import _DtypeLike, _ScalarLike, get_string_from_dtype
+from ..dtypes import _DtypeLike, _ScalarLike, dtype_to_str
 from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
@@ -49,8 +49,7 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
+    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype_to_str(dtype)))
 
 
 def linspace(
@@ -81,8 +80,7 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
+    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype_to_str(dtype)))
 
 
 def empty(
@@ -104,8 +102,7 @@ def empty(
     Tensor
         Tensor with uninitialized values.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
+    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype_to_str(dtype)))
 
 
 def zeros(
@@ -127,8 +124,7 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).zeros(shape, dtype=dtype))
+    return Tensor(get_engine(device).zeros(shape, dtype=dtype_to_str(dtype)))
 
 
 def ones(
@@ -150,8 +146,7 @@ def ones(
     Tensor
         Tensor with all values being one.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).ones(shape, dtype=dtype))
+    return Tensor(get_engine(device).ones(shape, dtype=dtype_to_str(dtype)))
 
 
 def full(
@@ -178,8 +173,7 @@ def full(
     Tensor
         Tensor with all values being one.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).full(shape, value, dtype=dtype))
+    return Tensor(get_engine(device).full(shape, value, dtype=dtype_to_str(dtype)))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -267,5 +261,4 @@ def identity(
     Tensor
         Diagonal tensor.
     """
-    dtype = get_string_from_dtype(dtype)
-    return Tensor(get_engine(device).identity(n, dtype=dtype))
+    return Tensor(get_engine(device).identity(n, dtype=dtype_to_str(dtype)))

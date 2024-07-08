@@ -1,9 +1,10 @@
 """Learning rate decay callbacks module"""
 
 import math
+from functools import reduce
+from operator import add
 from typing import Any
 
-from ....tensor_functions.computing import tensorsum
 from ...optimizers import Optimizer
 from .callback import Callback
 
@@ -254,12 +255,11 @@ class AdaptiveLrScheduler(LrScheduler):
         self._update_cache(trainer_cache)
 
         # keep target history
-        history = self.cache["target_history"]
-        history.append(trainer_cache[self.target])
+        hist: list[float] = self.cache["target_history"]
+        hist.append(trainer_cache[self.target])
 
         if self.t > self.trend_range:
-            trend = tensorsum(history[-i] - history[-i - 1] for i in range(1, self.trend_range + 1))
-
+            trend = reduce(add, (hist[-i] - hist[-i - 1] for i in range(1, self.trend_range + 1)))
             if trend <= 0:
                 self.optimizer.lr *= self.lr_upscale_factor  # model is improving
             else:

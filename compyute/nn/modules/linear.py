@@ -52,7 +52,7 @@ class Linear(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = bias
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # init weights
         k = in_channels**-0.5

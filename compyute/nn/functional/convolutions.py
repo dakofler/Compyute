@@ -2,7 +2,7 @@
 
 from typing import Callable, Literal, Optional
 
-from ...base_tensor import Tensor, _AxisLike, _ShapeLike
+from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype
 from ...tensor_functions.creating import zeros
 from ...tensor_functions.reshaping import (
@@ -15,9 +15,9 @@ from ...tensor_functions.reshaping import (
     reshape,
 )
 from ...tensor_functions.transforming import fft1d, fft2d, ifft1d, ifft2d
-from ...tensor_functions.transforming import max as _max
+from ...tensor_functions.transforming import max as cpmax
 from ...tensor_functions.transforming import mean, real
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = [
     "convolve1d",
@@ -75,7 +75,7 @@ def convolve1d(
     x_ = insert_dim(x, 1)  # (B, 1, Ci, T)
 
     conv, conv_grad_func = _convolve1d(x_, f_, stride, return_grad_func)  # (B, Co, Ci, T)
-    y = _sum(conv, 2)  # (B, Co, T)
+    y = cpsum(conv, 2)  # (B, Co, T)
 
     if b is not None:
         y += reshape(b, (b.shape[0], 1))
@@ -85,13 +85,13 @@ def convolve1d(
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
             dx, df = conv_grad_func(dy_)
-            dx = pad_grad_func(_sum(dx, 1))
+            dx = pad_grad_func(cpsum(dx, 1))
 
             if df is not None:
-                df = dil_grad_func(_sum(df, 0))
+                df = dil_grad_func(cpsum(df, 0))
 
             if b is not None and b.requires_grad:
-                db = _sum(dy, (0, 2))
+                db = cpsum(dy, (0, 2))
             else:
                 db = None
 
@@ -265,7 +265,7 @@ def convolve2d(
 
     s = (stride, stride)
     conv, conv_grad_func = _convolve2d(x_, f_, s, return_grad_func)  # (B, Co, Ci, Y, X)
-    y = _sum(conv, 2)  # (B, Co, Y, X) sum over in channels
+    y = cpsum(conv, 2)  # (B, Co, Y, X) sum over in channels
 
     if b is not None:
         y += reshape(b, (b.shape[0], 1, 1))
@@ -275,13 +275,13 @@ def convolve2d(
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
             dx, df = conv_grad_func(dy_)
-            dx = pad_grad_func(_sum(dx, 1))  # sum over out channels
+            dx = pad_grad_func(cpsum(dx, 1))  # sum over out channels
 
             if df is not None:
-                df = dil_grad_func(_sum(df, 0))  # sum over batches
+                df = dil_grad_func(cpsum(df, 0))  # sum over batches
 
             if b is not None and b.requires_grad:
-                db = _sum(dy, (0, 2, 3))  # sum over batches, Y and X
+                db = cpsum(dy, (0, 2, 3))  # sum over batches, Y and X
             else:
                 db = None
 
@@ -431,7 +431,7 @@ def upsample2d(
     x: Tensor,
     scaling_factors: tuple[int, int],
     shape: _ShapeLike,
-    axes: _AxisLike = (-2, -1),
+    axes: tuple[int, int] = (-2, -1),
 ) -> Tensor:
     """Upsamples a tensor by repeating it's elements over given axes.
 
@@ -444,7 +444,7 @@ def upsample2d(
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after stretching,
         remaining values are filled with zeroes.
-    axes : AxisLike, optional
+    axes : tuple[int, int], optional
         Axes along which to stretch the tensor, by default (-2, -1).
 
     Returns
@@ -479,17 +479,22 @@ def maxpooling2d(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    Yi, Xi = x.shape[-2:]
-    Ky, Kx = kernel_size
+    x_height, x_width = x.shape[-2:]
+    kernel_height, kernel_width = kernel_size
 
     # maxpooling
     crop_slice = [slice(None)] * (x.ndim - 2) + [
-        slice(None, Yi // Ky * Ky),
-        slice(None, Xi // Kx * Kx),
+        slice(None, x_height // kernel_height * kernel_height),
+        slice(None, x_width // kernel_width * kernel_width),
     ]
     x_crop = x[*crop_slice]
-    pool_shape = x.shape[:-2] + (Yi // Ky, Ky, Xi // Kx, Kx)
-    y = _max(reshape(x_crop, pool_shape), axis=(-3, -1))
+    pool_shape = x.shape[:-2] + (
+        x_height // kernel_height,
+        kernel_height,
+        x_width // kernel_width,
+        kernel_width,
+    )
+    y = cpmax(reshape(x_crop, pool_shape), axis=(-3, -1))
 
     if return_grad_func:
         y_ups = upsample2d(y, kernel_size, x.shape)
@@ -523,22 +528,27 @@ def avgpooling2d(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    Yi, Xi = x.shape[-2:]
-    Ky, Kx = kernel_size
+    x_height, x_width = x.shape[-2:]
+    kernel_height, kernel_width = kernel_size
 
     # avgpooling
     crop_slice = [slice(None)] * (x.ndim - 2) + [
-        slice(None, Yi // Ky * Ky),
-        slice(None, Xi // Kx * Kx),
+        slice(None, x_height // kernel_height * kernel_height),
+        slice(None, x_width // kernel_width * kernel_width),
     ]
     x_crop = x[*crop_slice]
-    pool_shape = x.shape[:-2] + (Yi // Ky, Ky, Xi // Kx, Kx)
+    pool_shape = x.shape[:-2] + (
+        x_height // kernel_height,
+        kernel_height,
+        x_width // kernel_width,
+        kernel_width,
+    )
     y = mean(reshape(x_crop, pool_shape), axis=(-3, -1))
 
     if return_grad_func:
 
         def grad_func(dy: Tensor) -> Tensor:
-            return upsample2d(dy, kernel_size, x.shape) / (Ky * Kx)
+            return upsample2d(dy, kernel_size, x.shape) / (kernel_height * kernel_width)
 
         return y, grad_func
 

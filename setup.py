@@ -37,6 +37,16 @@ setup(
         "regex>=2023.12.25",
         "tqdm>=4.66.2",
     ],
+    extras_require={
+        "dev": [
+            "pytest>=8.2.0",
+            "pytest-cov>=5.0.0",
+            "torch>=2.3.0",
+            "torchaudio>=2.3.0",
+            "torchvision>=0.18.0",
+            "twine>=5.1.1",
+        ]
+    },
     packages=find_packages(exclude=["tests", ".github", ".venv", "docs"]),
     include_package_data=True,
 )

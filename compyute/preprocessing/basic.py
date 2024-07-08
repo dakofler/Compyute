@@ -6,9 +6,9 @@ from ..base_tensor import Tensor, _AxisLike
 from ..dtypes import Dtype
 from ..random import shuffle
 from ..tensor_functions.creating import identity
-from ..tensor_functions.transforming import max as _max
+from ..tensor_functions.transforming import max as cpmax
 from ..tensor_functions.transforming import mean
-from ..tensor_functions.transforming import min as _min
+from ..tensor_functions.transforming import min as cpmin
 from ..tensor_functions.transforming import var
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
@@ -72,8 +72,8 @@ def normalize(
         Normalized tensor.
     """
 
-    x_min = _min(x, axis=axis)
-    x_max = _max(x, axis=axis)
+    x_min = cpmin(x, axis=axis)
+    x_max = cpmax(x, axis=axis)
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 

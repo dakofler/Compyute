@@ -79,7 +79,7 @@ class Convolution1d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # init weights
         k = (in_channels * kernel_size) ** -0.5
@@ -184,7 +184,7 @@ class Convolution2d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # init weights
         k = (in_channels * self.kernel_size**2) ** -0.5

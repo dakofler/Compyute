@@ -110,8 +110,7 @@ class Trainer:
             if self.cache["abort"]:
                 break
 
-        if not self.model._retain_values:
-            self.model.cleanup()
+        self.model.cleanup()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32

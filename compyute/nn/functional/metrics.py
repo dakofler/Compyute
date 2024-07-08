@@ -1,10 +1,12 @@
 """Neural network functions module"""
 
+from functools import reduce
+from operator import mul
+
 from ...base_tensor import Tensor
-from ...tensor_functions.computing import tensorprod
 from ...tensor_functions.selecting import argmax
 from ...tensor_functions.transforming import mean
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = ["accuracy_score", "r2_score"]
 
@@ -24,7 +26,7 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    return _sum(argmax(y_pred, -1) == y_true) / tensorprod(y_pred.shape[:-1])
+    return cpsum(argmax(y_pred, -1) == y_true) / reduce(mul, y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
@@ -44,6 +46,6 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
     Tensor
         R2 score.
     """
-    ssr = _sum((y_true - y_pred) ** 2)
-    sst = _sum((y_true - mean(y_true)) ** 2)
+    ssr = cpsum((y_true - y_pred) ** 2)
+    sst = cpsum((y_true - mean(y_true)) ** 2)
     return 1 - ssr / (sst + eps)

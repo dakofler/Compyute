@@ -152,7 +152,7 @@ class Container(Module):
                 # add summary of current modules
                 s = {}
                 s["name"] = " " * depth + module.label
-                s["out_shape"] = (-1,) + module.y.shape[1:]
+                s["out_shape"] = (-1,) + module.y.shape[1:] if module.y is not None else ()
                 s["n_params"] = sum(p.size for p in module.parameters)
                 s["trainable"] = module.trainable
                 s["type"] = "container" if isinstance(module, Container) else "module"
@@ -263,7 +263,8 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Parallel container module. Inputs are processed in parallel, outputs are added element-wise."""
+    """Parallel container module.
+    Inputs are processed in parallel, outputs are added element-wise."""
 
     __slots__ = ()
 

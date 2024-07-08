@@ -6,7 +6,7 @@ from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import empty_like, zeros, zeros_like
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import tanh
 from ..functional.activations import sigmoid
 from ..functional.linear import linear
@@ -69,7 +69,7 @@ class Recurrent(Module):
         self.h_channels = h_channels
         self.bias = bias
         self.return_sequence = return_sequence
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         k = h_channels**-0.5
 
@@ -128,7 +128,7 @@ class Recurrent(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += _sum(dx_h, axis=(0, 1))
+                    self.b_h.grad += cpsum(dx_h, axis=(0, 1))
 
                 # input projection gradients
                 dx, dw_i, db_i = x_h_backward(dx_h)
@@ -200,7 +200,7 @@ class LSTM(Module):
         self.h_channels = h_channels
         self.bias = bias
         self.return_sequence = return_sequence
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         k = in_channels**-0.5
 
@@ -321,7 +321,7 @@ class LSTM(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += _sum(difgo_preact, axis=(0, 1))
+                    self.b_h.grad += cpsum(difgo_preact, axis=(0, 1))
 
                 # input projection gradients
                 dx, dw_i, db_i = x_h_backward(difgo_preact)

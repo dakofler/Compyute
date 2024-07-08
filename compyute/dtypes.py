@@ -66,7 +66,7 @@ _DtypeLike: TypeAlias = (
 )
 
 
-def get_string_from_dtype(dtype: Optional[_DtypeLike]) -> Optional[
+def dtype_to_str(dtype: Optional[_DtypeLike]) -> Optional[
     Literal[
         "int8",
         "int16",

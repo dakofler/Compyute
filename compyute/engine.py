@@ -11,14 +11,6 @@ import numpy
 __all__ = ["cpu", "cuda"]
 
 
-def _cuda_available() -> bool:
-    try:
-        return cupy.is_available()
-    except Exception as e:
-        print(e)
-        return False
-
-
 class Device(Enum):
     """Device enum."""
 
@@ -36,8 +28,17 @@ cpu = Device.CPU
 cuda = Device.CUDA
 
 
+@cache
+def _cuda_available() -> bool:
+    try:
+        return cupy.is_available()
+    except Exception as e:
+        return False
+
+
 _ArrayLike: TypeAlias = numpy.ndarray | cupy.ndarray
 _DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
+
 _AVAILABLE_DEVICES = {Device.CPU}.union({Device.CUDA} if _cuda_available() else {})
 _DEVICE_TO_ENGINE: dict[Device, ModuleType] = {Device.CPU: numpy, Device.CUDA: cupy}
 _ENGINE_TO_DEVICE: dict[type, Device] = {numpy.ndarray: Device.CPU, cupy.ndarray: Device.CUDA}
@@ -49,7 +50,7 @@ def gpu_available() -> bool:
 
 
 @cache
-def check_device_availability(device: Device):
+def available(device: Device) -> None:
     """Checks if the specified device is available."""
     if device not in _AVAILABLE_DEVICES:
         raise AttributeError(f"Device {device} is not available.")
@@ -59,7 +60,7 @@ def check_device_availability(device: Device):
 def get_engine(device: _DeviceLike) -> ModuleType:
     """Returns the computation engine for a given device."""
     device = Device(device)
-    check_device_availability(device)
+    available(device)
     return _DEVICE_TO_ENGINE.get(device, numpy)
 
 
@@ -69,13 +70,19 @@ def infer_device(data_type: type) -> Device:
     return _ENGINE_TO_DEVICE.get(data_type, Device.CPU)
 
 
+def same_device(data1: _ArrayLike, data2: _ArrayLike) -> None:
+    """Checks if two arrays are on the same device."""
+    if infer_device(type(data1)) == infer_device(type(data2)):
+        raise AttributeError("Device mismatch.")
+
+
 def move_data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     """Moves the data to the specified device."""
     if device == infer_device(type(data)):
         return data
     if device == Device.CPU:
         return cupy.asnumpy(data)
-    check_device_availability(device)
+    available(device)
     return cupy.array(data)
 
 
