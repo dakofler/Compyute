@@ -1,12 +1,13 @@
 """Neural network functions module"""
 
+from functools import reduce
+from operator import mul
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.computing import tensorprod
 from ...tensor_functions.reshaping import reshape, squeeze
 from ...tensor_functions.transforming import mean as _mean
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import var as _var
 
 __all__ = ["batchnorm1d", "batchnorm2d", "layernorm"]
@@ -87,23 +88,17 @@ def batchnorm1d(
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
-            n = tensorprod(x.shape) / x.shape[1]
-            dx = (
-                weights
-                * var_h
-                / n
-                * (
-                    n * dy
-                    - _sum(dy, axis=axes, keepdims=True)
-                    - x_h * _sum(dy * x_h, axis=axes, keepdims=True)
-                )
-            )
+            n = reduce(mul, x.shape) / x.shape[1]
+
+            dy_sum = cpsum(dy, axis=axes, keepdims=True)
+            dy_x_h_sum = cpsum(dy * x_h, axis=axes, keepdims=True)
+            dx = weights * var_h / n * (n * dy - dy_sum - x_h * dy_x_h_sum)
 
             # gamma grads
-            dw = _sum(x_h * dy, axis=axes) if w.requires_grad else None
+            dw = squeeze(dy_x_h_sum) if w.requires_grad else None
 
             # beta grads
-            db = _sum(dy, axis=axes) if b.requires_grad else None
+            db = squeeze(dy_sum) if b.requires_grad else None
 
             return dx, dw, db
 
@@ -186,23 +181,17 @@ def batchnorm2d(
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
-            n = tensorprod(x.shape) / x.shape[1]
-            dx = (
-                weights
-                * var_h
-                / n
-                * (
-                    n * dy
-                    - _sum(dy, axis=axes, keepdims=True)
-                    - x_h * _sum(dy * x_h, axis=axes, keepdims=True)
-                )
-            )
+            n = reduce(mul, x.shape) / x.shape[1]
+
+            dy_sum = cpsum(dy, axis=axes, keepdims=True)
+            dy_x_h_sum = cpsum(dy * x_h, axis=axes, keepdims=True)
+            dx = weights * var_h / n * (n * dy - dy_sum - x_h * dy_x_h_sum)
 
             # gamma grads
-            dw = _sum(x_h * dy, axis=axes) if w.requires_grad else None
+            dw = squeeze(dy_x_h_sum) if w.requires_grad else None
 
             # beta grads
-            db = _sum(dy, axis=axes) if b.requires_grad else None
+            db = squeeze(dy_sum) if b.requires_grad else None
 
             return dx, dw, db
 
@@ -252,23 +241,17 @@ def layernorm(
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
-            n = tensorprod(x.shape[1:])
-            dx = (
-                w
-                * var_h
-                / n
-                * (
-                    n * dy
-                    - _sum(dy, axis=axes, keepdims=True)
-                    - x_h * _sum(dy * x_h, axis=axes, keepdims=True)
-                )
-            )
+            n = reduce(mul, x.shape[1:])
+
+            dy_sum = cpsum(dy, axis=axes, keepdims=True)
+            dy_x_h_sum = cpsum(dy * x_h, axis=axes, keepdims=True)
+            dx = w * var_h / n * (n * dy - dy_sum - x_h * dy_x_h_sum)
 
             # gamma grads
-            dw = _sum(x_h * dy, axis=0) if w.requires_grad else None
+            dw = cpsum(dy * x_h, axis=0) if w.requires_grad else None
 
             # beta grads
-            db = _sum(dy, axis=0) if b.requires_grad else None
+            db = cpsum(dy, axis=0) if b.requires_grad else None
 
             return dx, dw, db
 

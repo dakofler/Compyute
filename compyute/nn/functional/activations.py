@@ -7,10 +7,10 @@ from ...tensor_functions.computing import maximum, minimum
 from ...tensor_functions.creating import identity
 from ...tensor_functions.reshaping import insert_dim, reshape, tile
 from ...tensor_functions.transforming import exp
-from ...tensor_functions.transforming import max as _max
+from ...tensor_functions.transforming import max as cpmax
 from ...tensor_functions.transforming import sech
-from ...tensor_functions.transforming import sum as _sum
-from ...tensor_functions.transforming import tanh as _tanh
+from ...tensor_functions.transforming import sum as cpsum
+from ...tensor_functions.transforming import tanh as cptanh
 
 __all__ = [
     "relu",
@@ -74,7 +74,7 @@ def leaky_relu(
         Gradient function.
     """
     x = x.float()
-    y = maximum(x, 0) + alpha * minimum(0, x)
+    y = maximum(x, 0) + alpha * minimum(x, 0)
 
     if return_grad_func:
         return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
@@ -102,12 +102,13 @@ def gelu(
     """
 
     tmp = GELU_S * (x + GELU_C * x**3)
-    y = 0.5 * x * (1 + _tanh(tmp))
+    y = 0.5 * x * (1 + cptanh(tmp))
 
     if return_grad_func:
         return y, (
             lambda dy: (
-                0.5 * (1 + _tanh(tmp)) + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
+                0.5 * (1 + cptanh(tmp))
+                + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
             )
             * dy
         )
@@ -159,7 +160,7 @@ def tanh(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    y = _tanh(x)
+    y = cptanh(x)
 
     if return_grad_func:
         return y, (lambda dy: (1 - y**2) * dy)
@@ -185,8 +186,8 @@ def softmax(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    x = exp(x - _max(x, axis=-1, keepdims=True))
-    y = x / _sum(x, axis=-1, keepdims=True)
+    x = exp(x - cpmax(x, axis=-1, keepdims=True))
+    y = x / cpsum(x, axis=-1, keepdims=True)
 
     if return_grad_func:
 
@@ -218,5 +219,5 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     if temperature == 0:
         raise ValueError("Temperature cannot be 0.")
 
-    x = exp((x - _max(x, axis=-1, keepdims=True)) / temperature)
-    return x / _sum(x, axis=-1, keepdims=True)
+    x = exp((x - cpmax(x, axis=-1, keepdims=True)) / temperature)
+    return x / cpsum(x, axis=-1, keepdims=True)

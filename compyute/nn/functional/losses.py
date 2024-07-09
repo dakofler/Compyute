@@ -1,12 +1,13 @@
 """Neural network functions module"""
 
+from functools import reduce
+from operator import mul
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_functions.computing import tensorprod
 from ...tensor_functions.transforming import clip, log, mean
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 from .activations import softmax
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
@@ -36,7 +37,7 @@ def mean_squared_error(
     dif = y_pred.float() - y_true.float()
     loss = mean(dif**2)
 
-    grad_func = (lambda: dif * 2 / tensorprod(y_pred.shape)) if return_grad_func else None
+    grad_func = (lambda: dif * 2 / reduce(mul, y_pred.shape)) if return_grad_func else None
 
     return loss, grad_func
 
@@ -66,12 +67,12 @@ def cross_entropy(
     """
     probs, _ = softmax(y_pred.float(), False)
     y_true = one_hot_encode(y_true.int(), y_pred.shape[-1])
-    loss = -mean(log(_sum((probs + eps) * y_true, axis=-1)))
+    loss = -mean(log(cpsum((probs + eps) * y_true, axis=-1)))
 
     if return_grad_func:
 
         def grad_func() -> Tensor:
-            return (probs - y_true) / tensorprod(y_pred.shape[:-1])
+            return (probs - y_true) / reduce(mul, y_pred.shape[:-1])
 
         return loss, grad_func
 
@@ -105,7 +106,7 @@ def binary_cross_entropy(
     if return_grad_func:
 
         def grad_func() -> Tensor:
-            return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / tensorprod(y_pred.shape)
+            return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / reduce(mul, y_pred.shape)
 
         return loss, grad_func
 

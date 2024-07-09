@@ -4,10 +4,10 @@
 
 ## Installation
 
-All you need is to pip install the requirements.
+All you need is to pip install .
 ```bash
 git clone https://github.com/dakofler/Compyute
-pip install -r requirements.txt
+pip install .
 ```
 As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit following the installation guide of `CuPy` (https://docs.cupy.dev/en/stable/install.html).
 
@@ -164,6 +164,39 @@ trainer = Trainer(
 
 # train model
 trainer.train(X_train, y_train, epochs=10)
+```
+
+Alternatively, you can write your own training loop.
+
+```python
+epochs = 100
+batch_size = 32
+
+train_dl = nn.DataLoader(X_train, y_train, batch_size)
+val_dl = nn.DataLoader(X_val, y_val, batch_size)
+loss_func = nn.CrossEntropy()
+optim = nn.optimizers.SGD(model.parameters)
+
+for epoch in range(epochs):
+    # training
+    with model.training():
+        for x, y in train_dl():
+            # forward pass
+            y_pred = model(x)
+            _ = loss_func(y_pred, y)
+
+            # backward pass
+            optim.reset_grads()  # reset all gradients
+            model.backward(loss_func.backward())  # compute new gradients
+            optim.step()  # update parameters
+    
+    # validiation
+    val_loss = 0
+    for x, y in val_dl():
+        y_pred = model(x)
+        val_loss += loss_func(y_pred, y).item()
+    val_loss /= len(val_dl)
+    print(f"epoch {epoch}: {val_loss=:.4f}")
 ```
 
 Models can also be saved and loaded later on.

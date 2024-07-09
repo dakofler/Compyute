@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import pickle
 from abc import ABC
+from contextlib import contextmanager
+from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _check_device_availability, _DeviceLike
+from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -21,7 +23,7 @@ class Module(ABC):
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
         self.y: Optional[Tensor] = None
-        self._backward: Optional[Callable[[Tensor], Optional[Tensor]]] = None
+        self._backward: Optional[Callable[[Tensor], Tensor]] = None
         self.label = label if label is not None else self.__class__.__name__
         self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
@@ -43,26 +45,14 @@ class Module(ABC):
         if device == self._device:
             return
 
-        _check_device_availability(device)
+        available(device)
         self._device = device
 
         if self.y is not None:
             self.y.to_device(device)
 
-        for b in self.buffers:
-            b.to_device(device)
-
-        for p in self.parameters:
-            p.to_device(device)
-
-    @property
-    def retain_values(self) -> bool:
-        """Whether module parameters are trainable."""
-        return self._retain_values
-
-    def set_retain_values(self, value: bool) -> None:
-        """Whether module parameters are trainable."""
-        self._retain_values = value
+        for i in chain(self.buffers, self.parameters):
+            i.to_device(device)
 
     @property
     def trainable(self) -> bool:
@@ -79,15 +69,6 @@ class Module(ABC):
             parameter.requires_grad = value
 
     @property
-    def training(self) -> bool:
-        """Whether the module is in training mode."""
-        return self._training
-
-    def set_training(self, value: bool) -> None:
-        """Whether the module is in training mode."""
-        self._training = value
-
-    @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
         return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Parameter))
@@ -96,6 +77,38 @@ class Module(ABC):
     def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
         return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Buffer))
+
+    # ----------------------------------------------------------------------------------------------
+    # CONTEXT MANAGERS
+    # ----------------------------------------------------------------------------------------------
+
+    def set_retain_values(self, value: bool) -> None:
+        """Sets module to retain intermedate values."""
+        self._retain_values = value
+
+    @contextmanager
+    def retain_values(self):
+        """Context manager for temporarily setting the module to retain values."""
+        retain_values = self._retain_values
+        self.set_retain_values(True)
+        try:
+            yield
+        finally:
+            self.set_retain_values(retain_values)
+
+    def set_training(self, value: bool) -> None:
+        """Sets the training mode of the module."""
+        self._training = value
+
+    @contextmanager
+    def training(self):
+        """Context manager for temporarily putting the module in training state."""
+        training = self._training
+        self.set_training(True)
+        try:
+            yield
+        finally:
+            self.set_training(training)
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -136,7 +149,7 @@ class Module(ABC):
         """
         return x
 
-    def backward(self, dy: Tensor) -> Optional[Tensor]:
+    def backward(self, dy: Tensor) -> Tensor:
         """Performs a backward pass through the module.
 
         Parameters
@@ -146,12 +159,14 @@ class Module(ABC):
 
         Returns
         ----------
-        Tensor, optional
+        Tensor
             Input gradient tensor.
         """
-        if not self.training:
+        if not self._training:
             raise AttributeError(f"{self.label} is not in training mode.")
+
         self._set_dy(dy)
+
         if self._backward is not None:
             return self._backward(dy)
         return dy
@@ -164,11 +179,12 @@ class Module(ABC):
         y : Tensor
             Module output tensor.
         """
-        if self.retain_values:
-            if self.y is None:
-                self.y = y.copy()
-            else:
-                self.y.data = y.data.copy()
+        if not self._retain_values:
+            return
+        if self.y is None:
+            self.y = y.copy()
+        else:
+            self.y.data = y.data.copy()
 
     def _set_dy(self, dy: Tensor) -> None:
         """Saves the module output gradients to y tensor.
@@ -178,11 +194,13 @@ class Module(ABC):
         dy : Tensor
             Module output tensor gradients.
         """
-        if self.retain_values and self.y is not None:
+        if self._retain_values and self.y is not None:
             self.y.grad = dy.copy()
 
-    def reset(self) -> None:
+    def cleanup(self, force: bool = False) -> None:
         """Resets temporary values like outputs and gradients."""
+        if self._retain_values and not force:
+            return
         self.y = None
         self._backward = None
 
@@ -204,11 +222,10 @@ class Module(ABC):
         ShapeError
             If the tensor's dimensions do not match the target dimensions.
         """
-        if x.ndim not in valid_dims:
-            vdims = ", ".join(str(d) for d in valid_dims)
-            raise ShapeError(
-                f"{self.label}: Number of input dimensions {x.ndim} is not valid (valid: {vdims})"
-            )
+        if x.ndim in valid_dims:
+            return
+        vdims = ", ".join(str(d) for d in valid_dims)
+        raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
 
 
 def save_module(module: Module, filepath: str) -> None:
@@ -223,7 +240,7 @@ def save_module(module: Module, filepath: str) -> None:
     """
 
     module.to_device(Device.CPU)
-    module.reset()
+    module.cleanup(force=True)
 
     with open(filepath, "wb") as file:
         pickle.dump(module, file)

@@ -104,17 +104,18 @@ class BinaryCrossEntropy(Loss):
         return loss
 
 
-def parse_loss(
-    loss: Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
-) -> Loss:
-    """Returns an instance of a loss."""
+_LossLike = Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
+LOSSES = {
+    "binary_cross_entropy": BinaryCrossEntropy,
+    "cross_entropy": CrossEntropy,
+    "mean_squared_error": MeanSquaredError,
+}
+
+
+def get_loss_function(loss: _LossLike) -> Loss:
+    """Returns an instance of a loss function."""
     if isinstance(loss, Loss):
         return loss
-    losses = {
-        "binary_cross_entropy": BinaryCrossEntropy,
-        "cross_entropy": CrossEntropy,
-        "mean_squared_error": MeanSquaredError,
-    }
-    if loss not in losses.keys():
-        raise ValueError(f"Unknown loss function {loss}.")
-    return losses[loss]()
+    if loss not in LOSSES:
+        raise ValueError(f"Unknown loss function: {loss}.")
+    return LOSSES[loss]()

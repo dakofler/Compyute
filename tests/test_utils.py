@@ -5,11 +5,10 @@ import torch
 
 from compyute.base_tensor import Tensor, _ShapeLike
 from compyute.nn.parameter import Parameter
-from compyute.random import set_seed, uniform, uniform_int
-
-set_seed(42)
+from compyute.random import seed, uniform, uniform_int
 
 
+@seed(42)
 def get_random_floats(
     shape: _ShapeLike,
     torch_grad: bool = True,
@@ -26,6 +25,7 @@ def get_random_floats(
     return compyute_x, torch_x
 
 
+@seed(42)
 def get_random_integers(
     shape: _ShapeLike, device: str = "cpu", low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
@@ -36,6 +36,7 @@ def get_random_integers(
     return compyute_x, torch_x
 
 
+@seed(42)
 def get_random_params(
     shape: _ShapeLike, device: str = "cpu"
 ) -> tuple[Parameter, torch.nn.Parameter]:

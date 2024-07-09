@@ -57,7 +57,7 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the sum of elements.
     """
-    return Tensor.as_tensor(x.data.sum(axis=axis, keepdims=keepdims))
+    return tensor(x.data.sum(axis=axis, keepdims=keepdims))
 
 
 def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -79,7 +79,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     Tensor
         Tensor containing the product of elements.
     """
-    return Tensor.as_tensor(x.data.prod(axis=axis, keepdims=keepdims))
+    return tensor(x.data.prod(axis=axis, keepdims=keepdims))
 
 
 def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -101,7 +101,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     Tensor
         Tensor containing the mean of elements.
     """
-    return Tensor.as_tensor(x.data.mean(axis=axis, keepdims=keepdims))
+    return tensor(x.data.mean(axis=axis, keepdims=keepdims))
 
 
 def var(
@@ -128,7 +128,7 @@ def var(
     Tensor
         Tensor containing the variance of elements.
     """
-    return Tensor.as_tensor(x.data.var(axis=axis, ddof=ddof, keepdims=keepdims))
+    return tensor(x.data.var(axis=axis, ddof=ddof, keepdims=keepdims))
 
 
 def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -150,7 +150,7 @@ def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the standard deviation of elements.
     """
-    return Tensor.as_tensor(x.data.std(axis=axis, keepdims=keepdims))
+    return tensor(x.data.std(axis=axis, keepdims=keepdims))
 
 
 def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -172,7 +172,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the minimum of elements.
     """
-    return Tensor.as_tensor(x.data.min(axis=axis, keepdims=keepdims))
+    return tensor(x.data.min(axis=axis, keepdims=keepdims))
 
 
 def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -194,7 +194,7 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the maximum of elements.
     """
-    return Tensor.as_tensor(x.data.max(axis=axis, keepdims=keepdims))
+    return tensor(x.data.max(axis=axis, keepdims=keepdims))
 
 
 def round(x: Tensor, decimals: int) -> Tensor:

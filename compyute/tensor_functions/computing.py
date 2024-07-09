@@ -2,23 +2,23 @@
 
 import operator
 from functools import reduce
-from typing import Iterable
+from typing import Iterable, Iterator
 
-from ..base_tensor import Tensor
+from ..base_tensor import Tensor, tensor
 from ..dtypes import _ScalarLike
-from ..engine import Device, get_engine
+from ..engine import get_engine
 
 __all__ = ["maximum", "minimum", "tensorsum", "tensorprod", "inner", "outer", "einsum", "dot"]
 
 
-def maximum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
+def maximum(a: Tensor, b: Tensor | _ScalarLike) -> Tensor:
     """Returns a new tensor containing the element-wise maximum of two tensors/scalars.
 
     Parameters
     ----------
-    a : Tensor | ScalarLike
-        Tensor or scalar.
-    b : Tensor | ScalarLike
+    a : Tensor
+        Tensor.
+    b : Tensor | _ScalarLike
         Tensor or scalar.
 
     Returns
@@ -26,31 +26,18 @@ def maximum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise maxima.
     """
-    device = Device.CPU  # set cpu in case of two scalars
-
-    if isinstance(a, Tensor):
-        device = a.device
-        _a = a.data
-    else:
-        _a = a
-
-    if isinstance(b, Tensor):
-        device = b.device
-        _b = b.data
-    else:
-        _b = b
-
-    return Tensor(get_engine(device).maximum(_a, _b))
+    _b = b.data if isinstance(b, Tensor) else b
+    return Tensor(get_engine(a.device).maximum(a.data, _b))
 
 
-def minimum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
+def minimum(a: Tensor, b: Tensor | _ScalarLike) -> Tensor:
     """Returns a new tensor containing the element-wise minimum of two tensors/scalars.
 
     Parameters
     ----------
-    a : Tensor | ScalarLike
-        Tensor or scalar.
-    b : Tensor | ScalarLike
+    a : Tensor
+        Tensor.
+    b : Tensor | _ScalarLike
         Tensor or scalar.
 
     Returns
@@ -58,51 +45,38 @@ def minimum(a: Tensor | _ScalarLike, b: Tensor | _ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise minima.
     """
-    device = Device.CPU
-
-    if isinstance(a, Tensor):
-        device = a.device
-        _a = a.data
-    else:
-        _a = a
-
-    if isinstance(b, Tensor):
-        device = b.device
-        _b = b.data
-    else:
-        _b = b
-
-    return Tensor(get_engine(device).minimum(_a, _b))
+    _b = b.data if isinstance(b, Tensor) else b
+    return Tensor(get_engine(a.device).minimum(a.data, _b))
 
 
-def tensorsum(tensors: Iterable[Tensor | _ScalarLike]) -> Tensor | _ScalarLike:
-    """Sums the elements of an iterable element-wise over the first axis.
+def tensorsum(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
+    """Sums the elements of tensors element-wise over the first axis.
 
     Parameters
     ----------
-    tensors : Iterable[Tensor | ScalarLike]
-        Iterable of values to be summed.
+    tensors : Iterable[Tensor] | Iterator[Tensor]
+        Iterable or Iterator of tensors to be summed.
 
     Returns
     -------
-    Tensor | ScalarLike
-        Tensor containing element-wise sums or scalar.
+    Tensor
+        Tensor containing element-wise sums.
     """
     return reduce(operator.add, tensors)
 
 
-def tensorprod(tensors: Iterable[Tensor | _ScalarLike]) -> Tensor | _ScalarLike:
-    """Multiplies the elements of an iterable element-wise over the first axis.
+def tensorprod(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
+    """Multiplies the elements of tensors element-wise over the first axis.
 
     Parameters
     ----------
-    tensors : Iterable[Tensor | ScalarLike]
-        Iterable of values to be multiplied.
+    tensors : Iterable[Tensor] | Iterator[Tensor]
+        Iterable or Iterator of tensors to be multiplied.
 
     Returns
     -------
-    Tensor | ScalarLike
-        Tensor containing element-wise products or scalar.
+    Tensor
+        Tensor containing element-wise products.
     """
     return reduce(operator.mul, tensors)
 
@@ -121,7 +95,7 @@ def inner(*tensors: Tensor) -> Tensor:
         Inner product.
     """
     device = tensors[0].device
-    return Tensor.as_tensor(get_engine(device).inner(*[t.data for t in tensors]))
+    return tensor(get_engine(device).inner(*[t.data for t in tensors]))
 
 
 def outer(*tensors: Tensor) -> Tensor:
@@ -179,4 +153,4 @@ def einsum(subscripts, *tensors: Tensor) -> Tensor:
         Result based on the Einstein summation.
     """
     device = tensors[0].device
-    return Tensor.as_tensor(get_engine(device).einsum(subscripts, *[t.data for t in tensors]))
+    return tensor(get_engine(device).einsum(subscripts, *[t.data for t in tensors]))

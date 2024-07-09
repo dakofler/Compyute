@@ -1,9 +1,10 @@
 """Random functions module"""
 
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
 from .base_tensor import Tensor, _ShapeLike, tensor
-from .dtypes import _DtypeLike, get_string_from_dtype
+from .dtypes import _DtypeLike, dtype_to_str
 from .engine import Device, _DeviceLike, get_engine
 
 __all__ = [
@@ -17,19 +18,29 @@ __all__ = [
 ]
 
 
-def set_seed(seed: int) -> None:
+def set_seed(value: Optional[int] = None) -> None:
     """Sets the seed of the random number generator for reproducability.
 
     Parameters
     ----------
-    seed : int
+    value : int, optional
         Seed value.
     """
     try:
-        get_engine(Device.CUDA).random.seed(seed)
-    except AttributeError:
+        get_engine(Device.CUDA).random.seed(value)
+    except Exception:
         pass
-    get_engine(Device.CPU).random.seed(seed)
+    get_engine(Device.CPU).random.seed(value)
+
+
+@contextmanager
+def seed(value: Optional[int] = None) -> Iterator[None]:
+    """Sets the seed of the random number generator for reproducability."""
+    set_seed(value)
+    try:
+        yield
+    finally:
+        set_seed()
 
 
 def normal(
@@ -59,8 +70,9 @@ def normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    dtype = get_string_from_dtype(dtype)
-    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype_to_str(dtype)
+    )
 
 
 def uniform(
@@ -83,15 +95,18 @@ def uniform(
     dtype: _DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
+        The device the tensor is stored on, by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of uniformly distributed samples.
     """
-    dtype = get_string_from_dtype(dtype)
-    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.uniform(low, high, shape),
+        device=device,
+        dtype=dtype_to_str(dtype),
+    )
 
 
 def uniform_int(
@@ -114,15 +129,18 @@ def uniform_int(
     dtype: _DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
+        The device the tensor is stored on, by default Device.CPU.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
-    dtype = get_string_from_dtype(dtype)
-    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.randint(low, high, shape),
+        device=device,
+        dtype=dtype_to_str(dtype),
+    )
 
 
 def permutation(
@@ -137,15 +155,16 @@ def permutation(
     dtype: _DtypeLike, optional
         Datatype of the tensor data, by default None.
     device: _DeviceLike, optional
-        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
+        The device the tensor is stored on, by default Device.CPU.
 
     Returns
     -------
     Tensor
         Permuted tensor.
     """
-    dtype = get_string_from_dtype(dtype)
-    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.permutation(n), device=device, dtype=dtype_to_str(dtype)
+    )
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
@@ -181,7 +200,7 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) ->
     shape : _ShapeLike
         Shape of the new tensor.
     device: _DeviceLike, optional
-        The device the tensor is stored on (Device.CUDA or Device.CPU), by default Device.CPU.
+        The device the tensor is stored on, by default Device.CPU.
 
     Returns
     -------

@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _AxisLike
+from ..base_tensor import Tensor, _AxisLike, tensor
 from ..engine import get_engine
 
 __all__ = ["argmax", "get_diagonal", "tril", "triu", "unique"]
@@ -27,7 +27,7 @@ def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) 
     Tensor
         Tensor containing indices.
     """
-    return Tensor.as_tensor(get_engine(x.device).argmax(x.data, axis=axis, keepdims=keepdims))
+    return tensor(get_engine(x.device).argmax(x.data, axis=axis, keepdims=keepdims))
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:

@@ -1,6 +1,5 @@
 experiments
 data
-trained_models
 *.cp
 x.ipynb
 

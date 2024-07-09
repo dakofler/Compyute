@@ -6,7 +6,7 @@ from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import empty_like, zeros, zeros_like
-from ...tensor_functions.transforming import sum as _sum
+from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import tanh
 from ..functional.activations import sigmoid
 from ..functional.linear import linear
@@ -69,7 +69,7 @@ class Recurrent(Module):
         self.h_channels = h_channels
         self.bias = bias
         self.return_sequence = return_sequence
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         k = h_channels**-0.5
 
@@ -87,7 +87,7 @@ class Recurrent(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
+        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         h = zeros_like(x_h)
@@ -97,7 +97,7 @@ class Recurrent(Module):
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
             h[:, t] = tanh(x_h[:, t] + h_h)
 
-        if self.training:
+        if self._training and x_h_grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -128,15 +128,15 @@ class Recurrent(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += _sum(dx_h, axis=(0, 1))
+                    self.b_h.grad += cpsum(dx_h, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_backward(dx_h)
+                dx, dw_i, db_i = x_h_grad_func(dx_h)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
 
-                if db_i is not None:
+                if self.b_i is not None and db_i is not None:
                     self.b_i.grad += db_i
 
                 return dx
@@ -200,7 +200,7 @@ class LSTM(Module):
         self.h_channels = h_channels
         self.bias = bias
         self.return_sequence = return_sequence
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         k = in_channels**-0.5
 
@@ -223,7 +223,7 @@ class LSTM(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self.training)
+        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         ifgo = empty_like(x_h)
@@ -249,7 +249,7 @@ class LSTM(Module):
             # h_t = o_t * tanh(c_t)
             h[:, t] = ifgo[:, t, i3:] * tanh(c[:, t])
 
-        if self.training:
+        if self._training and x_h_grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -321,15 +321,15 @@ class LSTM(Module):
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += _sum(difgo_preact, axis=(0, 1))
+                    self.b_h.grad += cpsum(difgo_preact, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_backward(difgo_preact)
+                dx, dw_i, db_i = x_h_grad_func(difgo_preact)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
 
-                if db_i is not None:
+                if self.b_i is not None and db_i is not None:
                     self.b_i.grad += db_i
 
                 return dx

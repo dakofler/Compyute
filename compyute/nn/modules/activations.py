@@ -15,7 +15,7 @@ class ReLU(Module):
     __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = relu(x, self.training)
+        y, self._backward = relu(x, self._training)
         return y
 
 
@@ -40,7 +40,7 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = leaky_relu(x, self.alpha, self.training)
+        y, self._backward = leaky_relu(x, self.alpha, self._training)
         return y
 
 
@@ -50,7 +50,7 @@ class GELU(Module):
     __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = gelu(x, self.training)
+        y, self._backward = gelu(x, self._training)
         return y
 
 
@@ -58,7 +58,7 @@ class Tanh(Module):
     """Tanh activation function."""
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = tanh(x, self.training)
+        y, self._backward = tanh(x, self._training)
         return y
 
 
@@ -68,21 +68,23 @@ class Sigmoid(Module):
     __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = sigmoid(x, self.training)
+        y, self._backward = sigmoid(x, self._training)
         return y
 
 
-def get_act_from_str(
-    activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
-) -> Module:
+_ActivationLike = Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+ACTIVATIONS = {
+    "relu": ReLU,
+    "leaky_relu": LeakyReLU,
+    "gelu": GELU,
+    "sigmoid": Sigmoid,
+    "tanh": Tanh,
+}
+
+
+def get_activation(activation: _ActivationLike) -> Module:
     """Returns an instance of an actiation function."""
-    activations = {
-        "relu": ReLU,
-        "leaky_relu": LeakyReLU,
-        "gelu": GELU,
-        "sigmoid": Sigmoid,
-        "tanh": Tanh,
-    }
-    if activation not in activations.keys():
-        raise ValueError(f"Unknown activation function {activation}.")
-    return activations[activation]()
+
+    if activation not in ACTIVATIONS:
+        raise ValueError(f"Unknown activation function: {activation}.")
+    return ACTIVATIONS[activation]()

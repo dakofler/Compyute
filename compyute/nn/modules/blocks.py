@@ -3,9 +3,9 @@
 from typing import Literal, Optional
 
 from ...dtypes import Dtype, _DtypeLike
-from ..initializers import get_initializer
+from ..initializers import _InitializerLike, get_initializer
 from ..parameter import Parameter
-from .activations import get_act_from_str
+from .activations import _ActivationLike, get_activation
 from .containers import ParallelAdd, Sequential
 from .convolution import Convolution1d, Convolution2d
 from .linear import Linear
@@ -23,25 +23,10 @@ class DenseBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
-        weight_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-        ] = "xavier_uniform",
+        activation: _ActivationLike,
+        weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "zeros",
-        ] = "zeros",
+        bias_init: _InitializerLike = "zeros",
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
@@ -58,13 +43,13 @@ class DenseBlock(Sequential):
             Number of input features.
         out_channels : int
             Number of output channels (neurons) of the dense block.
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+        activation: _ActivationLike
             Activation function to use in the dense block.
-        weight_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform"], optional
+        weight_init: _InitializerLike, optional
             What method to use for initializing weight parameters, by default "xavier_uniform".
         bias : bool, optional
             Whether to use bias values, by default True.
-        bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
+        bias_init: _InitializerLike, optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default Dtype.FLOAT32.
@@ -82,7 +67,7 @@ class DenseBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             linear.b = Parameter(b_init((out_channels,)), "lin_b")
 
-        super().__init__(linear, get_act_from_str(activation), label=label, training=training)
+        super().__init__(linear, get_activation(activation), label=label, training=training)
 
 
 class Convolution1dBlock(Sequential):
@@ -94,29 +79,14 @@ class Convolution1dBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
+        activation: _ActivationLike,
         kernel_size: int,
         padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
-        weight_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-        ] = "xavier_uniform",
+        weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "zeros",
-        ] = "zeros",
+        bias_init: _InitializerLike = "zeros",
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
@@ -135,7 +105,7 @@ class Convolution1dBlock(Sequential):
             Number of output channels (filters).
         kernel_size : int
             Size of each kernel.
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+        activation: _ActivationLike
             Activation function to use in the dense block.
         padding: Literal["same", "valid"], optional
             Padding applied before convolution, by default "valid".
@@ -143,11 +113,11 @@ class Convolution1dBlock(Sequential):
             Stride used for the convolution operation, by default 1.
         dilation : int, optional
             Dilation used for each axis of the filter, by default 1.
-        weight_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform"], optional
+        weight_init: _InitializerLike, optional
             What method to use for initializing weight parameters, by default "xavier_uniform".
         bias : bool, optional
             Whether to use bias values, by default True.
-        bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
+        bias_init: _InitializerLike, optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default Dtype.FLOAT32.
@@ -175,7 +145,7 @@ class Convolution1dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "conv1d_b")
 
-        super().__init__(conv, get_act_from_str(activation), label=label, training=training)
+        super().__init__(conv, get_activation(activation), label=label, training=training)
 
 
 class Convolution2dBlock(Sequential):
@@ -187,29 +157,14 @@ class Convolution2dBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"],
+        activation: _ActivationLike,
         kernel_size: int = 3,
         padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
-        weight_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-        ] = "xavier_uniform",
+        weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: Literal[
-            "kaiming_normal",
-            "kaiming_uniform",
-            "normal",
-            "uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "zeros",
-        ] = "zeros",
+        bias_init: _InitializerLike = "zeros",
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
@@ -228,7 +183,7 @@ class Convolution2dBlock(Sequential):
             Number of output channels (filters).
         kernel_size : int, optional
             Size of each kernel, by default 3.
-        activation: Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+        activation: _ActivationLike
             Activation function to use in the dense block.
         padding: Literal["same", "valid"], optional
             Padding applied before convolution, by default "valid".
@@ -236,11 +191,11 @@ class Convolution2dBlock(Sequential):
             Strides used for the convolution operation, by default 1.
         dilation : int , optional
             Dilations used for each axis of the filter, by default 1.
-        weight_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform"], optional
+        weight_init: _InitializerLike, optional
             What method to use for initializing weight parameters, by default "xavier_uniform".
         bias : bool, optional
             Whether to use bias values, by default True.
-        bias_init: Literal["kaiming_normal", "kaiming_uniform", "normal", "uniform", "xavier_normal", "xavier_uniform", "zeros"], optional
+        bias_init: _InitializerLike, optional
             What method to use for initializing bias parameters, by default "zeros".
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default Dtype.FLOAT32.
@@ -270,7 +225,7 @@ class Convolution2dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "conv2d_b")
 
-        super().__init__(conv, get_act_from_str(activation), label=label, training=training)
+        super().__init__(conv, get_activation(activation), label=label, training=training)
 
 
 class SkipConnection(ParallelAdd):

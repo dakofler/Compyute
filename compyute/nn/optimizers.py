@@ -342,11 +342,14 @@ class NAdam(Optimizer):
         self.t += 1
 
 
-def parse_optimizer(optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"]) -> Optimizer:
+_OptimizerLike = Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
+OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
+
+
+def get_optimizer(optimizer: _OptimizerLike) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer
-    optimizers = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
-    if optimizer not in optimizers.keys():
-        raise ValueError(f"Unknown optimizer {optimizer}.")
-    return optimizers[optimizer]()
+    if optimizer not in OPTIMIZERS:
+        raise ValueError(f"Unknown optimizer: {optimizer}.")
+    return OPTIMIZERS[optimizer]()

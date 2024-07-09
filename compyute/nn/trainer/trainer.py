@@ -1,14 +1,14 @@
 """Neural network models module"""
 
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
 from ..dataloaders import DataLoader
-from ..losses import Loss, parse_loss
-from ..metrics import Metric, parse_metric
+from ..losses import _LossLike, get_loss_function
+from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
-from ..optimizers import Optimizer, parse_optimizer
+from ..optimizers import _OptimizerLike, get_optimizer
 from .callbacks import Callback
 
 __all__ = ["Trainer"]
@@ -24,15 +24,15 @@ class Trainer:
         "metric",
         "metric_name",
         "callbacks",
-        "_callback_cache",
+        "cache",
     )
 
     def __init__(
         self,
         model: Module,
-        optimizer: Optimizer | Literal["sgd", "adam", "adamw", "nadam"],
-        loss: Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"],
-        metric: Optional[Metric | Literal["accuracy", "r2"]] = None,
+        optimizer: _OptimizerLike,
+        loss: _LossLike,
+        metric: Optional[_MetricLike] = None,
         callbacks: Optional[list[Callback]] = None,
     ) -> None:
         """Neural network model trainer.
@@ -41,24 +41,24 @@ class Trainer:
         ----------
         model : Module
             Model to be trained.
-        optimizer : Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
+        optimizer : _OptimizerLike
             Optimizer algorithm used to update model parameters.
-        loss : Loss | Literal["mse", "crossentropy"]
+        loss : _LossLike
             Loss function used to evaluate the model.
-        metric : Metric | Literal["accuracy", "r2"], optional
+        metric : _MetricLike, optional
             Metric function used to evaluate the model, by default None.
         callbacks : list[Callback], optional
             Callback functions to be executed during training, by default None.
         """
         super().__init__()
         self.model = model
-        self.optimizer = parse_optimizer(optimizer)
+        self.optimizer = get_optimizer(optimizer)
         self.optimizer.parameters = model.parameters
-        self.loss = parse_loss(loss)
-        self.metric = None if metric is None else parse_metric(metric)
+        self.loss = get_loss_function(loss)
+        self.metric = None if metric is None else get_metric_function(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
         self.callbacks = callbacks
-        self._callback_cache: dict[str, Any] = {"abort": False, "t": 1}
+        self.cache: dict = {"abort": False, "t": 1}
 
     def train(
         self,
@@ -84,37 +84,33 @@ class Trainer:
             Number of inputs processed in parallel, by default 32.
         """
         train_dataloader = DataLoader(x_train, y_train, batch_size, self.model.device)
-        self._callback_cache["t"] = 0
-        self._callback_cache["epochs"] = epochs
-        self._callback_cache["train_steps"] = len(train_dataloader)
+        self.cache["t"] = 0
+        self.cache["epochs"] = epochs
+        self.cache["train_steps"] = len(train_dataloader)
         self._callback("init")
 
         for _ in range(1, epochs + 1):
-            self._callback_cache["t"] += 1
+            self.cache["t"] += 1
             self._callback("epoch_start")
 
             # training
-            self.model.set_training(True)
-
-            for batch in train_dataloader():
-                self._train_step(batch)
-                self._callback("step")
-
-            self.model.set_training(False)
+            with self.model.training():
+                for batch in train_dataloader():
+                    self._train_step(batch)
+                    self._callback("step")
 
             # validation
             if val_data:
                 loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
-                self._callback_cache["val_loss"] = loss
+                self.cache["val_loss"] = loss
                 if self.metric is not None:
-                    self._callback_cache[f"val_{self.metric_name}_score"] = score
+                    self.cache[f"val_{self.metric_name}_score"] = score
 
             self._callback("epoch_end")
-            if self._callback_cache["abort"]:
+            if self.cache["abort"]:
                 break
 
-        if not self.model.retain_values:
-            self.model.reset()
+        self.model.cleanup()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -145,9 +141,7 @@ class Trainer:
             shuffle_data=False,
         )
 
-        losses = []
-        if self.metric is not None:
-            scores = []
+        losses, scores = [], []
 
         # compute loss/score for each batch to save memory
         for x_batch, y_batch in dataloader():
@@ -170,7 +164,7 @@ class Trainer:
                 "step": callback.on_step,
                 "epoch_start": callback.on_epoch_start,
                 "epoch_end": callback.on_epoch_end,
-            }[on](self._callback_cache)
+            }[on](self.cache)
 
     def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
         # prepare data
@@ -180,9 +174,9 @@ class Trainer:
         y_pred = self.model(x_batch)
 
         # compute loss and metrics
-        self._callback_cache["loss"] = self.loss(y_pred, y_batch).item()
+        self.cache["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self._callback_cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
+            self.cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
         self.optimizer.reset_grads()
