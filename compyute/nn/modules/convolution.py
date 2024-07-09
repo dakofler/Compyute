@@ -6,7 +6,13 @@ from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import zeros
-from ..functional.convolutions import avgpooling2d, convolve1d, convolve2d, maxpooling2d
+from ..functional.convolutions import (
+    _PaddingLike,
+    avgpooling2d,
+    convolve1d,
+    convolve2d,
+    maxpooling2d,
+)
 from ..parameter import Parameter
 from .module import Module
 
@@ -99,7 +105,7 @@ class Convolution1d(Module):
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self._training:
+        if self._training and grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -108,7 +114,7 @@ class Convolution1d(Module):
                 if dw is not None:
                     self.w.grad += dw
 
-                if db is not None:
+                if self.b is not None and db is not None:
                     self.b.grad += db
 
                 return dx
@@ -139,7 +145,7 @@ class Convolution2d(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        padding: Literal["same", "valid"] = "valid",
+        padding: _PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -161,7 +167,7 @@ class Convolution2d(Module):
             Number of output channels (filters).
         kernel_size : int, optional
             Size of each kernel, by default 3.
-        padding: Literal["same", "valid"], optional
+        padding: _PaddingLike, optional
             Padding applied to a tensor before the convolution, by default "valid".
         stride : int , optional
             Strides used for the convolution operation, by default 1.
@@ -201,7 +207,7 @@ class Convolution2d(Module):
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self._training:
+        if self._training and grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -210,7 +216,7 @@ class Convolution2d(Module):
                 if dw is not None:
                     self.w.grad += dw
 
-                if db is not None:
+                if self.b is not None and db is not None:
                     self.b.grad += db
 
                 return dx

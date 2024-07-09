@@ -31,12 +31,14 @@ __all__ = [
     "avgpooling2d",
 ]
 
+_PaddingLike = Literal["valid", "same"]
+
 
 def convolve1d(
     x: Tensor,
     f: Tensor,
     b: Optional[Tensor] = None,
-    padding: Literal["valid", "same"] = "valid",
+    padding: _PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
     return_grad_func: bool = False,
@@ -51,7 +53,7 @@ def convolve1d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    padding: Literal["valid", "same"], optional
+    padding: _PaddingLike, optional
         Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
@@ -80,7 +82,7 @@ def convolve1d(
     if b is not None:
         y += reshape(b, (b.shape[0], 1))
 
-    if return_grad_func:
+    if conv_grad_func is not None and pad_grad_func is not None and dil_grad_func is not None:
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
@@ -136,7 +138,7 @@ def dilate1d(
     return x_dil, None
 
 
-def _pad1d_from_str(padding: Literal["valid", "same"], kernel_size: int) -> tuple[int, int]:
+def _pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
     if padding == "valid":
         return (0, 0)
     p = kernel_size // 2
@@ -223,7 +225,7 @@ def convolve2d(
     x: Tensor,
     f: Tensor,
     b: Optional[Tensor] = None,
-    padding: Literal["valid", "same"] = "valid",
+    padding: _PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
     return_grad_func: bool = False,
@@ -238,7 +240,7 @@ def convolve2d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    padding: Literal["valid", "same"], optional
+    padding: _PaddingLike, optional
         Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
@@ -270,7 +272,7 @@ def convolve2d(
     if b is not None:
         y += reshape(b, (b.shape[0], 1, 1))
 
-    if return_grad_func:
+    if conv_grad_func is not None and pad_grad_func is not None and dil_grad_func is not None:
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
@@ -334,7 +336,7 @@ def dilate2d(
 
 
 def _pad2d_from_str(
-    padding: Literal["valid", "same"], kernel_size: int
+    padding: _PaddingLike, kernel_size: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     if padding == "valid":
         return ((0, 0), (0, 0))

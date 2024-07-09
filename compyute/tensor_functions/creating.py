@@ -49,7 +49,8 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
 def linspace(
@@ -80,7 +81,8 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
 def empty(
@@ -102,7 +104,8 @@ def empty(
     Tensor
         Tensor with uninitialized values.
     """
-    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
 
 
 def zeros(
@@ -124,7 +127,8 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    return Tensor(get_engine(device).zeros(shape, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 
 def ones(
@@ -146,7 +150,8 @@ def ones(
     Tensor
         Tensor with all values being one.
     """
-    return Tensor(get_engine(device).ones(shape, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
 def full(
@@ -173,7 +178,8 @@ def full(
     Tensor
         Tensor with all values being one.
     """
-    return Tensor(get_engine(device).full(shape, value, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).full(shape, value, dtype=dtype))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -261,4 +267,5 @@ def identity(
     Tensor
         Diagonal tensor.
     """
-    return Tensor(get_engine(device).identity(n, dtype=dtype_to_str(dtype)))
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).identity(n, dtype=dtype))

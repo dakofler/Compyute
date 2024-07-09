@@ -51,8 +51,10 @@ def tensor(
     requires_grad: bool, optional
         Whether the tensor requires gradients, by default True.
     """
+    if isinstance(data, _ArrayLike) and device is None and dtype is None:
+        return Tensor(data)
     device = infer_device(type(data)) if device is None else device
-    dtype = dtype_to_str(dtype)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
     data = get_engine(device).array(data, copy=copy, dtype=dtype)
     return Tensor(data, requires_grad)
 
@@ -84,14 +86,6 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
-
-    @staticmethod
-    def as_tensor(value: _ArrayLike | _ScalarLike) -> Tensor:
-        """Converts a value to a tensor."""
-        if isinstance(value, _ArrayLike):
-            return Tensor(value)
-        return tensor(value)
-
     @staticmethod
     def _as_array(value: Any) -> _ArrayLike:
         """Converts a value to an array."""
@@ -111,10 +105,6 @@ class Tensor:
                 f"Invalid data type {type(value)}. Use compyute.tensor to initialize tensors."
             )
         self._data = value
-
-    @property
-    def _engine(self) -> ModuleType:
-        return get_engine(self.device)
 
     @property
     def device(self) -> Device:
@@ -155,7 +145,7 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """Transposed tensor."""
-        return Tensor(self._engine.moveaxis(self._data, -2, -1))
+        return Tensor(get_engine(self.device).moveaxis(self._data, -2, -1))
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -167,7 +157,7 @@ class Tensor:
 
     def __getitem__(self, key: Any) -> Tensor:
         i = tuple(self._as_array(j) for j in key) if isinstance(key, tuple) else self._as_array(key)
-        return self.as_tensor(self._data[i])
+        return tensor(self._data[i])
 
     def __setitem__(self, key: Any, value: Tensor | _ScalarLike) -> None:
         self._data[self._as_array(key)] = self._as_array(value)
@@ -183,20 +173,20 @@ class Tensor:
         raise StopIteration
 
     def __add__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data + self._as_array(other))
+        return tensor(self._data + self._as_array(other))
 
-    def __radd__(self, other: _ScalarLike) -> Tensor:
+    def __radd__(self, other: Optional[_ScalarLike]) -> Tensor:
         other = 0.0 if other is None else other  # for gradient accumulation
         return self + other
 
     def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data * self._as_array(other))
+        return tensor(self._data * self._as_array(other))
 
     def __rmul__(self, other: _ScalarLike) -> Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data ** self._as_array(other))
+        return tensor(self._data ** self._as_array(other))
 
     def __rpow__(self, other: _ScalarLike) -> Tensor:
         return tensor(other, self.device) ** self
@@ -205,46 +195,46 @@ class Tensor:
         return self * -1
 
     def __sub__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data - self._as_array(other))
+        return tensor(self._data - self._as_array(other))
 
     def __rsub__(self, other: _ScalarLike) -> Tensor:
         return -self + other
 
     def __truediv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data / self._as_array(other))
+        return tensor(self._data / self._as_array(other))
 
     def __rtruediv__(self, other: _ScalarLike) -> Tensor:
         return self**-1 * other
 
     def __floordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data // self._as_array(other))
+        return tensor(self._data // self._as_array(other))
 
     def __rfloordiv__(self, other: _ScalarLike) -> Tensor:
         return (other // self).as_type(self.dtype)
 
     def __mod__(self, other: int) -> Tensor:
-        return self.as_tensor(self._data % other)
+        return tensor(self._data % other)
 
     def __matmul__(self, other: Tensor) -> Tensor:
-        return self.as_tensor(self._data @ other.data)
+        return tensor(self._data @ other.data)
 
     def __lt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data < self._as_array(other))
+        return tensor(self._data < self._as_array(other))
 
     def __gt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data > self._as_array(other))
+        return tensor(self._data > self._as_array(other))
 
     def __le__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data <= self._as_array(other))
+        return tensor(self._data <= self._as_array(other))
 
     def __ge__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data >= self._as_array(other))
+        return tensor(self._data >= self._as_array(other))
 
     def __eq__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data == self._as_array(other))
+        return tensor(self._data == self._as_array(other))
 
     def __ne__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return self.as_tensor(self._data != self._as_array(other))
+        return tensor(self._data != self._as_array(other))
 
     def __iadd__(self, other: Tensor | _ScalarLike) -> Tensor:
         self._data += self._as_array(other)

@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 from typing import Iterable, Iterator
 
-from ..base_tensor import Tensor
+from ..base_tensor import Tensor, tensor
 from ..dtypes import _ScalarLike
 from ..engine import get_engine
 
@@ -95,7 +95,7 @@ def inner(*tensors: Tensor) -> Tensor:
         Inner product.
     """
     device = tensors[0].device
-    return Tensor.as_tensor(get_engine(device).inner(*[t.data for t in tensors]))
+    return tensor(get_engine(device).inner(*[t.data for t in tensors]))
 
 
 def outer(*tensors: Tensor) -> Tensor:
@@ -153,4 +153,4 @@ def einsum(subscripts, *tensors: Tensor) -> Tensor:
         Result based on the Einstein summation.
     """
     device = tensors[0].device
-    return Tensor.as_tensor(get_engine(device).einsum(subscripts, *[t.data for t in tensors]))
+    return tensor(get_engine(device).einsum(subscripts, *[t.data for t in tensors]))

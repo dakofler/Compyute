@@ -87,7 +87,7 @@ class Recurrent(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self._training)
+        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         h = zeros_like(x_h)
@@ -97,7 +97,7 @@ class Recurrent(Module):
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
             h[:, t] = tanh(x_h[:, t] + h_h)
 
-        if self._training:
+        if self._training and x_h_grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -131,12 +131,12 @@ class Recurrent(Module):
                     self.b_h.grad += cpsum(dx_h, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_backward(dx_h)
+                dx, dw_i, db_i = x_h_grad_func(dx_h)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
 
-                if db_i is not None:
+                if self.b_i is not None and db_i is not None:
                     self.b_i.grad += db_i
 
                 return dx
@@ -223,7 +223,7 @@ class LSTM(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h, x_h_backward = linear(x, self.w_i, self.b_i, self._training)
+        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         ifgo = empty_like(x_h)
@@ -249,7 +249,7 @@ class LSTM(Module):
             # h_t = o_t * tanh(c_t)
             h[:, t] = ifgo[:, t, i3:] * tanh(c[:, t])
 
-        if self._training:
+        if self._training and x_h_grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -324,12 +324,12 @@ class LSTM(Module):
                     self.b_h.grad += cpsum(difgo_preact, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_backward(difgo_preact)
+                dx, dw_i, db_i = x_h_grad_func(difgo_preact)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
 
-                if db_i is not None:
+                if self.b_i is not None and db_i is not None:
                     self.b_i.grad += db_i
 
                 return dx

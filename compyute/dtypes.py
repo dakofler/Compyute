@@ -66,18 +66,10 @@ _DtypeLike: TypeAlias = (
 )
 
 
-def dtype_to_str(dtype: Optional[_DtypeLike]) -> Optional[
-    Literal[
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "float16",
-        "float32",
-        "float64",
-        "complex64",
-        "complex128",
-    ]
+def dtype_to_str(
+    dtype: _DtypeLike,
+) -> Literal[
+    "int8", "int16", "int32", "int64", "float16", "float32", "float64", "complex64", "complex128"
 ]:
     """Returns the string representation of a dtype."""
-    return Dtype(dtype).value if dtype is not None else None
+    return Dtype(dtype).value

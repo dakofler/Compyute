@@ -52,7 +52,7 @@ class Batchnorm1d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones((channels,), dtype), label="bn1d_w")
@@ -70,7 +70,7 @@ class Batchnorm1d(Module):
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training:
+        if self._training and grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -129,7 +129,7 @@ class Batchnorm2d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones((channels,), dtype), label="bn2d_w")
@@ -147,7 +147,7 @@ class Batchnorm2d(Module):
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training:
+        if self._training and grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -202,7 +202,7 @@ class Layernorm(Module):
         super().__init__(label, training)
         self.normalized_shape = normalized_shape
         self.eps = eps
-        self.dtype = dtype
+        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones(normalized_shape, dtype), label="ln_w")
@@ -213,7 +213,7 @@ class Layernorm(Module):
 
         y, grad_func = layernorm(x, self.w, self.b, self.eps, self._training)
 
-        if self._training:
+        if self._training and grad_func is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
