@@ -1,5 +1,7 @@
 # Compyute Neural Networks
 
+[![CI/CD](https://github.com/dakofler/Compyute/actions/workflows/tests.yml/badge.svg)](https://github.com/dakofler/Compyute/actions/workflows/tests.yml)
+
 `Compyute` is a toolbox for building and training and analyzing neural networks only using `NumPy`/`CuPy` under the hood to perform computations.
 
 ## Installation

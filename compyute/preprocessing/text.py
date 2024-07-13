@@ -210,7 +210,7 @@ class BPETokenizer(Tokenizer):
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
-        counts = {} if counts is None else counts
+        counts = counts or {}
         for bigram in zip(token_ids, token_ids[1:]):
             counts[bigram] = counts.get(bigram, 0) + 1
         return counts

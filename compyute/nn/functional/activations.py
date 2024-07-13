@@ -21,9 +21,8 @@ __all__ = [
     "softmax",
     "temperature_softmax",
 ]
-PI: float = 3.141592653589793
-GELU_S: float = 0.7978845608028654  # sqrt(2/pi)
-GELU_C: float = 0.044715
+_GELU_S: float = 0.7978845608028654
+_GELU_C: float = 0.044715
 
 
 def relu(
@@ -101,14 +100,14 @@ def gelu(
         Gradient function.
     """
 
-    tmp = GELU_S * (x + GELU_C * x**3)
+    tmp = _GELU_S * (x + _GELU_C * x**3)
     y = 0.5 * x * (1 + cptanh(tmp))
 
     if return_grad_func:
         return y, (
             lambda dy: (
                 0.5 * (1 + cptanh(tmp))
-                + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
+                + 0.5 * x * sech(tmp) ** 2 * _GELU_S * (1 + 3 * _GELU_C * x**2)
             )
             * dy
         )

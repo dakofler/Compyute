@@ -3,6 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
+from ...tensor_functions.computing import einsum
 from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = ["linear"]
@@ -31,12 +32,12 @@ def linear(
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
         Gradient function.
     """
-
     y = x @ w.T
     if b is not None:
         y += b
 
     if return_grad_func:
+        batch_dims = "abcdef"[: x.ndim - 1]
 
         def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
@@ -44,17 +45,13 @@ def linear(
 
             # weight grads
             if w.requires_grad:
-                dw = dy.T @ x
-                if x.ndim > 2:  # sum over all batch dimensions
-                    axes = tuple(range(x.ndim - 2))
-                    dw = cpsum(dw, axis=axes)
+                dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)  # sum over all batch dims
             else:
                 dw = None
 
             # bias grads
             if b is not None and b.requires_grad:
-                axes = tuple(range(x.ndim - 1))
-                db = cpsum(dy, axis=axes)  # sum over all batch dimensions
+                db = einsum(f"{batch_dims}o->o", dy)  # sum over all batch dims
             else:
                 db = None
 

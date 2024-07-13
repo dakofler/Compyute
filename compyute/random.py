@@ -70,9 +70,8 @@ def normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    return tensor(
-        get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype_to_str(dtype)
-    )
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
 def uniform(
@@ -102,11 +101,8 @@ def uniform(
     Tensor
         Tensor of uniformly distributed samples.
     """
-    return tensor(
-        get_engine(device).random.uniform(low, high, shape),
-        device=device,
-        dtype=dtype_to_str(dtype),
-    )
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
 def uniform_int(
@@ -136,11 +132,8 @@ def uniform_int(
     Tensor
         Tensor of samples.
     """
-    return tensor(
-        get_engine(device).random.randint(low, high, shape),
-        device=device,
-        dtype=dtype_to_str(dtype),
-    )
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
 def permutation(
@@ -162,9 +155,8 @@ def permutation(
     Tensor
         Permuted tensor.
     """
-    return tensor(
-        get_engine(device).random.permutation(n), device=device, dtype=dtype_to_str(dtype)
-    )
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
