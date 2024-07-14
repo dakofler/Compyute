@@ -71,8 +71,8 @@ class DataLoader:
                 y_batch = self.y[i * b : (i + 1) * b]
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
-
-            yield x_batch, None
+            else:
+                yield x_batch, None
 
         # yield remaining
         if not self.drop_remaining and n_trunc < n:
@@ -83,8 +83,8 @@ class DataLoader:
                 y_batch = self.y[n_trunc:]
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
-
-            yield x_batch, None
+            else:
+                yield x_batch, None
 
     def __len__(self) -> int:
         return max(1, self.x.shape[0] // self.batch_size)

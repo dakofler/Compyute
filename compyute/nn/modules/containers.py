@@ -152,7 +152,7 @@ class Container(Module):
             ) -> None:
                 # add summary of current modules
                 s = {}
-                s["name"] = " " * depth + module.label
+                s["name"] = " " * (2 * depth) + module.label
                 s["out_shape"] = (-1,) + module.y.shape[1:] if module.y is not None else ()
                 s["n_params"] = sum(p.size for p in module.parameters)
                 s["trainable"] = module.trainable

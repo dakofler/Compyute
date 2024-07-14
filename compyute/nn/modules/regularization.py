@@ -31,13 +31,8 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self._training:
-            d_map = multinulli(self.p, x.shape, device=self.device)
-            y = x * d_map / (1 - self.p)
-
-            # use d_map as mask for grads
-            self._backward = lambda dy: dy * d_map / (1 - self.p)
-
-        else:
-            y = x
-
-        return y
+            dropout_map = multinulli(self.p, x.shape, device=self.device) / (1 - self.p)
+            y = x * dropout_map
+            self._backward = lambda dy: dy * dropout_map
+            return y
+        return x

@@ -81,8 +81,9 @@ class Trainer:
         val_data : tuple[Tensor, Tensor], optional
             Data used for the validaton every epoch, by default None.
         batch_size : int, optional
-            Number of inputs processed in parallel, by default 32.
+            Number of inputs processed in parallel, by default 32. If -1, all samples are used.
         """
+        batch_size = len(x_train) if batch_size == -1 else batch_size
         train_dataloader = DataLoader(x_train, y_train, batch_size, self.model.device)
         self.cache["t"] = 0
         self.cache["epochs"] = epochs
