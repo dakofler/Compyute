@@ -133,12 +133,12 @@ class Container(Module):
         input_dtype : DtypeLike
             Data type of the expected input data.
         """
-        seperator = "=" * 75
+        seperator = "=" * 80
 
         summary = [
             self.label,
             seperator,
-            f"{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
+            f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
             seperator,
         ]
 
@@ -147,24 +147,33 @@ class Container(Module):
             _ = self(x)
             module_summaries = []
 
-            def build_module_summary_dict(
-                module: Module, summaries: list[dict], depth: int
-            ) -> None:
-                # add summary of current modules
-                s = {}
-                s["name"] = " " * (2 * depth) + module.label
-                s["out_shape"] = (-1,) + module.y.shape[1:] if module.y is not None else ()
-                s["n_params"] = sum(p.size for p in module.parameters)
-                s["trainable"] = module.trainable
-                s["type"] = "container" if isinstance(module, Container) else "module"
-                summaries.append(s)
+            def build_module_summary(module: Module, summaries: list[dict], prefix: str) -> None:
+                # add summary of current module
+                summaries.append(
+                    {
+                        "name": prefix + module.label,
+                        "out_shape": (-1,) + module.y.shape[1:] if module.y is not None else (),
+                        "n_params": sum(p.size for p in module.parameters),
+                        "trainable": module.trainable,
+                        "type": "container" if isinstance(module, Container) else "module",
+                    }
+                )
 
                 # get summary of child modules
                 if isinstance(module, Container):
-                    for module in module.modules:
-                        build_module_summary_dict(module, summaries, depth + 1)
+                    for i, m in enumerate(module.modules):
+                        child_prefix = prefix[:-2]
 
-            build_module_summary_dict(self, module_summaries, 0)
+                        if prefix[-2:] == "├-":
+                            child_prefix += "│ "
+                        elif prefix[-2:] == "└-":
+                            child_prefix += "  "
+
+                        child_prefix += "└-" if i == len(module.modules) - 1 else "├-"
+
+                        build_module_summary(m, summaries, child_prefix)
+
+            build_module_summary(self, module_summaries, "")
 
             # convert dict to list of strings
             n_parameters = 0
@@ -179,7 +188,7 @@ class Container(Module):
                 n_train_parameters += (
                     s["n_params"] if s["trainable"] and s["type"] == "module" else 0
                 )
-                summary.append(f"{name:25s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
+                summary.append(f"{name:30s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.cleanup()
         summary.append(seperator)

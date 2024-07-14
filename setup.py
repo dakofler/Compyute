@@ -45,6 +45,7 @@ setup(
             "torchaudio>=2.3.0",
             "torchvision>=0.18.0",
             "twine>=5.1.1",
+            "wheel>=0.43.0",
         ]
     },
     packages=find_packages(exclude=["tests", ".github", ".venv", "docs"]),
