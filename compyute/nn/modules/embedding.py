@@ -16,8 +16,6 @@ __all__ = ["Embedding"]
 class Embedding(Module):
     """Layer used for token embedding."""
 
-    __slots__ = ("vocab_size", "embedding_dim", "dtype", "w")
-
     def __init__(
         self,
         vocab_size: int,

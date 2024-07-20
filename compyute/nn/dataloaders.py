@@ -14,8 +14,6 @@ __all__ = ["DataLoader"]
 class DataLoader:
     """DataLoader to yield batched data for training and inference."""
 
-    __slots__ = ("x", "y", "batch_size", "device", "shuffle", "drop_remaining")
-
     def __init__(
         self,
         x: Tensor,

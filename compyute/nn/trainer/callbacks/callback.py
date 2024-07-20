@@ -9,8 +9,6 @@ __all__ = ["Callback"]
 class Callback(ABC):
     """Trainig callback."""
 
-    __slots__ = ()
-
     def on_init(self, trainer_cache: dict[str, Any]) -> None:
         """Does someting at initialization."""
 

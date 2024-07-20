@@ -12,8 +12,6 @@ __all__ = ["History", "ProgressBar"]
 class History(Callback):
     """Training history."""
 
-    __slots__ = ("cache",)
-
     def __init__(self) -> None:
         self.cache: dict[str, list[float]] = {}
 
@@ -42,8 +40,6 @@ class History(Callback):
 
 class ProgressBar(Callback):
     """Callback used for displaying the training progress."""
-
-    __slots__ = ("mode", "pbar")
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
         """Callback used for displaying the training progress.

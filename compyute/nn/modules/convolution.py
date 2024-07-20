@@ -22,19 +22,6 @@ __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 class Convolution1d(Module):
     """Layer used for spacial information and feature extraction."""
 
-    __slots__ = (
-        "in_channels",
-        "out_channels",
-        "kernel_size",
-        "padding",
-        "stride",
-        "dilation",
-        "bias",
-        "dtype",
-        "w",
-        "b",
-    )
-
     def __init__(
         self,
         in_channels: int,
@@ -127,19 +114,6 @@ class Convolution1d(Module):
 class Convolution2d(Module):
     """Layer used for spacial information and feature extraction."""
 
-    __slots__ = (
-        "in_channels",
-        "out_channels",
-        "kernel_size",
-        "padding",
-        "stride",
-        "dilation",
-        "bias",
-        "dtype",
-        "w",
-        "b",
-    )
-
     def __init__(
         self,
         in_channels: int,
@@ -229,8 +203,6 @@ class Convolution2d(Module):
 class MaxPooling2d(Module):
     """MaxPoling layer used to reduce information to avoid overfitting."""
 
-    __slots__ = ("kernel_size",)
-
     def __init__(
         self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
     ) -> None:
@@ -258,8 +230,6 @@ class MaxPooling2d(Module):
 
 class AvgPooling2d(Module):
     """AvgPooling layer used to reduce information to avoid overfitting."""
-
-    __slots__ = ("kernel_size",)
 
     def __init__(
         self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False

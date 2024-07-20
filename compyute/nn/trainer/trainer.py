@@ -17,16 +17,6 @@ __all__ = ["Trainer"]
 class Trainer:
     """Neural network model trainer."""
 
-    __slots__ = (
-        "model",
-        "optimizer",
-        "loss",
-        "metric",
-        "metric_name",
-        "callbacks",
-        "cache",
-    )
-
     def __init__(
         self,
         model: Module,

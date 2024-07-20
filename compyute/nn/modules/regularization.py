@@ -12,8 +12,6 @@ __all__ = ["Dropout"]
 class Dropout(Module):
     """Dropout layer used to randomly reduce information and avoid overfitting."""
 
-    __slots__ = ("p",)
-
     def __init__(self, p: float = 0.5, label: Optional[str] = None, training: bool = False) -> None:
         """Dropout layer used to randomly reduce information and avoid overfitting.
 

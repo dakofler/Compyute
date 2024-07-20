@@ -16,8 +16,6 @@ __all__ = ["Linear"]
 class Linear(Module):
     """Fully connected layer."""
 
-    __slots__ = ("in_channels", "out_channels", "bias", "dtype", "w", "b")
-
     def __init__(
         self,
         in_channels: int,

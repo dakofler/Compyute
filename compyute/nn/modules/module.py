@@ -18,8 +18,6 @@ __all__ = ["Module", "save_module", "load_module"]
 class Module(ABC):
     """Neural network module."""
 
-    __slots__ = ("y", "_backward", "label", "_device", "_retain_values", "_training", "_trainable")
-
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
 
@@ -73,12 +71,12 @@ class Module(ABC):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
-        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Parameter))
+        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
-        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Buffer))
+        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
     # CONTEXT MANAGERS
@@ -123,7 +121,7 @@ class Module(ABC):
     def __repr__(self) -> str:
         repr_string = f"{self.label}("
         attributes = [
-            f"{a}={getattr(self, a)}" for a in self.__slots__ if self._reprattr(a, getattr(self, a))
+            f"{a}={getattr(self, a)}" for a in self.__dict__ if self._reprattr(a, getattr(self, a))
         ]
         return repr_string + ", ".join(attributes) + ")"
 

@@ -13,8 +13,6 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 class Optimizer(ABC):
     """Optimizer base class"""
 
-    __slots__ = ("lr", "state", "t", "grad_clip_value")
-
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]],
@@ -51,8 +49,6 @@ class Optimizer(ABC):
 
 class SGD(Optimizer):
     """Updates parameters using stochastic gradient descent."""
-
-    __slots__ = ("momentum", "nesterov", "weight_decay")
 
     def __init__(
         self,
@@ -118,8 +114,6 @@ class SGD(Optimizer):
 class Adam(Optimizer):
     """Updates parameters following the Adam learning algorithm
     as described by Kingma et al., 2014."""
-
-    __slots__ = ("beta1", "beta2", "eps", "weight_decay")
 
     def __init__(
         self,
@@ -192,8 +186,6 @@ class Adam(Optimizer):
 class AdamW(Optimizer):
     """Updates parameters following the AdamW learning algorithm."""
 
-    __slots__ = ("beta1", "beta2", "eps", "weight_decay")
-
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -261,8 +253,6 @@ class AdamW(Optimizer):
 
 class NAdam(Optimizer):
     """Updates parameters following the NAdam learning algorithm."""
-
-    __slots__ = ("beta1", "beta2", "eps", "weight_decay", "momentum_decay")
 
     def __init__(
         self,

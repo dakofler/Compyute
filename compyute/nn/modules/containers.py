@@ -1,7 +1,7 @@
 """Neural network containers module"""
 
 from abc import abstractmethod
-from itertools import accumulate
+from itertools import accumulate, chain
 from typing import Iterator, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
@@ -10,7 +10,7 @@ from ...engine import Device, _DeviceLike
 from ...tensor_functions.combining import concatenate, split
 from ...tensor_functions.computing import tensorsum
 from ...tensor_functions.creating import ones
-from ..parameter import Parameter
+from ..parameter import Buffer, Parameter
 from .module import Module
 
 __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
@@ -18,8 +18,6 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
 class Container(Module):
     """Container base module."""
-
-    __slots__ = ("_modules",)
 
     def __init__(
         self, *modules: Module, label: Optional[str] = None, training: bool = False
@@ -54,9 +52,7 @@ class Container(Module):
         """Returns the list of modules."""
         if self._modules is not None:
             return self._modules
-        if "__dict__" in dir(self):
-            return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
-        return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
+        return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
 
     def add_module(self, module: Module) -> None:
         """Adds a module to the container.
@@ -74,7 +70,16 @@ class Container(Module):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns a generator of module parameters."""
-        return (p for module in self.modules for p in module.parameters)
+        self_parameters = super().parameters
+        module_parameters = (p for module in self.modules for p in module.parameters)
+        return chain(self_parameters, module_parameters)
+
+    @property
+    def buffers(self) -> Iterator[Buffer]:
+        """Returns a generator of module buffers."""
+        self_buffers = super().buffers
+        module_buffers = (b for module in self.modules for b in module.buffers)
+        return chain(self_buffers, module_buffers)
 
     def set_retain_values(self, value: bool) -> None:
         if self._retain_values == value:
@@ -208,8 +213,6 @@ class Container(Module):
 class Sequential(Container):
     """Sequential container module. Layers are processed sequentially."""
 
-    __slots__ = ()
-
     def forward(self, x: Tensor) -> Tensor:
         if not self.modules:
             raise EmptyContainerError()
@@ -231,8 +234,6 @@ class Sequential(Container):
 
 class ParallelConcat(Container):
     """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
-
-    __slots__ = ("concat_axis",)
 
     def __init__(
         self,
@@ -280,8 +281,6 @@ class ParallelConcat(Container):
 class ParallelAdd(Container):
     """Parallel container module.
     Inputs are processed in parallel, outputs are added element-wise."""
-
-    __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
         if not self.modules:

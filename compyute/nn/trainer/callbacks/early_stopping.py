@@ -11,8 +11,6 @@ __all__ = ["EarlyStopping"]
 class EarlyStopping(Callback):
     """Early stopping."""
 
-    __slots__ = ("model", "patience", "use_best_params", "target", "cache")
-
     def __init__(
         self,
         model: Module,

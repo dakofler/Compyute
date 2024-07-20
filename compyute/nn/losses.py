@@ -12,8 +12,6 @@ __all__ = ["BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 class Loss(ABC):
     """Loss base class."""
 
-    __slots__ = ("backward",)
-
     def __init__(self):
         self.backward: Optional[Callable[[], Tensor]] = None
 
@@ -23,8 +21,6 @@ class Loss(ABC):
 
 class MeanSquaredError(Loss):
     """Computes the mean squared error loss."""
-
-    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the mean squared error loss.
@@ -47,8 +43,6 @@ class MeanSquaredError(Loss):
 
 class CrossEntropy(Loss):
     """Computes the cross entropy loss from model logits."""
-
-    __slots__ = ("eps",)
 
     def __init__(self, eps: float = 1e-8):
         """Computes the crossentropy loss from model logits.
@@ -82,8 +76,6 @@ class CrossEntropy(Loss):
 
 class BinaryCrossEntropy(Loss):
     """Computes the binary cross entropy loss from model logits."""
-
-    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the binary cross entropy loss.

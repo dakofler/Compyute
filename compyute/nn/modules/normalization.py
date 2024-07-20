@@ -15,8 +15,6 @@ __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 class Batchnorm1d(Module):
     """Batch Normalization."""
 
-    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
-
     def __init__(
         self,
         channels: int,
@@ -92,8 +90,6 @@ class Batchnorm1d(Module):
 class Batchnorm2d(Module):
     """Batch Normalization."""
 
-    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
-
     def __init__(
         self,
         channels: int,
@@ -168,8 +164,6 @@ class Batchnorm2d(Module):
 
 class Layernorm(Module):
     """Normalizes values per sample."""
-
-    __slots__ = ("normalized_shape", "eps", "dtype", "w", "b")
 
     def __init__(
         self,

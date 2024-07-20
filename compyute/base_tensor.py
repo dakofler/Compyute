@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import partialmethod
-from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
 import numpy
@@ -61,8 +60,6 @@ def tensor(
 
 class Tensor:
     """Tensor object."""
-
-    __slots__ = ("_data", "requires_grad", "grad", "_iterator")
 
     def __init__(
         self,
