@@ -10,6 +10,7 @@ from .containers import ParallelAdd, Sequential
 from .convolution import Convolution1d, Convolution2d
 from .linear import Linear
 from .module import Module
+from .normalization import Batchnorm1d, Batchnorm2d
 
 __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
 
@@ -87,6 +88,9 @@ class Convolution1dBlock(Sequential):
         weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: _InitializerLike = "zeros",
+        batchnorm: bool = False,
+        batchnorm_eps: float = 1e-5,
+        batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
@@ -119,6 +123,12 @@ class Convolution1dBlock(Sequential):
             Whether to use bias values, by default True.
         bias_init: _InitializerLike, optional
             What method to use for initializing bias parameters, by default "zeros".
+        batchnorm : bool, optional
+            Whether to use batch normalization, by default False.
+        batchnorm_eps : float, optional
+            Constant for numerical stability used in batch normalization, by default 1e-5.
+        batchnorm_m : float, optional
+            Momentum used in batch normalization, by default 0.1.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
@@ -145,7 +155,11 @@ class Convolution1dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "conv1d_b")
 
-        super().__init__(conv, get_activation(activation), label=label, training=training)
+        if batchnorm:
+            bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
+            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+        else:
+            super().__init__(conv, get_activation(activation), label=label, training=training)
 
 
 class Convolution2dBlock(Sequential):
@@ -165,6 +179,9 @@ class Convolution2dBlock(Sequential):
         weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: _InitializerLike = "zeros",
+        batchnorm: bool = False,
+        batchnorm_eps: float = 1e-5,
+        batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
@@ -197,6 +214,12 @@ class Convolution2dBlock(Sequential):
             Whether to use bias values, by default True.
         bias_init: _InitializerLike, optional
             What method to use for initializing bias parameters, by default "zeros".
+        batchnorm : bool, optional
+            Whether to use batch normalization, by default False.
+        batchnorm_eps : float, optional
+            Constant for numerical stability used in batch normalization, by default 1e-5.
+        batchnorm_m : float, optional
+            Momentum used in batch normalization, by default 0.1.
         dtype: DtypeLike, optional
             Datatype of weights and biases, by default Dtype.FLOAT32.
         label: str, optional
@@ -225,7 +248,11 @@ class Convolution2dBlock(Sequential):
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)), "conv2d_b")
 
-        super().__init__(conv, get_activation(activation), label=label, training=training)
+        if batchnorm:
+            bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
+            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+        else:
+            super().__init__(conv, get_activation(activation), label=label, training=training)
 
 
 class SkipConnection(ParallelAdd):

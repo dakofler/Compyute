@@ -121,8 +121,8 @@ class Container(Module):
         for module in self.modules:
             module.cleanup(force)
 
-    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Prints information about the container and its modules.
+    def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
+        """Returns information about the container and its modules.
 
         Parameters
         ----------
@@ -132,6 +132,11 @@ class Container(Module):
             Shape of the model input ignoring the batch dimension.
         input_dtype : DtypeLike
             Data type of the expected input data.
+
+        Returns
+        -------
+        str
+            Summary of the container and its modules.
         """
         seperator = "=" * 80
 
@@ -195,8 +200,7 @@ class Container(Module):
         summary.append(f"Parameters: {n_parameters}")
         summary.append(f"Trainable parameters: {n_train_parameters}")
 
-        summary = "\n".join(summary)
-        print(summary)
+        return "\n".join(summary)
 
 
 class Sequential(Container):
