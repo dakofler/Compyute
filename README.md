@@ -69,6 +69,7 @@ z = cp.mean(x, axis=0)
 z = cp.ones(shape=(10, 10))
 z = cp.zeros(shape=(10, 10))
 z = cp.full(shape=(10, 10), value=99)
+z = cp.random.normal(shape=(10, 10))
 ```
 
 ### Data preprocessing, Encoding
@@ -89,8 +90,8 @@ tokenizer = BPETokenizer()
 tokenizer.fit(data, vocab_size=400)
 ```
 
-### Building and training models
-Models can be built using modules and containers, like `Sequential`. This also allows you to define your own blocks and reuse them in models.
+### Building models
+Models can be built using predefined modules (such as `Linear` or `ReLU`) and containers (such as `Sequential`).
 
 ```python
 import compyute.nn as nn
@@ -102,19 +103,28 @@ model = nn.Sequential(
 )
 ```
 
-Alternatively, models can also be built entirely from scratch by using custom classes that inherit from the `Container` class. With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules` (e.g. layers in a `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. 
+Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Container` class.
+
+With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules`. `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come.
+
+When inheriting from predefined containers, such as `Sequential`, the forward-function is already defined (in the case of `Sequential`, Modules are processed in the order specified in the arguments). This way, you can create reusable blocks.
 
 ```python
 import compyute.nn as nn
 
-# create a block or model by inheriting from the 'Sequential' container
+# create a block with custom arguments by inheriting from the 'Sequential' container
 class MyConvBlock(nn.Sequential):
-    def __init__(self):
-        super().__init__(
-            nn.Convolution2D(32, 64, kernel_size=3),
-            nn.ReLU(),
-            Batchnorm1d(16)
-        )
+    def __init__(self, in_channels, out_channels):
+        conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
+        relu = nn.ReLU()
+        bn = Batchnorm1d(out_channels)
+        super().__init__(conv, relu, bn)
+```
+
+When you want to define a custom forward-behaviour, the `Container` base class can be used.
+
+```python
+import compyute.nn as nn
 
 # create a model from scratch by inheriting from the 'Container' base class
 class MyModel(nn.Container):
@@ -142,14 +152,15 @@ class MyModel(nn.Container):
             dy = self.lin1.backward(dy)
             return dy
 
+        # register the models backward function
         self._backward = backward
         
         return x
-
-my_model = MyModel()
 ```
 
-All modules can be trained and updated using common optimizer algorithms, such as SGD or Adam. Callbacks offer extended functionality such as tracking the loss-values during training.
+### Training models
+
+All modules can be trained and updated using common optimizer algorithms, such as SGD or Adam. Callbacks offer extended functionality such as tracking the loss-values during training. An easy and approchable way is to use a `Trainer` object.
 
 ```python
 from compyute.nn.trainer import Trainer
@@ -201,7 +212,7 @@ for epoch in range(epochs):
     print(f"epoch {epoch}: {val_loss=:.4f}")
 ```
 
-Models can also be saved and loaded later on.
+Model checkpoints can also be saved and loaded later on.
 
 ```python
 nn.save_module(model, "my_model.cp")

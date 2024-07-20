@@ -21,12 +21,14 @@ class Container(Module):
 
     __slots__ = ("_modules",)
 
-    def __init__(self, *args: Module, label: Optional[str] = None, training: bool = False) -> None:
+    def __init__(
+        self, *modules: Module, label: Optional[str] = None, training: bool = False
+    ) -> None:
         """Container base module.
 
         Parameters
         ----------
-        *args : Module
+        *modules : Module
             Modules used in the container.
         label: str, optional
             Container label.
@@ -34,7 +36,7 @@ class Container(Module):
             Whether the module should be in training mode, by default False.
         """
         super().__init__(label, training)
-        self._modules = list(args) if len(args) > 0 else None
+        self._modules = list(modules) if len(modules) > 0 else None
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -128,9 +130,9 @@ class Container(Module):
         ----------
         root_module: Module
             Module to get the summary from.
-        input_shape : ShapeLike
+        input_shape : _ShapeLike
             Shape of the model input ignoring the batch dimension.
-        input_dtype : DtypeLike
+        input_dtype : _DtypeLike
             Data type of the expected input data.
 
         Returns
@@ -138,13 +140,13 @@ class Container(Module):
         str
             Summary of the container and its modules.
         """
-        seperator = "=" * 80
+        divider = "=" * 80
 
         summary = [
             self.label,
-            seperator,
+            divider,
             f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
-            seperator,
+            divider,
         ]
 
         x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
@@ -196,7 +198,7 @@ class Container(Module):
                 summary.append(f"{name:30s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.cleanup()
-        summary.append(seperator)
+        summary.append(divider)
         summary.append(f"Parameters: {n_parameters}")
         summary.append(f"Trainable parameters: {n_train_parameters}")
 
@@ -209,8 +211,8 @@ class Sequential(Container):
     __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         for module in self.modules:
             x = module(x)
@@ -257,8 +259,8 @@ class ParallelConcat(Container):
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         ys = [m(x) for m in self.modules]
         y = concatenate(ys, axis=self.concat_axis)
@@ -282,8 +284,8 @@ class ParallelAdd(Container):
     __slots__ = ()
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         y = tensorsum(m(x) for m in self.modules)
 
@@ -291,3 +293,10 @@ class ParallelAdd(Container):
             self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y
+
+
+class EmptyContainerError(Exception):
+    """Exception for empty containers."""
+
+    def __init__(self, message: str = "Container has no modules.") -> None:
+        super().__init__(message)

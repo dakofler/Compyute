@@ -9,10 +9,10 @@ from .activations import _ActivationLike, get_activation
 from .containers import ParallelAdd, Sequential
 from .convolution import Convolution1d, Convolution2d
 from .linear import Linear
-from .module import Module
+from .module import Identity, Module
 from .normalization import Batchnorm1d, Batchnorm2d
 
-__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "SkipConnection"]
+__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBlock"]
 
 
 class DenseBlock(Sequential):
@@ -255,31 +255,36 @@ class Convolution2dBlock(Sequential):
             super().__init__(conv, get_activation(activation), label=label, training=training)
 
 
-class SkipConnection(ParallelAdd):
-    """Skip connection bypassing a block of modules."""
+class ResidualBlock(ParallelAdd):
+    """Residual block implementing a residual connection bypassing a block of modules."""
 
     __slots__ = ()
 
     def __init__(
         self,
-        residual_block: Module,
-        projection: Optional[Module] = None,
+        *modules: Module,
+        residual_proj: Optional[Module] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Residual connection bypassing a block of modules.
+        """Residual block implementing a residual connection bypassing a block of modules.
 
         Parameters
         ----------
-        residual_block : Module
-            Residual block bypassed by the skip connection.
-            For multiple modules use a container module.
-        projection: Module, optional
+        *modules : Module
+            Modules used in the residual block.
+        residual_projection: Module, optional
             Module used for a linear projection to achieve matching dimensions, by default None.
+            If none is provided, the identity function is used.
         label: str, optional
             Module label.
         training: bool, optional
             Whether the module should be in training mode, by default False.
         """
-        proj = projection if projection is not None else Module("Projection", training)
-        super().__init__(residual_block, proj, label=label, training=training)
+        proj = residual_proj if residual_proj is not None else Identity(training=training)
+
+        if len(modules) == 1:
+            super().__init__(modules[0], proj, label=label, training=training)
+        else:
+            module_block = Sequential(*modules, label=label, training=training)
+            super().__init__(module_block, proj, label=label, training=training)

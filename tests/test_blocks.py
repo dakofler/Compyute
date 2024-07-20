@@ -2,7 +2,7 @@
 
 import torch
 
-from compyute.nn import Linear, ReLU, Sequential, SkipConnection
+from compyute.nn import Linear, ReLU, ResidualBlock, Sequential
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Cout, X = (10, 20, 30, 40)
@@ -23,7 +23,7 @@ def test_skip() -> None:
     compyute_lin2 = Linear(Cin, Cout, bias=False, training=True)
     compyute_lin1.w = compyute_w1
     compyute_lin2.w = compyute_w2
-    compyute_module = SkipConnection(
+    compyute_module = ResidualBlock(
         Sequential(compyute_lin1, ReLU(training=True), compyute_lin2, training=True), training=True
     )
 

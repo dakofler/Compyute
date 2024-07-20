@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pickle
-from abc import ABC
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
@@ -22,12 +22,14 @@ class Module(ABC):
 
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
         """Neural network module."""
+
+        self.label = label if label is not None else self.__class__.__name__
+        self._training: bool = training
+
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Tensor]] = None
-        self.label = label if label is not None else self.__class__.__name__
         self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
-        self._training: bool = training
         self._trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
@@ -134,6 +136,7 @@ class Module(ABC):
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
 
+    @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
         """Performs a forward pass through the module.
 
@@ -147,7 +150,6 @@ class Module(ABC):
         Tensor
             Computed module output.
         """
-        return x
 
     def backward(self, dy: Tensor) -> Tensor:
         """Performs a backward pass through the module.
@@ -164,6 +166,13 @@ class Module(ABC):
         """
         if not self._training:
             raise AttributeError(f"{self.label} is not in training mode.")
+
+        if self._backward is None:
+            raise ModelDefinitionError(
+                """No backward function has been defined.
+                If you are using a custom model, make sure to define a backward function and assign
+                it to self._backward during the call of the forward method (see Compyute README)"""
+            )
 
         self._set_dy(dy)
 
@@ -226,6 +235,18 @@ class Module(ABC):
             return
         vdims = ", ".join(str(d) for d in valid_dims)
         raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
+
+
+class Identity(Module):
+    """Identity module."""
+
+    def forward(self, x: Tensor) -> Tensor:
+        self._backward = lambda dy: dy
+        return x
+
+
+class ModelDefinitionError(Exception):
+    """Model definition error."""
 
 
 def save_module(module: Module, filepath: str) -> None:
