@@ -68,14 +68,18 @@ def convolve1d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
+
+    # dilate filter and add a fake batch dimension
     f, dil_grad_func = dilate1d(f, dilation, return_grad_func)  # (Co, Ci, F)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
     f_.requires_grad = f.requires_grad
 
+    # pad input and add a fake output dimension
     p = _pad1d_from_str(padding, f_.shape[-1])
     x, pad_grad_func = pad1d(x, p, return_grad_func)  # (B, Ci, T)
     x_ = insert_dim(x, 1)  # (B, 1, Ci, T)
 
+    # perform convolution and sum over input dimension
     conv, conv_grad_func = _convolve1d(x_, f_, stride, return_grad_func)  # (B, Co, Ci, T)
     y = cpsum(conv, 2)  # (B, Co, T)
 
@@ -196,7 +200,6 @@ def _convolve1d(
             dy_, _ = dilate1d(dy, stride)
             dy_ = pad_to_shape(dy_, conv.shape)
 
-            # full pad dy
             dy_, _ = pad1d(dy_, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
             dx = _fft_conv1d(dy_, f)
 
@@ -256,18 +259,22 @@ def convolve2d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
+
+    # dilate filter and add a fake batch dimension
     d = (dilation, dilation)
     f, dil_grad_func = dilate2d(f, d, return_grad_func)  # (Co, Ci, Fy, Fx)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
     f_.requires_grad = f.requires_grad
 
+    # pad input and add a fake output dimension
     p = _pad2d_from_str(padding, f_.shape[-1])
     x, pad_grad_func = pad2d(x, p, return_grad_func)  # (B, Ci, Y, X)
     x_ = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
+    # perform convolution and sum over input dimension
     s = (stride, stride)
     conv, conv_grad_func = _convolve2d(x_, f_, s, return_grad_func)  # (B, Co, Ci, Y, X)
-    y = cpsum(conv, 2)  # (B, Co, Y, X) sum over in channels
+    y = cpsum(conv, 2)  # (B, Co, Y, X)
 
     if b is not None:
         y += reshape(b, (b.shape[0], 1, 1))

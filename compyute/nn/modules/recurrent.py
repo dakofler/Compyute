@@ -202,7 +202,7 @@ class LSTM(Module):
         x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
-        ifgo = empty_like(x_h)
+        gates = empty_like(x_h)
         c = zeros_like(x_h[:, :, :i1])
         h = zeros_like(c)
 
@@ -210,20 +210,20 @@ class LSTM(Module):
             # gates pre activation
             # (B, 4*Ch) + (B, Ch) @ (Ch, 4*Ch) + (4*Ch,) -> (B, 4*Ch)
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
-            ifgo_preact = x_h[:, t] + h_h
+            gates_preact = x_h[:, t] + h_h
 
             # gates post activation i_t, f_t, g_t, o_t
-            ifgo[:, t, :i2] = sigmoid(ifgo_preact[:, :i2])[0]  # input, forget
-            ifgo[:, t, i2:i3] = tanh(ifgo_preact[:, i2:i3])  # node
-            ifgo[:, t, i3:] = sigmoid(ifgo_preact[:, i3:])[0]  # output
+            gates[:, t, :i2], _ = sigmoid(gates_preact[:, :i2])  # input, forget
+            gates[:, t, i2:i3] = tanh(gates_preact[:, i2:i3])  # node
+            gates[:, t, i3:], _ = sigmoid(gates_preact[:, i3:])  # output
 
             # cell state
             # c_t = f_t * c_t-1 + i_t * g_t
-            c[:, t] = ifgo[:, t, i1:i2] * c[:, t - 1] + ifgo[:, t, :i1] * ifgo[:, t, i2:i3]
+            c[:, t] = gates[:, t, i1:i2] * c[:, t - 1] + gates[:, t, :i1] * gates[:, t, i2:i3]
 
             # hidden state
             # h_t = o_t * tanh(c_t)
-            h[:, t] = ifgo[:, t, i3:] * tanh(c[:, t])
+            h[:, t] = gates[:, t, i3:] * tanh(c[:, t])
 
         if self._training and x_h_grad_func is not None:
 
@@ -237,7 +237,7 @@ class LSTM(Module):
                     dh = dy
 
                 dc = empty_like(c)
-                difgo_preact = empty_like(ifgo)
+                dgates_preact = empty_like(gates)
 
                 for t in range(x.shape[1] - 1, -1, -1):
 
@@ -245,62 +245,62 @@ class LSTM(Module):
                     out_grad = dh[:, t]
                     if t < x.shape[1] - 1:
                         # hidden state gradients from next time step
-                        out_grad += difgo_preact[:, t + 1] @ self.w_h
+                        out_grad += dgates_preact[:, t + 1] @ self.w_h
 
                     # cell state gradients
                     # dc_t = dtanh(c_t) * do_t * output grads
-                    dc[:, t] = (1 - tanh(c[:, t]) ** 2) * ifgo[:, t, i3:] * out_grad
+                    dc[:, t] = (1 - tanh(c[:, t]) ** 2) * gates[:, t, i3:] * out_grad
                     if t < x.shape[1] - 1:
                         # cell state gradients from next time step
                         # dc_t += f_t+1 * dc_t+1
-                        dc[:, t] += ifgo[:, t + 1, i1:i2] * dc[:, t + 1]
+                        dc[:, t] += gates[:, t + 1, i1:i2] * dc[:, t + 1]
 
-                    difgo_t = empty_like(ifgo[:, 1])
+                    dgates = empty_like(gates[:, 1])
 
                     # input gate gradients
                     # di_t = g_t * dc_t
-                    difgo_t[:, :i1] = ifgo[:, t, i2:i3] * dc[:, t]
+                    dgates[:, :i1] = gates[:, t, i2:i3] * dc[:, t]
 
                     # forget gate gradients
                     # df_t = c_t-1 * dc_t
-                    difgo_t[:, i1:i2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
+                    dgates[:, i1:i2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
 
                     # node gradients
                     # dg_t = i_t * dc_t
-                    difgo_t[:, i2:i3] = ifgo[:, t, :i1] * dc[:, t]
+                    dgates[:, i2:i3] = gates[:, t, :i1] * dc[:, t]
 
                     # output gate gradients
                     # do_t = tanh(c_t) * output grads
-                    difgo_t[:, i3:] = tanh(c[:, t]) * out_grad
+                    dgates[:, i3:] = tanh(c[:, t]) * out_grad
 
                     # pre activation input and forget gate gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
-                    difgo_preact[:, t, :i2] = (
-                        ifgo[:, t, :i2] * (1 - ifgo[:, t, :i2]) * difgo_t[:, :i2]
+                    dgates_preact[:, t, :i2] = (
+                        gates[:, t, :i2] * (1 - gates[:, t, :i2]) * dgates[:, :i2]
                     )
 
                     # pre activation node gradients
                     # dg_t = dtanh(g_t) * dg_t
-                    difgo_preact[:, t, i2:i3] = (1 - ifgo[:, t, i2:i3] ** 2) * difgo_t[:, i2:i3]
+                    dgates_preact[:, t, i2:i3] = (1 - gates[:, t, i2:i3] ** 2) * dgates[:, i2:i3]
 
                     # pre activation output gate gradients
                     # do_t = dsigmoid(o_t) * do_t
-                    difgo_preact[:, t, i3:] = (
-                        ifgo[:, t, i3:] * (1 - ifgo[:, t, i3:]) * difgo_t[:, i3:]
+                    dgates_preact[:, t, i3:] = (
+                        gates[:, t, i3:] * (1 - gates[:, t, i3:]) * dgates[:, i3:]
                     )
 
                     # hidden weight gradients
                     # (Ch, B) @ (B, Ch) -> (Ch, Ch)
                     if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += difgo_preact[:, t].T @ h[:, t - 1]
+                        self.w_h.grad += dgates_preact[:, t].T @ h[:, t - 1]
 
                 # hidden bias gradients
                 # (B, T, Ch) -> (Ch,)
                 if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += cpsum(difgo_preact, axis=(0, 1))
+                    self.b_h.grad += cpsum(dgates_preact, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_grad_func(difgo_preact)
+                dx, dw_i, db_i = x_h_grad_func(dgates_preact)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
