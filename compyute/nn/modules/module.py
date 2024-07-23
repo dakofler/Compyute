@@ -36,11 +36,11 @@ class Module(ABC):
 
     @property
     def device(self) -> _DeviceLike:
-        """Device the module tensors are stored on."""
+        """Device the module parametes and buffers are stored on."""
         return self._device
 
     def to_device(self, device: _DeviceLike) -> None:
-        """Moves the module to the specified device."""
+        """Moves the module parameters and buffers to the specified device."""
         device = Device(device)
         if device == self._device:
             return
@@ -88,7 +88,7 @@ class Module(ABC):
 
     @contextmanager
     def retain_values(self):
-        """Context manager for temporarily setting the module to retain values."""
+        """Context manager for setting the module to retain intermediate values."""
         retain_values = self._retain_values
         self.set_retain_values(True)
         try:
@@ -102,7 +102,7 @@ class Module(ABC):
 
     @contextmanager
     def training(self):
-        """Context manager for temporarily putting the module in training state."""
+        """Context manager for putting the module in training state."""
         training = self._training
         self.set_training(True)
         try:

@@ -64,15 +64,15 @@ class Batchnorm1d(Module):
         self._check_dims(x, [2, 3])
         x = x.as_type(self.dtype)
 
-        y, self.rmean, self.rvar, grad_func = batchnorm1d(
+        y, self.rmean, self.rvar, grad_fn = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
+                dx, dw, db = grad_fn(dy)
 
                 if dw is not None:
                     self.w.grad += dw
@@ -139,15 +139,15 @@ class Batchnorm2d(Module):
         self._check_dims(x, [4])
         x = x.as_type(self.dtype)
 
-        y, self.rmean, self.rvar, grad_func = batchnorm2d(
+        y, self.rmean, self.rvar, grad_fn = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
+                dx, dw, db = grad_fn(dy)
 
                 if dw is not None:
                     self.w.grad += dw
@@ -205,13 +205,13 @@ class Layernorm(Module):
     def forward(self, x: Tensor) -> Tensor:
         x = x.as_type(self.dtype)
 
-        y, grad_func = layernorm(x, self.w, self.b, self.eps, self._training)
+        y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._training)
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
+                dx, dw, db = grad_fn(dy)
 
                 if dw is not None:
                     self.w.grad += dw

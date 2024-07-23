@@ -41,7 +41,7 @@ def convolve1d(
     padding: _PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
-    return_grad_func: bool = False,
+    return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Convolves two tensors over their last axis.
 
@@ -59,7 +59,7 @@ def convolve1d(
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
     Returns
     -------
@@ -70,31 +70,31 @@ def convolve1d(
     """
 
     # dilate filter and add a fake batch dimension
-    f, dil_grad_func = dilate1d(f, dilation, return_grad_func)  # (Co, Ci, F)
+    f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
     f_.requires_grad = f.requires_grad
 
     # pad input and add a fake output dimension
     p = _pad1d_from_str(padding, f_.shape[-1])
-    x, pad_grad_func = pad1d(x, p, return_grad_func)  # (B, Ci, T)
+    x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
     x_ = insert_dim(x, 1)  # (B, 1, Ci, T)
 
     # perform convolution and sum over input dimension
-    conv, conv_grad_func = _convolve1d(x_, f_, stride, return_grad_func)  # (B, Co, Ci, T)
+    conv, conv_grad_fn = _convolve1d(x_, f_, stride, return_grad_fn)  # (B, Co, Ci, T)
     y = cpsum(conv, 2)  # (B, Co, T)
 
     if b is not None:
         y += reshape(b, (b.shape[0], 1))
 
-    if conv_grad_func is not None and pad_grad_func is not None and dil_grad_func is not None:
+    if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
-        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
-            dx, df = conv_grad_func(dy_)
-            dx = pad_grad_func(cpsum(dx, 1))
+            dx, df = conv_grad_fn(dy_)
+            dx = pad_grad_fn(cpsum(dx, 1))
 
             if df is not None:
-                df = dil_grad_func(cpsum(df, 0))
+                df = dil_grad_fn(cpsum(df, 0))
 
             if b is not None and b.requires_grad:
                 db = cpsum(dy, (0, 2))
@@ -103,13 +103,13 @@ def convolve1d(
 
             return dx, df, db
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None
 
 
 def dilate1d(
-    x: Tensor, dilation: int, return_grad_func: bool = False
+    x: Tensor, dilation: int, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Dilates a tensor in its last axis.
 
@@ -119,7 +119,7 @@ def dilate1d(
         Input tensor.
     dilation : int
         Dilation used.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
     Returns
     -------
@@ -136,7 +136,7 @@ def dilate1d(
     dil_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
     x_dil[*dil_slice] = x
 
-    if return_grad_func:
+    if return_grad_fn:
         return x_dil, (lambda dy: dy[*dil_slice])
 
     return x_dil, None
@@ -150,7 +150,7 @@ def _pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
 
 
 def pad1d(
-    x: Tensor, padding: tuple[int, int], return_grad_func: bool = False
+    x: Tensor, padding: tuple[int, int], return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Pads a tensor in its last axis.
 
@@ -160,7 +160,7 @@ def pad1d(
         Input tensor.
     padding : tuple[int, int]
         Padding width applied to the front and back of the last axis.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
     Returns
     -------
@@ -175,7 +175,7 @@ def pad1d(
     widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
     y = pad(x, widths)
 
-    if return_grad_func:
+    if return_grad_fn:
         pad_grad_slice = [slice(None)] * (x.ndim - 1) + [slice(padding[0], -padding[0])]
         return y, (lambda dy: dy[*pad_grad_slice])
 
@@ -186,16 +186,16 @@ def _convolve1d(
     x: Tensor,
     f: Tensor,
     stride: int = 1,
-    return_grad_func: bool = False,
+    return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
     f_ = flip(f, -1)
     conv = _fft_conv1d(x, f_)
     stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
     y = conv[*stride_slice]
 
-    if return_grad_func:
+    if return_grad_fn:
 
-        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
             # fill elements skipped by strides with zeros
             dy_, _ = dilate1d(dy, stride)
             dy_ = pad_to_shape(dy_, conv.shape)
@@ -208,7 +208,7 @@ def _convolve1d(
 
             return dx, df
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None
 
@@ -231,7 +231,7 @@ def convolve2d(
     padding: _PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
-    return_grad_func: bool = False,
+    return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Convolves two tensors over their last two axes.
 
@@ -249,7 +249,7 @@ def convolve2d(
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -262,32 +262,32 @@ def convolve2d(
 
     # dilate filter and add a fake batch dimension
     d = (dilation, dilation)
-    f, dil_grad_func = dilate2d(f, d, return_grad_func)  # (Co, Ci, Fy, Fx)
+    f, dil_grad_fn = dilate2d(f, d, return_grad_fn)  # (Co, Ci, Fy, Fx)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
     f_.requires_grad = f.requires_grad
 
     # pad input and add a fake output dimension
     p = _pad2d_from_str(padding, f_.shape[-1])
-    x, pad_grad_func = pad2d(x, p, return_grad_func)  # (B, Ci, Y, X)
+    x, pad_grad_fn = pad2d(x, p, return_grad_fn)  # (B, Ci, Y, X)
     x_ = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
     # perform convolution and sum over input dimension
     s = (stride, stride)
-    conv, conv_grad_func = _convolve2d(x_, f_, s, return_grad_func)  # (B, Co, Ci, Y, X)
+    conv, conv_grad_fn = _convolve2d(x_, f_, s, return_grad_fn)  # (B, Co, Ci, Y, X)
     y = cpsum(conv, 2)  # (B, Co, Y, X)
 
     if b is not None:
         y += reshape(b, (b.shape[0], 1, 1))
 
-    if conv_grad_func is not None and pad_grad_func is not None and dil_grad_func is not None:
+    if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
-        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
-            dx, df = conv_grad_func(dy_)
-            dx = pad_grad_func(cpsum(dx, 1))  # sum over out channels
+            dx, df = conv_grad_fn(dy_)
+            dx = pad_grad_fn(cpsum(dx, 1))  # sum over out channels
 
             if df is not None:
-                df = dil_grad_func(cpsum(df, 0))  # sum over batches
+                df = dil_grad_fn(cpsum(df, 0))  # sum over batches
 
             if b is not None and b.requires_grad:
                 db = cpsum(dy, (0, 2, 3))  # sum over batches, Y and X
@@ -296,13 +296,13 @@ def convolve2d(
 
             return dx, df, db
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None
 
 
 def dilate2d(
-    x: Tensor, dilation: tuple[int, int], return_grad_func: bool = False
+    x: Tensor, dilation: tuple[int, int], return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Dilates a tensor in its last two axes.
 
@@ -312,7 +312,7 @@ def dilate2d(
         Input tensor.
     dilation : tuple[int, int]
         Dilation used.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
     Returns
     -------
@@ -336,7 +336,7 @@ def dilate2d(
     )
     x_dil[*dil_slice] = x
 
-    if return_grad_func:
+    if return_grad_fn:
         return x_dil, (lambda dy: dy[*dil_slice])
 
     return x_dil, None
@@ -352,7 +352,7 @@ def _pad2d_from_str(
 
 
 def pad2d(
-    x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]], return_grad_func: bool = False
+    x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]], return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Pads a tensor in its last two axes.
 
@@ -362,7 +362,7 @@ def pad2d(
         Input tensor.
     padding : tuple[tuple[int, int], tuple[int, int]]
         Padding width applied to the front and back of the last two axes.
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
     Returns
     -------
@@ -377,7 +377,7 @@ def pad2d(
     widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
     y = pad(x, widths)
 
-    if return_grad_func:
+    if return_grad_fn:
         pad_grad_slice = [slice(None)] * (x.ndim - 2) + [
             slice(padding[0][0], -padding[0][1]),
             slice(padding[1][0], -padding[1][1]),
@@ -388,7 +388,7 @@ def pad2d(
 
 
 def _convolve2d(
-    x: Tensor, f: Tensor, strides: tuple[int, int] = (1, 1), return_grad_func: bool = False
+    x: Tensor, f: Tensor, strides: tuple[int, int] = (1, 1), return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
     f_ = flip(f, (-2, -1))
     conv = _fft_conv2d(x, f_)
@@ -398,9 +398,9 @@ def _convolve2d(
     ]
     y = conv[*stride_slice]
 
-    if return_grad_func:
+    if return_grad_fn:
 
-        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
             # fill elements skipped by strides with zeros
             dy_, _ = dilate2d(dy, strides)
             dy_ = pad_to_shape(dy_, conv.shape)
@@ -416,7 +416,7 @@ def _convolve2d(
 
             return dx, df
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None
 
@@ -468,7 +468,7 @@ def upsample2d(
 
 
 def maxpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_func: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a max pooling over the last two axes.
 
@@ -478,7 +478,7 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -505,19 +505,19 @@ def maxpooling2d(
     )
     y = cpmax(reshape(x_crop, pool_shape), axis=(-3, -1))
 
-    if return_grad_func:
+    if return_grad_fn:
         y_ups = upsample2d(y, kernel_size, x.shape)
 
-        def grad_func(dy: Tensor) -> Tensor:
+        def grad_fn(dy: Tensor) -> Tensor:
             return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None
 
 
 def avgpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_func: bool = False
+    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs a average pooling over the last two axes.
 
@@ -527,7 +527,7 @@ def avgpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -554,11 +554,11 @@ def avgpooling2d(
     )
     y = mean(reshape(x_crop, pool_shape), axis=(-3, -1))
 
-    if return_grad_func:
+    if return_grad_fn:
 
-        def grad_func(dy: Tensor) -> Tensor:
+        def grad_fn(dy: Tensor) -> Tensor:
             return upsample2d(dy, kernel_size, x.shape) / (kernel_height * kernel_width)
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None

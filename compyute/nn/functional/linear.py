@@ -10,7 +10,7 @@ __all__ = ["linear"]
 
 
 def linear(
-    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_func: bool = False
+    x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
     """Applies the linear transformation X @ W^T + b.
 
@@ -22,7 +22,7 @@ def linear(
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    return_grad_func: bool, optional
+    return_grad_fn: bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -36,10 +36,10 @@ def linear(
     if b is not None:
         y += b
 
-    if return_grad_func:
+    if return_grad_fn:
         batch_dims = "abcdef"[: x.ndim - 1]
 
-        def grad_func(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
             # input grads
             dx = dy @ w
 
@@ -59,6 +59,6 @@ def linear(
 
             return dx, dw, db
 
-        return y, grad_func
+        return y, grad_fn
 
     return y, None

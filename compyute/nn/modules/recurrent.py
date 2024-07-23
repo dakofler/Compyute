@@ -75,7 +75,7 @@ class Recurrent(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
+        x_h, x_h_grad_fn = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         h = zeros_like(x_h)
@@ -85,7 +85,7 @@ class Recurrent(Module):
             h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
             h[:, t] = tanh(x_h[:, t] + h_h)
 
-        if self._training and x_h_grad_func is not None:
+        if self._training and x_h_grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -119,7 +119,7 @@ class Recurrent(Module):
                     self.b_h.grad += cpsum(dx_h, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_grad_func(dx_h)
+                dx, dw_i, db_i = x_h_grad_fn(dx_h)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i
@@ -199,7 +199,7 @@ class LSTM(Module):
 
         # input projection
         # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h, x_h_grad_func = linear(x, self.w_i, self.b_i, self._training)
+        x_h, x_h_grad_fn = linear(x, self.w_i, self.b_i, self._training)
 
         # iterate over timesteps
         gates = empty_like(x_h)
@@ -225,7 +225,7 @@ class LSTM(Module):
             # h_t = o_t * tanh(c_t)
             h[:, t] = gates[:, t, i3:] * tanh(c[:, t])
 
-        if self._training and x_h_grad_func is not None:
+        if self._training and x_h_grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
@@ -300,7 +300,7 @@ class LSTM(Module):
                     self.b_h.grad += cpsum(dgates_preact, axis=(0, 1))
 
                 # input projection gradients
-                dx, dw_i, db_i = x_h_grad_func(dgates_preact)
+                dx, dw_i, db_i = x_h_grad_fn(dgates_preact)
 
                 if dw_i is not None:
                     self.w_i.grad += dw_i

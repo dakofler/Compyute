@@ -296,10 +296,6 @@ class Tensor:
     double = partialmethod(as_type, dtype=Dtype.FLOAT64)
     complex = partialmethod(as_type, dtype=Dtype.COMPLEX64)
 
-    def to_numpy(self) -> numpy.ndarray:
-        """Returns the tensor data as a NumPy array."""
-        return self.cpu().data
-
     # ----------------------------------------------------------------------------------------------
     # MEMORY/DEVICE METHODS
     # ----------------------------------------------------------------------------------------------
@@ -329,3 +325,15 @@ class Tensor:
         new_tensor = self.copy()
         new_tensor.to_device(Device.CUDA)
         return new_tensor
+
+    # ----------------------------------------------------------------------------------------------
+    # OTHER METHODS
+    # ----------------------------------------------------------------------------------------------
+
+    def to_numpy(self) -> numpy.ndarray:
+        """Returns the tensor data as a NumPy array."""
+        return self.cpu().data
+
+    def as_shape(self, shape: _ShapeLike) -> Tensor:
+        """Returns a new view of the tensor of a given shape."""
+        return Tensor(self._data.reshape(shape))

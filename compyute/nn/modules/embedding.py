@@ -53,14 +53,14 @@ class Embedding(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])
-        y, grad_func = lookup_embedding(x, self.w, self._training)
+        y, grad_fn = lookup_embedding(x, self.w, self._training)
 
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 if self.w.requires_grad:
                     dy = dy.as_type(self.dtype)
-                    self.w.grad += grad_func(dy)
+                    self.w.grad += grad_fn(dy)
                 return zeros_like(x)
 
             self._backward = _backward

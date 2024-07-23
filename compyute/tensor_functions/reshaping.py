@@ -31,7 +31,7 @@ def diagonal(x: Tensor) -> Tensor:
 
 
 def reshape(x: Tensor, shape: _ShapeLike) -> Tensor:
-    """Returns a view of the tensor tensor of a given shape.
+    """Returns a new view of the tensor of a given shape.
 
     Parameters
     ----------

@@ -37,7 +37,7 @@ class MeanSquaredError(Loss):
         Tensor
             Mean squared error loss.
         """
-        loss, self.backward = mean_squared_error(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = mean_squared_error(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
@@ -70,7 +70,7 @@ class CrossEntropy(Loss):
         Tensor
             Cross entropy loss.
         """
-        loss, self.backward = cross_entropy(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = cross_entropy(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
@@ -92,7 +92,7 @@ class BinaryCrossEntropy(Loss):
         Tensor
             Binary cross entropy loss.
         """
-        loss, self.backward = binary_cross_entropy(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = binary_cross_entropy(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
