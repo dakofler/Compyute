@@ -7,8 +7,9 @@ from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import empty_like, zeros, zeros_like
 from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import tanh
+from ...tensor_functions.transforming import tanh_
 from ..functional.activations import sigmoid
+from ..functional.activations import tanh as tanh
 from ..functional.linear import linear
 from ..parameter import Parameter
 from .module import Module
@@ -73,66 +74,60 @@ class Recurrent(Module):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
 
-        # input projection
-        # (B, T, Cin) @ (Cin, Ch) -> (B, T, Ch)
-        x_h, x_h_grad_fn = linear(x, self.w_i, self.b_i, self._training)
+        grad_fns = []
+        h = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
 
         # iterate over timesteps
-        h = zeros_like(x_h)
-        for t in range(x_h.shape[1]):
-            # hidden state
-            # (B, Ch) @ (Ch, Ch) -> (B, Ch)
-            h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
-            h[:, t] = tanh(x_h[:, t] + h_h)
+        for t in range(x.shape[1]):
 
-        if self._training and x_h_grad_fn is not None:
+            # input projection
+            x_h, x_h_grad_fn = linear(x[:, t], self.w_i, self.b_i, self._training)
+
+            # hidden projection
+            h_h, h_h_grad_fn = linear(h[:, t - 1], self.w_h, self.b_h, self._training)
+
+            # apply non-linearity
+            h[:, t], tanh_grad_fn = tanh(x_h + h_h, self._training)
+
+            if self._training:
+                grad_fns.append((x_h_grad_fn, h_h_grad_fn, tanh_grad_fn))
+
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-
-                if not self.return_sequence:
-                    dh = zeros_like(h)
-                    dh[:, -1] = dy
-                else:
-                    dh = dy
-
-                dx_h = empty_like(x_h)
+                dx = empty_like(x)
+                dh = 0
 
                 for t in range(x.shape[1] - 1, -1, -1):
-                    # hidden state gradients
-                    out_grad = dh[:, t]
-                    if t < x_h.shape[1] - 1:
-                        # hidden state gradients from next time step
-                        out_grad += dx_h[:, t + 1] @ self.w_h
+                    # add output gradients if returning sequence or last time step
+                    dh += dy[:, t] if self.return_sequence or t == x.shape[1] - 1 else 0
 
-                    # activation gradients
-                    dx_h[:, t] = (1 - h[:, t] ** 2) * out_grad
+                    # non-linearity backward
+                    dtanh = grad_fns[t][2](dh)
 
-                    # hidden weight gradients
-                    # (Ch, B) @ (B, Ch) -> (Ch, Ch)
-                    if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += dx_h[:, t].T @ h[:, t - 1]
+                    # hidden projection backward
+                    dh, dw_h, db_h = grad_fns[t][1](dtanh)
 
-                # hidden bias gradients
-                # (B, T, Ch) -> (Ch,)
-                if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += cpsum(dx_h, axis=(0, 1))
+                    if t > 0:
+                        if self.w_h.requires_grad:
+                            self.w_h.grad += dw_h
+                    if self.b_h is not None and self.b_h.requires_grad:
+                        self.b_h.grad += db_h
 
-                # input projection gradients
-                dx, dw_i, db_i = x_h_grad_fn(dx_h)
+                    # input projeciton backward
+                    dx[:, t], dw_i, db_i = grad_fns[t][0](dtanh)  # x_h_grad_fn
 
-                if dw_i is not None:
-                    self.w_i.grad += dw_i
-
-                if self.b_i is not None and db_i is not None:
-                    self.b_i.grad += db_i
+                    if self.w_i.requires_grad:
+                        self.w_i.grad += dw_i
+                    if self.b_i is not None and self.b_i.requires_grad:
+                        self.b_i.grad += db_i
 
                 return dx
 
             self._backward = _backward
 
-        y = h if self.return_sequence else h[:, -1]
-        return y
+        return h if self.return_sequence else h[:, -1]
 
 
 class LSTM(Module):
@@ -214,7 +209,7 @@ class LSTM(Module):
 
             # gates post activation i_t, f_t, g_t, o_t
             gates[:, t, :i2], _ = sigmoid(gates_preact[:, :i2])  # input, forget
-            gates[:, t, i2:i3] = tanh(gates_preact[:, i2:i3])  # node
+            gates[:, t, i2:i3] = tanh_(gates_preact[:, i2:i3])  # node
             gates[:, t, i3:], _ = sigmoid(gates_preact[:, i3:])  # output
 
             # cell state
@@ -223,7 +218,7 @@ class LSTM(Module):
 
             # hidden state
             # h_t = o_t * tanh(c_t)
-            h[:, t] = gates[:, t, i3:] * tanh(c[:, t])
+            h[:, t] = gates[:, t, i3:] * tanh_(c[:, t])
 
         if self._training and x_h_grad_fn is not None:
 
@@ -249,7 +244,7 @@ class LSTM(Module):
 
                     # cell state gradients
                     # dc_t = dtanh(c_t) * do_t * output grads
-                    dc[:, t] = (1 - tanh(c[:, t]) ** 2) * gates[:, t, i3:] * out_grad
+                    dc[:, t] = (1 - tanh_(c[:, t]) ** 2) * gates[:, t, i3:] * out_grad
                     if t < x.shape[1] - 1:
                         # cell state gradients from next time step
                         # dc_t += f_t+1 * dc_t+1
@@ -271,7 +266,7 @@ class LSTM(Module):
 
                     # output gate gradients
                     # do_t = tanh(c_t) * output grads
-                    dgates[:, i3:] = tanh(c[:, t]) * out_grad
+                    dgates[:, i3:] = tanh_(c[:, t]) * out_grad
 
                     # pre activation input and forget gate gradients
                     # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t

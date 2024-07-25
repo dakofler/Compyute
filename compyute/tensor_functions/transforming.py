@@ -24,7 +24,7 @@ __all__ = [
     "cos",
     "cosh",
     "tan",
-    "tanh",
+    "tanh_",
     "sech",
     "abs",
     "sqrt",
@@ -260,7 +260,7 @@ def tan(x: Tensor) -> Tensor:
     return Tensor(get_engine(x.device).tan(x.data))
 
 
-def tanh(x: Tensor) -> Tensor:
+def tanh_(x: Tensor) -> Tensor:
     """Returns a new tensor containing the element-wise hyperbolic tangent values."""
     return Tensor(get_engine(x.device).tanh(x.data))
 
