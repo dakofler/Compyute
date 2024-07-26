@@ -6,10 +6,7 @@ from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
 from ...tensor_functions.creating import empty_like, zeros, zeros_like
-from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import tanh_
-from ..functional.activations import sigmoid
-from ..functional.activations import tanh as tanh
+from ..functional.activations import sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter
 from .module import Module
@@ -74,7 +71,7 @@ class Recurrent(Module):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
 
-        grad_fns = []
+        grad_functions = []
         h = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
 
         # iterate over timesteps
@@ -90,7 +87,7 @@ class Recurrent(Module):
             h[:, t], tanh_grad_fn = tanh(x_h + h_h, self._training)
 
             if self._training:
-                grad_fns.append((x_h_grad_fn, h_h_grad_fn, tanh_grad_fn))
+                grad_functions.append((x_h_grad_fn, h_h_grad_fn, tanh_grad_fn))
 
         if self._training:
 
@@ -99,24 +96,26 @@ class Recurrent(Module):
                 dx = empty_like(x)
                 dh = 0
 
+                # iterate backwards over timesteps
                 for t in range(x.shape[1] - 1, -1, -1):
+                    x_h_grad_fn, h_h_grad_fn, tanh_grad_fn = grad_functions[t]
+
                     # add output gradients if returning sequence or last time step
                     dh += dy[:, t] if self.return_sequence or t == x.shape[1] - 1 else 0
 
                     # non-linearity backward
-                    dtanh = grad_fns[t][2](dh)
+                    dtanh = tanh_grad_fn(dh)
 
                     # hidden projection backward
-                    dh, dw_h, db_h = grad_fns[t][1](dtanh)
+                    dh, dw_h, db_h = h_h_grad_fn(dtanh)
 
-                    if t > 0:
-                        if self.w_h.requires_grad:
-                            self.w_h.grad += dw_h
+                    if t > 0 and self.w_h.requires_grad:
+                        self.w_h.grad += dw_h
                     if self.b_h is not None and self.b_h.requires_grad:
                         self.b_h.grad += db_h
 
                     # input projeciton backward
-                    dx[:, t], dw_i, db_i = grad_fns[t][0](dtanh)  # x_h_grad_fn
+                    dx[:, t], dw_i, db_i = x_h_grad_fn(dtanh)
 
                     if self.w_i.requires_grad:
                         self.w_i.grad += dw_i
@@ -176,136 +175,187 @@ class LSTM(Module):
         k = in_channels**-0.5
 
         # init input weights and biases
-        self.w_i = Parameter(uniform((4 * h_channels, in_channels), -k, k, dtype), label="lstm_w_i")
-        self.b_i = Parameter(zeros((4 * h_channels,), dtype), label="lstm_b_i") if bias else None
+        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ii")
+        self.b_ii = Parameter(zeros((h_channels,), dtype), label="lstm_b_ii") if bias else None
+        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_if")
+        self.b_if = Parameter(zeros((h_channels,), dtype), label="lstm_b_if") if bias else None
+        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ig")
+        self.b_ig = Parameter(zeros((h_channels,), dtype), label="lstm_b_ig") if bias else None
+        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_io")
+        self.b_io = Parameter(zeros((h_channels,), dtype), label="lstm_b_io") if bias else None
 
         # init hidden weights and biases
-        self.w_h = Parameter(uniform((4 * h_channels, h_channels), -k, k, dtype), label="lstm_w_h")
-        self.b_h = Parameter(zeros((4 * h_channels,), dtype), label="lstm_b_h") if bias else None
+        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hi")
+        self.b_hi = Parameter(zeros((h_channels,), dtype), label="lstm_b_hi") if bias else None
+        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hf")
+        self.b_hf = Parameter(zeros((h_channels,), dtype), label="lstm_b_hf") if bias else None
+        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hg")
+        self.b_hg = Parameter(zeros((h_channels,), dtype), label="lstm_b_hg") if bias else None
+        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_ho")
+        self.b_ho = Parameter(zeros((h_channels,), dtype), label="lstm_b_ho") if bias else None
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
-
-        # indices used to access the concatinated matrices
-        i1 = self.h_channels
-        i2 = 2 * i1
-        i3 = 3 * i1
-
-        # input projection
-        # (B, T, Cin) @ (Cin, 4*Ch) + (4*Ch,) -> (B, T, 4*Ch)
-        x_h, x_h_grad_fn = linear(x, self.w_i, self.b_i, self._training)
+        grad_functions = []
+        i = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        f = zeros_like(i)
+        g = zeros_like(i)
+        o = zeros_like(i)
+        c = zeros_like(i)
+        tanh_c = zeros_like(i)
+        h = zeros_like(i)
 
         # iterate over timesteps
-        gates = empty_like(x_h)
-        c = zeros_like(x_h[:, :, :i1])
-        h = zeros_like(c)
-
         for t in range(x.shape[1]):
-            # gates pre activation
-            # (B, 4*Ch) + (B, Ch) @ (Ch, 4*Ch) + (4*Ch,) -> (B, 4*Ch)
-            h_h, _ = linear(h[:, t - 1], self.w_h, self.b_h)
-            gates_preact = x_h[:, t] + h_h
 
-            # gates post activation i_t, f_t, g_t, o_t
-            gates[:, t, :i2], _ = sigmoid(gates_preact[:, :i2])  # input, forget
-            gates[:, t, i2:i3] = tanh_(gates_preact[:, i2:i3])  # node
-            gates[:, t, i3:], _ = sigmoid(gates_preact[:, i3:])  # output
+            # input projection W_i * x_t
+            x_i, x_i_grad_fn = linear(x[:, t], self.w_ii, self.b_ii, self._training)
+            x_f, x_f_grad_fn = linear(x[:, t], self.w_if, self.b_if, self._training)
+            x_g, x_g_grad_fn = linear(x[:, t], self.w_ig, self.b_ig, self._training)
+            x_o, x_o_grad_fn = linear(x[:, t], self.w_io, self.b_io, self._training)
 
-            # cell state
-            # c_t = f_t * c_t-1 + i_t * g_t
-            c[:, t] = gates[:, t, i1:i2] * c[:, t - 1] + gates[:, t, :i1] * gates[:, t, i2:i3]
+            # hidden projection W_h * h_t-1
+            h_i, h_i_grad_fn = linear(h[:, t - 1], self.w_hi, self.b_hi, self._training)
+            h_f, h_f_grad_fn = linear(h[:, t - 1], self.w_hf, self.b_hf, self._training)
+            h_g, h_g_grad_fn = linear(h[:, t - 1], self.w_hg, self.b_hg, self._training)
+            h_o, h_o_grad_fn = linear(h[:, t - 1], self.w_ho, self.b_ho, self._training)
 
-            # hidden state
-            # h_t = o_t * tanh(c_t)
-            h[:, t] = gates[:, t, i3:] * tanh_(c[:, t])
+            # gates
+            i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._training)
+            f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._training)
+            g[:, t], g_grad_fn = tanh(x_g + h_g, self._training)
+            o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._training)
 
-        if self._training and x_h_grad_fn is not None:
+            # carry state c_t = f_t * c_t-1 + i_t * g_t
+            c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
+
+            # memory state h_t = o_t * tanh(c_t)
+            tanh_c[:, t], tanc_grad_fn = tanh(c[:, t], self._training)
+            h[:, t] = o[:, t] * tanh_c[:, t]
+
+            # remember gradient functions
+            if self._training:
+                grad_functions_t = (
+                    x_i_grad_fn,
+                    x_f_grad_fn,
+                    x_g_grad_fn,
+                    x_o_grad_fn,
+                    h_i_grad_fn,
+                    h_f_grad_fn,
+                    h_g_grad_fn,
+                    h_o_grad_fn,
+                    i_grad_fn,
+                    f_grad_fn,
+                    g_grad_fn,
+                    o_grad_fn,
+                    tanc_grad_fn,
+                )
+                grad_functions.append(grad_functions_t)
+
+        if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
+                dx = empty_like(x)
+                dc = zeros_like(c)
+                dh = 0
 
-                if not self.return_sequence:
-                    dh = zeros_like(h)
-                    dh[:, -1] = dy
-                else:
-                    dh = dy
-
-                dc = empty_like(c)
-                dgates_preact = empty_like(gates)
-
+                # iterate backwards over timesteps
                 for t in range(x.shape[1] - 1, -1, -1):
 
-                    # hidden state gradients
-                    out_grad = dh[:, t]
-                    if t < x.shape[1] - 1:
-                        # hidden state gradients from next time step
-                        out_grad += dgates_preact[:, t + 1] @ self.w_h
+                    # load gradient functions
+                    (
+                        x_i_grad_fn,
+                        x_f_grad_fn,
+                        x_g_grad_fn,
+                        x_o_grad_fn,
+                        h_i_grad_fn,
+                        h_f_grad_fn,
+                        h_g_grad_fn,
+                        h_o_grad_fn,
+                        i_grad_fn,
+                        f_grad_fn,
+                        g_grad_fn,
+                        o_grad_fn,
+                        tanc_grad_fn,
+                    ) = grad_functions.pop(t)
 
-                    # cell state gradients
-                    # dc_t = dtanh(c_t) * do_t * output grads
-                    dc[:, t] = (1 - tanh_(c[:, t]) ** 2) * gates[:, t, i3:] * out_grad
-                    if t < x.shape[1] - 1:
-                        # cell state gradients from next time step
-                        # dc_t += f_t+1 * dc_t+1
-                        dc[:, t] += gates[:, t + 1, i1:i2] * dc[:, t + 1]
+                    # add output gradients if returning sequence or last time step
+                    dh += dy[:, t] if self.return_sequence or t == x.shape[1] - 1 else 0
 
-                    dgates = empty_like(gates[:, 1])
+                    # memory state gradients
+                    do = tanh_c[:, t] * dh
+                    dc[:, t] += tanc_grad_fn(dh) * o[:, t]
 
-                    # input gate gradients
-                    # di_t = g_t * dc_t
-                    dgates[:, :i1] = gates[:, t, i2:i3] * dc[:, t]
+                    # carry state gradients
+                    df = c[:, t - 1] * dc[:, t] if t > 0 else 0
+                    if t > 0:
+                        dc[:, t - 1] += f[:, t] * dc[:, t]
+                    di = g[:, t] * dc[:, t]
+                    dg = i[:, t] * dc[:, t]
 
-                    # forget gate gradients
-                    # df_t = c_t-1 * dc_t
-                    dgates[:, i1:i2] = (c[:, t - 1] * dc[:, t]) if t > 0 else 0
+                    # gate gradients
+                    di_preact = i_grad_fn(di)
+                    df_preact = f_grad_fn(df)
+                    dg_preact = g_grad_fn(dg)
+                    do_preact = o_grad_fn(do)
 
-                    # node gradients
-                    # dg_t = i_t * dc_t
-                    dgates[:, i2:i3] = gates[:, t, :i1] * dc[:, t]
+                    # hidden projection gradients
+                    dh_i, dw_hi, db_hi = h_i_grad_fn(di_preact)
+                    if t > 0 and self.w_hi.requires_grad:
+                        self.w_hi.grad += dw_hi
+                    if self.b_hi is not None and self.b_hi.requires_grad:
+                        self.b_hi.grad += db_hi
 
-                    # output gate gradients
-                    # do_t = tanh(c_t) * output grads
-                    dgates[:, i3:] = tanh_(c[:, t]) * out_grad
+                    dh_f, dw_hf, db_hf = h_f_grad_fn(df_preact)
+                    if t > 0 and self.w_hf.requires_grad:
+                        self.w_hf.grad += dw_hf
+                    if self.b_hf is not None and self.b_hf.requires_grad:
+                        self.b_hf.grad += db_hf
 
-                    # pre activation input and forget gate gradients
-                    # di_t, df_t = dsigmoid(i_t, f_t) * di_t, df_t
-                    dgates_preact[:, t, :i2] = (
-                        gates[:, t, :i2] * (1 - gates[:, t, :i2]) * dgates[:, :i2]
-                    )
+                    dh_g, dw_hg, db_hg = h_g_grad_fn(dg_preact)
+                    if t > 0 and self.w_hg.requires_grad:
+                        self.w_hg.grad += dw_hg
+                    if self.b_hg is not None and self.b_hg.requires_grad:
+                        self.b_hg.grad += db_hg
 
-                    # pre activation node gradients
-                    # dg_t = dtanh(g_t) * dg_t
-                    dgates_preact[:, t, i2:i3] = (1 - gates[:, t, i2:i3] ** 2) * dgates[:, i2:i3]
+                    dh_o, dw_ho, db_ho = h_o_grad_fn(do_preact)
+                    if t > 0 and self.w_ho.requires_grad:
+                        self.w_ho.grad += dw_ho
+                    if self.b_ho is not None and self.b_ho.requires_grad:
+                        self.b_ho.grad += db_ho
 
-                    # pre activation output gate gradients
-                    # do_t = dsigmoid(o_t) * do_t
-                    dgates_preact[:, t, i3:] = (
-                        gates[:, t, i3:] * (1 - gates[:, t, i3:]) * dgates[:, i3:]
-                    )
+                    dh = dh_i + dh_f + dh_g + dh_o
 
-                    # hidden weight gradients
-                    # (Ch, B) @ (B, Ch) -> (Ch, Ch)
-                    if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += dgates_preact[:, t].T @ h[:, t - 1]
+                    # input projection gradients
+                    dx_i, dw_ii, db_ii = x_i_grad_fn(di_preact)
+                    if self.w_ii.requires_grad:
+                        self.w_ii.grad += dw_ii
+                    if self.b_ii is not None and self.b_ii.requires_grad:
+                        self.b_ii.grad += db_ii
 
-                # hidden bias gradients
-                # (B, T, Ch) -> (Ch,)
-                if self.b_h is not None and self.b_h.requires_grad:
-                    self.b_h.grad += cpsum(dgates_preact, axis=(0, 1))
+                    dx_f, dw_if, db_if = x_f_grad_fn(df_preact)
+                    if self.w_if.requires_grad:
+                        self.w_if.grad += dw_if
+                    if self.b_if is not None and self.b_if.requires_grad:
+                        self.b_if.grad += db_if
 
-                # input projection gradients
-                dx, dw_i, db_i = x_h_grad_fn(dgates_preact)
+                    dx_g, dw_ig, db_ig = x_g_grad_fn(dg_preact)
+                    if self.w_ig.requires_grad:
+                        self.w_ig.grad += dw_ig
+                    if self.b_ig is not None and self.b_ig.requires_grad:
+                        self.b_ig.grad += db_ig
 
-                if dw_i is not None:
-                    self.w_i.grad += dw_i
+                    dx_o, dw_io, db_io = x_o_grad_fn(do_preact)
+                    if self.w_io.requires_grad:
+                        self.w_io.grad += dw_io
+                    if self.b_io is not None and self.b_io.requires_grad:
+                        self.b_io.grad += db_io
 
-                if self.b_i is not None and db_i is not None:
-                    self.b_i.grad += db_i
-
+                    dx[:, t] = dx_i + dx_f + dx_g + dx_o
                 return dx
 
             self._backward = _backward
 
-        y = h if self.return_sequence else h[:, -1]
-        return y
+        return h if self.return_sequence else h[:, -1]
