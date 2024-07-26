@@ -34,7 +34,9 @@ def test_recurrent() -> None:
 
     # init compyute module
     compyute_module = Sequential(
-        Recurrent(Cin, Ch, training=True), Recurrent(Ch, Ch, training=True), training=True
+        Recurrent(Cin, Ch, training=True),
+        Recurrent(Ch, Ch, training=True, return_sequence=False),
+        training=True,
     )
     compyute_module.modules[0].w_i = compyute_w_in_1
     compyute_module.modules[0].b_i = compyute_b_in_1
@@ -59,7 +61,7 @@ def test_recurrent() -> None:
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0]  # ouputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0][:, -1]  # ouputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
@@ -118,7 +120,9 @@ def test_lstm() -> None:
 
     # init compyute module
     compyute_module = Sequential(
-        LSTM(Cin, Ch, training=True), LSTM(Ch, Ch, training=True), training=True
+        LSTM(Cin, Ch, training=True),
+        LSTM(Ch, Ch, training=True, return_sequence=False),
+        training=True,
     )
     compyute_module.modules[0].w_ii = compyute_w_ii_1
     compyute_module.modules[0].b_ii = compyute_b_ii_1
@@ -170,7 +174,7 @@ def test_lstm() -> None:
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0]  # ouputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0][:, -1]  # ouputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward

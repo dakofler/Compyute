@@ -1,12 +1,12 @@
 """Recurrent cells module"""
 
-from typing import Optional
+from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random import uniform
-from ...tensor_functions.creating import empty_like, zeros, zeros_like
-from ..functional.activations import sigmoid, tanh
+from ...tensor_functions.creating import empty, empty_like, zeros, zeros_like
+from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter
 from .module import Module
@@ -22,6 +22,7 @@ class Recurrent(Module):
         in_channels: int,
         h_channels: int,
         bias: bool = True,
+        activation: Literal["relu", "tanh"] = "tanh",
         return_sequence: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
@@ -35,12 +36,14 @@ class Recurrent(Module):
 
         Parameters
         ----------
-        in_channels : int
+        in_channels: int
             Number of input channels.
-        h_channels : int
+        h_channels: int
             Number of hidden channels.
-        bias : bool, optional
+        bias: bool, optional
             Whether to use bias values, by default True.
+        activation: Literal["relu", "tanh"], optional
+            Activation function to use, by default "tanh".
         return_sequence: bool, optional
             Whether to return the entire sequence or only the last hidden state.
         dtype: DtypeLike, optional
@@ -54,6 +57,7 @@ class Recurrent(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
+        self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
         self.dtype = Dtype(dtype)
 
@@ -84,10 +88,10 @@ class Recurrent(Module):
             h_h, h_h_grad_fn = linear(h[:, t - 1], self.w_h, self.b_h, self._training)
 
             # apply non-linearity
-            h[:, t], tanh_grad_fn = tanh(x_h + h_h, self._training)
+            h[:, t], act_grad_fn = self.activation(x_h + h_h, self._training)
 
             if self._training:
-                grad_functions.append((x_h_grad_fn, h_h_grad_fn, tanh_grad_fn))
+                grad_functions.append((x_h_grad_fn, h_h_grad_fn, act_grad_fn))
 
         if self._training:
 
@@ -98,16 +102,19 @@ class Recurrent(Module):
 
                 # iterate backwards over timesteps
                 for t in range(x.shape[1] - 1, -1, -1):
-                    x_h_grad_fn, h_h_grad_fn, tanh_grad_fn = grad_functions[t]
+                    x_h_grad_fn, h_h_grad_fn, act_grad_fn = grad_functions.pop(t)
 
                     # add output gradients if returning sequence or last time step
-                    dh += dy[:, t] if self.return_sequence or t == x.shape[1] - 1 else 0
+                    if self.return_sequence:
+                        dh += dy[:, t]
+                    elif t == x.shape[1] - 1:
+                        dh += dy
 
                     # non-linearity backward
-                    dtanh = tanh_grad_fn(dh)
+                    dact = act_grad_fn(dh)
 
                     # hidden projection backward
-                    dh, dw_h, db_h = h_h_grad_fn(dtanh)
+                    dh, dw_h, db_h = h_h_grad_fn(dact)
 
                     if t > 0 and self.w_h.requires_grad:
                         self.w_h.grad += dw_h
@@ -115,7 +122,7 @@ class Recurrent(Module):
                         self.b_h.grad += db_h
 
                     # input projeciton backward
-                    dx[:, t], dw_i, db_i = x_h_grad_fn(dtanh)
+                    dx[:, t], dw_i, db_i = x_h_grad_fn(dact)
 
                     if self.w_i.requires_grad:
                         self.w_i.grad += dw_i
@@ -137,6 +144,7 @@ class LSTM(Module):
         in_channels: int,
         h_channels: int,
         bias: bool = True,
+        activation: Literal["relu", "tanh"] = "tanh",
         return_sequence: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
@@ -150,12 +158,14 @@ class LSTM(Module):
 
         Parameters
         ----------
-        in_channels : int
+        in_channels: int
             Number of input channels.
-        h_channels : int
+        h_channels: int
             Number of hidden channels.
-        bias : bool, optional
+        bias: bool, optional
             Whether to use bias values, by default True.
+        activation: Literal["relu", "tanh"], optional
+            Activation function to use, by default "tanh".
         return_sequence: bool, optional
             Whether to return the entire sequence or only the last hidden state.
         dtype: DtypeLike, optional
@@ -169,10 +179,11 @@ class LSTM(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
+        self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
         self.dtype = Dtype(dtype)
 
-        k = in_channels**-0.5
+        k = h_channels**-0.5
 
         # init input weights and biases
         self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ii")
@@ -197,42 +208,45 @@ class LSTM(Module):
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
+
         grad_functions = []
-        i = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
-        f = zeros_like(i)
-        g = zeros_like(i)
-        o = zeros_like(i)
+        i = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        f = empty_like(i)
+        g = empty_like(i)
+        o = empty_like(i)
         c = zeros_like(i)
-        tanh_c = zeros_like(i)
+        act_c = empty_like(i)
         h = zeros_like(i)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
 
-            # input projection W_i * x_t
-            x_i, x_i_grad_fn = linear(x[:, t], self.w_ii, self.b_ii, self._training)
-            x_f, x_f_grad_fn = linear(x[:, t], self.w_if, self.b_if, self._training)
-            x_g, x_g_grad_fn = linear(x[:, t], self.w_ig, self.b_ig, self._training)
-            x_o, x_o_grad_fn = linear(x[:, t], self.w_io, self.b_io, self._training)
+            # input projection W_i * x_t + b_i
+            x_t = x[:, t]
+            x_i, x_i_grad_fn = linear(x_t, self.w_ii, self.b_ii, self._training)
+            x_f, x_f_grad_fn = linear(x_t, self.w_if, self.b_if, self._training)
+            x_g, x_g_grad_fn = linear(x_t, self.w_ig, self.b_ig, self._training)
+            x_o, x_o_grad_fn = linear(x_t, self.w_io, self.b_io, self._training)
 
-            # hidden projection W_h * h_t-1
-            h_i, h_i_grad_fn = linear(h[:, t - 1], self.w_hi, self.b_hi, self._training)
-            h_f, h_f_grad_fn = linear(h[:, t - 1], self.w_hf, self.b_hf, self._training)
-            h_g, h_g_grad_fn = linear(h[:, t - 1], self.w_hg, self.b_hg, self._training)
-            h_o, h_o_grad_fn = linear(h[:, t - 1], self.w_ho, self.b_ho, self._training)
+            # hidden projection W_h * h_t-1 + b_h
+            h_tprev = h[:, t - 1]
+            h_i, h_i_grad_fn = linear(h_tprev, self.w_hi, self.b_hi, self._training)
+            h_f, h_f_grad_fn = linear(h_tprev, self.w_hf, self.b_hf, self._training)
+            h_g, h_g_grad_fn = linear(h_tprev, self.w_hg, self.b_hg, self._training)
+            h_o, h_o_grad_fn = linear(h_tprev, self.w_ho, self.b_ho, self._training)
 
             # gates
             i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._training)
             f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._training)
-            g[:, t], g_grad_fn = tanh(x_g + h_g, self._training)
+            g[:, t], g_grad_fn = self.activation(x_g + h_g, self._training)
             o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._training)
 
             # carry state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
 
-            # memory state h_t = o_t * tanh(c_t)
-            tanh_c[:, t], tanc_grad_fn = tanh(c[:, t], self._training)
-            h[:, t] = o[:, t] * tanh_c[:, t]
+            # memory state h_t = o_t * act(c_t)
+            act_c[:, t], actc_grad_fn = self.activation(c[:, t], self._training)
+            h[:, t] = o[:, t] * act_c[:, t]
 
             # remember gradient functions
             if self._training:
@@ -249,7 +263,7 @@ class LSTM(Module):
                     f_grad_fn,
                     g_grad_fn,
                     o_grad_fn,
-                    tanc_grad_fn,
+                    actc_grad_fn,
                 )
                 grad_functions.append(grad_functions_t)
 
@@ -278,15 +292,18 @@ class LSTM(Module):
                         f_grad_fn,
                         g_grad_fn,
                         o_grad_fn,
-                        tanc_grad_fn,
+                        actc_grad_fn,
                     ) = grad_functions.pop(t)
 
                     # add output gradients if returning sequence or last time step
-                    dh += dy[:, t] if self.return_sequence or t == x.shape[1] - 1 else 0
+                    if self.return_sequence:
+                        dh += dy[:, t]
+                    elif t == x.shape[1] - 1:
+                        dh += dy
 
                     # memory state gradients
-                    do = tanh_c[:, t] * dh
-                    dc[:, t] += tanc_grad_fn(dh) * o[:, t]
+                    do = act_c[:, t] * dh
+                    dc[:, t] += actc_grad_fn(dh) * o[:, t]
 
                     # carry state gradients
                     df = c[:, t - 1] * dc[:, t] if t > 0 else 0
@@ -303,6 +320,7 @@ class LSTM(Module):
 
                     # hidden projection gradients
                     dh_i, dw_hi, db_hi = h_i_grad_fn(di_preact)
+
                     if t > 0 and self.w_hi.requires_grad:
                         self.w_hi.grad += dw_hi
                     if self.b_hi is not None and self.b_hi.requires_grad:
@@ -330,6 +348,7 @@ class LSTM(Module):
 
                     # input projection gradients
                     dx_i, dw_ii, db_ii = x_i_grad_fn(di_preact)
+
                     if self.w_ii.requires_grad:
                         self.w_ii.grad += dw_ii
                     if self.b_ii is not None and self.b_ii.requires_grad:
