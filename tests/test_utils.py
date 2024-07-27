@@ -1,11 +1,11 @@
-"""Test utils module"""
+"""Testing utilities."""
 
 import numpy
 import torch
 
 from compyute.base_tensor import Tensor, _ShapeLike
 from compyute.nn.parameter import Parameter
-from compyute.random import seed, uniform, uniform_int
+from compyute.random.random import seed, uniform, uniform_int
 
 
 @seed(42)

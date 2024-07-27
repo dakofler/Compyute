@@ -1,4 +1,4 @@
-"""Neural network parameter module"""
+"""Neural network parameter and buffer classes."""
 
 from typing import Optional
 

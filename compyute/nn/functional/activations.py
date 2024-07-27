@@ -1,16 +1,15 @@
-"""Neural network functions module"""
+"""Neural network activation functions."""
 
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.computing import maximum, minimum
 from ...tensor_functions.creating import identity
 from ...tensor_functions.reshaping import insert_dim, reshape, tile
 from ...tensor_functions.transforming import exp
 from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import sech
+from ...tensor_functions.transforming import maximum, minimum, sech
 from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import tanh_ as cptanh
+from ...tensor_functions.transforming import tanh as cptanh
 
 __all__ = [
     "relu",

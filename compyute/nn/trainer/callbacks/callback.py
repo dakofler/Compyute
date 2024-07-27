@@ -1,4 +1,4 @@
-"""Training callback module"""
+"""Training callback base class."""
 
 from abc import ABC
 from typing import Any
@@ -7,7 +7,7 @@ __all__ = ["Callback"]
 
 
 class Callback(ABC):
-    """Trainig callback."""
+    """Trainig callback base class."""
 
     def on_init(self, trainer_cache: dict[str, Any]) -> None:
         """Does someting at initialization."""

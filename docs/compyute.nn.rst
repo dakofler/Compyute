@@ -1,71 +1,74 @@
-compyute.nn package
-===================
-
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   compyute.nn.functional
-   compyute.nn.modules
-   compyute.nn.trainer
-
-Submodules
-----------
-
-compyute.nn.dataloaders module
+Dataloaders
 ------------------------------
 
 .. automodule:: compyute.nn.dataloaders
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.nn.initializers module
--------------------------------
-
-.. automodule:: compyute.nn.initializers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-compyute.nn.losses module
+Losses
 -------------------------
 
 .. automodule:: compyute.nn.losses
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.nn.metrics module
+Metrics
 --------------------------
 
 .. automodule:: compyute.nn.metrics
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.nn.optimizers module
------------------------------
+Modules
+--------------------------
 
-.. automodule:: compyute.nn.optimizers
+.. automodule:: compyute.nn.modules.activations
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.nn.parameter module
+.. automodule:: compyute.nn.modules.blocks
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.containers
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.convolution
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.embedding
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.linear
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.module
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.normalization
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.recurrent
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.regularization
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.nn.modules.reshape
+   :members:
+   :show-inheritance:
+
+Parameter
 ----------------------------
 
 .. automodule:: compyute.nn.parameter
    :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: compyute.nn
-   :members:
-   :undoc-members:
    :show-inheritance:

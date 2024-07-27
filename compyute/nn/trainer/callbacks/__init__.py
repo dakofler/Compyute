@@ -1,4 +1,4 @@
-"""Training callbacks module"""
+"""Trainer callbacks."""
 
 from .callback import *
 from .early_stopping import *

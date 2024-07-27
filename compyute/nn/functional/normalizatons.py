@@ -1,4 +1,4 @@
-"""Neural network functions module"""
+"""Neural network normalization functions."""
 
 from functools import reduce
 from operator import mul

@@ -1,9 +1,9 @@
-"""Regularization layers module"""
+"""Neural network regularization modules."""
 
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...random import multinulli
+from ...random.random import multinulli
 from .module import Module
 
 __all__ = ["Dropout"]

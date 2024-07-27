@@ -1,55 +1,33 @@
-compyute package
-================
-
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   compyute.nn
-   compyute.preprocessing
-   compyute.tensor_functions
-
-Submodules
-----------
-
-compyute.base\_tensor module
+Tensor
 ----------------------------
 
 .. automodule:: compyute.base_tensor
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.dtypes module
-----------------------
+Tensor functions
+----------------------------
 
-.. automodule:: compyute.dtypes
+.. automodule:: compyute.tensor_functions.creating
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.engine module
+.. automodule:: compyute.tensor_functions.reshaping
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.tensor_functions.selecting
+   :members:
+   :show-inheritance:
+
+.. automodule:: compyute.tensor_functions.transforming
+   :members:
+   :show-inheritance:
+
+Engine
 ----------------------
 
 .. automodule:: compyute.engine
    :members:
-   :undoc-members:
    :show-inheritance:
 
-compyute.random module
-----------------------
-
-.. automodule:: compyute.random
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: compyute
-   :members:
-   :undoc-members:
-   :show-inheritance:

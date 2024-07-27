@@ -1,4 +1,4 @@
-"""Linear layer tests"""
+"""Linear module tests"""
 
 import torch
 

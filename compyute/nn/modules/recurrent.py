@@ -1,10 +1,10 @@
-"""Recurrent cells module"""
+"""Neural network recurrent modules."""
 
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
-from ...random import uniform
+from ...random.random import uniform
 from ...tensor_functions.creating import empty, empty_like, zeros, zeros_like
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
@@ -34,7 +34,7 @@ class Recurrent(Module):
         Activation function to use, by default "tanh".
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases, by default Dtype.FLOAT32.
     label : str, optional
         Module label.
@@ -132,7 +132,7 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    """Long Short-Term Memory module (follows the PyTorch implementation).
+    """Long Short-Term Memory module.
 
     Input: (B, T, Cin)
         B ... batch, T ... time, Cin ... input channels
@@ -151,7 +151,7 @@ class LSTM(Module):
         Activation function to use, by default "tanh".
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases, by default Dtype.FLOAT32.
     label : str, optional
         Module label.
@@ -366,7 +366,10 @@ class LSTM(Module):
 
 
 class GRU(Module):
-    """Gated Recurrent Unit module (follows the PyTorch implementation).
+    """Gated Recurrent Unit module.
+
+    .. note::
+        This implementation follows the one by PyTorch which differs slightly from the original paper.
 
     Input: (B, T, Cin)
         B ... batch, T ... time, Cin ... input channels
@@ -385,7 +388,7 @@ class GRU(Module):
         Activation function to use, by default "tanh".
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases, by default Dtype.FLOAT32.
     label : str, optional
         Module label.

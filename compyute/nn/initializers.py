@@ -1,13 +1,13 @@
-"""Parameter initializations module"""
+"""Parameter initializers."""
 
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Literal, Optional
 
-from .. import random
 from ..base_tensor import Tensor, _ShapeLike
 from ..dtypes import Dtype, _DtypeLike
+from ..random.random import normal, uniform
 from ..tensor_functions.creating import ones, zeros
 
 __all__ = [
@@ -22,7 +22,7 @@ __all__ = [
 
 
 class Initializer(ABC):
-    """Optimizer base class.
+    """Initializer base class.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ class KaimingNormal(Initializer):
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         std = self.gain / fan_in**0.5
-        return random.normal(shape, std=std, dtype=self.dtype)
+        return normal(shape, std=std, dtype=self.dtype)
 
 
 class KaimingUniform(Initializer):
@@ -88,7 +88,7 @@ class KaimingUniform(Initializer):
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         k = self.gain * (3 / fan_in) ** 0.5
-        return random.uniform(shape, low=-k, high=k, dtype=self.dtype)
+        return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
 class Normal(Initializer):
@@ -112,7 +112,7 @@ class Normal(Initializer):
         self.std = std
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
-        return random.normal(shape, self.mean, self.std, self.dtype)
+        return normal(shape, self.mean, self.std, self.dtype)
 
 
 class Uniform(Initializer):
@@ -136,7 +136,7 @@ class Uniform(Initializer):
         self.high = high
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
-        return random.uniform(shape, self.low, self.high, self.dtype)
+        return uniform(shape, self.low, self.high, self.dtype)
 
 
 class XavierNormal(Initializer):
@@ -158,7 +158,7 @@ class XavierNormal(Initializer):
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
         std = self.gain * (2 / (fan_in + fan_out)) ** 0.5
-        return random.normal(shape, std=std, dtype=self.dtype)
+        return normal(shape, std=std, dtype=self.dtype)
 
 
 class XavierUniform(Initializer):
@@ -180,7 +180,7 @@ class XavierUniform(Initializer):
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
         k = self.gain * (6 / (fan_in + fan_out)) ** 0.5
-        return random.uniform(shape, low=-k, high=k, dtype=self.dtype)
+        return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
 class Ones(Initializer):

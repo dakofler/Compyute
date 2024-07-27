@@ -1,4 +1,4 @@
-"""Tensor reshaping functions module"""
+"""Tensor reshaping functions."""
 
 from typing import Optional
 

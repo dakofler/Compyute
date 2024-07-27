@@ -1,4 +1,4 @@
-"""Loss functions module"""
+"""Loss functions."""
 
 from abc import ABC, abstractmethod
 from typing import Callable, Literal, Optional

@@ -1,4 +1,4 @@
-"""Neural network functions module"""
+"""Neural network embedding functions."""
 
 from typing import Callable, Optional
 

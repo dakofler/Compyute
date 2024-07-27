@@ -1,10 +1,10 @@
-"""Linear transformation layers module"""
+"""Neural network linear transformation modules."""
 
 from typing import Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
-from ...random import uniform
+from ...random.random import uniform
 from ...tensor_functions.creating import zeros
 from ..functional.linear import linear
 from ..parameter import Parameter

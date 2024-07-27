@@ -1,4 +1,4 @@
-"""text preprocessing module"""
+"""Text data preprocessing utilities."""
 
 from __future__ import annotations
 

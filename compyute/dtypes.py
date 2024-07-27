@@ -1,7 +1,7 @@
-"""Compyute types module"""
+"""Tensor data types."""
 
 from enum import Enum
-from typing import Literal, Optional, TypeAlias
+from typing import Literal, TypeAlias
 
 import cupy
 import numpy

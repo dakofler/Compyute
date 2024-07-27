@@ -1,4 +1,4 @@
-"""Neural network module base module"""
+"""Neural network base module class."""
 
 from __future__ import annotations
 

@@ -6,8 +6,10 @@
 Compyute documentation
 ======================
 
+Compyute is a toolbox for building and training and analyzing neural networks only using NumPy/CuPy under the hood to perform computations.
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Python API:
 
    modules

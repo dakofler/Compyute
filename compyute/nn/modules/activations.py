@@ -1,4 +1,4 @@
-"""Activation layers module"""
+"""Activation modules."""
 
 from typing import Literal, Optional
 

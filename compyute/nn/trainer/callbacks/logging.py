@@ -1,4 +1,4 @@
-"""Logging callbacks module"""
+"""Logging callbacks."""
 
 from typing import Any, Iterable, Literal
 

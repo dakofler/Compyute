@@ -1,4 +1,4 @@
-"""Normalization layer tests"""
+"""Normalization module tests"""
 
 import torch
 

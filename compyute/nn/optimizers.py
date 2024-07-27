@@ -1,10 +1,9 @@
-"""Parameter optimizers module"""
+"""Parameter optimizers."""
 
 from abc import ABC, abstractmethod
 from typing import Iterator, Literal, Optional
 
-from ..tensor_functions.computing import tensorprod
-from ..tensor_functions.transforming import clip
+from ..tensor_functions.transforming import clip, tensorprod
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]

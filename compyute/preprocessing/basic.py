@@ -1,10 +1,10 @@
-"""basic preprocessing module"""
+"""Basic data preprocessing utilities."""
 
 from typing import Optional
 
 from ..base_tensor import Tensor, _AxisLike
 from ..dtypes import Dtype
-from ..random import shuffle
+from ..random.random import shuffle
 from ..tensor_functions.creating import identity
 from ..tensor_functions.transforming import max as cpmax
 from ..tensor_functions.transforming import mean

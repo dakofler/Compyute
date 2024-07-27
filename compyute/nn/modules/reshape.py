@@ -1,4 +1,4 @@
-"""Tensor reshaping layers module"""
+"""Neural network reshaping modules."""
 
 from typing import Optional
 

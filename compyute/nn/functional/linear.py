@@ -1,9 +1,9 @@
-"""Neural network functions module"""
+"""Neural network linear functions."""
 
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.computing import einsum
+from ...tensor_functions.transforming import einsum
 
 __all__ = ["linear"]
 

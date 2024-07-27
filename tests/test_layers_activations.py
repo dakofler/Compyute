@@ -1,4 +1,4 @@
-"""Activation layer tests"""
+"""Activation module tests"""
 
 import torch.nn.functional as F
 
@@ -14,16 +14,16 @@ def test_relu() -> None:
     compyute_x, torch_x = get_random_floats(SHAPE)
 
     # init compyute module
-    module = ReLU(training=True)
+    compyute_module = ReLU(training=True)
 
     # forward
-    compyute_y = module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.relu(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
@@ -35,16 +35,16 @@ def test_leaky_relu() -> None:
     compyute_x, torch_x = get_random_floats(SHAPE)
 
     # init compyute module
-    module = LeakyReLU(alpha=0.01, training=True)
+    compyute_module = LeakyReLU(alpha=0.01, training=True)
 
     # forward
-    compyute_y = module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.leaky_relu(torch_x, negative_slope=0.01)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
@@ -56,16 +56,16 @@ def test_gelu() -> None:
     compyute_x, torch_x = get_random_floats(SHAPE)
 
     # init compyute module
-    module = GELU(training=True)
+    compyute_module = GELU(training=True)
 
     # forward
-    compyute_y = module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.gelu(torch_x, approximate="tanh")
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
@@ -77,16 +77,16 @@ def test_tanh() -> None:
     compyute_x, torch_x = get_random_floats(SHAPE)
 
     # init compyute module
-    module = Tanh(training=True)
+    compyute_module = Tanh(training=True)
 
     # forward
-    compyute_y = module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.tanh(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
@@ -98,15 +98,15 @@ def test_sigmoid() -> None:
     compyute_x, torch_x = get_random_floats(SHAPE)
 
     # init compyute module
-    module = Sigmoid(training=True)
+    compyute_module = Sigmoid(training=True)
 
     # forward
-    compyute_y = module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.sigmoid(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    compyute_dx = module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)

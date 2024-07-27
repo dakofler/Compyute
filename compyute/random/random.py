@@ -1,11 +1,11 @@
-"""Random functions module"""
+"""Randomness based tensor functions."""
 
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-from .base_tensor import Tensor, _ShapeLike, tensor
-from .dtypes import _DtypeLike, dtype_to_str
-from .engine import Device, _DeviceLike, get_engine
+from ..base_tensor import Tensor, _ShapeLike, tensor
+from ..dtypes import _DtypeLike, dtype_to_str
+from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
     "normal",

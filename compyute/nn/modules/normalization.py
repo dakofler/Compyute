@@ -1,4 +1,4 @@
-"""Normalization layers module"""
+"""Neural network normalization modules."""
 
 from typing import Optional
 

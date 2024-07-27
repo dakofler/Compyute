@@ -1,7 +1,5 @@
-"""Tensor functions module"""
+"""Tensor functions."""
 
-from .combining import *
-from .computing import *
 from .creating import *
 from .reshaping import *
 from .selecting import *

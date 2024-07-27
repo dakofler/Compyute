@@ -1,4 +1,4 @@
-"""Learning rate decay callbacks module"""
+"""Learning rate scheduler callbacks."""
 
 import math
 from itertools import pairwise

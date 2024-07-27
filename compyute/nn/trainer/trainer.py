@@ -1,4 +1,4 @@
-"""Neural network models module"""
+"""Model trainer."""
 
 from typing import Literal, Optional
 

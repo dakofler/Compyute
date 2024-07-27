@@ -1,8 +1,7 @@
-"""Tensor module"""
+"""Base tensor class."""
 
 from __future__ import annotations
 
-from functools import partialmethod
 from typing import Any, Optional, TypeAlias
 
 import numpy
@@ -35,7 +34,8 @@ def tensor(
     copy: bool = False,
     requires_grad: bool = True,
 ) -> Tensor:
-    """Creates a tensor object.
+    """Creates a tensor object from arbitrary data.
+    The data type and device are inferred from the data if not specified.
 
     Parameters
     ----------
@@ -59,7 +59,12 @@ def tensor(
 
 
 class Tensor:
-    """Tensor object.
+    """Tensor object used for storing multidimensional data.
+
+    .. note::
+        Tensors can only be initialized with NumPy or CuPy arrays.
+        For other data types use the ``tensor()`` function. It automatically
+        infers the data type and device if not specified.
 
     Parameters
     ----------
@@ -108,7 +113,13 @@ class Tensor:
         return infer_device(type(self._data))
 
     def to_device(self, device: _DeviceLike) -> None:
-        """Moves the tensor to a specified device."""
+        """Moves the tensor to a specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the tensor to.
+        """
         self._data = move_data_to_device(self._data, Device(device))
         if self.grad is not None:
             self.grad.to_device(device)
@@ -140,7 +151,7 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Transposed tensor."""
+        """Returns a transposed version of the tensor."""
         return Tensor(get_engine(self.device).moveaxis(self._data, -2, -1))
 
     # ----------------------------------------------------------------------------------------------
@@ -274,7 +285,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def as_type(self, dtype: _DtypeLike) -> Tensor:
-        """Returns a copy of the tensor with parsed values.
+        """Returns a converted tensor of a given datatype.
 
         Parameters
         ----------
@@ -288,12 +299,29 @@ class Tensor:
         """
         return tensor(self._data, self.device, dtype=dtype)
 
-    int = partialmethod(as_type, dtype=Dtype.INT32)
-    long = partialmethod(as_type, dtype=Dtype.INT64)
-    half = partialmethod(as_type, dtype=Dtype.FLOAT16)
-    float = partialmethod(as_type, dtype=Dtype.FLOAT32)
-    double = partialmethod(as_type, dtype=Dtype.FLOAT64)
-    complex = partialmethod(as_type, dtype=Dtype.COMPLEX64)
+    def int(self) -> Tensor:
+        """Returns a copy of the tensor with integer values."""
+        return self.as_type(Dtype.INT32)
+
+    def long(self) -> Tensor:
+        """Returns a copy of the tensor with long integer values."""
+        return self.as_type(Dtype.INT64)
+
+    def half(self) -> Tensor:
+        """Returns a copy of the tensor with half precision values."""
+        return self.as_type(Dtype.FLOAT16)
+
+    def float(self) -> Tensor:
+        """Returns a copy of the tensor with single precision values."""
+        return self.as_type(Dtype.FLOAT32)
+
+    def double(self) -> Tensor:
+        """Returns a copy of the tensor with double precision values."""
+        return self.as_type(Dtype.FLOAT64)
+
+    def complex(self) -> Tensor:
+        """Returns a copy of the tensor with complex values."""
+        return self.as_type(Dtype.COMPLEX64)
 
     # ----------------------------------------------------------------------------------------------
     # MEMORY/DEVICE METHODS
@@ -334,5 +362,5 @@ class Tensor:
         return self.cpu().data
 
     def as_shape(self, shape: _ShapeLike) -> Tensor:
-        """Returns a new view of the tensor of a given shape."""
+        """Returns a view of the tensor of a given shape."""
         return Tensor(self._data.reshape(shape))

@@ -1,12 +1,12 @@
-"""Dataloaders module"""
+"""Dataloaders."""
 
 from functools import wraps
 from typing import Callable, Iterator, Optional
 
 from ..base_tensor import Tensor
 from ..engine import Device, _DeviceLike
-from ..random import shuffle
-from ..tensor_functions.combining import concatenate
+from ..random.random import shuffle
+from ..tensor_functions.creating import concatenate
 
 __all__ = ["DataLoader"]
 

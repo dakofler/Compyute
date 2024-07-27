@@ -1,4 +1,4 @@
-"""Optimizers tests"""
+"""Optimizer tests"""
 
 import torch
 

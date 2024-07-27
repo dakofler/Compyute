@@ -1,4 +1,4 @@
-"""Neural network blocks module"""
+"""Neural network block modules."""
 
 from typing import Literal, Optional
 
@@ -16,7 +16,8 @@ __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBl
 
 
 class DenseBlock(Sequential):
-    """Dense neural network block.
+    """Dense neural network block containing a linear transformation layer
+    and an activation function.
 
     Input: (B, ... , Cin)
         B ... batch, Cin ... input channels
@@ -70,7 +71,8 @@ class DenseBlock(Sequential):
 
 
 class Convolution1dBlock(Sequential):
-    """Convolution 1d block containing a 1d convolutional layer and an activation function.
+    """Convolution block containing a 1D convolutional layer, followed by an
+    optional batch normalization and an activation function.
 
     Input: (B, Ci, Ti)
         B ... batch, Ci ... input channels, Ti ... input time
@@ -117,8 +119,8 @@ class Convolution1dBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        activation: _ActivationLike,
         kernel_size: int,
+        activation: _ActivationLike,
         padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
@@ -159,7 +161,8 @@ class Convolution1dBlock(Sequential):
 
 
 class Convolution2dBlock(Sequential):
-    """Convolution 2d block containing a 2d convolutional layer and an activation function.
+    """Convolution block containing a 2D convolutional layer, followed by an
+    optional batch normalization and an activation function.
 
     Input: (B, Ci, Yi, Xi)
         B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
@@ -172,8 +175,8 @@ class Convolution2dBlock(Sequential):
         Number of input channels (color channels).
     out_channels : int
         Number of output channels (filters).
-    kernel_size : int, optional
-        Size of each kernel, by default 3.
+    kernel_size : int
+        Size of each kernel.
     activation : _ActivationLike
         Activation function to use in the dense block.
     padding : Literal["same", "valid"], optional
@@ -206,8 +209,8 @@ class Convolution2dBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
+        kernel_size: int,
         activation: _ActivationLike,
-        kernel_size: int = 3,
         padding: Literal["same", "valid"] = "valid",
         stride: int = 1,
         dilation: int = 1,
@@ -250,14 +253,15 @@ class Convolution2dBlock(Sequential):
 
 
 class ResidualBlock(ParallelAdd):
-    """Residual block implementing a residual connection bypassing a block of modules.
+    """Residual block implementing a residual connection around a block of modules.
+    Modules in the residual block are processed sequentially.
 
     Parameters
     ----------
     modules : Module
-        Modules used in the residual block.
+        Modules used in the residual block. They are processed sequentially.
     residual_projection : Module, optional
-        Module used for a linear projection to achieve matching dimensions, by default None.
+        Module used as a projection to achieve matching dimensions, by default None.
         If none is provided, the identity function is used.
     label : str, optional
         Module label.

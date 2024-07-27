@@ -1,10 +1,10 @@
-"""Embedding layers module"""
+"""Neural network embedding modules."""
 
 from typing import Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
-from ...random import normal
+from ...random.random import normal
 from ...tensor_functions.creating import zeros_like
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter

@@ -1,4 +1,4 @@
-"""Early stopping callback module"""
+"""Early stopping callbacks."""
 
 from typing import Any
 

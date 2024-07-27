@@ -1,4 +1,4 @@
-"""Neural network containers module"""
+"""Neural network container modules."""
 
 from abc import abstractmethod
 from itertools import accumulate, chain
@@ -7,9 +7,8 @@ from typing import Iterator, Optional
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
 from ...engine import Device, _DeviceLike
-from ...tensor_functions.combining import concatenate, split
-from ...tensor_functions.computing import tensorsum
-from ...tensor_functions.creating import ones
+from ...tensor_functions.creating import concatenate, ones, split
+from ...tensor_functions.transforming import tensorsum
 from ..parameter import Buffer, Parameter
 from .module import Module
 
@@ -210,7 +209,7 @@ class Container(Module):
 
 
 class Sequential(Container):
-    """Modules are processed sequentially.
+    """Container that processes modules sequentially.
 
     Parameters
     ----------
@@ -242,7 +241,7 @@ class Sequential(Container):
 
 
 class ParallelConcat(Container):
-    """Modules are processed in parallel, outputs are concatenated.
+    """Container that processes modules in parallel and concatenates their outputs.
 
     Parameters
     ----------
@@ -287,7 +286,7 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Modules are processed in parallel, outputs are summed element-wise.
+    """Container that processes modules in parallel and sums their outputs element-wise.
 
     Parameters
     ----------

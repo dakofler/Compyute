@@ -1,4 +1,4 @@
-"""Compyute neural network functional module"""
+"""Neural network functions."""
 
 from .activations import *
 from .convolutions import *

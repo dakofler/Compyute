@@ -1,4 +1,4 @@
-"""Embedding layer tests"""
+"""Embedding module tests"""
 
 import torch
 
