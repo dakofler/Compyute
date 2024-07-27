@@ -1,4 +1,4 @@
-"""Loss functions module"""
+"""Loss functions."""
 
 from abc import ABC, abstractmethod
 from typing import Callable, Literal, Optional
@@ -12,8 +12,6 @@ __all__ = ["BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 class Loss(ABC):
     """Loss base class."""
 
-    __slots__ = ("backward",)
-
     def __init__(self):
         self.backward: Optional[Callable[[], Tensor]] = None
 
@@ -23,8 +21,6 @@ class Loss(ABC):
 
 class MeanSquaredError(Loss):
     """Computes the mean squared error loss."""
-
-    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the mean squared error loss.
@@ -41,23 +37,20 @@ class MeanSquaredError(Loss):
         Tensor
             Mean squared error loss.
         """
-        loss, self.backward = mean_squared_error(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = mean_squared_error(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
 class CrossEntropy(Loss):
-    """Computes the cross entropy loss from model logits."""
+    """Computes the crossentropy loss from model logits.
 
-    __slots__ = ("eps",)
+    Parameters
+    ----------
+    eps : float, optional
+        Constant used for numerical stability, by default 1e-8.
+    """
 
     def __init__(self, eps: float = 1e-8):
-        """Computes the crossentropy loss from model logits.
-
-        Parameters
-        ----------
-        eps : float, optional
-            Constant used for numerical stability, by default 1e-8.
-        """
         super().__init__()
         self.eps = eps
 
@@ -76,14 +69,12 @@ class CrossEntropy(Loss):
         Tensor
             Cross entropy loss.
         """
-        loss, self.backward = cross_entropy(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = cross_entropy(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
 class BinaryCrossEntropy(Loss):
     """Computes the binary cross entropy loss from model logits."""
-
-    __slots__ = ()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the binary cross entropy loss.
@@ -100,7 +91,7 @@ class BinaryCrossEntropy(Loss):
         Tensor
             Binary cross entropy loss.
         """
-        loss, self.backward = binary_cross_entropy(y_pred, y_true, return_grad_func=True)
+        loss, self.backward = binary_cross_entropy(y_pred, y_true, return_grad_fn=True)
         return loss
 
 

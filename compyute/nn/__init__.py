@@ -1,4 +1,4 @@
-"""Compyute neural network module"""
+"""Neural network components and utilities."""
 
 from . import functional, initializers, optimizers, trainer
 from .dataloaders import *

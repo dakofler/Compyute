@@ -1,4 +1,4 @@
-"""Neural network models module"""
+"""Model trainer."""
 
 from typing import Literal, Optional
 
@@ -15,17 +15,21 @@ __all__ = ["Trainer"]
 
 
 class Trainer:
-    """Neural network model trainer."""
+    """Neural network model trainer.
 
-    __slots__ = (
-        "model",
-        "optimizer",
-        "loss",
-        "metric",
-        "metric_name",
-        "callbacks",
-        "cache",
-    )
+    Parameters
+    ----------
+    model : Module
+        Model to be trained.
+    optimizer : _OptimizerLike
+        Optimizer algorithm used to update model parameters.
+    loss : _LossLike
+        Loss function used to evaluate the model.
+    metric : _MetricLike, optional
+        Metric function used to evaluate the model, by default None.
+    callbacks : list[Callback], optional
+        Callback functions to be executed during training, by default None.
+    """
 
     def __init__(
         self,
@@ -35,21 +39,6 @@ class Trainer:
         metric: Optional[_MetricLike] = None,
         callbacks: Optional[list[Callback]] = None,
     ) -> None:
-        """Neural network model trainer.
-
-        Parameters
-        ----------
-        model : Module
-            Model to be trained.
-        optimizer : _OptimizerLike
-            Optimizer algorithm used to update model parameters.
-        loss : _LossLike
-            Loss function used to evaluate the model.
-        metric : _MetricLike, optional
-            Metric function used to evaluate the model, by default None.
-        callbacks : list[Callback], optional
-            Callback functions to be executed during training, by default None.
-        """
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)
@@ -81,8 +70,9 @@ class Trainer:
         val_data : tuple[Tensor, Tensor], optional
             Data used for the validaton every epoch, by default None.
         batch_size : int, optional
-            Number of inputs processed in parallel, by default 32.
+            Number of inputs processed in parallel, by default 32. If -1, all samples are used.
         """
+        batch_size = len(x_train) if batch_size == -1 else batch_size
         train_dataloader = DataLoader(x_train, y_train, batch_size, self.model.device)
         self.cache["t"] = 0
         self.cache["epochs"] = epochs
@@ -179,8 +169,8 @@ class Trainer:
             self.cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
 
         # backward pass
-        self.optimizer.reset_grads()
         self.model.backward(self.loss.backward())
 
         # update parameters
         self.optimizer.step()
+        self.optimizer.reset_grads()

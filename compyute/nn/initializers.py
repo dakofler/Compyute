@@ -1,13 +1,13 @@
-"""Parameter initializations module"""
+"""Parameter initializers."""
 
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Literal, Optional
 
-from .. import random
 from ..base_tensor import Tensor, _ShapeLike
 from ..dtypes import Dtype, _DtypeLike
+from ..random.random import normal, uniform
 from ..tensor_functions.creating import ones, zeros
 
 __all__ = [
@@ -22,9 +22,13 @@ __all__ = [
 
 
 class Initializer(ABC):
-    """Optimizer base class"""
+    """Initializer base class.
 
-    __slots__ = ("dtype",)
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike) -> None:
         self.dtype = Dtype(dtype)
@@ -46,122 +50,107 @@ class Initializer(ABC):
 
 
 class KaimingNormal(Initializer):
-    """Normal initializer following He et al., 2015."""
+    """Normal initializer following He et al., 2015.
 
-    __slots__ = ("gain",)
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Normal initializer following He et al., 2015.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         std = self.gain / fan_in**0.5
-        return random.normal(shape, std=std, dtype=self.dtype)
+        return normal(shape, std=std, dtype=self.dtype)
 
 
 class KaimingUniform(Initializer):
-    """Uniform initializer following He et al., 2015."""
+    """Uniform initializer following He et al., 2015.
 
-    __slots__ = ("gain",)
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Uniform initializer following He et al., 2015.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         k = self.gain * (3 / fan_in) ** 0.5
-        return random.uniform(shape, low=-k, high=k, dtype=self.dtype)
+        return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
 class Normal(Initializer):
-    """Initializes a tensor with values following a normal distribution."""
+    """Initializes a tensor with values following a uniform distribution.
 
-    __slots__ = ("mean", "std")
+    Parameters
+    ----------
+    mean : float, optional
+        Mean of the normal distribution, by default 0.
+    std : float, optional
+        Standard deviation of the normal distribution, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(
         self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
     ) -> None:
-        """Initializes a tensor with values following a uniform distribution.
-
-        Parameters
-        ----------
-        mean : float, optional
-            Mean of the normal distribution, by default 0.
-        std : float, optional
-            Standard deviation of the normal distribution, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.mean = mean
         self.std = std
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
-        return random.normal(shape, self.mean, self.std, self.dtype)
+        return normal(shape, self.mean, self.std, self.dtype)
 
 
 class Uniform(Initializer):
-    """Initializes a tensor with values following a uniform distribution."""
+    """Initializes a tensor with values following a uniform distribution.
 
-    __slots__ = ("low", "high")
+    Parameters
+    ----------
+    low : float, optional
+        Lower bound for random values, by default 0.
+    high : float, optional
+        Upper bound for random values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(
         self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
     ) -> None:
-        """Initializes a tensor with values following a uniform distribution.
-
-        Parameters
-        ----------
-        low : float, optional
-            Lower bound for random values, by default 0.
-        high : float, optional
-            Upper bound for random values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.low = low
         self.high = high
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
-        return random.uniform(shape, self.low, self.high, self.dtype)
+        return uniform(shape, self.low, self.high, self.dtype)
 
 
 class XavierNormal(Initializer):
-    """Normal initializer following Glorot et al., 2010."""
+    """Normal initializer following Glorot et al., 2010.
 
-    __slots__ = ("gain",)
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Normal initializer following Glorot et al., 2010.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -169,24 +158,21 @@ class XavierNormal(Initializer):
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
         std = self.gain * (2 / (fan_in + fan_out)) ** 0.5
-        return random.normal(shape, std=std, dtype=self.dtype)
+        return normal(shape, std=std, dtype=self.dtype)
 
 
 class XavierUniform(Initializer):
-    """Uniform initializer following Glorot et al., 2010."""
+    """Uniform initializer following Glorot et al., 2010.
 
-    __slots__ = ("gain",)
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Uniform initializer following Glorot et al., 2010.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -194,22 +180,19 @@ class XavierUniform(Initializer):
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
         k = self.gain * (6 / (fan_in + fan_out)) ** 0.5
-        return random.uniform(shape, low=-k, high=k, dtype=self.dtype)
+        return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
 class Ones(Initializer):
-    """Initializes a tensor with ones."""
+    """Initializes a tensor with ones.
 
-    __slots__ = ()
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
-        """Initializes a tensor with ones.
-
-        Parameters
-        ----------
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
@@ -217,18 +200,15 @@ class Ones(Initializer):
 
 
 class Zeros(Initializer):
-    """Initializes a tensor with zeros."""
+    """Initializes a tensor with zeros.
 
-    __slots__ = ()
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
-        """Initializes a tensor with zeros.
-
-        Parameters
-        ----------
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
 
     def __call__(self, shape: _ShapeLike) -> Tensor:

@@ -1,4 +1,4 @@
-"""text preprocessing module"""
+"""Text data preprocessing utilities."""
 
 from __future__ import annotations
 
@@ -28,8 +28,6 @@ BPE_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    __slots__ = ("oov_token", "vocab", "ivocab")
-
     def __init__(self, oov_token: str = "") -> None:
         self.oov_token = oov_token
         self.vocab: dict[int, str | bytes] = {}
@@ -54,8 +52,6 @@ class Tokenizer(ABC):
 
 class CharacterTokenizer(Tokenizer):
     """Creates character tokens."""
-
-    __slots__ = ()
 
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__(oov_token)
@@ -97,8 +93,6 @@ class CharacterTokenizer(Tokenizer):
 
 class WordTokenizer(Tokenizer):
     """Creates word tokens."""
-
-    __slots__ = ()
 
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__(oov_token)
@@ -159,8 +153,6 @@ class WordTokenizer(Tokenizer):
 class BPETokenizer(Tokenizer):
     """Creates tokens using Byte-Pair-Encoding. Mostly follows the code by Andrjey Karpathy."""
 
-    __slots__ = ("_merges", "_pattern")
-
     def __init__(self) -> None:
         super().__init__()
         self._merges = {}
@@ -210,7 +202,7 @@ class BPETokenizer(Tokenizer):
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
-        counts = {} if counts is None else counts
+        counts = counts if counts is not None else {}
         for bigram in zip(token_ids, token_ids[1:]):
             counts[bigram] = counts.get(bigram, 0) + 1
         return counts

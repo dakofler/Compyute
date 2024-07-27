@@ -1,10 +1,10 @@
-"""Convolution layers module"""
+"""Neural network convolution modules."""
 
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
-from ...random import uniform
+from ...random.random import uniform
 from ...tensor_functions.creating import zeros
 from ..functional.convolutions import (
     _PaddingLike,
@@ -20,20 +20,36 @@ __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 
 
 class Convolution1d(Module):
-    """Layer used for spacial information and feature extraction."""
+    """Convolutional layer used for temporal information and feature extraction.
 
-    __slots__ = (
-        "in_channels",
-        "out_channels",
-        "kernel_size",
-        "padding",
-        "stride",
-        "dilation",
-        "bias",
-        "dtype",
-        "w",
-        "b",
-    )
+    Input: (B, Ci, Ti)
+        B ... batch, Ci ... input channels, Ti ... input time
+    Output: (B, Co, To)
+        B ... batch, Co ... output channels, To ... output time
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    out_channels : int
+        Number of output channels (filters).
+    kernel_size : int
+        Size of each kernel.
+    padding : int, optional
+        Padding applied to the input tensor, by default 0.
+    stride : int, optional
+        Stride used for the convolution operation, by default 1.
+    dilation : int, optional
+        Dilation used for each axis of the filter, by default 1.
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -48,35 +64,6 @@ class Convolution1d(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Convolutional layer used for temporal information and feature extraction.
-        Input: (B, Ci, Ti)
-            B ... batch, Ci ... input channels, Ti ... input time
-        Output: (B, Co, To)
-            B ... batch, Co ... output channels, To ... output time
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input channels.
-        out_channels : int
-            Number of output channels (filters).
-        kernel_size : int
-            Size of each kernel.
-        padding: int, optional
-            Padding applied to the input tensor, by default 0.
-        stride : int, optional
-            Stride used for the convolution operation, by default 1.
-        dilation : int, optional
-            Dilation used for each axis of the filter, by default 1.
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -101,22 +88,17 @@ class Convolution1d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
         x = x.as_type(self.dtype)
-        y, grad_func = convolve1d(
+        y, grad_fn = convolve1d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if self.b is not None and db is not None:
-                    self.b.grad += db
-
+                dx, dw, db = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -125,20 +107,36 @@ class Convolution1d(Module):
 
 
 class Convolution2d(Module):
-    """Layer used for spacial information and feature extraction."""
+    """Convolutional layer used for spacial information and feature extraction.
 
-    __slots__ = (
-        "in_channels",
-        "out_channels",
-        "kernel_size",
-        "padding",
-        "stride",
-        "dilation",
-        "bias",
-        "dtype",
-        "w",
-        "b",
-    )
+    Input: (B, Ci, Yi, Xi)
+        B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
+    Output: (B, Co, Yo, Xo)
+        B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels (color channels).
+    out_channels : int
+        Number of output channels (filters).
+    kernel_size : int, optional
+        Size of each kernel, by default 3.
+    padding : _PaddingLike, optional
+        Padding applied to a tensor before the convolution, by default "valid".
+    stride : int , optional
+        Strides used for the convolution operation, by default 1.
+    dilation : int , optional
+        Dilations used for each axis of the filter, by default 1.
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -153,35 +151,6 @@ class Convolution2d(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Convolutional layer used for spacial information and feature extraction.
-        Input: (B, Ci, Yi, Xi)
-            B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
-        Output: (B, Co, Yo, Xo)
-            B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input channels (color channels).
-        out_channels : int
-            Number of output channels (filters).
-        kernel_size : int, optional
-            Size of each kernel, by default 3.
-        padding: _PaddingLike, optional
-            Padding applied to a tensor before the convolution, by default "valid".
-        stride : int , optional
-            Strides used for the convolution operation, by default 1.
-        dilation : int , optional
-            Dilations used for each axis of the filter, by default 1.
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -203,22 +172,17 @@ class Convolution2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
         x = x.as_type(self.dtype)
-        y, grad_func = convolve2d(
+        y, grad_fn = convolve2d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if self.b is not None and db is not None:
-                    self.b.grad += db
-
+                dx, dw, db = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -227,24 +191,21 @@ class Convolution2d(Module):
 
 
 class MaxPooling2d(Module):
-    """MaxPoling layer used to reduce information to avoid overfitting."""
+    """MaxPooling layer used for downsampling.
 
-    __slots__ = ("kernel_size",)
+    Parameters
+    ----------
+    kernel_size : int, optional
+        Size of the pooling window used for the pooling operation, by default 2.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
     ) -> None:
-        """MaxPoling layer used to reduce information to avoid overfitting.
-
-        Parameters
-        ----------
-        kernel_size : int, optional
-             Shape of the pooling window used for the pooling operation, by default 2.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.kernel_size = kernel_size
 
@@ -257,24 +218,21 @@ class MaxPooling2d(Module):
 
 
 class AvgPooling2d(Module):
-    """AvgPooling layer used to reduce information to avoid overfitting."""
+    """AvgPooling layer used for downsampling.
 
-    __slots__ = ("kernel_size",)
+    Parameters
+    ----------
+    kernel_size : int, optional
+        Size of the pooling window used for the pooling operation, by default 2.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
     ) -> None:
-        """AvgPooling layer used to reduce information to avoid overfitting.
-
-        Parameters
-        ----------
-        kernel_size : int, optional
-             Shape of the pooling window used for the pooling operation, by default 2.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.kernel_size = kernel_size
 

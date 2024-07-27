@@ -1,4 +1,4 @@
-"""Logging callbacks module"""
+"""Logging callbacks."""
 
 from typing import Any, Iterable, Literal
 
@@ -11,8 +11,6 @@ __all__ = ["History", "ProgressBar"]
 
 class History(Callback):
     """Training history."""
-
-    __slots__ = ("cache",)
 
     def __init__(self) -> None:
         self.cache: dict[str, list[float]] = {}
@@ -41,20 +39,17 @@ class History(Callback):
 
 
 class ProgressBar(Callback):
-    """Callback used for displaying the training progress."""
+    """Callback used for displaying the training progress.
 
-    __slots__ = ("mode", "pbar")
+    Parameters
+    ----------
+    mode : Literal["step", "epoch"], optional
+        Progress bar update mode, by default "step"
+        epoch ... one progress bar is shown and updated for each epoch.
+        step ... a progress bar is shown per epoch and updated for each step.
+    """
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
-        """Callback used for displaying the training progress.
-
-        Parameters
-        ----------
-        mode : Literal["step", "epoch"], optional
-            Progress bar update mode, by default "step"
-            epoch ... one progress bar is shown and updated for each epoch.
-            step ... a progress bar is shown per epoch and updated for each step.
-        """
         self.pbar = None
         self.mode = mode
 

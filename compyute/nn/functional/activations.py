@@ -1,14 +1,13 @@
-"""Neural network functions module"""
+"""Neural network activation functions."""
 
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.computing import maximum, minimum
 from ...tensor_functions.creating import identity
 from ...tensor_functions.reshaping import insert_dim, reshape, tile
 from ...tensor_functions.transforming import exp
 from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import sech
+from ...tensor_functions.transforming import maximum, minimum, sech
 from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import tanh as cptanh
 
@@ -21,13 +20,12 @@ __all__ = [
     "softmax",
     "temperature_softmax",
 ]
-PI: float = 3.141592653589793
-GELU_S: float = 0.7978845608028654  # sqrt(2/pi)
-GELU_C: float = 0.044715
+_GELU_S: float = 0.7978845608028654
+_GELU_C: float = 0.044715
 
 
 def relu(
-    x: Tensor, return_grad_func: bool = False
+    x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Rectified Linear Unit function.
 
@@ -35,7 +33,7 @@ def relu(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -47,13 +45,13 @@ def relu(
     """
     y = maximum(x, 0)
 
-    if return_grad_func:
+    if return_grad_fn:
         return y, (lambda dy: (y > 0) * dy)
     return y, None
 
 
 def leaky_relu(
-    x: Tensor, alpha: float = 0.01, return_grad_func: bool = False
+    x: Tensor, alpha: float = 0.01, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the leaky ReLU function.
 
@@ -63,7 +61,7 @@ def leaky_relu(
         Input tensor.
     alpha : float, optional
         Slope of the negative output, by default 0.01.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -76,13 +74,13 @@ def leaky_relu(
     x = x.float()
     y = maximum(x, 0) + alpha * minimum(x, 0)
 
-    if return_grad_func:
+    if return_grad_fn:
         return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
     return y, None
 
 
 def gelu(
-    x: Tensor, return_grad_func: bool = False
+    x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Gaussian Error Linear Unit function.
 
@@ -90,7 +88,7 @@ def gelu(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -101,14 +99,14 @@ def gelu(
         Gradient function.
     """
 
-    tmp = GELU_S * (x + GELU_C * x**3)
+    tmp = _GELU_S * (x + _GELU_C * x**3)
     y = 0.5 * x * (1 + cptanh(tmp))
 
-    if return_grad_func:
+    if return_grad_fn:
         return y, (
             lambda dy: (
                 0.5 * (1 + cptanh(tmp))
-                + 0.5 * x * sech(tmp) ** 2 * GELU_S * (1 + 3 * GELU_C * x**2)
+                + 0.5 * x * sech(tmp) ** 2 * _GELU_S * (1 + 3 * _GELU_C * x**2)
             )
             * dy
         )
@@ -116,7 +114,7 @@ def gelu(
 
 
 def sigmoid(
-    x: Tensor, return_grad_func: bool = False
+    x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the sigmoid function.
 
@@ -124,7 +122,7 @@ def sigmoid(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -136,13 +134,13 @@ def sigmoid(
     """
     y = exp(x) * (1 + exp(x)) ** -1
 
-    if return_grad_func:
+    if return_grad_fn:
         return y, (lambda dy: (y * (1 - y)) * dy)
     return y, None
 
 
 def tanh(
-    x: Tensor, return_grad_func: bool = False
+    x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the hyperbolic tangent function.
 
@@ -150,7 +148,7 @@ def tanh(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -162,13 +160,13 @@ def tanh(
     """
     y = cptanh(x)
 
-    if return_grad_func:
+    if return_grad_fn:
         return y, (lambda dy: (1 - y**2) * dy)
     return y, None
 
 
 def softmax(
-    x: Tensor, return_grad_func: bool = False
+    x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the softmax function over the last axis.
 
@@ -176,7 +174,7 @@ def softmax(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_func: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -189,15 +187,15 @@ def softmax(
     x = exp(x - cpmax(x, axis=-1, keepdims=True))
     y = x / cpsum(x, axis=-1, keepdims=True)
 
-    if return_grad_func:
+    if return_grad_fn:
 
-        def grad_func(dy: Tensor) -> Tensor:
+        def grad_fn(dy: Tensor) -> Tensor:
             sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
             return reshape(
                 sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape
             )
 
-        return y, grad_func
+        return y, grad_fn
     return y, None
 
 

@@ -1,4 +1,4 @@
-"""Compyute neural network trainer module"""
+"""Model trainer."""
 
 from . import callbacks
 from .trainer import *

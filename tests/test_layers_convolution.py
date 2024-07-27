@@ -1,4 +1,4 @@
-"""Convolutional layer tests"""
+"""Convolution module tests"""
 
 import torch
 

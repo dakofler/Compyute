@@ -1,20 +1,35 @@
-"""Dataloaders module"""
+"""Dataloaders."""
 
 from functools import wraps
 from typing import Callable, Iterator, Optional
 
 from ..base_tensor import Tensor
 from ..engine import Device, _DeviceLike
-from ..random import shuffle
-from ..tensor_functions.combining import concatenate
+from ..random.random import shuffle
+from ..tensor_functions.creating import concatenate
 
 __all__ = ["DataLoader"]
 
 
 class DataLoader:
-    """DataLoader to yield batched data for training and inference."""
+    """DataLoader to yield batched data for training and inference.
 
-    __slots__ = ("x", "y", "batch_size", "device", "shuffle", "drop_remaining")
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    y : Tensor, optional
+        Target tensor, by default None.
+    batch_size : int, optional
+        Size of returned batches, by default 1.
+    device : DeviceLike, optional
+        Device the tensors should be loaded to, by default Device.CPU.
+    shuffle_data : bool, optional
+        Whether to shuffle the data each time the dataloader is called, by default True.
+    drop_remaining : bool, optional
+        Whether to drop data, that remains when the number of samples is not divisible by
+        the batch_size.
+    """
 
     def __init__(
         self,
@@ -25,24 +40,6 @@ class DataLoader:
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
-        """DataLoader to yield batched data for training and inference.
-
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
-        y : Tensor, optional
-            Target tensor, by default None.
-        batch_size : int, optional
-            Size of returned batches, by default 1.
-        device: DeviceLike, optional
-            Device the tensors should be loaded to, by default Device.CPU.
-        shuffle_data : bool, optional
-            Whether to shuffle the data each time the dataloader is called, by default True.
-        drop_remaining: bool, optional
-            Whether to drop data, that remains when the number of samples is not divisible by
-            the batch_size.
-        """
         self.x = x
         self.y = y
         self.batch_size = batch_size
@@ -71,8 +68,8 @@ class DataLoader:
                 y_batch = self.y[i * b : (i + 1) * b]
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
-
-            yield x_batch, None
+            else:
+                yield x_batch, None
 
         # yield remaining
         if not self.drop_remaining and n_trunc < n:
@@ -83,8 +80,8 @@ class DataLoader:
                 y_batch = self.y[n_trunc:]
                 y_batch.to_device(self.device)
                 yield x_batch, y_batch
-
-            yield x_batch, None
+            else:
+                yield x_batch, None
 
     def __len__(self) -> int:
         return max(1, self.x.shape[0] // self.batch_size)
@@ -103,11 +100,11 @@ def batched(
     ----------
     batch_size : int, optional
         Size of returned batches, by default 1.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         Device the tensors should be loaded to, by default Device.CPU.
     shuffle_data : bool, optional
         Whether to shuffle the data each time the dataloader is called, by default True.
-    drop_remaining: bool, optional
+    drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
         the batch_size.
     """

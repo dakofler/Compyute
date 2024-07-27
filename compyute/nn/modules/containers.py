@@ -1,40 +1,38 @@
-"""Neural network containers module"""
+"""Neural network container modules."""
 
 from abc import abstractmethod
-from itertools import accumulate
+from itertools import accumulate, chain
 from typing import Iterator, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
 from ...engine import Device, _DeviceLike
-from ...tensor_functions.combining import concatenate, split
-from ...tensor_functions.computing import tensorsum
-from ...tensor_functions.creating import ones
-from ..parameter import Parameter
+from ...tensor_functions.creating import concatenate, ones, split
+from ...tensor_functions.transforming import tensorsum
+from ..parameter import Buffer, Parameter
 from .module import Module
 
 __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
 
 class Container(Module):
-    """Container base module."""
+    """Container base module.
 
-    __slots__ = ("_modules",)
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
-    def __init__(self, *args: Module, label: Optional[str] = None, training: bool = False) -> None:
-        """Container base module.
-
-        Parameters
-        ----------
-        *args : Module
-            Modules used in the container.
-        label: str, optional
-            Container label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
+    def __init__(
+        self, *modules: Module, label: Optional[str] = None, training: bool = False
+    ) -> None:
         super().__init__(label, training)
-        self._modules = list(args) if len(args) > 0 else None
+        self._modules = list(modules) if len(modules) > 0 else None
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -52,9 +50,7 @@ class Container(Module):
         """Returns the list of modules."""
         if self._modules is not None:
             return self._modules
-        if "__dict__" in dir(self):
-            return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
-        return [getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Module)]
+        return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
 
     def add_module(self, module: Module) -> None:
         """Adds a module to the container.
@@ -72,7 +68,16 @@ class Container(Module):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns a generator of module parameters."""
-        return (p for module in self.modules for p in module.parameters)
+        self_parameters = super().parameters
+        module_parameters = (p for module in self.modules for p in module.parameters)
+        return chain(self_parameters, module_parameters)
+
+    @property
+    def buffers(self) -> Iterator[Buffer]:
+        """Returns a generator of module buffers."""
+        self_buffers = super().buffers
+        module_buffers = (b for module in self.modules for b in module.buffers)
+        return chain(self_buffers, module_buffers)
 
     def set_retain_values(self, value: bool) -> None:
         if self._retain_values == value:
@@ -121,25 +126,30 @@ class Container(Module):
         for module in self.modules:
             module.cleanup(force)
 
-    def summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Prints information about the container and its modules.
+    def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
+        """Returns information about the container and its modules.
 
         Parameters
         ----------
-        root_module: Module
+        root_module : Module
             Module to get the summary from.
-        input_shape : ShapeLike
+        input_shape : _ShapeLike
             Shape of the model input ignoring the batch dimension.
-        input_dtype : DtypeLike
+        input_dtype : _DtypeLike
             Data type of the expected input data.
+
+        Returns
+        -------
+        str
+            Summary of the container and its modules.
         """
-        seperator = "=" * 75
+        divider = "=" * 80
 
         summary = [
             self.label,
-            seperator,
-            f"{'Layer':25s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
-            seperator,
+            divider,
+            f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
+            divider,
         ]
 
         x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
@@ -147,24 +157,33 @@ class Container(Module):
             _ = self(x)
             module_summaries = []
 
-            def build_module_summary_dict(
-                module: Module, summaries: list[dict], depth: int
-            ) -> None:
-                # add summary of current modules
-                s = {}
-                s["name"] = " " * depth + module.label
-                s["out_shape"] = (-1,) + module.y.shape[1:] if module.y is not None else ()
-                s["n_params"] = sum(p.size for p in module.parameters)
-                s["trainable"] = module.trainable
-                s["type"] = "container" if isinstance(module, Container) else "module"
-                summaries.append(s)
+            def build_module_summary(module: Module, summaries: list[dict], prefix: str) -> None:
+                # add summary of current module
+                summaries.append(
+                    {
+                        "name": prefix + module.label,
+                        "out_shape": (-1,) + module.y.shape[1:] if module.y is not None else (),
+                        "n_params": sum(p.size for p in module.parameters),
+                        "trainable": module.trainable,
+                        "type": "container" if isinstance(module, Container) else "module",
+                    }
+                )
 
                 # get summary of child modules
                 if isinstance(module, Container):
-                    for module in module.modules:
-                        build_module_summary_dict(module, summaries, depth + 1)
+                    for i, m in enumerate(module.modules):
+                        child_prefix = prefix[:-2]
 
-            build_module_summary_dict(self, module_summaries, 0)
+                        if prefix[-2:] == "├-":
+                            child_prefix += "│ "
+                        elif prefix[-2:] == "└-":
+                            child_prefix += "  "
+
+                        child_prefix += "└-" if i == len(module.modules) - 1 else "├-"
+
+                        build_module_summary(m, summaries, child_prefix)
+
+            build_module_summary(self, module_summaries, "")
 
             # convert dict to list of strings
             n_parameters = 0
@@ -179,25 +198,32 @@ class Container(Module):
                 n_train_parameters += (
                     s["n_params"] if s["trainable"] and s["type"] == "module" else 0
                 )
-                summary.append(f"{name:25s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
+                summary.append(f"{name:30s} {out_shape:20s} {n_params:15d} {trainable:>12s}")
 
         self.cleanup()
-        summary.append(seperator)
+        summary.append(divider)
         summary.append(f"Parameters: {n_parameters}")
         summary.append(f"Trainable parameters: {n_train_parameters}")
 
-        summary = "\n".join(summary)
-        print(summary)
+        return "\n".join(summary)
 
 
 class Sequential(Container):
-    """Sequential container module. Layers are processed sequentially."""
+    """Container that processes modules sequentially.
 
-    __slots__ = ()
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         for module in self.modules:
             x = module(x)
@@ -215,37 +241,34 @@ class Sequential(Container):
 
 
 class ParallelConcat(Container):
-    """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
+    """Container that processes modules in parallel and concatenates their outputs.
 
-    __slots__ = ("concat_axis",)
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the parallel container.
+    concat_axis : int, optional
+        Axis along which the output of the parallel modules
+        shall be concatinated, by default -1.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
-        *args: Module,
+        *modules: Module,
         concat_axis: int = -1,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Parallel container module. Module output tensors are concatinated.
-
-        Parameters
-        ----------
-        *args : Module
-            Modules used in the parallel container.
-        concat_axis : int, optional
-            Axis along which the output of the parallel modules
-            shall be concatinated, by default -1.
-        label: str, optional
-            Container label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
-        super().__init__(*args, label=label, training=training)
+        super().__init__(*modules, label=label, training=training)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         ys = [m(x) for m in self.modules]
         y = concatenate(ys, axis=self.concat_axis)
@@ -263,14 +286,21 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Parallel container module.
-    Inputs are processed in parallel, outputs are added element-wise."""
+    """Container that processes modules in parallel and sums their outputs element-wise.
 
-    __slots__ = ()
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
-        if len(self.modules) == 0:
-            raise ValueError("No modules have been added yet.")
+        if not self.modules:
+            raise EmptyContainerError()
 
         y = tensorsum(m(x) for m in self.modules)
 
@@ -278,3 +308,10 @@ class ParallelAdd(Container):
             self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y
+
+
+class EmptyContainerError(Exception):
+    """Exception for empty containers."""
+
+    def __init__(self, message: str = "Container has no modules.") -> None:
+        super().__init__(message)

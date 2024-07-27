@@ -1,4 +1,4 @@
-"""Learning rate decay callbacks module"""
+"""Learning rate scheduler callbacks."""
 
 import math
 from itertools import pairwise
@@ -31,9 +31,15 @@ class LrSchedulerCache(TypedDict):
 
 
 class LrScheduler(Callback):
-    """Learning rate scheduler base class"""
+    """Learning rate scheduler base class.
 
-    __slots__ = ("optimizer", "verbose", "t", "cache")
+    Parameters
+    ----------
+    optimizer  : Optimizer
+        Optimizer, whose learning rate will be adapted.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(self, optimizer: Optimizer, verbose: bool = False) -> None:
         self.optimizer = optimizer
@@ -52,9 +58,19 @@ class LrScheduler(Callback):
 
 
 class StepLrScheduler(LrScheduler):
-    """Decays an optimizers learning rate after a specified epoch."""
+    """Decays an optimizers learning rate after a specified epoch.
 
-    __slots__ = ("lr_decay", "t_decay")
+    Parameters
+    ----------
+    optimizer  : Optimizer
+        Optimizer, whose learning rate will be adapted.
+    lr_decay : float, optional
+        Decay factor, by default 0.1.
+    t_decay : int, optional
+        Epoch, at which the update is applied, by default 10.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(
         self,
@@ -63,19 +79,6 @@ class StepLrScheduler(LrScheduler):
         t_decay: int = 10,
         verbose: bool = False,
     ) -> None:
-        """Decays an optimizers learning rate after a specified epoch.
-
-        Parameters
-        ----------
-        optimizer: Optimizer
-            Optimizer, whose learning rate will be adapted.
-        lr_decay : float, optional
-            Decay factor, by default 0.1.
-        t_decay: int, optional
-            Epoch, at which the update is applied, by default 10.
-        verbose : bool, optional
-            Whether to print the learning rate, by default False.
-        """
         super().__init__(optimizer, verbose)
         self.lr_decay = lr_decay
         self.t_decay = t_decay
@@ -88,9 +91,19 @@ class StepLrScheduler(LrScheduler):
 
 
 class MultistepLrScheduler(LrScheduler):
-    """Decays an optimizers learning rate each time a specified number of epochs has elapsed."""
+    """Decays an optimizers learning rate each time a specified number of epochs has elapsed.
 
-    __slots__ = ("lr_decay", "t_decay_step")
+    Parameters
+    ----------
+    optimizer: Optimizer
+        Optimizer, whose learning rate will be adapted.
+    lr_decay : float, optional
+        Decay factor, by default 0.5.
+    t_decay_step : int, optional
+        Number of epochs, at which the update is applied, by default 10.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(
         self,
@@ -99,19 +112,6 @@ class MultistepLrScheduler(LrScheduler):
         t_decay_step: int = 10,
         verbose: bool = False,
     ) -> None:
-        """Decays an optimizers learning rate each time a specified number of epochs has elapsed.
-
-        Parameters
-        ----------
-        optimizer: Optimizer
-            Optimizer, whose learning rate will be adapted.
-        lr_decay : float, optional
-            Decay factor, by default 0.5.
-        t_decay_step: int, optional
-            Number of epochs, at which the update is applied, by default 10.
-        verbose : bool, optional
-            Whether to print the learning rate, by default False.
-        """
         super().__init__(optimizer, verbose)
         self.lr_decay = lr_decay
         self.t_decay_step = t_decay_step
@@ -124,9 +124,19 @@ class MultistepLrScheduler(LrScheduler):
 
 
 class ExponentialLrScheduler(LrScheduler):
-    """Decays an optimizers learning rate exponentially."""
+    """Decays an optimizers learning rate each epoch exponentially.
 
-    __slots__ = ("lr_decay", "decay_steps")
+    Parameters
+    ----------
+    optimizer : Optimizer
+        Optimizer, whose learning rate will be adapted.
+    lr_decay : float, optional
+        Decay factor the learning rate is multiplied by each step, by default 0.5.
+    decay_steps : int, optional
+        How many times (epochs) the update is applied, by default 10.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(
         self,
@@ -135,19 +145,6 @@ class ExponentialLrScheduler(LrScheduler):
         decay_steps: int = 10,
         verbose: bool = False,
     ) -> None:
-        """Decays an optimizers learning rate each epoch exponentially.
-
-        Parameters
-        ----------
-        optimizer: Optimizer
-            Optimizer, whose learning rate will be adapted.
-        lr_decay : float, optional
-            Decay factor the learning rate is multiplied by each step, by default 0.5.
-        decay_steps: int, optional
-            How many times (epochs) the update is applied, by default 10.
-        verbose : bool, optional
-            Whether to print the learning rate, by default False.
-        """
         super().__init__(optimizer, verbose)
         self.lr_decay = lr_decay
         self.decay_steps = decay_steps
@@ -160,16 +157,23 @@ class ExponentialLrScheduler(LrScheduler):
 
 
 class CosineAnnealingLrScheduler(LrScheduler):
-    """Sets an optimizers learning rate using a cosine schedule."""
+    """Sets an optimizers learning rate using a cosine schedule.
 
-    __slots__ = (
-        "target_lr",
-        "decay_steps",
-        "warmup_steps",
-        "max_warmup_lr",
-        "_initial_lr",
-        "_warmup_lr_delta",
-    )
+    Parameters
+    ----------
+    optimizer : Optimizer
+        Optimizer, whose learning rate will be adapted.
+    target_lr : float, optional
+        Target learning rate, by default 0.1.
+    decay_steps : int, optional
+        How many times (epochs) the update is applied, by default 10.
+    warmup_steps : int, optional
+        Number of warmup steps, by default 5.
+    max_warmup_lr : float, optional
+        Maximum learning rate after warmup, by default 1.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(
         self,
@@ -180,23 +184,6 @@ class CosineAnnealingLrScheduler(LrScheduler):
         max_warmup_lr: float = 1.0,
         verbose: bool = False,
     ) -> None:
-        """Sets an optimizers learning rate using a cosine schedule.
-
-        Parameters
-        ----------
-        optimizer: Optimizer
-            Optimizer, whose learning rate will be adapted.
-        target_lr : float, optional
-            Target learning rate, by default 0.1.
-        decay_steps: int, optional
-            How many times (epochs) the update is applied, by default 10.
-        warmup_steps: int, optional
-            Number of warmup steps, by default 5.
-        max_warmup_lr : float, optional
-            Maximum learning rate after warmup, by default 1.
-        verbose : bool, optional
-            Whether to print the learning rate, by default False.
-        """
         super().__init__(optimizer, verbose)
         self.target_lr = target_lr
         self.decay_steps = decay_steps
@@ -228,9 +215,23 @@ class CosineAnnealingLrScheduler(LrScheduler):
 
 
 class AdaptiveLrScheduler(LrScheduler):
-    """Sets an optimizers learning rate based on the trend of a specified metric."""
+    """Sets an optimizers learning based on the trend of a specified metric.
 
-    __slots__ = ("target", "scope", "lr_downscale_factor", "lr_upscale_factor")
+    Parameters
+    ----------
+    optimizer : Optimizer
+        Optimizer, whose learning rate will be adapted.
+    target : str, optional
+        Metric to consider, by default "loss".
+    scope : int, optional
+        Number of past epochs to consider when computing the trend, by default 10.
+    lr_downscale_factor : float, optional
+        Factor to scale the learning rate down by if the metric is not improing, by default 0.5.
+    lr_upscale_factor : float, optional
+        Factor to scale the learning rate up by if the metric is improing, by default 1.0.
+    verbose : bool, optional
+        Whether to print the learning rate, by default False.
+    """
 
     def __init__(
         self,
@@ -241,23 +242,6 @@ class AdaptiveLrScheduler(LrScheduler):
         lr_upscale_factor: float = 1.0,
         verbose: bool = False,
     ) -> None:
-        """Sets an optimizers learning based on the trend of a specified metric.
-
-        Parameters
-        ----------
-        optimizer: Optimizer
-            Optimizer, whose learning rate will be adapted.
-        target : str, optional
-            Metric to consider, by default "loss".
-        scope : int, optional
-            Number of past epochs to consider when computing the trend, by default 10.
-        lr_downscale_factor : float, optional
-            Factor to scale the learning rate down by if the metric is not improing, by default 0.5.
-        lr_upscale_factor : float, optional
-            Factor to scale the learning rate up by if the metric is improing, by default 1.0.
-        verbose : bool, optional
-            Whether to print the learning rate, by default False.
-        """
         super().__init__(optimizer, verbose)
         self.target = target
         self.scope = scope

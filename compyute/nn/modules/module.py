@@ -1,9 +1,9 @@
-"""Neural network module base module"""
+"""Neural network base module class."""
 
 from __future__ import annotations
 
 import pickle
-from abc import ABC
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
@@ -16,18 +16,24 @@ __all__ = ["Module", "save_module", "load_module"]
 
 
 class Module(ABC):
-    """Neural network module."""
+    """Neural network base module.
 
-    __slots__ = ("y", "_backward", "label", "_device", "_retain_values", "_training", "_trainable")
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
-        """Neural network module."""
+        self.label = label if label is not None else self.__class__.__name__
+        self._training: bool = training
+
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Tensor]] = None
-        self.label = label if label is not None else self.__class__.__name__
         self._device: _DeviceLike = Device.CPU
         self._retain_values: bool = False
-        self._training: bool = training
         self._trainable: bool = True
 
     # ----------------------------------------------------------------------------------------------
@@ -36,11 +42,11 @@ class Module(ABC):
 
     @property
     def device(self) -> _DeviceLike:
-        """Device the module tensors are stored on."""
+        """Device the module parametes and buffers are stored on."""
         return self._device
 
     def to_device(self, device: _DeviceLike) -> None:
-        """Moves the module to the specified device."""
+        """Moves the module parameters and buffers to the specified device."""
         device = Device(device)
         if device == self._device:
             return
@@ -71,12 +77,12 @@ class Module(ABC):
     @property
     def parameters(self) -> Iterator[Parameter]:
         """Returns module parameters."""
-        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Parameter))
+        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
         """Returns module buffers."""
-        return (getattr(self, a) for a in self.__slots__ if isinstance(getattr(self, a), Buffer))
+        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
     # CONTEXT MANAGERS
@@ -88,7 +94,7 @@ class Module(ABC):
 
     @contextmanager
     def retain_values(self):
-        """Context manager for temporarily setting the module to retain values."""
+        """Context manager for setting the module to retain intermediate values."""
         retain_values = self._retain_values
         self.set_retain_values(True)
         try:
@@ -102,7 +108,7 @@ class Module(ABC):
 
     @contextmanager
     def training(self):
-        """Context manager for temporarily putting the module in training state."""
+        """Context manager for putting the module in training state."""
         training = self._training
         self.set_training(True)
         try:
@@ -121,7 +127,7 @@ class Module(ABC):
     def __repr__(self) -> str:
         repr_string = f"{self.label}("
         attributes = [
-            f"{a}={getattr(self, a)}" for a in self.__slots__ if self._reprattr(a, getattr(self, a))
+            f"{a}={getattr(self, a)}" for a in self.__dict__ if self._reprattr(a, getattr(self, a))
         ]
         return repr_string + ", ".join(attributes) + ")"
 
@@ -134,6 +140,7 @@ class Module(ABC):
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
 
+    @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
         """Performs a forward pass through the module.
 
@@ -147,7 +154,6 @@ class Module(ABC):
         Tensor
             Computed module output.
         """
-        return x
 
     def backward(self, dy: Tensor) -> Tensor:
         """Performs a backward pass through the module.
@@ -164,6 +170,13 @@ class Module(ABC):
         """
         if not self._training:
             raise AttributeError(f"{self.label} is not in training mode.")
+
+        if self._backward is None:
+            raise ModelDefinitionError(
+                """No backward function has been defined.
+                If you are using a custom model, make sure to define a backward function and assign
+                it to self._backward during the call of the forward method (see Compyute README)"""
+            )
 
         self._set_dy(dy)
 
@@ -226,6 +239,33 @@ class Module(ABC):
             return
         vdims = ", ".join(str(d) for d in valid_dims)
         raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
+
+    @staticmethod
+    def _update_parameter_grad(parameter: Optional[Parameter], grad: Optional[Tensor]) -> None:
+        """Updates the parameter gradients."""
+        if parameter is None or grad is None:
+            return
+        parameter.grad += grad
+
+
+class Identity(Module):
+    """Identity module.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
+
+    def forward(self, x: Tensor) -> Tensor:
+        self._backward = lambda dy: dy
+        return x
+
+
+class ModelDefinitionError(Exception):
+    """Model definition error."""
 
 
 def save_module(module: Module, filepath: str) -> None:

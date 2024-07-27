@@ -1,4 +1,4 @@
-"""Compyute neural network modules"""
+"""Neural network modules."""
 
 from .activations import *
 from .blocks import *

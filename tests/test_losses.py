@@ -1,4 +1,4 @@
-"""Losses tests"""
+"""Loss function tests"""
 
 import torch
 

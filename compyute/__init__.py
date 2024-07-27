@@ -1,4 +1,4 @@
-"""Compyute module"""
+"""Compyute."""
 
 import pathlib
 

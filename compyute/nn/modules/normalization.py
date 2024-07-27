@@ -1,4 +1,4 @@
-"""Normalization layers module"""
+"""Neural network normalization modules."""
 
 from typing import Optional
 
@@ -13,9 +13,28 @@ __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 
 
 class Batchnorm1d(Module):
-    """Batch Normalization."""
+    """Implements Batch Normalization (normalizes over the C dimension).
 
-    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
+    Input: (B, C, T) or (B, C)
+        B ... batch, C ... channels, T ... time
+    Output: (B, C, T) or (B, C)
+        B ... batch, C ... channels, T ... time
+
+    Parameters
+    ----------
+    channels : int
+        Number of channels.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-5.
+    m : float, optional
+        Momentum used for running mean and variance computation, by default 0.1.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -26,28 +45,6 @@ class Batchnorm1d(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Implements Batch Normalization.
-        Input: (B, C, T) or (B, C)
-            B ... batch, C ... channels, T ... time
-        Output: (B, C, T) or (B, C)
-            B ... batch, C ... channels, T ... time
-        Normalizes over the C dimension.
-
-        Parameters
-        ----------
-        channels : int
-            Number of channels.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-5.
-        m : float, optional
-            Momentum used for running mean and variance computation, by default 0.1.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.channels = channels
         self.eps = eps
@@ -66,22 +63,17 @@ class Batchnorm1d(Module):
         self._check_dims(x, [2, 3])
         x = x.as_type(self.dtype)
 
-        y, self.rmean, self.rvar, grad_func = batchnorm1d(
+        y, self.rmean, self.rvar, grad_fn = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if db is not None:
-                    self.b.grad += db
-
+                dx, dw, db = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -90,9 +82,28 @@ class Batchnorm1d(Module):
 
 
 class Batchnorm2d(Module):
-    """Batch Normalization."""
+    """Implements Batch Normalization (normalizes over the C dimension).
 
-    __slots__ = ("channels", "eps", "m", "dtype", "w", "b", "rmean", "rvar")
+    Input: (B, C, Y, X)
+        B ... batch, C ... channels, Y ... height, X ... width
+    Output: (B, C, Y, X)
+        B ... batch, C ... channels, Y ... height, X ... width
+
+    Parameters
+    ----------
+    channels : int
+        Number of channels.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-5.
+    m : float, optional
+        Momentum used for running mean and variance computation, by default 0.1.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -103,28 +114,6 @@ class Batchnorm2d(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Implements Batch Normalization.
-        Input: (B, C, Y, X)
-            B ... batch, C ... channels, Y ... height, X ... width
-        Output: (B, C, Y, X)
-            B ... batch, C ... channels, Y ... height, X ... width
-        Normalizes over the C dimension.
-
-        Parameters
-        ----------
-        channels : int
-            Number of channels.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-5.
-        m : float, optional
-            Momentum used for running mean and variance computation, by default 0.1.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.channels = channels
         self.eps = eps
@@ -143,22 +132,17 @@ class Batchnorm2d(Module):
         self._check_dims(x, [4])
         x = x.as_type(self.dtype)
 
-        y, self.rmean, self.rvar, grad_func = batchnorm2d(
+        y, self.rmean, self.rvar, grad_fn = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
         )
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if db is not None:
-                    self.b.grad += db
-
+                dx, dw, db = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -167,9 +151,27 @@ class Batchnorm2d(Module):
 
 
 class Layernorm(Module):
-    """Normalizes values per sample."""
+    """Implements Layer Normalization (normalizes over all trailing dimensions).
 
-    __slots__ = ("normalized_shape", "eps", "dtype", "w", "b")
+    Input: (B, ...)
+        B ... batch
+    Output: (B, ...)
+        B ... batch
+
+
+    Parameters
+    ----------
+    normalized_shape : ShapeLike
+        Shape of the normalized tensor ignoring the batch dimension.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-5.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -179,26 +181,6 @@ class Layernorm(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Implements layer normalization.
-        Input: (B, ...)
-            B ... batch
-        Output: (B, ...)
-            B ... batch
-        Normalizes over all trailing dimensions.
-
-        Parameters
-        ----------
-        normalized_shape : ShapeLike
-            Shape of the normalized tensor ignoring the batch dimension.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-5.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.normalized_shape = normalized_shape
         self.eps = eps
@@ -211,20 +193,15 @@ class Layernorm(Module):
     def forward(self, x: Tensor) -> Tensor:
         x = x.as_type(self.dtype)
 
-        y, grad_func = layernorm(x, self.w, self.b, self.eps, self._training)
+        y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._training)
 
-        if self._training and grad_func is not None:
+        if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
-                dx, dw, db = grad_func(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if db is not None:
-                    self.b.grad += db
-
+                dx, dw, db = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward

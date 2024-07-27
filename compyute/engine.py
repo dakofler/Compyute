@@ -1,4 +1,4 @@
-"""Engine functions module"""
+"""Compyute engine utilities."""
 
 from enum import Enum
 from functools import cache
@@ -8,7 +8,7 @@ from typing import Literal, TypeAlias
 import cupy
 import numpy
 
-__all__ = ["cpu", "cuda"]
+__all__ = ["cpu", "cuda", "gpu_available"]
 
 
 class Device(Enum):
