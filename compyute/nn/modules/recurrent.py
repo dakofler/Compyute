@@ -11,11 +11,11 @@ from ..functional.linear import linear
 from ..parameter import Parameter
 from .module import Module
 
-__all__ = ["LSTM", "Recurrent"]
+__all__ = ["GRU", "LSTM", "Recurrent"]
 
 
 class Recurrent(Module):
-    """Recurrent module."""
+    """Recurrent module (following the PyTorch implementation)."""
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class Recurrent(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Recurrent module.
+        """Recurrent module (following the PyTorch implementation).
         Input: (B, T, Cin)
             B ... batch, T ... time, Cin ... input channels
         Output: (B, T, Ch) if return_sequence=True else (B, Ch)
@@ -102,7 +102,7 @@ class Recurrent(Module):
 
                 # iterate backwards over timesteps
                 for t in range(x.shape[1] - 1, -1, -1):
-                    x_h_grad_fn, h_h_grad_fn, act_grad_fn = grad_functions.pop(t)
+                    x_h_grad_fn, h_h_grad_fn, act_grad_fn = grad_functions[t]
 
                     # add output gradients if returning sequence or last time step
                     if self.return_sequence:
@@ -137,7 +137,7 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    """Long Short-Term Memory module."""
+    """Long Short-Term Memory module (following the PyTorch implementation)."""
 
     def __init__(
         self,
@@ -150,7 +150,7 @@ class LSTM(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Long Short-Term Memory module.
+        """Long Short-Term Memory module (following the PyTorch implementation).
         Input: (B, T, Cin)
             B ... batch, T ... time, Cin ... input channels
         Output: (B, T, Ch) if return_sequence=True else (B, Ch)
@@ -236,10 +236,12 @@ class LSTM(Module):
             h_o, h_o_grad_fn = linear(h_tprev, self.w_ho, self.b_ho, self._training)
 
             # gates
-            i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._training)
-            f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._training)
+            i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._training)  # input gate
+            f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._training)  # forget gate
+            o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._training)  # output gate
+
+            # input node
             g[:, t], g_grad_fn = self.activation(x_g + h_g, self._training)
-            o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._training)
 
             # carry state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
@@ -293,7 +295,7 @@ class LSTM(Module):
                         g_grad_fn,
                         o_grad_fn,
                         actc_grad_fn,
-                    ) = grad_functions.pop(t)
+                    ) = grad_functions[t]
 
                     # add output gradients if returning sequence or last time step
                     if self.return_sequence:
@@ -315,8 +317,10 @@ class LSTM(Module):
                     # gate gradients
                     di_preact = i_grad_fn(di)
                     df_preact = f_grad_fn(df)
-                    dg_preact = g_grad_fn(dg)
                     do_preact = o_grad_fn(do)
+
+                    # input node gradients
+                    dg_preact = g_grad_fn(dg)
 
                     # hidden projection gradients
                     dh_i, dw_hi, db_hi = h_i_grad_fn(di_preact)
@@ -373,6 +377,213 @@ class LSTM(Module):
                         self.b_io.grad += db_io
 
                     dx[:, t] = dx_i + dx_f + dx_g + dx_o
+                return dx
+
+            self._backward = _backward
+
+        return h if self.return_sequence else h[:, -1]
+
+
+class GRU(Module):
+    """Gated Recurrent Unit module (following the PyTorch implementation)."""
+
+    def __init__(
+        self,
+        in_channels: int,
+        h_channels: int,
+        bias: bool = True,
+        activation: Literal["relu", "tanh"] = "tanh",
+        return_sequence: bool = True,
+        dtype: _DtypeLike = Dtype.FLOAT32,
+        label: Optional[str] = None,
+        training: bool = False,
+    ) -> None:
+        """Gated Recurrent Unit module (following the PyTorch implementation).
+        Input: (B, T, Cin)
+            B ... batch, T ... time, Cin ... input channels
+        Output: (B, T, Ch) if return_sequence=True else (B, Ch)
+            B ... batch, T ... time, Ch ... hidden channels
+
+        Parameters
+        ----------
+        in_channels: int
+            Number of input channels.
+        h_channels: int
+            Number of hidden channels.
+        bias: bool, optional
+            Whether to use bias values, by default True.
+        activation: Literal["relu", "tanh"], optional
+            Activation function to use, by default "tanh".
+        return_sequence: bool, optional
+            Whether to return the entire sequence or only the last hidden state.
+        dtype: DtypeLike, optional
+            Datatype of weights and biases, by default Dtype.FLOAT32.
+        label: str, optional
+            Module label.
+        training: bool, optional
+            Whether the module should be in training mode, by default False.
+        """
+        super().__init__(label, training)
+        self.in_channels = in_channels
+        self.h_channels = h_channels
+        self.bias = bias
+        self.activation = relu if activation == "relu" else tanh
+        self.return_sequence = return_sequence
+        self.dtype = Dtype(dtype)
+
+        k = h_channels**-0.5
+
+        # init input weights and biases
+        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ir")
+        self.b_ir = Parameter(zeros((h_channels,), dtype), label="lstm_b_ir") if bias else None
+        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_iz")
+        self.b_iz = Parameter(zeros((h_channels,), dtype), label="lstm_b_iz") if bias else None
+        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_in")
+        self.b_in = Parameter(zeros((h_channels,), dtype), label="lstm_b_in") if bias else None
+
+        # init hidden weights and biases
+        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hr")
+        self.b_hr = Parameter(zeros((h_channels,), dtype), label="lstm_b_hr") if bias else None
+        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hz")
+        self.b_hz = Parameter(zeros((h_channels,), dtype), label="lstm_b_hz") if bias else None
+        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hn")
+        self.b_hn = Parameter(zeros((h_channels,), dtype), label="lstm_b_hn") if bias else None
+
+    def forward(self, x: Tensor):
+        self._check_dims(x, [3])
+        x = x.as_type(self.dtype)
+
+        grad_functions = []
+        r = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        z = empty_like(r)
+        n = empty_like(r)
+        h_n = empty_like(r)
+        h = zeros_like(r)
+
+        # iterate over timesteps
+        for t in range(x.shape[1]):
+
+            # input projection W_i * x_t + b_i
+            x_t = x[:, t]
+            x_r, x_r_grad_fn = linear(x_t, self.w_ir, self.b_ir, self._training)
+            x_z, x_z_grad_fn = linear(x_t, self.w_iz, self.b_iz, self._training)
+            x_n, x_n_grad_fn = linear(x_t, self.w_in, self.b_in, self._training)
+
+            # hidden projection W_h * h_t-1 + b_h
+            h_tprev = h[:, t - 1]
+            h_r, h_r_grad_fn = linear(h_tprev, self.w_hr, self.b_hr, self._training)
+            h_z, h_z_grad_fn = linear(h_tprev, self.w_hz, self.b_hz, self._training)
+            h_n[:, t], h_n_grad_fn = linear(h_tprev, self.w_hn, self.b_hn, self._training)
+
+            # gates
+            r[:, t], r_grad_fn = sigmoid(x_r + h_r, self._training)  # reset gate
+            z[:, t], z_grad_fn = sigmoid(x_z + h_z, self._training)  # update gate
+
+            # candidate hidden state n_t = act(x_n + r_t * h_t-1)
+            n[:, t], n_grad_fn = self.activation(x_n + r[:, t] * h_n[:, t], self._training)
+
+            # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
+            h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]
+
+            # remember gradient functions
+            if self._training:
+                grad_functions_t = (
+                    x_r_grad_fn,
+                    x_z_grad_fn,
+                    x_n_grad_fn,
+                    h_r_grad_fn,
+                    h_z_grad_fn,
+                    h_n_grad_fn,
+                    r_grad_fn,
+                    z_grad_fn,
+                    n_grad_fn,
+                )
+                grad_functions.append(grad_functions_t)
+
+        if self._training:
+
+            def _backward(dy: Tensor) -> Tensor:
+                dy = dy.as_type(self.dtype)
+                dx = empty_like(x)
+                dh = 0
+
+                # iterate backwards over timesteps
+                for t in range(x.shape[1] - 1, -1, -1):
+
+                    # load gradient functions
+                    (
+                        x_r_grad_fn,
+                        x_z_grad_fn,
+                        x_n_grad_fn,
+                        h_r_grad_fn,
+                        h_z_grad_fn,
+                        h_n_grad_fn,
+                        r_grad_fn,
+                        z_grad_fn,
+                        n_grad_fn,
+                    ) = grad_functions[t]
+
+                    # add output gradients if returning sequence or last time step
+                    if self.return_sequence:
+                        dh += dy[:, t]
+                    elif t == x.shape[1] - 1:
+                        dh += dy
+
+                    # hidden state gradients
+                    dz = ((h[:, t - 1] if t > 0 else 0) - n[:, t]) * dh
+                    dn = (1 - z[:, t]) * dh
+                    dh = z[:, t] * dh
+
+                    # candidate hidden state gradients
+                    dn_preact = n_grad_fn(dn)
+                    dr = h_n[:, t] * dn_preact
+
+                    # gate gradients
+                    dr_preact = r_grad_fn(dr)
+                    dz_preact = z_grad_fn(dz)
+
+                    # hidden projection gradients
+                    dh_r, dw_hr, db_hr = h_r_grad_fn(dr_preact)
+
+                    if t > 0 and self.w_hr.requires_grad:
+                        self.w_hr.grad += dw_hr
+                    if self.b_hr is not None and self.b_hr.requires_grad:
+                        self.b_hr.grad += db_hr
+
+                    dh_z, dw_hz, db_hz = h_z_grad_fn(dz_preact)
+                    if t > 0 and self.w_hz.requires_grad:
+                        self.w_hz.grad += dw_hz
+                    if self.b_hz is not None and self.b_hz.requires_grad:
+                        self.b_hz.grad += db_hz
+
+                    dh_n, dw_hn, db_hn = h_n_grad_fn(r[:, t] * dn_preact)
+                    if t > 0 and self.w_hn.requires_grad:
+                        self.w_hn.grad += dw_hn
+                    if self.b_hn is not None and self.b_hn.requires_grad:
+                        self.b_hn.grad += db_hn
+
+                    dh += dh_r + dh_z + dh_n
+
+                    # input projection gradients
+                    dx_r, dw_ir, db_ir = x_r_grad_fn(dr_preact)
+                    if self.w_ir.requires_grad:
+                        self.w_ir.grad += dw_ir
+                    if self.b_ir is not None and self.b_ir.requires_grad:
+                        self.b_ir.grad += db_ir
+
+                    dx_z, dw_iz, db_iz = x_z_grad_fn(dz_preact)
+                    if self.w_iz.requires_grad:
+                        self.w_iz.grad += dw_iz
+                    if self.b_iz is not None and self.b_iz.requires_grad:
+                        self.b_iz.grad += db_iz
+
+                    dx_n, dw_in, db_in = x_n_grad_fn(dn_preact)
+                    if self.w_in.requires_grad:
+                        self.w_in.grad += dw_in
+                    if self.b_in is not None and self.b_in.requires_grad:
+                        self.b_in.grad += db_in
+
+                    dx[:, t] = dx_r + dx_z + dx_n
                 return dx
 
             self._backward = _backward

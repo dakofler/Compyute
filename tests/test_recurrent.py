@@ -2,14 +2,13 @@
 
 import torch
 
-from compyute.nn import LSTM, Recurrent, Sequential
+from compyute.nn import GRU, LSTM, Recurrent, Sequential
 from compyute.tensor_functions.combining import concatenate, split
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Ch, X = (10, 20, 30, 40)
 
 
-# Recurrent
 def test_recurrent() -> None:
     """Test for the recurrent layer."""
     shape_x = (B, X, Cin)
@@ -61,7 +60,7 @@ def test_recurrent() -> None:
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0][:, -1]  # ouputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
@@ -80,7 +79,6 @@ def test_recurrent() -> None:
     assert is_equal(layers[1].b_h.grad, torch_module.bias_hh_l1.grad)
 
 
-# LSTM
 def test_lstm() -> None:
     """Test for the lstm layer."""
     shape_x = (B, X, Cin)
@@ -174,7 +172,7 @@ def test_lstm() -> None:
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0][:, -1]  # ouputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
@@ -220,5 +218,140 @@ def test_lstm() -> None:
 
     compyute_b_h_2_grad = concatenate(
         [compyute_b_hi_2.grad, compyute_b_hf_2.grad, compyute_b_hg_2.grad, compyute_b_ho_2.grad], 0
+    )
+    assert is_equal(compyute_b_h_2_grad, torch_module.bias_hh_l1.grad)
+
+
+def test_gru() -> None:
+    """Test for the gru layer."""
+    shape_x = (B, X, Cin)
+    shape_w_i_1 = (3 * Ch, Cin)
+    shape_b_i_1 = (3 * Ch,)
+    shape_w_h_1 = (3 * Ch, Ch)
+    shape_b_h_1 = (3 * Ch,)
+    shape_w_i_2 = (3 * Ch, Ch)
+    shape_b_i_2 = (3 * Ch,)
+    shape_w_h_2 = (3 * Ch, Ch)
+    shape_b_h_2 = (3 * Ch,)
+
+    # init parameters
+    # layer 1 input
+    compyute_w_i_1, torch_w_i_1 = get_random_params(shape_w_i_1)
+    compyute_w_ir_1, compyute_w_iz_1, compyute_w_in_1 = split(compyute_w_i_1, 3, 0)
+    compyute_b_i_1, torch_b_i_1 = get_random_params(shape_b_i_1)
+    compyute_b_ir_1, compyute_b_iz_1, compyute_b_in_1 = split(compyute_b_i_1, 3, 0)
+
+    # layer 1 hidden
+    compyute_w_h_1, torch_w_h_1 = get_random_params(shape_w_h_1)
+    compyute_w_hr_1, compyute_w_hz_1, compyute_w_hn_1 = split(compyute_w_h_1, 3, 0)
+    compyute_b_h_1, torch_b_h_1 = get_random_params(shape_b_h_1)
+    compyute_b_hr_1, compyute_b_hz_1, compyute_b_hn_1 = split(compyute_b_h_1, 3, 0)
+
+    # layer 2 input
+    compyute_w_i_2, torch_w_i_2 = get_random_params(shape_w_i_2)
+    compyute_w_ir_2, compyute_w_iz_2, compyute_w_in_2 = split(compyute_w_i_2, 3, 0)
+    compyute_b_i_2, torch_b_i_2 = get_random_params(shape_b_i_2)
+    compyute_b_ir_2, compyute_b_iz_2, compyute_b_in_2 = split(compyute_b_i_2, 3, 0)
+
+    # layer 2 hidden
+    compyute_w_h_2, torch_w_h_2 = get_random_params(shape_w_h_2)
+    compyute_w_hr_2, compyute_w_hz_2, compyute_w_hn_2 = split(compyute_w_h_2, 3, 0)
+    compyute_b_h_2, torch_b_h_2 = get_random_params(shape_b_h_2)
+    compyute_b_hr_2, compyute_b_hz_2, compyute_b_hn_2 = split(compyute_b_h_2, 3, 0)
+
+    # init compyute module
+    compyute_module = Sequential(
+        GRU(Cin, Ch, training=True),
+        GRU(Ch, Ch, training=True, return_sequence=False),
+        training=True,
+    )
+    compyute_module.modules[0].w_ir = compyute_w_ir_1
+    compyute_module.modules[0].b_ir = compyute_b_ir_1
+    compyute_module.modules[0].w_iz = compyute_w_iz_1
+    compyute_module.modules[0].b_iz = compyute_b_iz_1
+    compyute_module.modules[0].w_in = compyute_w_in_1
+    compyute_module.modules[0].b_in = compyute_b_in_1
+
+    compyute_module.modules[0].w_hr = compyute_w_hr_1
+    compyute_module.modules[0].b_hr = compyute_b_hr_1
+    compyute_module.modules[0].w_hz = compyute_w_hz_1
+    compyute_module.modules[0].b_hz = compyute_b_hz_1
+    compyute_module.modules[0].w_hn = compyute_w_hn_1
+    compyute_module.modules[0].b_hn = compyute_b_hn_1
+
+    compyute_module.modules[1].w_ir = compyute_w_ir_2
+    compyute_module.modules[1].b_ir = compyute_b_ir_2
+    compyute_module.modules[1].w_iz = compyute_w_iz_2
+    compyute_module.modules[1].b_iz = compyute_b_iz_2
+    compyute_module.modules[1].w_in = compyute_w_in_2
+    compyute_module.modules[1].b_in = compyute_b_in_2
+
+    compyute_module.modules[1].w_hr = compyute_w_hr_2
+    compyute_module.modules[1].b_hr = compyute_b_hr_2
+    compyute_module.modules[1].w_hz = compyute_w_hz_2
+    compyute_module.modules[1].b_hz = compyute_b_hz_2
+    compyute_module.modules[1].w_hn = compyute_w_hn_2
+    compyute_module.modules[1].b_hn = compyute_b_hn_2
+
+    # init torch module
+    torch_module = torch.nn.GRU(Cin, Ch, batch_first=True, num_layers=2)
+    torch_module.weight_ih_l0 = torch_w_i_1
+    torch_module.bias_ih_l0 = torch_b_i_1
+    torch_module.weight_hh_l0 = torch_w_h_1
+    torch_module.bias_hh_l0 = torch_b_h_1
+    torch_module.weight_ih_l1 = torch_w_i_2
+    torch_module.bias_ih_l1 = torch_b_i_2
+    torch_module.weight_hh_l1 = torch_w_h_2
+    torch_module.bias_hh_l1 = torch_b_h_2
+
+    # forward
+    compyute_x, torch_x = get_random_floats(shape_x)
+    compyute_y = compyute_module(compyute_x)
+    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
+    assert is_equal(compyute_y, torch_y)
+
+    # backward
+    compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
+    compyute_dx = compyute_module.backward(compyute_dy)
+    torch_y.backward(torch_dy)
+    assert is_equal(compyute_dx, torch_x.grad)
+
+    compyute_w_i_1_grad = concatenate(
+        [compyute_w_ir_1.grad, compyute_w_iz_1.grad, compyute_w_in_1.grad], 0
+    )
+    assert is_equal(compyute_w_i_1_grad, torch_module.weight_ih_l0.grad)
+
+    compyute_b_i_1_grad = concatenate(
+        [compyute_b_ir_1.grad, compyute_b_iz_1.grad, compyute_b_in_1.grad], 0
+    )
+    assert is_equal(compyute_b_i_1_grad, torch_module.bias_ih_l0.grad)
+
+    compyute_w_h_1_grad = concatenate(
+        [compyute_w_hr_1.grad, compyute_w_hz_1.grad, compyute_w_hn_1.grad], 0
+    )
+    assert is_equal(compyute_w_h_1_grad, torch_module.weight_hh_l0.grad)
+
+    compyute_b_h_1_grad = concatenate(
+        [compyute_b_hr_1.grad, compyute_b_hz_1.grad, compyute_b_hn_1.grad], 0
+    )
+    assert is_equal(compyute_b_h_1_grad, torch_module.bias_hh_l0.grad)
+
+    compyute_w_i_2_grad = concatenate(
+        [compyute_w_ir_2.grad, compyute_w_iz_2.grad, compyute_w_in_2.grad], 0
+    )
+    assert is_equal(compyute_w_i_2_grad, torch_module.weight_ih_l1.grad)
+
+    compyute_b_i_2_grad = concatenate(
+        [compyute_b_ir_2.grad, compyute_b_iz_2.grad, compyute_b_in_2.grad], 0
+    )
+    assert is_equal(compyute_b_i_2_grad, torch_module.bias_ih_l1.grad)
+
+    compyute_w_h_2_grad = concatenate(
+        [compyute_w_hr_2.grad, compyute_w_hz_2.grad, compyute_w_hn_2.grad], 0
+    )
+    assert is_equal(compyute_w_h_2_grad, torch_module.weight_hh_l1.grad)
+
+    compyute_b_h_2_grad = concatenate(
+        [compyute_b_hr_2.grad, compyute_b_hz_2.grad, compyute_b_hn_2.grad], 0
     )
     assert is_equal(compyute_b_h_2_grad, torch_module.bias_hh_l1.grad)
