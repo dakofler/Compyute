@@ -16,7 +16,34 @@ __all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBl
 
 
 class DenseBlock(Sequential):
-    """Dense neural network block containing a linear layer and an activation function."""
+    """Dense neural network block.
+
+    Input: (B, ... , Cin)
+        B ... batch, Cin ... input channels
+    Output: (B, ... , Co)
+        B ... batch, Co ... output channels
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input features.
+    out_channels : int
+        Number of output channels (neurons) of the dense block.
+    activation : _ActivationLike
+        Activation function to use in the dense block.
+    weight_init : _InitializerLike, optional
+        What method to use for initializing weight parameters, by default "xavier_uniform".
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    bias_init : _InitializerLike, optional
+        What method to use for initializing bias parameters, by default "zeros".
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -30,33 +57,6 @@ class DenseBlock(Sequential):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Dense neural network block.
-        Input: (B, ... , Cin)
-            B ... batch, Cin ... input channels
-        Output: (B, ... , Co)
-            B ... batch, Co ... output channels
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input features.
-        out_channels : int
-            Number of output channels (neurons) of the dense block.
-        activation: _ActivationLike
-            Activation function to use in the dense block.
-        weight_init: _InitializerLike, optional
-            What method to use for initializing weight parameters, by default "xavier_uniform".
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        bias_init: _InitializerLike, optional
-            What method to use for initializing bias parameters, by default "zeros".
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         linear = Linear(in_channels, out_channels, bias, dtype, training=training)
 
         w_init = get_initializer(weight_init, dtype, activation)
@@ -70,7 +70,48 @@ class DenseBlock(Sequential):
 
 
 class Convolution1dBlock(Sequential):
-    """Convolution 1d block containing a 1d convolutional layer and an activation function."""
+    """Convolution 1d block containing a 1d convolutional layer and an activation function.
+
+    Input: (B, Ci, Ti)
+        B ... batch, Ci ... input channels, Ti ... input time
+    Output: (B, Co, To)
+        B ... batch, Co ... output channels, To ... output time
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    out_channels : int
+        Number of output channels (filters).
+    kernel_size : int
+        Size of each kernel.
+    activation : _ActivationLike
+        Activation function to use in the dense block.
+    padding : Literal["same", "valid"], optional
+        Padding applied before convolution, by default "valid".
+    stride : int, optional
+        Stride used for the convolution operation, by default 1.
+    dilation : int, optional
+        Dilation used for each axis of the filter, by default 1.
+    weight_init : _InitializerLike, optional
+        What method to use for initializing weight parameters, by default "xavier_uniform".
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    bias_init : _InitializerLike, optional
+        What method to use for initializing bias parameters, by default "zeros".
+    batchnorm : bool, optional
+        Whether to use batch normalization, by default False.
+    batchnorm_eps : float, optional
+        Constant for numerical stability used in batch normalization, by default 1e-5.
+    batchnorm_m : float, optional
+        Momentum used in batch normalization, by default 0.1.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -91,47 +132,6 @@ class Convolution1dBlock(Sequential):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Convolution 1d block containing a 1d convolutional layer and an activation function.
-        Input: (B, Ci, Ti)
-            B ... batch, Ci ... input channels, Ti ... input time
-        Output: (B, Co, To)
-            B ... batch, Co ... output channels, To ... output time
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input channels.
-        out_channels : int
-            Number of output channels (filters).
-        kernel_size : int
-            Size of each kernel.
-        activation: _ActivationLike
-            Activation function to use in the dense block.
-        padding: Literal["same", "valid"], optional
-            Padding applied before convolution, by default "valid".
-        stride : int, optional
-            Stride used for the convolution operation, by default 1.
-        dilation : int, optional
-            Dilation used for each axis of the filter, by default 1.
-        weight_init: _InitializerLike, optional
-            What method to use for initializing weight parameters, by default "xavier_uniform".
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        bias_init: _InitializerLike, optional
-            What method to use for initializing bias parameters, by default "zeros".
-        batchnorm : bool, optional
-            Whether to use batch normalization, by default False.
-        batchnorm_eps : float, optional
-            Constant for numerical stability used in batch normalization, by default 1e-5.
-        batchnorm_m : float, optional
-            Momentum used in batch normalization, by default 0.1.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         conv = Convolution1d(
             in_channels,
             out_channels,
@@ -159,7 +159,48 @@ class Convolution1dBlock(Sequential):
 
 
 class Convolution2dBlock(Sequential):
-    """Convolution 2d block containing a 2d convolutional layer and an activation function."""
+    """Convolution 2d block containing a 2d convolutional layer and an activation function.
+
+    Input: (B, Ci, Yi, Xi)
+        B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
+    Output: (B, Co, Yo, Xo)
+        B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels (color channels).
+    out_channels : int
+        Number of output channels (filters).
+    kernel_size : int, optional
+        Size of each kernel, by default 3.
+    activation : _ActivationLike
+        Activation function to use in the dense block.
+    padding : Literal["same", "valid"], optional
+        Padding applied before convolution, by default "valid".
+    stride : int , optional
+        Strides used for the convolution operation, by default 1.
+    dilation : int , optional
+        Dilations used for each axis of the filter, by default 1.
+    weight_init : _InitializerLike, optional
+        What method to use for initializing weight parameters, by default "xavier_uniform".
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    bias_init : _InitializerLike, optional
+        What method to use for initializing bias parameters, by default "zeros".
+    batchnorm : bool, optional
+        Whether to use batch normalization, by default False.
+    batchnorm_eps : float, optional
+        Constant for numerical stability used in batch normalization, by default 1e-5.
+    batchnorm_m : float, optional
+        Momentum used in batch normalization, by default 0.1.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -180,47 +221,6 @@ class Convolution2dBlock(Sequential):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Convolution 2d block containing a 2d convolutional layer and an activation function.
-        Input: (B, Ci, Yi, Xi)
-            B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
-        Output: (B, Co, Yo, Xo)
-            B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input channels (color channels).
-        out_channels : int
-            Number of output channels (filters).
-        kernel_size : int, optional
-            Size of each kernel, by default 3.
-        activation: _ActivationLike
-            Activation function to use in the dense block.
-        padding: Literal["same", "valid"], optional
-            Padding applied before convolution, by default "valid".
-        stride : int , optional
-            Strides used for the convolution operation, by default 1.
-        dilation : int , optional
-            Dilations used for each axis of the filter, by default 1.
-        weight_init: _InitializerLike, optional
-            What method to use for initializing weight parameters, by default "xavier_uniform".
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        bias_init: _InitializerLike, optional
-            What method to use for initializing bias parameters, by default "zeros".
-        batchnorm : bool, optional
-            Whether to use batch normalization, by default False.
-        batchnorm_eps : float, optional
-            Constant for numerical stability used in batch normalization, by default 1e-5.
-        batchnorm_m : float, optional
-            Momentum used in batch normalization, by default 0.1.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         conv = Convolution2d(
             in_channels,
             out_channels,
@@ -250,7 +250,20 @@ class Convolution2dBlock(Sequential):
 
 
 class ResidualBlock(ParallelAdd):
-    """Residual block implementing a residual connection bypassing a block of modules."""
+    """Residual block implementing a residual connection bypassing a block of modules.
+
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the residual block.
+    residual_projection : Module, optional
+        Module used for a linear projection to achieve matching dimensions, by default None.
+        If none is provided, the identity function is used.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -259,20 +272,6 @@ class ResidualBlock(ParallelAdd):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Residual block implementing a residual connection bypassing a block of modules.
-
-        Parameters
-        ----------
-        *modules : Module
-            Modules used in the residual block.
-        residual_projection: Module, optional
-            Module used for a linear projection to achieve matching dimensions, by default None.
-            If none is provided, the identity function is used.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         proj = residual_proj if residual_proj is not None else Identity(training=training)
 
         if len(modules) == 1:

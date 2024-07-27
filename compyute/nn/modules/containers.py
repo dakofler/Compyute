@@ -17,22 +17,21 @@ __all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
 
 
 class Container(Module):
-    """Container base module."""
+    """Container base module.
+
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self, *modules: Module, label: Optional[str] = None, training: bool = False
     ) -> None:
-        """Container base module.
-
-        Parameters
-        ----------
-        *modules : Module
-            Modules used in the container.
-        label: str, optional
-            Container label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self._modules = list(modules) if len(modules) > 0 else None
 
@@ -133,7 +132,7 @@ class Container(Module):
 
         Parameters
         ----------
-        root_module: Module
+        root_module : Module
             Module to get the summary from.
         input_shape : _ShapeLike
             Shape of the model input ignoring the batch dimension.
@@ -211,7 +210,17 @@ class Container(Module):
 
 
 class Sequential(Container):
-    """Sequential container module. Layers are processed sequentially."""
+    """Modules are processed sequentially.
+
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         if not self.modules:
@@ -233,30 +242,29 @@ class Sequential(Container):
 
 
 class ParallelConcat(Container):
-    """Parallel container module. Inputs are processed in parallel, outputs are concatinated."""
+    """Modules are processed in parallel, outputs are concatenated.
+
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the parallel container.
+    concat_axis : int, optional
+        Axis along which the output of the parallel modules
+        shall be concatinated, by default -1.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
-        *args: Module,
+        *modules: Module,
         concat_axis: int = -1,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Parallel container module. Module output tensors are concatinated.
-
-        Parameters
-        ----------
-        *args : Module
-            Modules used in the parallel container.
-        concat_axis : int, optional
-            Axis along which the output of the parallel modules
-            shall be concatinated, by default -1.
-        label: str, optional
-            Container label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
-        super().__init__(*args, label=label, training=training)
+        super().__init__(*modules, label=label, training=training)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
@@ -279,8 +287,17 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Parallel container module.
-    Inputs are processed in parallel, outputs are added element-wise."""
+    """Modules are processed in parallel, outputs are summed element-wise.
+
+    Parameters
+    ----------
+    modules : Module
+        Modules used in the container.
+    label : str, optional
+        Container label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         if not self.modules:

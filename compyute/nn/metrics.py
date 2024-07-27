@@ -49,7 +49,7 @@ class R2(Metric):
             A model's predictions.
         y_true : Tensor
             Target values.
-        eps: float, optional
+        eps : float, optional
             Constant for numerical stability, by default 1e-8.
 
         Returns

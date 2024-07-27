@@ -12,7 +12,24 @@ __all__ = ["DataLoader"]
 
 
 class DataLoader:
-    """DataLoader to yield batched data for training and inference."""
+    """DataLoader to yield batched data for training and inference.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    y : Tensor, optional
+        Target tensor, by default None.
+    batch_size : int, optional
+        Size of returned batches, by default 1.
+    device : DeviceLike, optional
+        Device the tensors should be loaded to, by default Device.CPU.
+    shuffle_data : bool, optional
+        Whether to shuffle the data each time the dataloader is called, by default True.
+    drop_remaining : bool, optional
+        Whether to drop data, that remains when the number of samples is not divisible by
+        the batch_size.
+    """
 
     def __init__(
         self,
@@ -23,24 +40,6 @@ class DataLoader:
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
-        """DataLoader to yield batched data for training and inference.
-
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
-        y : Tensor, optional
-            Target tensor, by default None.
-        batch_size : int, optional
-            Size of returned batches, by default 1.
-        device: DeviceLike, optional
-            Device the tensors should be loaded to, by default Device.CPU.
-        shuffle_data : bool, optional
-            Whether to shuffle the data each time the dataloader is called, by default True.
-        drop_remaining: bool, optional
-            Whether to drop data, that remains when the number of samples is not divisible by
-            the batch_size.
-        """
         self.x = x
         self.y = y
         self.batch_size = batch_size
@@ -101,11 +100,11 @@ def batched(
     ----------
     batch_size : int, optional
         Size of returned batches, by default 1.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         Device the tensors should be loaded to, by default Device.CPU.
     shuffle_data : bool, optional
         Whether to shuffle the data each time the dataloader is called, by default True.
-    drop_remaining: bool, optional
+    drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
         the batch_size.
     """

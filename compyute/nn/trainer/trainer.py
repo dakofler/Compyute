@@ -15,7 +15,21 @@ __all__ = ["Trainer"]
 
 
 class Trainer:
-    """Neural network model trainer."""
+    """Neural network model trainer.
+
+    Parameters
+    ----------
+    model : Module
+        Model to be trained.
+    optimizer : _OptimizerLike
+        Optimizer algorithm used to update model parameters.
+    loss : _LossLike
+        Loss function used to evaluate the model.
+    metric : _MetricLike, optional
+        Metric function used to evaluate the model, by default None.
+    callbacks : list[Callback], optional
+        Callback functions to be executed during training, by default None.
+    """
 
     def __init__(
         self,
@@ -25,21 +39,6 @@ class Trainer:
         metric: Optional[_MetricLike] = None,
         callbacks: Optional[list[Callback]] = None,
     ) -> None:
-        """Neural network model trainer.
-
-        Parameters
-        ----------
-        model : Module
-            Model to be trained.
-        optimizer : _OptimizerLike
-            Optimizer algorithm used to update model parameters.
-        loss : _LossLike
-            Loss function used to evaluate the model.
-        metric : _MetricLike, optional
-            Metric function used to evaluate the model, by default None.
-        callbacks : list[Callback], optional
-            Callback functions to be executed during training, by default None.
-        """
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)

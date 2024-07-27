@@ -39,9 +39,9 @@ def arange(
         Start value, by default 0.
     step : int | float, optional
         Spacing between values, by default 1.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -71,9 +71,9 @@ def linspace(
         Stop value.
     num : int
         Number of samples.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -92,11 +92,11 @@ def empty(
 
     Parameters
     ----------
-    shape: ShapeLike
+    shape : ShapeLike
         Shape of the new tensor.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -115,11 +115,11 @@ def zeros(
 
     Parameters
     ----------
-    shape: ShapeLike
+    shape : ShapeLike
         Shape of the new tensor.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -138,11 +138,11 @@ def ones(
 
     Parameters
     ----------
-    shape: ShapeLike
+    shape : ShapeLike
         Shape of the new tensor.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -164,13 +164,13 @@ def full(
 
     Parameters
     ----------
-    shape: ShapeLike
+    shape : ShapeLike
         Shape of the new tensor.
-    value: ScalarLike
+    value : ScalarLike
         Value to fill the tensor.
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -237,7 +237,7 @@ def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
     ----------
     x : Tensor
         Tensor whose shape, dtype and device is used.
-    value: ScalarLike
+    value : ScalarLike
         Value to fill the tensor.
 
     Returns
@@ -255,11 +255,11 @@ def identity(
 
     Parameters
     ----------
-    n: int
+    n : int
         Size of the new tensor. The shape will be (n, n).
-    dtype: DtypeLike, optional
+    dtype : DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: DeviceLike, optional
+    device : DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns

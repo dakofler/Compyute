@@ -50,19 +50,19 @@ def normal(
     dtype: Optional[_DtypeLike] = None,
     device: _DeviceLike = Device.CPU,
 ) -> Tensor:
-    """Returns a tensor with values drawn from a normal distribution.
+    """Creates a tensor with values drawn from a normal distribution.
 
     Parameters
     ----------
-    _ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
     mean : float, optional
         Mean of random values, by default 0.
     std : float, optional
         Standard deviation of random values, by default 1.
-    dtype: _DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: _DeviceLike, optional
+    device : _DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -81,19 +81,19 @@ def uniform(
     dtype: Optional[_DtypeLike] = None,
     device: _DeviceLike = Device.CPU,
 ) -> Tensor:
-    """Returns a tensor with values drawn from a uniform distribution.
+    """Creates a tensor with values drawn from a uniform distribution.
 
     Parameters
     ----------
-    _ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
     low : float, optional
         Lower bound for random values, by default 0.
     high : float, optional
         Upper bound for random values, by default 1.
-    dtype: _DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: _DeviceLike, optional
+    device : _DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -112,19 +112,19 @@ def uniform_int(
     dtype: Optional[_DtypeLike] = None,
     device: _DeviceLike = Device.CPU,
 ) -> Tensor:
-    """Returns a tensor with integer values drawn from a discrete uniform distribution.
+    """Creates a tensor with integer values drawn from a discrete uniform distribution.
 
     Parameters
     ----------
-    _ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
     low : int
         Lower bound for random values.
     high : int
         Upper bound for random values.
-    dtype: _DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: _DeviceLike, optional
+    device : _DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -145,9 +145,9 @@ def permutation(
     ----------
     n : int
         Length of the permuted range.
-    dtype: _DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of the tensor data, by default None.
-    device: _DeviceLike, optional
+    device : _DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns
@@ -191,7 +191,7 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) ->
         Probability of success.
     shape : _ShapeLike
         Shape of the new tensor.
-    device: _DeviceLike, optional
+    device : _DeviceLike, optional
         The device the tensor is stored on, by default Device.CPU.
 
     Returns

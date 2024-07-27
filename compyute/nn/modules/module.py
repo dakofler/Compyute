@@ -16,11 +16,17 @@ __all__ = ["Module", "save_module", "load_module"]
 
 
 class Module(ABC):
-    """Neural network module."""
+    """Neural network base module.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
-        """Neural network module."""
-
         self.label = label if label is not None else self.__class__.__name__
         self._training: bool = training
 
@@ -234,9 +240,24 @@ class Module(ABC):
         vdims = ", ".join(str(d) for d in valid_dims)
         raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
 
+    @staticmethod
+    def _update_parameter_grad(parameter: Optional[Parameter], grad: Optional[Tensor]) -> None:
+        """Updates the parameter gradients."""
+        if parameter is None or grad is None:
+            return
+        parameter.grad += grad
+
 
 class Identity(Module):
-    """Identity module."""
+    """Identity module.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         self._backward = lambda dy: dy

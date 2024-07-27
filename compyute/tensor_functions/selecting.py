@@ -13,7 +13,7 @@ def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) 
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : Optional[AxisLike] = None
         Axes, along which the maximum value is located, by default None.
@@ -35,7 +35,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     d : int, optional
         Index of the diagonal, by default 0.
@@ -57,7 +57,7 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     d : int, optional
         Index of the diagonal, by default 0.
@@ -79,7 +79,7 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     d : int, optional
         Index of the diagonal, by default 0.

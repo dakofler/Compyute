@@ -9,7 +9,19 @@ __all__ = ["EarlyStopping"]
 
 
 class EarlyStopping(Callback):
-    """Early stopping."""
+    """Aborts the training process if the model stops improving.
+
+    Parameters
+    ----------
+    model : Module
+        Model to be trained.
+    patience : int, optional
+        Number of epocs without improvement, before the training is aborted, by default 3.
+    use_best_params : bool, optional
+        Whether to reset the model parameters to the best values found, by default True.
+    target : str, optional
+        Metric to consider, by default "loss".
+    """
 
     def __init__(
         self,
@@ -18,19 +30,6 @@ class EarlyStopping(Callback):
         use_best_params: bool = True,
         target: str = "loss",
     ) -> None:
-        """Aborts the training process if the model stops improving.
-
-        Parameters
-        ----------
-        model : Module
-            Model to be trained.
-        patience : int, optional
-            Number of epocs without improvement, before the training is aborted, by default 3.
-        use_best_params : bool, optional
-            Whether to reset the model parameters to the best values found, by default True.
-        target : str, optional
-            Metric to consider, by default "loss".
-        """
         self.model = model
         self.patience = patience
         self.use_best_params = use_best_params

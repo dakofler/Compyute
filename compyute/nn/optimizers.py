@@ -11,7 +11,17 @@ __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
 
 
 class Optimizer(ABC):
-    """Optimizer base class"""
+    """Optimizer base class.
+
+    Parameters
+    ----------
+    parameters : Iterator[Parameter], optional
+        Paramters to optimize, by default None.
+    lr : float, optional
+        Learning rate, by default 0.001.
+    grad_clip_value : float, optional
+        Clips the gradient of all parameter to the set value, by default None.
+    """
 
     def __init__(
         self,
@@ -48,7 +58,23 @@ class Optimizer(ABC):
 
 
 class SGD(Optimizer):
-    """Updates parameters using stochastic gradient descent."""
+    """Updates parameters using stochastic gradient descent (with momentum).
+
+    Parameters
+    ----------
+    parameters : Iterator[Parameter], optional
+        Paramters to optimize, by default None.
+    lr : float, optional
+        Learning rate, by default 0.001.
+    momentum : float, optional
+        Momentum factor, by default 0.
+    nesterov : bool, optional
+        Whether to use the neterov momentum algorithm, by default False.
+    weight_deyas : float, optional
+        Weight decay factor, by default 0.
+    grad_clip_value : float, optional
+        Clips the gradient of all parameter to the set value, by default None.
+    """
 
     def __init__(
         self,
@@ -59,23 +85,6 @@ class SGD(Optimizer):
         weight_decay: float = 0,
         grad_clip_value: Optional[float] = None,
     ) -> None:
-        """Updates parameters using stochastic gradient descent (with momentum).
-
-        Parameters
-        ----------
-        parameters : Iterator[Parameter], optional
-            Paramters to optimize, by default None.
-        lr : float, optional
-            Learning rate, by default 0.001.
-        momentum : float, optional
-            Momentum factor, by default 0.
-        nesterov : bool, optional
-            Whether to use the neterov momentum algorithm, by default False.
-        weight_deyas : float, optional
-            Weight decay factor, by default 0.
-        grad_clip_value : float, optional
-            Clips the gradient of all parameter to the set value, by default None.
-        """
         super().__init__(parameters, lr, grad_clip_value)
         self.momentum = momentum
         self.nesterov = nesterov
@@ -113,7 +122,25 @@ class SGD(Optimizer):
 
 class Adam(Optimizer):
     """Updates parameters following the Adam learning algorithm
-    as described by Kingma et al., 2014."""
+    as described by Kingma et al., 2014.
+
+    Parameters
+    ----------
+    parameters : Iterator[Parameter], optional
+        Paramters to optimize, by default None.
+    lr : float, optional
+        Learning rate, by default 0.001.
+    beta1 : float, optional
+        Exponential decay rate for the 1st momentum estimates, by default 0.9.
+    beta2 : float, optional
+        Exponential decay rate for the 2nd momentum estimates, by default 0.999.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-08.
+    weight_deyas : float, optional
+        Weight decay factor, by default 0.
+    grad_clip_value : float, optional
+        Clips the gradient of all parameter to the set value, by default None.
+    """
 
     def __init__(
         self,
@@ -125,26 +152,6 @@ class Adam(Optimizer):
         weight_decay: float = 0,
         grad_clip_value: Optional[float] = None,
     ) -> None:
-        """Updates parameters following the Adam learning algorithm
-        as described by Kingma et al., 2014.
-
-        Parameters
-        ----------
-        parameters : Iterator[Parameter], optional
-            Paramters to optimize, by default None.
-        lr : float, optional
-            Learning rate, by default 0.001.
-        beta1 : float, optional
-            Exponential decay rate for the 1st momentum estimates, by default 0.9.
-        beta2 : float, optional
-            Exponential decay rate for the 2nd momentum estimates, by default 0.999.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-08.
-        weight_deyas : float, optional
-            Weight decay factor, by default 0.
-        grad_clip_value : float, optional
-            Clips the gradient of all parameter to the set value, by default None.
-        """
         super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2
@@ -184,7 +191,25 @@ class Adam(Optimizer):
 
 
 class AdamW(Optimizer):
-    """Updates parameters following the AdamW learning algorithm."""
+    """Updates parameters following the AdamW learning algorithm.
+
+    Parameters
+    ----------
+    parameters : Iterator[Parameter], optional
+        Paramters to optimize, by default None.
+    lr : float, optional
+        Learning rate, by default 0.001.
+    beta1 : float, optional
+        Exponential decay rate for the 1st momentum estimates, by default 0.9.
+    beta2 : float, optional
+        Exponential decay rate for the 2nd momentum estimates, by default 0.999.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-08.
+    weight_decay : float, optional
+        Weight decay factor, by default 0.
+    grad_clip_value : float, optional
+        Clips the gradient of all parameter to the set value, by default None.
+    """
 
     def __init__(
         self,
@@ -196,25 +221,6 @@ class AdamW(Optimizer):
         weight_decay: float = 0.01,
         grad_clip_value: Optional[float] = None,
     ) -> None:
-        """Updates parameters following the AdamW learning algorithm.
-
-        Parameters
-        ----------
-        parameters : Iterator[Parameter], optional
-            Paramters to optimize, by default None.
-        lr : float, optional
-            Learning rate, by default 0.001.
-        beta1 : float, optional
-            Exponential decay rate for the 1st momentum estimates, by default 0.9.
-        beta2 : float, optional
-            Exponential decay rate for the 2nd momentum estimates, by default 0.999.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-08.
-        weight_decay : float, optional
-            Weight decay factor, by default 0.
-        grad_clip_value : float, optional
-            Clips the gradient of all parameter to the set value, by default None.
-        """
         super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2
@@ -252,7 +258,27 @@ class AdamW(Optimizer):
 
 
 class NAdam(Optimizer):
-    """Updates parameters following the NAdam learning algorithm."""
+    """Updates parameters following the NAdam learning algorithm.
+
+    Parameters
+    ----------
+    parameters : Iterator[Parameter], optional
+        Paramters to optimize, by default None.
+    lr : float, optional
+        Learning rate, by default 0.002.
+    beta1 : float, optional
+        Exponential decay rate for the 1st momentum estimates, by default 0.9.
+    beta2 : float, optional
+        Exponential decay rate for the 2nd momentum estimates, by default 0.999.
+    eps : float, optional
+        Constant for numerical stability, by default 1e-08.
+    weight_decay : float, optional
+        Weight decay factor, by default 0.
+    momentum_decay : float, optional
+        Momentum decay factor, by default 0.004.
+    grad_clip_value : float, optional
+        Clips the gradient of all parameter to the set value, by default None.
+    """
 
     def __init__(
         self,
@@ -265,27 +291,6 @@ class NAdam(Optimizer):
         momentum_decay: float = 0.004,
         grad_clip_value: Optional[float] = None,
     ) -> None:
-        """Updates parameters following the NAdam learning algorithm.
-
-        Parameters
-        ----------
-        parameters : Iterator[Parameter], optional
-            Paramters to optimize, by default None.
-        lr : float, optional
-            Learning rate, by default 0.002.
-        beta1 : float, optional
-            Exponential decay rate for the 1st momentum estimates, by default 0.9.
-        beta2 : float, optional
-            Exponential decay rate for the 2nd momentum estimates, by default 0.999.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-08.
-        weight_decay : float, optional
-            Weight decay factor, by default 0.
-        momentum_decay : float, optional
-            Momentum decay factor, by default 0.004.
-        grad_clip_value : float, optional
-            Clips the gradient of all parameter to the set value, by default None.
-        """
         super().__init__(parameters, lr, grad_clip_value)
         self.beta1 = beta1
         self.beta2 = beta2

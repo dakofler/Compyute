@@ -18,7 +18,7 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     values : Tensor
         Values to append.
@@ -57,7 +57,7 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     splits : int | list[int]
         `int`: tensor is split into n equally sized tensors.

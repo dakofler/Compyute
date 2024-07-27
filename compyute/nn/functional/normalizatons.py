@@ -34,19 +34,19 @@ def batchnorm1d(
     ----------
     x : Tensor
         Input tensor.
-    rmean: Tensor
+    rmean : Tensor
         Running mean tensor.
-    rvar: Tensor
+    rvar : Tensor
         Running variance tensor.
-    w: Tensor
+    w : Tensor
         Weight tensor for scaling the distribution.
-    b: Tensor
+    b : Tensor
         Bias tensor for shifting the distribution.
     m : float, optional
         Momentum used for running mean and variance computation, by default 0.1.
     eps : float, optional
         Constant for numerical stability, by default 1e-5.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -128,19 +128,19 @@ def batchnorm2d(
     ----------
     x : Tensor
         Input tensor.
-    rmean: Tensor
+    rmean : Tensor
         Running mean values.
-    rvar: Tensor
+    rvar : Tensor
         Running variance values.
-    w: Tensor
+    w : Tensor
         Weight tensor for scaling the distribution.
-    b: Tensor
+    b : Tensor
         Bias tensor for shifting the distribution.
     m : float, optional
         Momentum used for running mean and variance computation, by default 0.1.
     eps : float, optional
         Constant for numerical stability, by default 1e-5.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -216,13 +216,13 @@ def layernorm(
     ----------
     x : Tensor
         Input tensor.
-    w: Tensor
+    w : Tensor
         Weight tensor for scaling the distribution.
-    b: Tensor
+    b : Tensor
         Bias tensor for shifting the distribution.
     eps : float, optional
         Constant for numerical stability, by default 1e-5.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns

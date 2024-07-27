@@ -39,7 +39,7 @@ __all__ = [
 
 
 def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Sum of tensor elements over a given axis.
+    """Computes the sum of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
 
 def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Product of tensor elements over a given axis.
+    """Computes the product of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
 
 
 def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Mean of tensor elements over a given axis.
+    """Computes the mean of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -107,7 +107,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
 def var(
     x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False
 ) -> Tensor:
-    """Variance of tensor elements over a given axis.
+    """Computes the variance of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -132,7 +132,7 @@ def var(
 
 
 def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Standard deviation of tensor elements over a given axis.
+    """Computes the standard deviation of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -154,7 +154,7 @@ def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
 
 def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Minimum of tensor elements over a given axis.
+    """Computes the minimum of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -176,7 +176,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
 
 def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Maximum of tensor elements over a given axis.
+    """Computes the maximum of tensor elements over a given axis.
 
     Parameters
     ----------
@@ -198,7 +198,7 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
 
 
 def round(x: Tensor, decimals: int) -> Tensor:
-    """Rounds the value of tensor elements.
+    """Rounds tensor elements.
 
     Parameters
     ----------
@@ -210,73 +210,211 @@ def round(x: Tensor, decimals: int) -> Tensor:
     Returns
     -------
     Tensor
-        Tensor containing the rounded values.
+        Tensor containing rounded elements.
     """
     return Tensor(x.data.round(decimals))
 
 
 def exp(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise exponential values."""
+    """Computes the element-wise exponential of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise exponential.
+    """
     return Tensor(get_engine(x.device).exp(x.data))
 
 
 def log(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise log values."""
+    """Computes the element-wise natural log of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise natural log.
+    """
     return Tensor(get_engine(x.device).log(x.data))
 
 
 def log10(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise log base 10 values."""
+    """Computes the element-wise log base 10 of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise log base 10.
+    """
     return Tensor(get_engine(x.device).log10(x.data))
 
 
 def log2(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise log base 2 values."""
+    """Computes the element-wise log base 2 of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise log base 2.
+    """
     return Tensor(get_engine(x.device).log2(x.data))
 
 
 def sin(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise sine values."""
+    """Computes the element-wise sine of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise sine.
+    """
     return Tensor(get_engine(x.device).sin(x.data))
 
 
 def sinh(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise hyperbolic sine values."""
+    """Computes the element-wise hyperbolic sine of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise hyperbolic sine.
+    """
     return Tensor(get_engine(x.device).sinh(x.data))
 
 
 def cos(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise cosine values."""
+    """Computes the element-wise cosine of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise cosine.
+    """
     return Tensor(get_engine(x.device).cos(x.data))
 
 
 def cosh(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise hyperbolic cosine values."""
+    """Computes the element-wise hyperbolic cosine of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise hyperbolic cosine.
+    """
     return Tensor(get_engine(x.device).cosh(x.data))
 
 
 def tan(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise tangent values."""
+    """Computes the element-wise tangent of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    """
     return Tensor(get_engine(x.device).tan(x.data))
 
 
 def tanh_(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise hyperbolic tangent values."""
+    """Computes the element-wise hyperbolic tangent of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise hyperbolic tangent.
+    """
     return Tensor(get_engine(x.device).tanh(x.data))
 
 
 def sech(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the element-wise hyperbolic secant values."""
+    """Computes the element-wise secant of a tensor..
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise secant.
+    """
     return cosh(x) ** -1
 
 
 def abs(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the absolute values."""
+    """Computes the element-wise absolute value of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise absolute value.
+    """
     return Tensor(get_engine(x.device).abs(x.data))
 
 
 def sqrt(x: Tensor) -> Tensor:
-    """Returns a new tensor containing the square root values."""
+    """Computes the element-wise square root of a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise square root.
+    """
     return Tensor(get_engine(x.device).sqrt(x.data))
 
 
@@ -286,7 +424,7 @@ def fft1d(
     axis: int = -1,
     dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
-    """Computes the 1D Fast Fourier Transform over a specified axis.
+    """Computes the 1D Fast Fourier Transform over a given axis.
 
     Parameters
     ----------
@@ -302,7 +440,7 @@ def fft1d(
     Returns
     -------
     Tensor
-        Complex tensor.
+        Complex tensor containing the 1D FFT.
     """
     return tensor(
         get_engine(x.device).fft.fft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
@@ -315,7 +453,7 @@ def ifft1d(
     axis: int = -1,
     dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
-    """Computes the inverse 1D Fast Fourier Transform over a specified axis.
+    """Computes the inverse 1D Fast Fourier Transform over a given axis.
 
     Parameters
     ----------
@@ -331,7 +469,7 @@ def ifft1d(
     Returns
     -------
     Tensor
-        Float tensor.
+        Float tensor containing the inverse 1D FFT.
     """
     return tensor(
         get_engine(x.device).fft.ifft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
@@ -344,7 +482,7 @@ def fft2d(
     axes: tuple[int, int] = (-2, -1),
     dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
-    """Computes the 2D Fast Fourier Transform over two specified axes.
+    """Computes the 2D Fast Fourier Transform over given axes.
 
     Parameters
     ----------
@@ -360,7 +498,7 @@ def fft2d(
     Returns
     -------
     Tensor
-        Complex tensor.
+        Complex tensor containing the 2D FFT.
     """
     return tensor(
         get_engine(x.device).fft.fft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
@@ -373,7 +511,7 @@ def ifft2d(
     axes: tuple[int, int] = (-2, -1),
     dtype: Optional[_DtypeLike] = None,
 ) -> Tensor:
-    """Applies the inverse 1D Fast Fourier Transform to the tensor.
+    """Computes the inverse 2D Fast Fourier Transform over given axes.
 
     Parameters
     ----------
@@ -389,7 +527,7 @@ def ifft2d(
     Returns
     -------
     Tensor
-        Complex tensor.
+        Float tensor containing the inverse 2D FFT.
     """
     return tensor(
         get_engine(x.device).fft.ifft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
@@ -397,7 +535,7 @@ def ifft2d(
 
 
 def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
-    """Returns the real parts of the complex tensor.
+    """Returns the real part of a complex tensor.
 
     Parameters
     ----------
@@ -414,8 +552,26 @@ def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
     return tensor(get_engine(x.device).real(x.data), device=x.device, dtype=dtype)
 
 
+def imag(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
+    """Returns the imaginary part of a complex tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    dtype : DtypeLike, optional
+        Datatype of the output tensor, by default None.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing imaginary values.
+    """
+    return tensor(get_engine(x.device).imag(x.data), device=x.device, dtype=dtype)
+
+
 def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None) -> Tensor:
-    """Limits the values of a tensor.
+    """Returns a tensor with values clipped to min_value and max_value.
 
     Parameters
     ----------
@@ -437,11 +593,11 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
 def histogram(
     x: Tensor,
     bins: int | Tensor = 10,
-    range: Optional[tuple[float, float]] = None,
+    binrange: Optional[tuple[float, float]] = None,
     density: bool = False,
     weights: Optional[Tensor] = None,
 ) -> tuple[Tensor, Tensor]:
-    """Compute the histogram of a dataset.
+    """Computes the histogram of a tensor.
 
     Parameters
     ----------
@@ -455,7 +611,7 @@ def histogram(
         Defines the range of the bins, by default None.
     density : bool, optional
         Whether to compute the density instead of the count, by default False.
-    weights: Tensor, optional
+    weights : Tensor, optional
         Each value in input contributes its associated weight
         towards its bin’s result, by default None.
 
@@ -469,6 +625,6 @@ def histogram(
     b = bins.data if isinstance(bins, Tensor) else bins
     w = weights.data if weights is not None else None
     hist, bin_edges = get_engine(x.device).histogram(
-        x.data, bins=b, range=range, density=density, weights=w
+        x.data, bins=b, range=binrange, density=density, weights=w
     )
     return Tensor(hist), Tensor(bin_edges)

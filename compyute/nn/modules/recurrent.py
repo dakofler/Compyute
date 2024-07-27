@@ -15,7 +15,32 @@ __all__ = ["GRU", "LSTM", "Recurrent"]
 
 
 class Recurrent(Module):
-    """Recurrent module (following the PyTorch implementation)."""
+    """Recurrent module (follows the PyTorch implementation).
+
+    Input: (B, T, Cin)
+        B ... batch, T ... time, Cin ... input channels
+    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
+        B ... batch, T ... time, Ch ... hidden channels
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    h_channels : int
+        Number of hidden channels.
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    activation : Literal["relu", "tanh"], optional
+        Activation function to use, by default "tanh".
+    return_sequence : bool, optional
+        Whether to return the entire sequence or only the last hidden state.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -28,31 +53,6 @@ class Recurrent(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Recurrent module (following the PyTorch implementation).
-        Input: (B, T, Cin)
-            B ... batch, T ... time, Cin ... input channels
-        Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-            B ... batch, T ... time, Ch ... hidden channels
-
-        Parameters
-        ----------
-        in_channels: int
-            Number of input channels.
-        h_channels: int
-            Number of hidden channels.
-        bias: bool, optional
-            Whether to use bias values, by default True.
-        activation: Literal["relu", "tanh"], optional
-            Activation function to use, by default "tanh".
-        return_sequence: bool, optional
-            Whether to return the entire sequence or only the last hidden state.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.h_channels = h_channels
@@ -115,19 +115,14 @@ class Recurrent(Module):
 
                     # hidden projection backward
                     dh, dw_h, db_h = h_h_grad_fn(dact)
-
-                    if t > 0 and self.w_h.requires_grad:
-                        self.w_h.grad += dw_h
-                    if self.b_h is not None and self.b_h.requires_grad:
-                        self.b_h.grad += db_h
+                    if t > 0:
+                        self._update_parameter_grad(self.w_h, dw_h)
+                    self._update_parameter_grad(self.b_h, db_h)
 
                     # input projeciton backward
                     dx[:, t], dw_i, db_i = x_h_grad_fn(dact)
-
-                    if self.w_i.requires_grad:
-                        self.w_i.grad += dw_i
-                    if self.b_i is not None and self.b_i.requires_grad:
-                        self.b_i.grad += db_i
+                    self._update_parameter_grad(self.w_i, dw_i)
+                    self._update_parameter_grad(self.b_i, db_i)
 
                 return dx
 
@@ -137,7 +132,32 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    """Long Short-Term Memory module (following the PyTorch implementation)."""
+    """Long Short-Term Memory module (follows the PyTorch implementation).
+
+    Input: (B, T, Cin)
+        B ... batch, T ... time, Cin ... input channels
+    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
+        B ... batch, T ... time, Ch ... hidden channels
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    h_channels : int
+        Number of hidden channels.
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    activation : Literal["relu", "tanh"], optional
+        Activation function to use, by default "tanh".
+    return_sequence : bool, optional
+        Whether to return the entire sequence or only the last hidden state.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -150,31 +170,6 @@ class LSTM(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Long Short-Term Memory module (following the PyTorch implementation).
-        Input: (B, T, Cin)
-            B ... batch, T ... time, Cin ... input channels
-        Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-            B ... batch, T ... time, Ch ... hidden channels
-
-        Parameters
-        ----------
-        in_channels: int
-            Number of input channels.
-        h_channels: int
-            Number of hidden channels.
-        bias: bool, optional
-            Whether to use bias values, by default True.
-        activation: Literal["relu", "tanh"], optional
-            Activation function to use, by default "tanh".
-        return_sequence: bool, optional
-            Whether to return the entire sequence or only the last hidden state.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.h_channels = h_channels
@@ -324,57 +319,43 @@ class LSTM(Module):
 
                     # hidden projection gradients
                     dh_i, dw_hi, db_hi = h_i_grad_fn(di_preact)
-
-                    if t > 0 and self.w_hi.requires_grad:
-                        self.w_hi.grad += dw_hi
-                    if self.b_hi is not None and self.b_hi.requires_grad:
-                        self.b_hi.grad += db_hi
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hi, dw_hi)
+                    self._update_parameter_grad(self.b_hi, db_hi)
 
                     dh_f, dw_hf, db_hf = h_f_grad_fn(df_preact)
-                    if t > 0 and self.w_hf.requires_grad:
-                        self.w_hf.grad += dw_hf
-                    if self.b_hf is not None and self.b_hf.requires_grad:
-                        self.b_hf.grad += db_hf
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hf, dw_hf)
+                    self._update_parameter_grad(self.b_hf, db_hf)
 
                     dh_g, dw_hg, db_hg = h_g_grad_fn(dg_preact)
-                    if t > 0 and self.w_hg.requires_grad:
-                        self.w_hg.grad += dw_hg
-                    if self.b_hg is not None and self.b_hg.requires_grad:
-                        self.b_hg.grad += db_hg
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hg, dw_hg)
+                    self._update_parameter_grad(self.b_hg, db_hg)
 
                     dh_o, dw_ho, db_ho = h_o_grad_fn(do_preact)
-                    if t > 0 and self.w_ho.requires_grad:
-                        self.w_ho.grad += dw_ho
-                    if self.b_ho is not None and self.b_ho.requires_grad:
-                        self.b_ho.grad += db_ho
+                    if t > 0:
+                        self._update_parameter_grad(self.w_ho, dw_ho)
+                    self._update_parameter_grad(self.b_ho, db_ho)
 
                     dh = dh_i + dh_f + dh_g + dh_o
 
                     # input projection gradients
                     dx_i, dw_ii, db_ii = x_i_grad_fn(di_preact)
-
-                    if self.w_ii.requires_grad:
-                        self.w_ii.grad += dw_ii
-                    if self.b_ii is not None and self.b_ii.requires_grad:
-                        self.b_ii.grad += db_ii
+                    self._update_parameter_grad(self.w_ii, dw_ii)
+                    self._update_parameter_grad(self.b_ii, db_ii)
 
                     dx_f, dw_if, db_if = x_f_grad_fn(df_preact)
-                    if self.w_if.requires_grad:
-                        self.w_if.grad += dw_if
-                    if self.b_if is not None and self.b_if.requires_grad:
-                        self.b_if.grad += db_if
+                    self._update_parameter_grad(self.w_if, dw_if)
+                    self._update_parameter_grad(self.b_if, db_if)
 
                     dx_g, dw_ig, db_ig = x_g_grad_fn(dg_preact)
-                    if self.w_ig.requires_grad:
-                        self.w_ig.grad += dw_ig
-                    if self.b_ig is not None and self.b_ig.requires_grad:
-                        self.b_ig.grad += db_ig
+                    self._update_parameter_grad(self.w_ig, dw_ig)
+                    self._update_parameter_grad(self.b_ig, db_ig)
 
                     dx_o, dw_io, db_io = x_o_grad_fn(do_preact)
-                    if self.w_io.requires_grad:
-                        self.w_io.grad += dw_io
-                    if self.b_io is not None and self.b_io.requires_grad:
-                        self.b_io.grad += db_io
+                    self._update_parameter_grad(self.w_io, dw_io)
+                    self._update_parameter_grad(self.b_io, db_io)
 
                     dx[:, t] = dx_i + dx_f + dx_g + dx_o
                 return dx
@@ -385,7 +366,32 @@ class LSTM(Module):
 
 
 class GRU(Module):
-    """Gated Recurrent Unit module (following the PyTorch implementation)."""
+    """Gated Recurrent Unit module (follows the PyTorch implementation).
+
+    Input: (B, T, Cin)
+        B ... batch, T ... time, Cin ... input channels
+    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
+        B ... batch, T ... time, Ch ... hidden channels
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    h_channels : int
+        Number of hidden channels.
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    activation : Literal["relu", "tanh"], optional
+        Activation function to use, by default "tanh".
+    return_sequence : bool, optional
+        Whether to return the entire sequence or only the last hidden state.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -398,31 +404,6 @@ class GRU(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Gated Recurrent Unit module (following the PyTorch implementation).
-        Input: (B, T, Cin)
-            B ... batch, T ... time, Cin ... input channels
-        Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-            B ... batch, T ... time, Ch ... hidden channels
-
-        Parameters
-        ----------
-        in_channels: int
-            Number of input channels.
-        h_channels: int
-            Number of hidden channels.
-        bias: bool, optional
-            Whether to use bias values, by default True.
-        activation: Literal["relu", "tanh"], optional
-            Activation function to use, by default "tanh".
-        return_sequence: bool, optional
-            Whether to return the entire sequence or only the last hidden state.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.h_channels = h_channels
@@ -544,44 +525,34 @@ class GRU(Module):
 
                     # hidden projection gradients
                     dh_r, dw_hr, db_hr = h_r_grad_fn(dr_preact)
-
-                    if t > 0 and self.w_hr.requires_grad:
-                        self.w_hr.grad += dw_hr
-                    if self.b_hr is not None and self.b_hr.requires_grad:
-                        self.b_hr.grad += db_hr
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hr, dw_hr)
+                    self._update_parameter_grad(self.b_hr, db_hr)
 
                     dh_z, dw_hz, db_hz = h_z_grad_fn(dz_preact)
-                    if t > 0 and self.w_hz.requires_grad:
-                        self.w_hz.grad += dw_hz
-                    if self.b_hz is not None and self.b_hz.requires_grad:
-                        self.b_hz.grad += db_hz
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hz, dw_hz)
+                    self._update_parameter_grad(self.b_hz, db_hz)
 
                     dh_n, dw_hn, db_hn = h_n_grad_fn(r[:, t] * dn_preact)
-                    if t > 0 and self.w_hn.requires_grad:
-                        self.w_hn.grad += dw_hn
-                    if self.b_hn is not None and self.b_hn.requires_grad:
-                        self.b_hn.grad += db_hn
+                    if t > 0:
+                        self._update_parameter_grad(self.w_hn, dw_hn)
+                    self._update_parameter_grad(self.b_hn, db_hn)
 
                     dh += dh_r + dh_z + dh_n
 
                     # input projection gradients
                     dx_r, dw_ir, db_ir = x_r_grad_fn(dr_preact)
-                    if self.w_ir.requires_grad:
-                        self.w_ir.grad += dw_ir
-                    if self.b_ir is not None and self.b_ir.requires_grad:
-                        self.b_ir.grad += db_ir
+                    self._update_parameter_grad(self.w_ir, dw_ir)
+                    self._update_parameter_grad(self.b_ir, db_ir)
 
                     dx_z, dw_iz, db_iz = x_z_grad_fn(dz_preact)
-                    if self.w_iz.requires_grad:
-                        self.w_iz.grad += dw_iz
-                    if self.b_iz is not None and self.b_iz.requires_grad:
-                        self.b_iz.grad += db_iz
+                    self._update_parameter_grad(self.w_iz, dw_iz)
+                    self._update_parameter_grad(self.b_iz, db_iz)
 
                     dx_n, dw_in, db_in = x_n_grad_fn(dn_preact)
-                    if self.w_in.requires_grad:
-                        self.w_in.grad += dw_in
-                    if self.b_in is not None and self.b_in.requires_grad:
-                        self.b_in.grad += db_in
+                    self._update_parameter_grad(self.w_in, dw_in)
+                    self._update_parameter_grad(self.b_in, db_in)
 
                     dx[:, t] = dx_r + dx_z + dx_n
                 return dx

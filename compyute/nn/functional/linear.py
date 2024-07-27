@@ -4,7 +4,6 @@ from typing import Callable, Optional
 
 from ...base_tensor import Tensor
 from ...tensor_functions.computing import einsum
-from ...tensor_functions.transforming import sum as cpsum
 
 __all__ = ["linear"]
 
@@ -22,7 +21,7 @@ def linear(
         Weight tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns

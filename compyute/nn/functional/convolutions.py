@@ -53,14 +53,15 @@ def convolve1d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    padding: _PaddingLike, optional
+    padding : _PaddingLike, optional
         Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
+
     Returns
     -------
     Tensor
@@ -68,7 +69,6 @@ def convolve1d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
-
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
@@ -119,8 +119,9 @@ def dilate1d(
         Input tensor.
     dilation : int
         Dilation used.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
+
     Returns
     -------
     Tensor
@@ -160,8 +161,9 @@ def pad1d(
         Input tensor.
     padding : tuple[int, int]
         Padding width applied to the front and back of the last axis.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
+
     Returns
     -------
     Tensor
@@ -243,13 +245,13 @@ def convolve2d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor, by default None
-    padding: _PaddingLike, optional
+    padding : _PaddingLike, optional
         Padding applied to the input tensor, by default "valid".
     stride : int, optional
         Stride used in the convolution operation, by default 1.
     dilation : int, optional
         Dilation used for each axis of the filter, by default 1.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -312,8 +314,9 @@ def dilate2d(
         Input tensor.
     dilation : tuple[int, int]
         Dilation used.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
+
     Returns
     -------
     Tensor
@@ -362,8 +365,9 @@ def pad2d(
         Input tensor.
     padding : tuple[tuple[int, int], tuple[int, int]]
         Padding width applied to the front and back of the last two axes.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
+
     Returns
     -------
     Tensor
@@ -478,7 +482,7 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -527,7 +531,7 @@ def avgpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window, by default (2, 2).
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns

@@ -42,16 +42,15 @@ class MeanSquaredError(Loss):
 
 
 class CrossEntropy(Loss):
-    """Computes the cross entropy loss from model logits."""
+    """Computes the crossentropy loss from model logits.
+
+    Parameters
+    ----------
+    eps : float, optional
+        Constant used for numerical stability, by default 1e-8.
+    """
 
     def __init__(self, eps: float = 1e-8):
-        """Computes the crossentropy loss from model logits.
-
-        Parameters
-        ----------
-        eps : float, optional
-            Constant used for numerical stability, by default 1e-8.
-        """
         super().__init__()
         self.eps = eps
 

@@ -22,7 +22,13 @@ __all__ = [
 
 
 class Initializer(ABC):
-    """Optimizer base class"""
+    """Optimizer base class.
+
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike) -> None:
         self.dtype = Dtype(dtype)
@@ -44,18 +50,17 @@ class Initializer(ABC):
 
 
 class KaimingNormal(Initializer):
-    """Normal initializer following He et al., 2015."""
+    """Normal initializer following He et al., 2015.
+
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Normal initializer following He et al., 2015.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -66,18 +71,17 @@ class KaimingNormal(Initializer):
 
 
 class KaimingUniform(Initializer):
-    """Uniform initializer following He et al., 2015."""
+    """Uniform initializer following He et al., 2015.
+
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Uniform initializer following He et al., 2015.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -88,22 +92,21 @@ class KaimingUniform(Initializer):
 
 
 class Normal(Initializer):
-    """Initializes a tensor with values following a normal distribution."""
+    """Initializes a tensor with values following a uniform distribution.
+
+    Parameters
+    ----------
+    mean : float, optional
+        Mean of the normal distribution, by default 0.
+    std : float, optional
+        Standard deviation of the normal distribution, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(
         self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
     ) -> None:
-        """Initializes a tensor with values following a uniform distribution.
-
-        Parameters
-        ----------
-        mean : float, optional
-            Mean of the normal distribution, by default 0.
-        std : float, optional
-            Standard deviation of the normal distribution, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.mean = mean
         self.std = std
@@ -113,22 +116,21 @@ class Normal(Initializer):
 
 
 class Uniform(Initializer):
-    """Initializes a tensor with values following a uniform distribution."""
+    """Initializes a tensor with values following a uniform distribution.
+
+    Parameters
+    ----------
+    low : float, optional
+        Lower bound for random values, by default 0.
+    high : float, optional
+        Upper bound for random values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(
         self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
     ) -> None:
-        """Initializes a tensor with values following a uniform distribution.
-
-        Parameters
-        ----------
-        low : float, optional
-            Lower bound for random values, by default 0.
-        high : float, optional
-            Upper bound for random values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.low = low
         self.high = high
@@ -138,18 +140,17 @@ class Uniform(Initializer):
 
 
 class XavierNormal(Initializer):
-    """Normal initializer following Glorot et al., 2010."""
+    """Normal initializer following Glorot et al., 2010.
+
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Normal initializer following Glorot et al., 2010.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -161,18 +162,17 @@ class XavierNormal(Initializer):
 
 
 class XavierUniform(Initializer):
-    """Uniform initializer following Glorot et al., 2010."""
+    """Uniform initializer following Glorot et al., 2010.
+
+    Parameters
+    ----------
+    gain : float, optional
+        Gain value to use for initializing values, by default 1.
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
-        """Uniform initializer following Glorot et al., 2010.
-
-        Parameters
-        ----------
-        gain : float, optional
-            Gain value to use for initializing values, by default 1.
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
         self.gain = gain
 
@@ -184,16 +184,15 @@ class XavierUniform(Initializer):
 
 
 class Ones(Initializer):
-    """Initializes a tensor with ones."""
+    """Initializes a tensor with ones.
+
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
-        """Initializes a tensor with ones.
-
-        Parameters
-        ----------
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
@@ -201,16 +200,15 @@ class Ones(Initializer):
 
 
 class Zeros(Initializer):
-    """Initializes a tensor with zeros."""
+    """Initializes a tensor with zeros.
+
+    Parameters
+    ----------
+    dtype : _DtypeLike, optional
+        Datatype of the tensor data, by default Dtype.FLOAT32.
+    """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
-        """Initializes a tensor with zeros.
-
-        Parameters
-        ----------
-        dtype: _DtypeLike, optional
-            Datatype of the tensor data, by default Dtype.FLOAT32.
-        """
         super().__init__(dtype)
 
     def __call__(self, shape: _ShapeLike) -> Tensor:

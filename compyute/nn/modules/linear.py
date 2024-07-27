@@ -14,7 +14,28 @@ __all__ = ["Linear"]
 
 
 class Linear(Module):
-    """Fully connected layer."""
+    """Fully connected layer. Applies a linear transformation to the incoming data.
+
+    Input: (B, ... , Cin)
+        B ... batch, Cin ... input channels
+    Output: (B, ... , Co)
+        B ... batch, Co ... output channels
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    out_channels : int
+        Number of output channels (neurons).
+    bias : bool, optional
+        Whether to use bias values, by default True.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -25,27 +46,6 @@ class Linear(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Fully connected layer.
-        Input: (B, ... , Cin)
-            B ... batch, Cin ... input channels
-        Output: (B, ... , Co)
-            B ... batch, Co ... output channels
-
-        Parameters
-        ----------
-        in_channels : int
-            Number of input channels.
-        out_channels : int
-            Number of output channels (neurons).
-        bias : bool, optional
-            Whether to use bias values, by default True.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -69,13 +69,8 @@ class Linear(Module):
             def _backward(dy: Tensor) -> Tensor:
                 dy = dy.as_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
-
-                if dw is not None:
-                    self.w.grad += dw
-
-                if self.b is not None and db is not None:
-                    self.b.grad += db
-
+                self._update_parameter_grad(self.w, dw)
+                self._update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward

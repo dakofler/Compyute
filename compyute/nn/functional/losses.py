@@ -24,7 +24,7 @@ def mean_squared_error(
         A model's predictions.
     y_true : Tensor
         Target values.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -55,7 +55,7 @@ def cross_entropy(
         Target integer class labels.
     eps : float, optional
         Constant used for numerical stability, by default 1e-8.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -90,7 +90,7 @@ def binary_cross_entropy(
         Model logits.
     y_true : Tensor
         Binary target values.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns

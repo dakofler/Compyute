@@ -45,9 +45,9 @@ def tensor(
         Device the tensor should be stored on. If None it is inferred from the data.
     dtype : _DtypeLike, optional
         Data type of tensor data. If None it is inferred from the data.
-    copy: bool, optional
+    copy : bool, optional
         If true, the data object is copied (may impact performance), by default False.
-    requires_grad: bool, optional
+    requires_grad : bool, optional
         Whether the tensor requires gradients, by default True.
     """
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
@@ -59,22 +59,21 @@ def tensor(
 
 
 class Tensor:
-    """Tensor object."""
+    """Tensor object.
+
+    Parameters
+    ----------
+    data : _ArrayLike
+        Data to initialize the tensor.
+    requires_grad : bool, optional
+        Whether the tensor requires gradients, by default True.
+    """
 
     def __init__(
         self,
         data: _ArrayLike,
         requires_grad: bool = True,
     ) -> None:
-        """Tensor object.
-
-        Parameters
-        ----------
-        data : _ArrayLike
-            Data to initialize the tensor.
-        requires_grad: bool, optional
-            Whether the tensor requires gradients, by default True.
-        """
         self.data = data
         self.requires_grad = requires_grad
         self.grad: Optional[Tensor] = None

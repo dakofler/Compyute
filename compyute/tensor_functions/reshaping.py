@@ -35,9 +35,9 @@ def reshape(x: Tensor, shape: _ShapeLike) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
-    ShapeLike
+    shape : _ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -78,7 +78,7 @@ def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike
         Where to insert the new dimension.
@@ -96,7 +96,7 @@ def add_dims(x: Tensor, target_dims: int) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     target_dims : int
         Total number of dimensions needed.
@@ -115,7 +115,7 @@ def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     shape : ShapeLike
         Shape of the new tensor.
@@ -133,7 +133,7 @@ def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n_repeats : int
         Number of repeats.
@@ -153,7 +153,7 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     n_repeats : int
         Number of repeats.
@@ -175,7 +175,7 @@ def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...])
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     pad_width : int | tuple[int, int] | tuple[tuple[int, int], ...]
         Padding width.
@@ -196,7 +196,7 @@ def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     shape : ShapeLike
         Final shape of the padded tensor.
@@ -215,7 +215,7 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     from_axis : int
         Original positions of the axes to move. These must be unique.
@@ -235,7 +235,7 @@ def squeeze(x: Tensor) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
 
     Returns
@@ -251,7 +251,7 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     axis : AxisLike, optional
         Axis alown which to flip the tensor, by default None.
@@ -272,7 +272,7 @@ def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
 
     Parameters
     ----------
-    x: Tensor
+    x : Tensor
         Input tensor.
     shape : _ShapeLike
         Shape of the new tensor

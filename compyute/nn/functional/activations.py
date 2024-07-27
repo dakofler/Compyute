@@ -34,7 +34,7 @@ def relu(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -62,7 +62,7 @@ def leaky_relu(
         Input tensor.
     alpha : float, optional
         Slope of the negative output, by default 0.01.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -89,7 +89,7 @@ def gelu(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -123,7 +123,7 @@ def sigmoid(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -149,7 +149,7 @@ def tanh(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns
@@ -175,7 +175,7 @@ def softmax(
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn: bool, optional
+    return_grad_fn : bool, optional
         Whether to also return the according gradient function, by default False.
 
     Returns

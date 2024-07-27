@@ -10,7 +10,15 @@ __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
 
 
 class ReLU(Module):
-    """ReLu activation function."""
+    """ReLu activation function.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = relu(x, self._training)
@@ -18,20 +26,19 @@ class ReLU(Module):
 
 
 class LeakyReLU(Module):
-    """Leaky ReLu activation function."""
+    """Leaky ReLu activation function.
+
+    Parameters
+    ----------
+    alpha : float, optional
+        Slope of the negative output, by default 0.01.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(self, alpha: float = 0.01, label: Optional[str] = None, training: bool = False):
-        """Leaky ReLu activation function.
-
-        Parameters
-        ----------
-        alpha : float, optional
-            Slope of the negative output, by default 0.01.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.alpha = alpha
 
@@ -41,7 +48,15 @@ class LeakyReLU(Module):
 
 
 class GELU(Module):
-    """Gaussian Error Linear Unit activation function."""
+    """Gaussian Error Linear Unit activation function.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = gelu(x, self._training)
@@ -49,7 +64,15 @@ class GELU(Module):
 
 
 class Tanh(Module):
-    """Tanh activation function."""
+    """Tanh activation function.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = tanh(x, self._training)
@@ -57,7 +80,15 @@ class Tanh(Module):
 
 
 class Sigmoid(Module):
-    """Sigmoid activation function."""
+    """Sigmoid activation function.
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = sigmoid(x, self._training)

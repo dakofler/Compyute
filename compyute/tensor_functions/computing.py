@@ -86,7 +86,7 @@ def inner(*tensors: Tensor) -> Tensor:
 
     Parameters
     ----------
-    *tensors : Tensor
+    tensors : Tensor
         Tensors to compute the inner product of.
 
     Returns
@@ -103,7 +103,7 @@ def outer(*tensors: Tensor) -> Tensor:
 
     Parameters
     ----------
-    *args : Tensor
+    tensors : Tensor
         Tensors to compute the outer product of.
 
     Returns
@@ -144,7 +144,7 @@ def einsum(subscripts, *tensors: Tensor) -> Tensor:
         Specifies the subscripts for summation as comma separated list of subscript labels.
         An implicit (classical Einstein summation) calculation is performed unless the explicit
         indicator ‘->’ is included as well as subscript labels of the precise output form.
-    *tensors : Tensor
+    tensors : Tensor
         Tensors to compute the outer product of.
 
     Returns

@@ -14,7 +14,26 @@ __all__ = ["Embedding"]
 
 
 class Embedding(Module):
-    """Layer used for token embedding."""
+    """Lookup embedding layer.
+
+    Input: (B, T)
+        B ... batch, T ... time
+    Output: (B, T, E)
+        B ... batch, T ... time, E ... embedding dim
+
+    Parameters
+    ----------
+    vocab_size : int
+        Vocabulary size.
+    embedding_dim : int
+        Embedding dimensionality.
+    dtype : DtypeLike, optional
+        Datatype of weights and biases, by default Dtype.FLOAT32.
+    label : str, optional
+        Module label.
+    training : bool, optional
+        Whether the module should be in training mode, by default False.
+    """
 
     def __init__(
         self,
@@ -24,25 +43,6 @@ class Embedding(Module):
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
-        """Embedding layer used for token embedding.
-        Input: (B, T)
-            B ... batch, T ... time
-        Output: (B, T, E)
-            B ... batch, T ... time, E ... embedding dim
-
-        Parameters
-        ----------
-        vocab_size : int
-            Vocabulary size.
-        embedding_dim : int
-            Embedding dimensionality.
-        dtype: DtypeLike, optional
-            Datatype of weights and biases, by default Dtype.FLOAT32.
-        label: str, optional
-            Module label.
-        training: bool, optional
-            Whether the module should be in training mode, by default False.
-        """
         super().__init__(label, training)
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
@@ -58,9 +58,9 @@ class Embedding(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                if self.w.requires_grad:
-                    dy = dy.as_type(self.dtype)
-                    self.w.grad += grad_fn(dy)
+                dy = dy.as_type(self.dtype)
+                dw = grad_fn(dy)
+                self._update_parameter_grad(self.w, dw)
                 return zeros_like(x)
 
             self._backward = _backward

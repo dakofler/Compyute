@@ -38,7 +38,7 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
         A model's predictions.
     y_true : Tensor
         Target values.
-    eps: float, optional
+    eps : float, optional
         Constant for numerical stability, by default 1e-8.
 
     Returns
