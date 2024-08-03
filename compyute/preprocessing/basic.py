@@ -60,7 +60,7 @@ def normalize(
         Input tensor.
     axis : _AxisLike, optional
         Axes over which normalization is applied. Defaults to ``None``.
-        If None, the flattended tensor is normalized.
+        If ``None``, the flattended tensor is normalized.
     l_bound : int, optional
         Lower bound of output values. Defaults to ``0``.
     u_bound : int, optional
@@ -89,7 +89,7 @@ def standardize(
         Tensor to be standardized.
     axis : _AxisLike, optional
         Axes over which standardization is applied. Defaults to ``None``.
-        If None, the flattended tensor is standardized.
+        If ``None``, the flattended tensor is standardized.
 
     Returns
     -------
@@ -124,4 +124,4 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     if x.dtype not in {Dtype.INT8, Dtype.INT16, Dtype.INT32, Dtype.INT64}:
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
-    return identity(n=num_classes, dtype="int32", device=x.device)[x]
+    return identity(n=num_classes, dtype=x.dtype, device=x.device)[x]

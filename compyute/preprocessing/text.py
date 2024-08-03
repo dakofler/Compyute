@@ -35,19 +35,49 @@ class Tokenizer(ABC):
 
     @property
     def vocab_size(self) -> int:
-        """Number of tokens."""
+        """Number of unique tokens."""
         return len(self.vocab)
 
     def fit(self, text: str, vocab_size: int | None = None) -> None:
-        """Fits the tokenizer to text."""
+        """Fits the tokenizer to text.
+
+        Parameters
+        ----------
+        text : str
+            Text the tokens should be extracted from.
+        vocab_size : int | None, optional
+            Number of tokens to be generated. Defaults to ``None``.
+        """
 
     @abstractmethod
     def encode(self, text: str) -> Tensor:
-        """Encodes text."""
+        """Encodes text to token ids.
+
+        Parameters
+        ----------
+        text : str
+            Text to be encoded to token ids.
+
+        Returns
+        -------
+        Tensor
+            Tensor of token ids.
+        """
 
     @abstractmethod
     def decode(self, token_ids: Tensor) -> str:
-        """Decodes token ids."""
+        """Decodes token ids to text..
+
+        Parameters
+        ----------
+        token_ids : Tensor
+            Tensor of integer token ids to be decoded.
+
+        Returns
+        -------
+        str
+            Decoded text.
+        """
 
 
 class CharacterTokenizer(Tokenizer):
@@ -60,34 +90,10 @@ class CharacterTokenizer(Tokenizer):
         self.ivocab = {token: idx for idx, token in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
-        """Encodes text.
-
-        Parameters
-        ----------
-        text : str
-            Text to be encoded.
-
-        Returns
-        -------
-        Tensor
-            Tensor of token ids.
-        """
         preprocessed = list(text)
         return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in preprocessed])
 
     def decode(self, token_ids: Tensor) -> str:
-        """Decodes token ids.
-
-        Parameters
-        ----------
-        token_ids : Tensor
-            Tensor of token_ids to be decoded.
-
-        Returns
-        -------
-        str
-            Text.
-        """
         return "".join([self.vocab[i.item()] for i in token_ids])
 
 
@@ -98,15 +104,6 @@ class WordTokenizer(Tokenizer):
         super().__init__(oov_token)
 
     def fit(self, text: str, vocab_size: Optional[int] = None) -> None:
-        """Fits the tokenizer to text.
-
-        Parameters
-        ----------
-        text : str
-            Text the tokens should be extracted from.
-        vocab_size : int | None, optional
-            Number of tokens to be generated. Defaults to ``None.
-        """
         split = re.split(WORD_PATTERN, text)
         split = [s for s in split if s not in [" ", ""]]
         tokens = [self.oov_token, "\n"] + sorted(list(set(split)))
@@ -116,35 +113,11 @@ class WordTokenizer(Tokenizer):
         self.ivocab = {t: i for i, t in self.vocab.items()}
 
     def encode(self, text: str) -> Tensor:
-        """Encodes a text.
-
-        Parameters
-        ----------
-        text : str
-            Text to be encoded.
-
-        Returns
-        -------
-        Tensor
-            Tensor of token ids.
-        """
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
         return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in split])
 
     def decode(self, token_ids: Tensor) -> str:
-        """Decodes token ids.
-
-        Parameters
-        ----------
-        tokens : Tensor
-            Tensor of token ids to be decoded.
-
-        Returns
-        -------
-        str
-            Concatenated tokens.
-        """
         text = " ".join([self.vocab[i.item()] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)
@@ -159,15 +132,6 @@ class BPETokenizer(Tokenizer):
         self._pattern = regex.compile(BPE_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
-        """Fits the tokenizer to text.
-
-        Parameters
-        ----------
-        text : str
-            Text the tokens should be extracted from.
-        vocab_size : int | None, optional
-            Number of tokens to be generated. Defaults to ``256.
-        """
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
 
         if vocab_size <= 256:
@@ -242,18 +206,6 @@ class BPETokenizer(Tokenizer):
         return token_ids
 
     def encode(self, text: str) -> Tensor:
-        """Encodes a text.
-
-        Parameters
-        ----------
-        text : str
-            Text to be encoded.
-
-        Returns
-        -------
-        Tensor
-            Tensor of token ids.
-        """
         text_chunks = regex.findall(self._pattern, text)
         token_ids = []
 
@@ -265,18 +217,6 @@ class BPETokenizer(Tokenizer):
         return tensor(token_ids)
 
     def decode(self, token_ids: Tensor) -> str:
-        """Decodes token ids.
-
-        Parameters
-        ----------
-        tokens : Tensor
-            Tensor of token ids to be decoded.
-
-        Returns
-        -------
-        str
-            Decoded string.
-        """
         part_bytes = []
 
         for idx in token_ids:
@@ -295,19 +235,19 @@ def save_tokenizer(tokenizer: Tokenizer, filepath: str) -> None:
     Parameters
     ----------
     filepath : str
-        Path to the file.
+        Path where the file should be saved to.
     """
     with open(filepath, "wb") as file:
         pickle.dump(tokenizer, file)
 
 
 def load_tokenizer(filepath: str) -> Tokenizer:
-    """Load a tokenizer from a previously saved binary file.
+    """Load a tokenizer from a binary file.
 
     Parameters
     ----------
     filepath : str
-        Path to the file.
+        Path to the binary file to load.
 
     Returns
     -------
