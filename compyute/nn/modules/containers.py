@@ -20,12 +20,12 @@ class Container(Module):
 
     Parameters
     ----------
-    modules : Module
+    *modules : Module
         Modules used in the container.
     label : str, optional
-        Container label.
+        Container label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
     def __init__(
@@ -47,18 +47,24 @@ class Container(Module):
 
     @property
     def modules(self) -> list[Module]:
-        """Returns the list of modules."""
+        """Returns the list of container modules.
+
+        Returns
+        -------
+        list[Module]
+            List of container modules.
+        """
         if self._modules is not None:
             return self._modules
         return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
 
     def add_module(self, module: Module) -> None:
-        """Adds a module to the container.
+        """Appends a module to the container.
 
         Parameters
         ----------
         module : Module
-            Module to add to the container.
+            Module to append to the container.
         """
         if self._modules is None:
             self._modules = [module]
@@ -67,14 +73,12 @@ class Container(Module):
 
     @property
     def parameters(self) -> Iterator[Parameter]:
-        """Returns a generator of module parameters."""
         self_parameters = super().parameters
         module_parameters = (p for module in self.modules for p in module.parameters)
         return chain(self_parameters, module_parameters)
 
     @property
     def buffers(self) -> Iterator[Buffer]:
-        """Returns a generator of module buffers."""
         self_buffers = super().buffers
         module_buffers = (b for module in self.modules for b in module.buffers)
         return chain(self_buffers, module_buffers)
@@ -120,7 +124,6 @@ class Container(Module):
     def forward(self, x: Tensor) -> Tensor: ...
 
     def cleanup(self, force: bool = False) -> None:
-        """Resets temporary values like outputs and gradients."""
         super().cleanup(force)
 
         for module in self.modules:
@@ -131,12 +134,10 @@ class Container(Module):
 
         Parameters
         ----------
-        root_module : Module
-            Module to get the summary from.
         input_shape : _ShapeLike
-            Shape of the model input ignoring the batch dimension.
-        input_dtype : _DtypeLike
-            Data type of the expected input data.
+            Shape of the container input ignoring the batch dimension.
+        input_dtype : _DtypeLike, optional
+            Data type of the expected input data. Defaults to :class:`compyute.float32`.
 
         Returns
         -------
@@ -213,12 +214,12 @@ class Sequential(Container):
 
     Parameters
     ----------
-    modules : Module
+    *modules : Module
         Modules used in the container.
     label : str, optional
-        Container label.
+        Container label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -245,15 +246,15 @@ class ParallelConcat(Container):
 
     Parameters
     ----------
-    modules : Module
+    *modules : Module
         Modules used in the parallel container.
     concat_axis : int, optional
         Axis along which the output of the parallel modules
-        shall be concatinated, by default -1.
+        shall be concatinated. Defaults to ``-1``.
     label : str, optional
-        Container label.
+        Container label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
     def __init__(
@@ -290,12 +291,12 @@ class ParallelAdd(Container):
 
     Parameters
     ----------
-    modules : Module
+    *modules : Module
         Modules used in the container.
     label : str, optional
-        Container label.
+        Container label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:

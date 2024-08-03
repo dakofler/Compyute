@@ -10,14 +10,17 @@ __all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
 
 
 class ReLU(Module):
-    """ReLu activation function.
+    r"""Applies the Rectified Linear Unit activation function to an input tensor.
+
+    .. math::
+        y = \max(0, x)
 
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -26,16 +29,19 @@ class ReLU(Module):
 
 
 class LeakyReLU(Module):
-    """Leaky ReLu activation function.
+    r"""Leaky ReLu activation function.
+
+    .. math::
+        y = \max(\alpha \cdot x, x)
 
     Parameters
     ----------
     alpha : float, optional
-        Slope of the negative output, by default 0.01.
+        Slope of the negative output. Defaults to ``0.01``.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(self, alpha: float = 0.01, label: Optional[str] = None, training: bool = False):
@@ -48,14 +54,17 @@ class LeakyReLU(Module):
 
 
 class GELU(Module):
-    """Gaussian Error Linear Unit activation function.
+    r"""Gaussian Error Linear Unit activation function.
+
+    .. math::
+        y = 0.5 \cdot x \cdot (1 + \tanh(\sqrt{\frac{2}{pi}} \cdot (x + 0.044715 \cdot x^3)))
 
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -64,14 +73,17 @@ class GELU(Module):
 
 
 class Tanh(Module):
-    """Tanh activation function.
+    r"""Tanh activation function.
+
+    .. math::
+        y = tanh(x)
 
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -80,14 +92,17 @@ class Tanh(Module):
 
 
 class Sigmoid(Module):
-    """Sigmoid activation function.
+    r"""Sigmoid activation function.
+
+    .. math::
+        y = \frac{1}{1 + e^{-x}}
 
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:

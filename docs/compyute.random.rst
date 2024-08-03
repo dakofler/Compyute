@@ -1,6 +1,12 @@
-Random
------------------------------------
+compyute.random
+===============
+.. automodule:: compyute.random
+.. currentmodule:: compyute.random
 
-.. automodule:: compyute.random.random
-   :members:
-   :show-inheritance:
+.. autofunction:: normal
+.. autofunction:: uniform
+.. autofunction:: uniform_int
+.. autofunction:: permutation
+.. autofunction:: set_seed
+.. autofunction:: shuffle
+.. autofunction:: multinomial

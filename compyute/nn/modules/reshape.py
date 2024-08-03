@@ -14,12 +14,12 @@ class Reshape(Module):
 
     Parameters
     ----------
-    output_shape : ShapeLike
+    output_shape : _ShapeLike
         The output's target shape not including the batch dimension.
     label: str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training: bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(
@@ -43,9 +43,9 @@ class Flatten(Module):
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -63,13 +63,13 @@ class Moveaxis(Module):
     Parameters
     ----------
     from_axis : int
-        Original positions of the axes to move. These must be unique.
+        Original position of the axis to move.
     to_axis : int
-        Destination positions for each of the original axes. These must also be unique.
+        Destination position.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(

@@ -16,11 +16,11 @@ class EarlyStopping(Callback):
     model : Module
         Model to be trained.
     patience : int, optional
-        Number of epocs without improvement, before the training is aborted, by default 3.
+        Number of epocs without improvement, before the training is aborted. Defaults to ``3``.
     use_best_params : bool, optional
-        Whether to reset the model parameters to the best values found, by default True.
+        Whether to reset the model parameters to the best values found. Defaults to ``True``.
     target : str, optional
-        Metric to consider, by default "loss".
+        Metric to consider. Defaults to ``loss``.
     """
 
     def __init__(

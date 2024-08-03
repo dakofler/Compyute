@@ -6,7 +6,7 @@ from typing import Callable, Literal, Optional
 from ..base_tensor import Tensor
 from .functional.losses import binary_cross_entropy, cross_entropy, mean_squared_error
 
-__all__ = ["BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
+__all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 
 
 class Loss(ABC):
@@ -16,14 +16,8 @@ class Loss(ABC):
         self.backward: Optional[Callable[[], Tensor]] = None
 
     @abstractmethod
-    def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor: ...
-
-
-class MeanSquaredError(Loss):
-    """Computes the mean squared error loss."""
-
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        """Computes the mean squared error loss.
+        """Computes the loss given model predictions and target values.
 
         Parameters
         ----------
@@ -35,19 +29,46 @@ class MeanSquaredError(Loss):
         Returns
         -------
         Tensor
-            Mean squared error loss.
+            Computed loss value.
+        """
+
+
+class MeanSquaredError(Loss):
+    r"""Computes the mean squared error loss.
+
+    .. math::
+        L = \frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2
+    """
+
+    def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        """Computes the mean squared error loss.
+
+        Parameters
+        ----------
+        y_pred : Tensor
+            Model predictions.
+        y_true : Tensor
+            Target values.
+
+        Returns
+        -------
+        Tensor
+            Computed loss value.
         """
         loss, self.backward = mean_squared_error(y_pred, y_true, return_grad_fn=True)
         return loss
 
 
 class CrossEntropy(Loss):
-    """Computes the crossentropy loss from model logits.
+    r"""Computes the cross entropy loss.
+
+    .. math::
+        L = -\frac{1}{N} \sum_{i=1}^N \hat{y}_i \log(y_i)
 
     Parameters
     ----------
     eps : float, optional
-        Constant used for numerical stability, by default 1e-8.
+        Constant used for numerical stability. Defaults to 1e-8.
     """
 
     def __init__(self, eps: float = 1e-8):
@@ -60,9 +81,9 @@ class CrossEntropy(Loss):
         Parameters
         ----------
         y_pred : Tensor
-            A model's logits.
+            Model logits.
         y_true : Tensor
-            Target class labels.
+            Target class labels, must be of type ``int``.
 
         Returns
         -------
@@ -74,7 +95,11 @@ class CrossEntropy(Loss):
 
 
 class BinaryCrossEntropy(Loss):
-    """Computes the binary cross entropy loss from model logits."""
+    r"""Computes the binary cross entropy loss.
+
+    .. math::
+        L = -\frac{1}{N} \sum_{i=1}^N \hat{y}_i \log(y_i) - (1 - \hat{y}_i) \log(1 - y_i)
+    """
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the binary cross entropy loss.
@@ -82,9 +107,9 @@ class BinaryCrossEntropy(Loss):
         Parameters
         ----------
         y_pred : Tensor
-            A model's logits.
+            Model logits.
         y_true : Tensor
-            Target class labels.
+            Binary target class labels, must be either ``0`` or ``1``.
 
         Returns
         -------

@@ -11,7 +11,6 @@ from ..random.random import normal, uniform
 from ..tensor_functions.creating import ones, zeros
 
 __all__ = [
-    "get_initializer",
     "KaimingNormal",
     "KaimingUniform",
     "Normal",
@@ -27,7 +26,7 @@ class Initializer(ABC):
     Parameters
     ----------
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, dtype: _DtypeLike) -> None:
@@ -35,7 +34,7 @@ class Initializer(ABC):
 
     @abstractmethod
     def __call__(self, shape: _ShapeLike) -> Tensor:
-        """Returns a tensor with values.
+        """Returns a tensor with initialized values.
 
         Parameters
         ----------
@@ -57,7 +56,7 @@ class KaimingNormal(Initializer):
     gain : float, optional
         Gain value to use for initializing values.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
@@ -78,7 +77,7 @@ class KaimingUniform(Initializer):
     gain : float, optional
         Gain value to use for initializing values.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
@@ -97,11 +96,11 @@ class Normal(Initializer):
     Parameters
     ----------
     mean : float, optional
-        Mean of the normal distribution, by default 0.
+        Mean of the normal distribution. Defaults to ``0``.
     std : float, optional
-        Standard deviation of the normal distribution, by default 1.
+        Standard deviation of the normal distribution. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(
@@ -121,11 +120,11 @@ class Uniform(Initializer):
     Parameters
     ----------
     low : float, optional
-        Lower bound for random values, by default 0.
+        Lower bound for random values. Defaults to ``0``.
     high : float, optional
-        Upper bound for random values, by default 1.
+        Upper bound for random values. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(
@@ -145,9 +144,9 @@ class XavierNormal(Initializer):
     Parameters
     ----------
     gain : float, optional
-        Gain value to use for initializing values, by default 1.
+        Gain value to use for initializing values. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
@@ -167,9 +166,9 @@ class XavierUniform(Initializer):
     Parameters
     ----------
     gain : float, optional
-        Gain value to use for initializing values, by default 1.
+        Gain value to use for initializing values. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, gain: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32) -> None:
@@ -189,7 +188,7 @@ class Ones(Initializer):
     Parameters
     ----------
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
@@ -205,7 +204,7 @@ class Zeros(Initializer):
     Parameters
     ----------
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default Dtype.FLOAT32.
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
     def __init__(self, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:

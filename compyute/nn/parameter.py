@@ -15,7 +15,7 @@ class Parameter(Tensor):
     data : Tensor
         Parameter data.
     label : str, optional
-        Parameter label, by default None.
+        Parameter label. Defaults to ``None``.
     """
 
     def __init__(self, data: Tensor, label: Optional[str] = None) -> None:
@@ -32,7 +32,7 @@ class Buffer(Tensor):
     data : Tensor
         Buffer data.
     label : str, optional
-        Buffer label, by default None.
+        Buffer label. Defaults to ``None``.
     """
 
     def __init__(self, data: Tensor, label: Optional[str] = None) -> None:

@@ -72,9 +72,9 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
     x : Tensor
         Input tensor.
     min_value : float, optional
-        Lower bound, by default None. If None, no clipping is performed on this edge.
+        Lower bound. Defaults to ``None``. If ``None``, no clipping is performed on this edge.
     max_value : float
-        Upper bound, by default None. If None, no clipping is performed on this edge.
+        Upper bound. Defaults to ``None``. If ``None``, no clipping is performed on this edge.
 
     Returns
     -------
@@ -141,7 +141,7 @@ def einsum(subscripts: str, *tensors: Tensor) -> Tensor:
 
     Parameters
     ----------
-    subscriptsstr : str
+    subscripts : str
         Specifies the subscripts for summation as a comma separated list of subscript labels.
         An implicit (classical Einstein summation) calculation is performed unless the explicit
         indicator "->" is included as well as subscript labels of the precise output form.
@@ -186,11 +186,11 @@ def fft1d(
     x : Tensor
         Input tensor.
     n : int, optional
-        Length of the transformed axis of the output, by default None.
+        Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
-        Axis over which to compute the FFT, by default -1.
+        Axis over which to compute the FFT. Defaults to ``-1``.
     dtype : _DtypeLike, optional
-        Complex datatype of the output tensor, by default None.
+        Complex datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -215,11 +215,11 @@ def fft2d(
     x : Tensor
         Input tensor.
     n : ShapeLike, optional
-        Shape (length of each transformed axis) of the output, by default None.
+        Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
-        Axes over which to compute the FFT, by default (-2, -1).
+        Axes over which to compute the FFT. Defaults to ``(-2, -1)``.
     dtype : _DtypeLike, optional
-        Complex datatype of the output tensor, by default None.
+        Complex datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -244,11 +244,11 @@ def ifft1d(
     x : Tensor
         Input tensor.
     n : int, optional
-        Length of the transformed axis of the output, by default None.
+        Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
-        Axis over which to compute the inverse FFT, by default -1.
+        Axis over which to compute the inverse FFT. Defaults to ``-1``.
     dtype : _DtypeLike, optional
-        Complex datatype of the output tensor, by default None.
+        Complex datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -268,7 +268,7 @@ def imag(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     dtype : DtypeLike, optional
-        Datatype of the output tensor, by default None.
+        Datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -308,11 +308,11 @@ def ifft2d(
     x : Tensor
         Input tensor.
     n : ShapeLike, optional
-        Shape (length of each transformed axis) of the output, by default None.
+        Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
-        Axes over which to compute the inverse FFT, by default (-2, -1).
+        Axes over which to compute the inverse FFT. Defaults to ``(-2, -1)``.
     dtype : _DtypeLike, optional
-        Complex datatype of the output tensor, by default None.
+        Complex datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -338,16 +338,17 @@ def histogram(
     x : Tensor
         Input tensor.
     bins : int | 1D Tensor
-        If int, defines the number of equal-width bins.
-        If tensor, defines the sequence of bin edges including the rightmost edge.
-        By default 10.
+        The number of bins to use for the histogram. Defaults to 10.
+            - ``int``:defines the number of equal-width bins.
+            - ``Tensor``: defines the sequence of bin edges including the rightmost edge.
+
     range : tuple[float, float], optional
-        Defines the range of the bins, by default None.
+        Defines the range of the bins. Defaults to ``None``.
     density : bool, optional
-        Whether to compute the density instead of the count, by default False.
+        Whether to compute the density instead of the count. Defaults to ``False``.
     weights : Tensor, optional
         Each value in input contributes its associated weight
-        towards its bin’s result, by default None.
+        towards its bin’s result. Defaults to ``None``.
 
     Returns
     -------
@@ -420,11 +421,11 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the maximum is computed, by default None.
+        Axis over which the maximum is computed. Defaults to ``None``.
         If none it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -461,11 +462,11 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the mean is computed, by default None.
+        Axis over which the mean is computed. Defaults to ``None``.
         If None it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -483,11 +484,11 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the minimum is computed, by default None.
+        Axis over which the minimum is computed. Defaults to ``None``.
         If None it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -541,11 +542,11 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the product is computed, by default None.
+        Axis over which the product is computed. Defaults to ``None``.
         If None it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -563,7 +564,7 @@ def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     dtype : DtypeLike, optional
-        Datatype of the output tensor, by default None.
+        Datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
@@ -592,7 +593,7 @@ def round(x: Tensor, decimals: int) -> Tensor:
 
 
 def sech(x: Tensor) -> Tensor:
-    """Computes the element-wise secant of a tensor..
+    """Computes the element-wise secant of a tensor.
 
     Parameters
     ----------
@@ -663,11 +664,11 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the sum is computed, by default None.
-        If None it is computed over the flattened tensor.
+        Axis over which the sum is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -685,11 +686,11 @@ def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the standard deviation is computed, by default None.
-        If None it is computed over the flattened tensor.
+        Axis over which the standard deviation is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
@@ -773,14 +774,14 @@ def var(
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the variance is computed, by default None.
+        Axis over which the variance is computed. Defaults to ``None``.
         If None it is computed over the flattened tensor.
     ddof : int, optional
-        "Delta Degrees of Freedom": the divisor used in the calculation is N - ddof,
-        where N represents the number of elements, by default 0.
+        "Delta Degrees of Freedom": the divisor used in the calculation is :math:`N - ddof`,
+        where :math:`N` represents the number of elements. Defaults to ``0``.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
-        If false the tensor is collapsed along the given axis.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        If ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------

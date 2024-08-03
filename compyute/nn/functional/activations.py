@@ -27,21 +27,25 @@ _GELU_C: float = 0.044715
 def relu(
     x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the Rectified Linear Unit function.
+    """Applies the Rectified Linear Unit activation function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
-    -------
+    ----------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable[[Tensor], Tensor], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.ReLU`
     """
     y = maximum(x, 0)
 
@@ -53,26 +57,30 @@ def relu(
 def leaky_relu(
     x: Tensor, alpha: float = 0.01, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the leaky ReLU function.
+    """Applies the leaky ReLU function to an input tensor as.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     alpha : float, optional
-        Slope of the negative output, by default 0.01.
+        Slope of the negative output. Defaults to ``0.01``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
-    -------
+    ----------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable[[Tensor], Tensor], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.LeakyReLU`
     """
     x = x.float()
-    y = maximum(x, 0) + alpha * minimum(x, 0)
+    y = maximum(alpha * x, x)
 
     if return_grad_fn:
         return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
@@ -82,14 +90,14 @@ def leaky_relu(
 def gelu(
     x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the Gaussian Error Linear Unit function.
+    """Applies the Gaussian Error Linear Unit function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -97,6 +105,10 @@ def gelu(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.GELU`
     """
 
     tmp = _GELU_S * (x + _GELU_C * x**3)
@@ -116,14 +128,14 @@ def gelu(
 def sigmoid(
     x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the sigmoid function.
+    """Applies the sigmoid function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -131,6 +143,10 @@ def sigmoid(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.Sigmoid`
     """
     y = exp(x) * (1 + exp(x)) ** -1
 
@@ -142,14 +158,14 @@ def sigmoid(
 def tanh(
     x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the hyperbolic tangent function.
+    """Applies the hyperbolic tangent activationfunction to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -157,6 +173,10 @@ def tanh(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.Tanh`
     """
     y = cptanh(x)
 
@@ -168,14 +188,17 @@ def tanh(
 def softmax(
     x: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Applies the softmax function over the last axis.
+    r"""Applies the softmax function over the last axis of an input tensor.
+
+    .. math::
+        softmax(x) = \frac{\exp(x)}{\sum_{i=1}^N \exp(x_i)}
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -200,19 +223,27 @@ def softmax(
 
 
 def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
-    """Applies the softmax function with temperature to the last axis.
+    r"""Applies the softmax function with temperature over the last axis of an input tensor.
+
+    .. math::
+        softmax(x) = \frac{\exp(\frac{x}{T})}{\sum_{i=1}^N \exp(\frac{x_i}{T})}
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     temperature : float, optional
-        Temperature scaling to be applied in the calculation.
+        Temperature scaling to be applied in the calculation. Defaults to ``1``.
 
     Returns
     -------
     Tensor
         Output tensor.
+
+    Raises
+    ------
+    ValueError
+        If temperature is 0.
     """
     if temperature == 0:
         raise ValueError("Temperature cannot be 0.")

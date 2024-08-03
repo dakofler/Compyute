@@ -6,58 +6,80 @@ from typing import Literal
 from ..base_tensor import Tensor
 from .functional.metrics import accuracy_score, r2_score
 
-__all__ = ["Accuracy", "R2"]
+__all__ = ["Metric", "Accuracy", "R2"]
 
 
 class Metric(ABC):
     """Metric base class."""
 
     @abstractmethod
-    def __call__(self, y: Tensor, t: Tensor) -> Tensor: ...
+    def __call__(self, y: Tensor, t: Tensor) -> Tensor:
+        """Computes the metric score.
+
+        Parameters
+        ----------
+        y_pred : Tensor
+            A model's predictions.
+        y_true : Tensor
+            Target values.
+
+        Returns
+        -------
+        Tensor
+            Metric value.
+        """
 
 
 class Accuracy(Metric):
     """Computes the accuracy score."""
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        """Computes the accuracy score.
+        """Computes the accuracy score given model predictions and target values.
 
         Parameters
         ----------
         y_pred : Tensor
-            A model's predictions.
+            Predicted probability distribution.
         y_true : Tensor
-            Target values.
+            Target classes, must be of type ``int``.
 
         Returns
         -------
         Tensor
-            Accuracy value.
+            Accuracy score.
         """
+
         return accuracy_score(y_pred, y_true)
 
 
 class R2(Metric):
-    """Computes the coefficient of determination (R2 score)."""
+    """Computes the coefficient of determination (R2 score).
 
-    def __call__(self, y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
+    Parameters
+    ----------
+    eps : float, optional
+        Constant for numerical stability. Defaults to ``1e-8``.
+    """
+
+    def __init__(self, eps: float = 1e-8) -> None:
+        self.eps = eps
+
+    def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the coefficient of determination (R2 score).
 
         Parameters
         ----------
         y_pred : Tensor
-            A model's predictions.
+            Model predictions.
         y_true : Tensor
             Target values.
-        eps : float, optional
-            Constant for numerical stability, by default 1e-8.
 
         Returns
         -------
         Tensor
             R2 score.
         """
-        return r2_score(y_pred, y_true, eps)
+        return r2_score(y_pred, y_true, self.eps)
 
 
 _MetricLike = Metric | Literal["accuracy", "r2"]

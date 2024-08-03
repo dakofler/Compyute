@@ -1,48 +1,51 @@
+compyute.nn.functional
+======================
+.. automodule:: compyute.nn.functional
+.. currentmodule:: compyute.nn.functional
+
 Activations
------------------------------------------
-
-.. automodule:: compyute.nn.functional.activations
-   :members:
-   :show-inheritance:
-
+-----------
+.. autofunction:: relu
+.. autofunction:: leaky_relu
+.. autofunction:: gelu
+.. autofunction:: sigmoid
+.. autofunction:: tanh
+.. autofunction:: softmax
+.. autofunction:: temperature_softmax
+    
 Convolutions
-------------------------------------------
-
-.. automodule:: compyute.nn.functional.convolutions
-   :members:
-   :show-inheritance:
+------------
+.. autofunction:: convolve1d
+.. autofunction:: dilate1d
+.. autofunction:: pad1d
+.. autofunction:: convolve2d
+.. autofunction:: dilate2d
+.. autofunction:: pad2d
+.. autofunction:: upsample2d
+.. autofunction:: maxpooling2d
+.. autofunction:: avgpooling2d
 
 Embeddings
-----------------------------------------
-
-.. automodule:: compyute.nn.functional.embeddings
-   :members:
-   :show-inheritance:
+----------
+.. autofunction:: lookup_embedding
 
 Linear
-------------------------------------
-
-.. automodule:: compyute.nn.functional.linear
-   :members:
-   :show-inheritance:
+------
+.. autofunction:: linear
 
 Losses
-------------------------------------
-
-.. automodule:: compyute.nn.functional.losses
-   :members:
-   :show-inheritance:
+------
+.. autofunction:: mean_squared_error
+.. autofunction:: binary_cross_entropy
+.. autofunction:: cross_entropy
 
 Metrics
--------------------------------------
+-------
+.. autofunction:: accuracy_score
+.. autofunction:: r2_score
 
-.. automodule:: compyute.nn.functional.metrics
-   :members:
-   :show-inheritance:
-
-Normalizatons
--------------------------------------------
-
-.. automodule:: compyute.nn.functional.normalizatons
-   :members:
-   :show-inheritance:
+Normalization
+-------------
+.. autofunction:: batchnorm1d
+.. autofunction:: batchnorm2d
+.. autofunction:: layernorm

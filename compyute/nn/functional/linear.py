@@ -11,7 +11,7 @@ __all__ = ["linear"]
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
-    """Applies the linear transformation X @ W^T + b.
+    """Applies a linear transformation to the input.
 
     Parameters
     ----------
@@ -20,16 +20,21 @@ def linear(
     w : Tensor
         Weight tensor.
     b : Tensor, optional
-        Bias tensor, by default None
+        Bias tensor. Defaults to ``None``. If ``None``, no bias is added.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
-        Linearly transformed tensor.
+        Output tensor.
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.Linear`
+
     """
     y = x @ w.T
     if b is not None:

@@ -8,10 +8,12 @@ from ...optimizers import Optimizer
 from .callback import Callback
 
 __all__ = [
+    "LrScheduler",
+    "AdaptiveLrScheduler",
+    "CosineAnnealingLrScheduler",
     "ExponentialLrScheduler",
     "StepLrScheduler",
     "MultistepLrScheduler",
-    "AdaptiveLrScheduler",
 ]
 
 
@@ -38,7 +40,7 @@ class LrScheduler(Callback):
     optimizer  : Optimizer
         Optimizer, whose learning rate will be adapted.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(self, optimizer: Optimizer, verbose: bool = False) -> None:
@@ -65,11 +67,11 @@ class StepLrScheduler(LrScheduler):
     optimizer  : Optimizer
         Optimizer, whose learning rate will be adapted.
     lr_decay : float, optional
-        Decay factor, by default 0.1.
+        Decay factor. Defaults to ``0.1``.
     t_decay : int, optional
-        Epoch, at which the update is applied, by default 10.
+        Epoch, at which the update is applied. Defaults to ``10``.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(
@@ -98,11 +100,11 @@ class MultistepLrScheduler(LrScheduler):
     optimizer: Optimizer
         Optimizer, whose learning rate will be adapted.
     lr_decay : float, optional
-        Decay factor, by default 0.5.
+        Decay factor. Defaults to ``0.5``.
     t_decay_step : int, optional
-        Number of epochs, at which the update is applied, by default 10.
+        Number of epochs, at which the update is applied. Defaults to ``10``.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(
@@ -131,11 +133,11 @@ class ExponentialLrScheduler(LrScheduler):
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
     lr_decay : float, optional
-        Decay factor the learning rate is multiplied by each step, by default 0.5.
+        Decay factor the learning rate is multiplied by each step. Defaults to ``0.5``.
     decay_steps : int, optional
-        How many times (epochs) the update is applied, by default 10.
+        How many times (epochs) the update is applied. Defaults to ``10``.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(
@@ -164,15 +166,15 @@ class CosineAnnealingLrScheduler(LrScheduler):
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
     target_lr : float, optional
-        Target learning rate, by default 0.1.
+        Target learning rate. Defaults to ``0.1``.
     decay_steps : int, optional
-        How many times (epochs) the update is applied, by default 10.
+        How many times (epochs) the update is applied. Defaults to ``10``.
     warmup_steps : int, optional
-        Number of warmup steps, by default 5.
+        Number of warmup steps. Defaults to ``5``.
     max_warmup_lr : float, optional
-        Maximum learning rate after warmup, by default 1.
+        Maximum learning rate after warmup. Defaults to ``1``.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(
@@ -222,15 +224,16 @@ class AdaptiveLrScheduler(LrScheduler):
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
     target : str, optional
-        Metric to consider, by default "loss".
+        Metric to consider. Defaults to ``loss``.
     scope : int, optional
-        Number of past epochs to consider when computing the trend, by default 10.
+        Number of past epochs to consider when computing the trend. Defaults to ``10``.
     lr_downscale_factor : float, optional
-        Factor to scale the learning rate down by if the metric is not improing, by default 0.5.
+        Factor to scale the learning rate down by if the metric is not improing.
+        Defaults to ``0.5``.
     lr_upscale_factor : float, optional
-        Factor to scale the learning rate up by if the metric is improing, by default 1.0.
+        Factor to scale the learning rate up by if the metric is improing. Defaults to ``1.0``.
     verbose : bool, optional
-        Whether to print the learning rate, by default False.
+        Whether to print the learning rate. Defaults to ``False``.
     """
 
     def __init__(

@@ -43,7 +43,7 @@ def convolve1d(
     dilation: int = 1,
     return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
-    """Convolves two tensors over their last axis.
+    """Computes the convolution of two tensors over their last axis.
 
     Parameters
     ----------
@@ -52,15 +52,15 @@ def convolve1d(
     f : Tensor
         Filter tensor.
     b : Tensor, optional
-        Bias tensor, by default None
+        Bias tensor. Defaults to ``None``. If ``None``, no bias is added.
     padding : _PaddingLike, optional
-        Padding applied to the input tensor, by default "valid".
+        Padding applied to the input tensor. Defaults to ``valid``.
     stride : int, optional
-        Stride used in the convolution operation, by default 1.
+        Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter, by default 1.
+        Dilation factor to use for each axis of the filter. Defaults to ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -68,6 +68,11 @@ def convolve1d(
         Output tensor.
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
+
+
+    See Also
+    ----------
+    :class:`compyute.nn.Convolution1d`
     """
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
@@ -118,9 +123,9 @@ def dilate1d(
     x : Tensor
         Input tensor.
     dilation : int
-        Dilation used.
+        Dilation factor to use.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -160,9 +165,9 @@ def pad1d(
     x : Tensor
         Input tensor.
     padding : tuple[int, int]
-        Padding width applied to the front and back of the last axis.
+        Padding width applied to the beginning and end of the last axis.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -235,7 +240,7 @@ def convolve2d(
     dilation: int = 1,
     return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
-    """Convolves two tensors over their last two axes.
+    """Computes the convolution of two tensors over their last two axes.
 
     Parameters
     ----------
@@ -244,15 +249,15 @@ def convolve2d(
     f : Tensor
         Filter tensor.
     b : Tensor, optional
-        Bias tensor, by default None
+        Bias tensor. Defaults to ``None. If ``None``, no bias is added.
     padding : _PaddingLike, optional
-        Padding applied to the input tensor, by default "valid".
+        Padding applied to the input tensor. Defaults to ``valid``.
     stride : int, optional
-        Stride used in the convolution operation, by default 1.
+        Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter, by default 1.
+        Dilation factor to use for each axis of the filter. Defaults to ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -260,6 +265,11 @@ def convolve2d(
         Output tensor.
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
+
+
+    See Also
+    ----------
+    :class:`compyute.nn.Convolution2d`
     """
 
     # dilate filter and add a fake batch dimension
@@ -313,9 +323,9 @@ def dilate2d(
     x : Tensor
         Input tensor.
     dilation : tuple[int, int]
-        Dilation used.
+        Dilation factor to use.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -364,9 +374,9 @@ def pad2d(
     x : Tensor
         Input tensor.
     padding : tuple[tuple[int, int], tuple[int, int]]
-        Padding width applied to the front and back of the last two axes.
+        Padding width applied to the beginning and end of the last two axes.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -455,10 +465,10 @@ def upsample2d(
     scaling_factors : tuple[int, int]
         Number of repeating values along each axis.
     shape : ShapeLike
-        Shape of the target tensor. If the shape does not match after stretching,
+        Shape of the target tensor. If the shape does not match after upsampling,
         remaining values are filled with zeroes.
     axes : tuple[int, int], optional
-        Axes along which to stretch the tensor, by default (-2, -1).
+        Axes along which to stretch the tensor. Defaults to ``(-2, -1)``.
 
     Returns
     -------
@@ -474,16 +484,16 @@ def upsample2d(
 def maxpooling2d(
     x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Performs a max pooling over the last two axes.
+    """Performs max pooling over the last two axes.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     kernel_size : tuple[int, int], optional
-        Size of the pooling window, by default (2, 2).
+        Size of the pooling window. Defaults to ``(2, 2)``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -523,16 +533,16 @@ def maxpooling2d(
 def avgpooling2d(
     x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    """Performs a average pooling over the last two axes.
+    """Performs average pooling over the last two axes.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     kernel_size : tuple[int, int], optional
-        Size of the pooling window, by default (2, 2).
+        Size of the pooling window. Defaults to ``(2, 2)``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------

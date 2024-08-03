@@ -1,27 +1,34 @@
-Callback
----------------------------------------------
+compyute.nn.trainer.callbacks
+=============================
+.. automodule:: compyute.nn.trainer.callbacks
+.. currentmodule:: compyute.nn.trainer.callbacks
 
-.. automodule:: compyute.nn.trainer.callbacks.callback
+.. autoclass:: Callback
    :members:
-   :show-inheritance:
 
 Early stopping
-----------------------------------------------------
-
-.. automodule:: compyute.nn.trainer.callbacks.early_stopping
-   :members:
+--------------
+.. autoclass:: EarlyStopping
    :show-inheritance:
 
 Logging
---------------------------------------------
-
-.. automodule:: compyute.nn.trainer.callbacks.logging
-   :members:
+-------
+.. autoclass:: History
+   :show-inheritance:
+.. autoclass:: ProgressBar
    :show-inheritance:
 
 Learning Rate Schedulers
----------------------------------------------------
-
-.. automodule:: compyute.nn.trainer.callbacks.lr_schedulers
-   :members:
+------------------------
+.. autoclass:: LrScheduler
+   :show-inheritance:
+.. autoclass:: AdaptiveLrScheduler
+   :show-inheritance:
+.. autoclass:: CosineAnnealingLrScheduler
+   :show-inheritance:
+.. autoclass:: ExponentialLrScheduler
+   :show-inheritance:
+.. autoclass:: StepLrScheduler
+   :show-inheritance:
+.. autoclass:: MultistepLrScheduler
    :show-inheritance:

@@ -1,7 +1,7 @@
 """Randomness based tensor functions."""
 
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 from ..base_tensor import Tensor, _ShapeLike, tensor
 from ..dtypes import _DtypeLike, dtype_to_str
@@ -12,6 +12,7 @@ __all__ = [
     "uniform",
     "uniform_int",
     "permutation",
+    "seed",
     "set_seed",
     "shuffle",
     "multinomial",
@@ -24,7 +25,7 @@ def set_seed(value: Optional[int] = None) -> None:
     Parameters
     ----------
     value : int, optional
-        Seed value.
+        Seed value. Defaults to ``None``. If ``None``, the seed is reset.
     """
     try:
         get_engine(Device.CUDA).random.seed(value)
@@ -34,8 +35,14 @@ def set_seed(value: Optional[int] = None) -> None:
 
 
 @contextmanager
-def seed(value: Optional[int] = None) -> Iterator[None]:
-    """Sets the seed of the random number generator for reproducability."""
+def seed(value: int):
+    """Context manager to set the seed of the random number generator for reproducability.
+
+    Parameters
+    ----------
+    value : int
+        Seed value.
+    """
     set_seed(value)
     try:
         yield
@@ -57,13 +64,13 @@ def normal(
     shape : _ShapeLike
         Shape of the new tensor.
     mean : float, optional
-        Mean of random values, by default 0.
+        Mean of random values. Defaults to ``0``.
     std : float, optional
-        Standard deviation of random values, by default 1.
+        Standard deviation of random values. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -88,13 +95,13 @@ def uniform(
     shape : _ShapeLike
         Shape of the new tensor.
     low : float, optional
-        Lower bound for random values, by default 0.
+        Lower bound for random values. Defaults to ``0``.
     high : float, optional
-        Upper bound for random values, by default 1.
+        Upper bound for random values. Defaults to ``1``.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -123,9 +130,9 @@ def uniform_int(
     high : int
         Upper bound for random values.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -139,16 +146,16 @@ def uniform_int(
 def permutation(
     n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
-    """Returns a tensor containing a permuted range of length n.
+    """Returns a tensor containing a permuted range of a specified length.
 
     Parameters
     ----------
     n : int
         Length of the permuted range.
     dtype : _DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -166,7 +173,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
     ----------
     x : Tensor | int
         If a tensor, it represents possible values to draw.
-        If an int, values are drawn from arange(x).
+        If an int, values are drawn from ``arange(x)``.
     p : Tensor
         Corresponding probablitity distribution.
     shape : _ShapeLike
@@ -192,7 +199,7 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) ->
     shape : _ShapeLike
         Shape of the new tensor.
     device : _DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------

@@ -12,14 +12,14 @@ __all__ = ["accuracy_score", "r2_score"]
 
 
 def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
-    """Computes the accuracy score.
+    """Computes the accuracy score given model predictions and target values.
 
     Parameters
     ----------
     y_pred : Tensor
-        A model's predictions.
+        Predicted probability distribution.
     y_true : Tensor
-        Target values.
+        Target classes, must be of type ``int``.
 
     Returns
     -------
@@ -35,11 +35,11 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
     Parameters
     ----------
     y_pred : Tensor
-        A model's predictions.
+        Model predictions.
     y_true : Tensor
         Target values.
     eps : float, optional
-        Constant for numerical stability, by default 1e-8.
+        Constant for numerical stability. Defaults to ``1e-8``.
 
     Returns
     -------

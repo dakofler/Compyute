@@ -15,12 +15,23 @@ __all__ = ["GRU", "LSTM", "Recurrent"]
 
 
 class Recurrent(Module):
-    """Recurrent module (follows the PyTorch implementation).
+    r"""Elman Recurrent module.
+    For each element in the sequence the hidden state is computed as follows:
 
-    Input: (B, T, Cin)
-        B ... batch, T ... time, Cin ... input channels
-    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-        B ... batch, T ... time, Ch ... hidden channels
+    .. math::
+        h_t = tanh(x_t W_{ih}^T + b_{ih} + h_{t-1}W_{hh}^T + b_{hh})
+
+    .. note::
+        This implementation follows the one by PyTorch which differs slightly from the original paper.
+
+    Shapes:
+        - Input :math:`(B, S, C_{in})`
+        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+    where
+        - :math:`B` ... batch axis
+        - :math:`S` ... sequence
+        - :math:`C_{in}` ... input channels
+        - :math:`C_{h}` ... hidden channels
 
     Parameters
     ----------
@@ -29,17 +40,22 @@ class Recurrent(Module):
     h_channels : int
         Number of hidden channels.
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
-        Activation function to use, by default "tanh".
+        Activation function to use. Defaults to ``tanh``.
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : _DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
     """
 
     def __init__(
@@ -132,12 +148,30 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    """Long Short-Term Memory module.
+    r"""Long Short-Term Memory module.
+    For each element in the sequence the hidden state is computed as follows:
 
-    Input: (B, T, Cin)
-        B ... batch, T ... time, Cin ... input channels
-    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-        B ... batch, T ... time, Ch ... hidden channels
+    .. math::
+        \begin{array}{ll} \\
+            i_t = \sigma(x_tW_{ii}^T + b_{ii} + h_{t-1}W_{hi}^T + b_{hi}) \\
+            f_t = \sigma(x_tW_{if}^T + b_{if} + h_{t-1}W_{hf}^T + b_{hf}) \\
+            g_t = act(x_tW_{ig}^T + b_{ig} + h_{t-1}W_{hg}^T + b_{hg}) \\
+            o_t = \sigma(x_tW_{io}^T + b_{io} + h_{t-1}W_{ho}^T + b_{ho}) \\
+            c_t = f_t \odot c_{t-1} + i_t \odot g_t \\
+            h_t = o_t \odot act(c_t) \\
+        \end{array}
+
+    .. note::
+        This implementation follows the one by PyTorch which differs slightly from the original paper.
+
+    Shapes:
+        - Input :math:`(B, S, C_{in})`
+        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+    where
+        - :math:`B` ... batch axis
+        - :math:`S` ... sequence
+        - :math:`C_{in}` ... input channels
+        - :math:`C_{h}` ... hidden channels
 
     Parameters
     ----------
@@ -146,17 +180,22 @@ class LSTM(Module):
     h_channels : int
         Number of hidden channels.
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
-        Activation function to use, by default "tanh".
+        Activation function to use. Defaults to ``tanh``.
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : _DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
     """
 
     def __init__(
@@ -366,15 +405,28 @@ class LSTM(Module):
 
 
 class GRU(Module):
-    """Gated Recurrent Unit module.
+    r"""Gated Recurrent Unit module.
+    For each element in the sequence the hidden state is computed as follows:
+
+    .. math::
+        \begin{array}{ll} \\
+            r_t = \sigma(x_tW_{ir}^T + b_{ir} + h_{t-1}W_{hr}^T + b_{hr}) \\
+            z_t = \sigma(x_tW_{iz}^T + b_{iz} + h_{t-1}W_{hz}^T + b_{hz}) \\
+            n_t = act(x_tW_{in}^T + b_{in} + r_t \odot (h_{t-1}W_{hn}^T + b_{hn})) \\
+            h_t = (1 - z_t) \odot n_t + z_t \odot h_{t-1}
+        \end{array}
 
     .. note::
         This implementation follows the one by PyTorch which differs slightly from the original paper.
 
-    Input: (B, T, Cin)
-        B ... batch, T ... time, Cin ... input channels
-    Output: (B, T, Ch) if return_sequence=True else (B, Ch)
-        B ... batch, T ... time, Ch ... hidden channels
+    Shapes:
+        - Input :math:`(B, S, C_{in})`
+        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+    where
+        - :math:`B` ... batch axis
+        - :math:`S` ... sequence
+        - :math:`C_{in}` ... input channels
+        - :math:`C_{h}` ... hidden channels
 
     Parameters
     ----------
@@ -383,17 +435,22 @@ class GRU(Module):
     h_channels : int
         Number of hidden channels.
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
-        Activation function to use, by default "tanh".
+        Activation function to use. Defaults to ``tanh``.
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : _DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
     """
 
     def __init__(

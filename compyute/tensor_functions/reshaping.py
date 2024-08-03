@@ -61,7 +61,7 @@ def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
     x: Tensor
         Input tensor.
     axes : tuple[int, int], optional
-        Transpose axes, by default (-2, -1).
+        Transpose axes. Defaults to ``(-2, -1)``.
 
     Returns
     -------
@@ -178,10 +178,10 @@ def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...])
     x : Tensor
         Input tensor.
     pad_width : int | tuple[int, int] | tuple[tuple[int, int], ...]
-        Padding width.
-        `int`: Same padding for before and after in all dimensions.
-        `tuple[int, int]`: Specific before and after padding in all dimensions.
-        `tuple[tuple[int, int]`: Specific before and after padding for each dimension.
+        Padding width(s).
+            - ``int``: same padding width at the begining and end of all axes.
+            - ``tuple[int, int]``: specific widths at the beginning and end of all axes.
+            - ``tuple[tuple[int, int]]``: specific widths in the beginning and end for each axis.
 
     Returns
     -------
@@ -218,20 +218,20 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
     x : Tensor
         Input tensor.
     from_axis : int
-        Original positions of the axes to move. These must be unique.
+        Original position of the axis to move.
     to_axis : int
-        Destination positions for each of the original axes. These must also be unique.
+        New position of the axis.
 
     Returns
     -------
     Tensor
-        Tensor with moved axes.
+        Tensor with a moved axes.
     """
     return Tensor(get_engine(x.device).moveaxis(x.data, from_axis, to_axis))
 
 
 def squeeze(x: Tensor) -> Tensor:
-    """Returns a tensor with removed axis where dim=1.
+    """Returns a tensor with removed axes where ``dim=1``.
 
     Parameters
     ----------
@@ -254,10 +254,10 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis alown which to flip the tensor, by default None.
-        `None`: flip all the axes.
-        `int`: flip given axis.
-        `tuple[int, ...]`: flip all given axes.
+        Axis alown which to flip the tensor. Defaults to ``None``.
+            - ``None``: all axes are flipped
+            - ``int``: only the specified axis is flipped.
+            - ``tuple[int, ...]``: all specified axes are flipped.
 
     Returns
     -------
