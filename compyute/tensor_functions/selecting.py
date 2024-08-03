@@ -15,11 +15,11 @@ def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) 
     ----------
     x : Tensor
         Input tensor.
-    axis : Optional[AxisLike] = None
-        Axes, along which the maximum value is located, by default None.
-        If None it is computed over the flattened tensor.
+    axis : _AxisLike, optional
+        Axes, along which the maximum value is located. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
-        Whether to keep the tensors dimensions, by default False.
+        Whether to keep the tensors dimensions. Defaults to ``False``.
         If false the tensor is collapsed along the given axis.
 
     Returns
@@ -38,10 +38,10 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal, by default 0.
-        `0`: main diagonal
-        `> 0`: above main diagonal
-        `< 0`: below main diagonal
+        Index of the diagonal. Defaults to ``0``.
+            - ``0``: main diagonal
+            - ``> 0``: above main diagonal
+            - ``< 0``: below main diagonal
 
     Returns
     -------
@@ -60,10 +60,10 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal, by default 0.
-        `0`: main diagonal
-        `> 0`: above main diagonal
-        `< 0`: below main diagonal
+        Index of the diagonal. Defaults to ``0``.
+            - ``0``: main diagonal
+            - ``> 0``: above main diagonal
+            - ``< 0``: below main diagonal
 
     Returns
     -------
@@ -82,10 +82,10 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal, by default 0.
-        `0`: main diagonal
-        `> 0`: above main diagonal
-        `< 0`: below main diagonal
+        Index of the diagonal. Defaults to ``0``.
+            - ``0``: main diagonal
+            - ``> 0``: above main diagonal
+            - ``< 0``: below main diagonal
 
     Returns
     -------
@@ -96,5 +96,16 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
 
 
 def unique(x: Tensor) -> Tensor:
-    """Returns the unique ordered values of the tensor."""
+    """Returns the unique ordered values of the tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing unique values.
+    """
     return Tensor(get_engine(x.device).unique(x.data))

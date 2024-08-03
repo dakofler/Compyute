@@ -105,7 +105,7 @@ class WordTokenizer(Tokenizer):
         text : str
             Text the tokens should be extracted from.
         vocab_size : int | None, optional
-            Number of tokens to be generated, by default None.
+            Number of tokens to be generated. Defaults to ``None.
         """
         split = re.split(WORD_PATTERN, text)
         split = [s for s in split if s not in [" ", ""]]
@@ -166,7 +166,7 @@ class BPETokenizer(Tokenizer):
         text : str
             Text the tokens should be extracted from.
         vocab_size : int | None, optional
-            Number of tokens to be generated, by default 256.
+            Number of tokens to be generated. Defaults to ``256.
         """
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
 

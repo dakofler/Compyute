@@ -13,27 +13,40 @@ __all__ = ["Batchnorm1d", "Batchnorm2d", "Layernorm"]
 
 
 class Batchnorm1d(Module):
-    """Implements Batch Normalization (normalizes over the C dimension).
+    r"""Implements Batch Normalization.
 
-    Input: (B, C, T) or (B, C)
-        B ... batch, C ... channels, T ... time
-    Output: (B, C, T) or (B, C)
-        B ... batch, C ... channels, T ... time
+    .. math::
+        y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
+
+    where :math:`E[x]` and :math:`Var[x]` are computed over the batch axis.
+
+    Shapes:
+        - Input :math:`(B, C, S)` or :math:`(B, C)`
+        - Output :math:`(B, C, S)` or :math:`(B, C)`
+    where
+        - :math:`B` ... batch axis
+        - :math:`C` ... channels
+        - :math:`S` ... sequence
 
     Parameters
     ----------
     channels : int
         Number of channels.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
-        Momentum used for running mean and variance computation, by default 0.1.
+        Momentum used for running mean and variance computation. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized as ones, biases as zeros.
+        The running means are initialized as zeros, the running variances as ones.
     """
 
     def __init__(
@@ -82,27 +95,41 @@ class Batchnorm1d(Module):
 
 
 class Batchnorm2d(Module):
-    """Implements Batch Normalization (normalizes over the C dimension).
+    r"""Implements Batch Normalization.
 
-    Input: (B, C, Y, X)
-        B ... batch, C ... channels, Y ... height, X ... width
-    Output: (B, C, Y, X)
-        B ... batch, C ... channels, Y ... height, X ... width
+    .. math::
+        y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
+
+    where :math:`E[x]` and :math:`Var[x]` are computed over the batch axis.
+
+    Shapes:
+        - Input :math:`(B, C, Y, X)`
+        - Output :math:`(B, C, Y, X)`
+    where
+        - :math:`B` ... batch axis
+        - :math:`C` ... channels
+        - :math:`Y` ... height
+        - :math:`X` ... width
 
     Parameters
     ----------
     channels : int
         Number of channels.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
-        Momentum used for running mean and variance computation, by default 0.1.
+        Momentum used for running mean and variance computation. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized as ones, biases as zeros.
+        The running means are initialized as zeros, the running variances as ones.
     """
 
     def __init__(
@@ -151,26 +178,35 @@ class Batchnorm2d(Module):
 
 
 class Layernorm(Module):
-    """Implements Layer Normalization (normalizes over all trailing dimensions).
+    r"""Implements Layer Normalization.
 
-    Input: (B, ...)
-        B ... batch
-    Output: (B, ...)
-        B ... batch
+    .. math::
+        y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
+    where :math:`E[x]` and :math:`Var[x]` are computed over all non-batch axes.
+
+    Shapes:
+        - Input :math:`(B, ...)`
+        - Output :math:`(B, ...)`
+    where
+        - :math:`B` ... batch axis
 
     Parameters
     ----------
     normalized_shape : ShapeLike
         Shape of the normalized tensor ignoring the batch dimension.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized as ones, biases as zeros.
     """
 
     def __init__(

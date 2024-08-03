@@ -8,10 +8,10 @@ from ..engine import Device, _DeviceLike
 from ..random.random import shuffle
 from ..tensor_functions.creating import concatenate
 
-__all__ = ["DataLoader"]
+__all__ = ["Dataloader"]
 
 
-class DataLoader:
+class Dataloader:
     """DataLoader to yield batched data for training and inference.
 
     Parameters
@@ -19,16 +19,16 @@ class DataLoader:
     x : Tensor
         Input tensor.
     y : Tensor, optional
-        Target tensor, by default None.
+        Target tensor. Defaults to ``None``.
     batch_size : int, optional
-        Size of returned batches, by default 1.
+        Size of returned batches. Defaults to ``1``.
     device : DeviceLike, optional
-        Device the tensors should be loaded to, by default Device.CPU.
+        Device the tensors should be loaded to. Defaults to :class:`compyute.cpu`.
     shuffle_data : bool, optional
-        Whether to shuffle the data each time the dataloader is called, by default True.
+        Whether to shuffle the data each time the dataloader is called. Defaults to ``True``.
     drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
-        the batch_size.
+        ``batch_size``. Defaults to ``False``.
     """
 
     def __init__(
@@ -48,7 +48,16 @@ class DataLoader:
         self.shuffle = shuffle_data
 
     def __call__(self) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
-        """Yields batched data."""
+        """Yields batched data.
+
+        Yields
+        -------
+        Tensor
+            Batched features.
+        Tensor
+            Batched labels.
+
+        """
         n = self.x.shape[0]
         n_steps = len(self)
         b = min(self.batch_size, n)
@@ -99,11 +108,11 @@ def batched(
     Parameters
     ----------
     batch_size : int, optional
-        Size of returned batches, by default 1.
+        Size of returned batches. Defaults to ``1.
     device : DeviceLike, optional
-        Device the tensors should be loaded to, by default Device.CPU.
+        Device the tensors should be loaded to. Defaults to ``Device.CPU.
     shuffle_data : bool, optional
-        Whether to shuffle the data each time the dataloader is called, by default True.
+        Whether to shuffle the data each time the dataloader is called. Defaults to ``True.
     drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
         the batch_size.

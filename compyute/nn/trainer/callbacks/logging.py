@@ -44,9 +44,9 @@ class ProgressBar(Callback):
     Parameters
     ----------
     mode : Literal["step", "epoch"], optional
-        Progress bar update mode, by default "step"
-        epoch ... one progress bar is shown and updated for each epoch.
-        step ... a progress bar is shown per epoch and updated for each step.
+        Progress bar update mode. Defaults to ``step``.
+        If ``epoch``, one progress bar is shown and updated for each epoch.
+        If ``step``, a new progress bar is shown per epoch and updated for each step.
     """
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:

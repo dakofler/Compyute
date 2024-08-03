@@ -21,11 +21,11 @@ def mean_squared_error(
     Parameters
     ----------
     y_pred : Tensor
-        A model's predictions.
+        Model predictions.
     y_true : Tensor
         Target values.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -33,6 +33,10 @@ def mean_squared_error(
         Mean squared error loss.
     Callable[[], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.MeanSquaredError`
     """
     dif = y_pred.float() - y_true.float()
     loss = mean(dif**2)
@@ -52,11 +56,11 @@ def cross_entropy(
     y_pred : Tensor
         Model logits.
     y_true : Tensor
-        Target integer class labels.
+        Target class labels, must be of type ``int``.
     eps : float, optional
-        Constant used for numerical stability, by default 1e-8.
+        Constant used for numerical stability. Defaults to ``1e-8``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -64,6 +68,10 @@ def cross_entropy(
         Cross entropy loss.
     Callable[[], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.CrossEntropy`
     """
     probs, _ = softmax(y_pred.float(), False)
     y_true = one_hot_encode(y_true.int(), y_pred.shape[-1])
@@ -89,9 +97,9 @@ def binary_cross_entropy(
     y_pred : Tensor
         Model logits.
     y_true : Tensor
-        Binary target values.
+        Binary target class labels, must be either ``0`` or ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -99,6 +107,10 @@ def binary_cross_entropy(
         Cross entropy loss.
     Callable[[], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.BinaryCrossEntropy`
     """
     c = 100
     loss = -mean(y_true * clip(log(y_pred), -c, c) + (1 - y_true) * clip(log(1 - y_pred), -c, c))

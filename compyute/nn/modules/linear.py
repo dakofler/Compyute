@@ -14,12 +14,18 @@ __all__ = ["Linear"]
 
 
 class Linear(Module):
-    """Fully connected layer. Applies a linear transformation to the incoming data.
+    r"""Applies a linear transformation to the input.
 
-    Input: (B, ... , Cin)
-        B ... batch, Cin ... input channels
-    Output: (B, ... , Co)
-        B ... batch, Co ... output channels
+    .. math::
+        y = xW^T + b
+
+    Shapes:
+        - Input :math:`(B_1, ... , B_n, C_{in})`
+        - Output :math:`(B_1, ... , B_n, C_{out})`
+    where
+        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`C_{in}` ... input channels
+        - :math:`C_{out}` ... output channels
 
     Parameters
     ----------
@@ -28,13 +34,18 @@ class Linear(Module):
     out_channels : int
         Number of output channels (neurons).
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in}}}`. Biases are initialized as zeros.
     """
 
     def __init__(

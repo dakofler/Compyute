@@ -1,14 +1,11 @@
+compyute.preprocessing
+======================
+.. automodule:: compyute.preprocessing
+.. currentmodule:: compyute.preprocessing
+
 Basic
------------------------------------
-
-.. automodule:: compyute.preprocessing.basic
-   :members:
-   :show-inheritance:
-
-Text module
-----------------------------------
-
-.. automodule:: compyute.preprocessing.text
-   :members:
-   
-   :show-inheritance:
+-----
+.. autofunction:: split_train_val_test
+.. autofunction:: normalize
+.. autofunction:: standardize
+.. autofunction:: one_hot_encode

@@ -46,9 +46,10 @@ def tensor(
     dtype : _DtypeLike, optional
         Data type of tensor data. If None it is inferred from the data.
     copy : bool, optional
-        If true, the data object is copied (may impact performance), by default False.
+        If true, the data object is copied (may impact performance). Defaults to ``False``.
     requires_grad : bool, optional
-        Whether the tensor requires gradients, by default True.
+        Whether the tensor requires gradients. Defaults to ``True``.
+        If false gradients are not computed within neural network modules for this tensor.
     """
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
         return Tensor(data)
@@ -63,15 +64,17 @@ class Tensor:
 
     .. note::
         Tensors can only be initialized with NumPy or CuPy arrays.
-        For other data types use the ``tensor()`` function. It automatically
+        For other data types use the :func:`tensor` function. It automatically
         infers the data type and device if not specified.
 
     Parameters
     ----------
     data : _ArrayLike
-        Data to initialize the tensor.
+        Data to initialize the tensor. Must be a NumPy array or CuPy array.
+        for other data use the :func:`tensor` function.
     requires_grad : bool, optional
-        Whether the tensor requires gradients, by default True.
+        Whether the tensor requires gradients. Defaults to ``True``.
+        If false gradients are not computed within neural network modules for this tensor.
     """
 
     def __init__(
@@ -103,7 +106,7 @@ class Tensor:
     def data(self, value: _ArrayLike) -> None:
         if not isinstance(value, _ArrayLike):
             raise ValueError(
-                f"Invalid data type {type(value)}. Use compyute.tensor to initialize tensors."
+                f"Invalid data type {type(value)}. Use ``compyute.tensor()`` to initialize tensors."
             )
         self._data = value
 

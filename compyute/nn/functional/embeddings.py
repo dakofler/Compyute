@@ -13,16 +13,16 @@ __all__ = ["lookup_embedding"]
 def lookup_embedding(
     x: Tensor, embedding_table: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Optional[Tensor]]]]:
-    """Performs lookup embedding on a tensor.
+    """Performs lookup embedding on a tensor of indices.
 
     Parameters
     ----------
     x : Tensor
-        Input tensor of integer dtype used for indexing into the embedding table.
+        Input tensor containing indeces. Must be of type ``int8``.
     embedding_table : Tensor
         Tensor of embedding values.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -4,7 +4,7 @@ from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
-from ..dataloaders import DataLoader
+from ..dataloaders import Dataloader
 from ..losses import _LossLike, get_loss_function
 from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
@@ -15,20 +15,24 @@ __all__ = ["Trainer"]
 
 
 class Trainer:
-    """Neural network model trainer.
+    """Trainer utility used to train neural network models.
 
     Parameters
     ----------
     model : Module
         Model to be trained.
     optimizer : _OptimizerLike
-        Optimizer algorithm used to update model parameters.
+        Optimizer algorithm used to update model parameters based on gradients.
+        See :ref:`optimizers` for more details.
     loss : _LossLike
-        Loss function used to evaluate the model.
+        Loss function used to quantify the model performance.
+        See :ref:`losses` for more details.
     metric : _MetricLike, optional
-        Metric function used to evaluate the model, by default None.
+        Metric function used to evaluate the model. Defaults to ``None``.
+        See :ref:`metrics` for more details.
     callbacks : list[Callback], optional
-        Callback functions to be executed during training, by default None.
+        Callback functions that are executing each training epoch and step. Defaults to ``None``.
+        See :ref:`callbacks` for more details.
     """
 
     def __init__(
@@ -66,14 +70,15 @@ class Trainer:
         y_train : Tensor
             Target tensor.
         epochs : int, optional
-            Number of training iterations, by default 100.
+            Number of training iterations. Defaults to ``100``.
         val_data : tuple[Tensor, Tensor], optional
-            Data used for the validaton every epoch, by default None.
+            Data used for the validaton every epoch. Defaults to ``None``.
         batch_size : int, optional
-            Number of inputs processed in parallel, by default 32. If -1, all samples are used.
+            Number of inputs processed in parallel. Defaults to ``32``.
+            If ``-1``, all samples are used.
         """
         batch_size = len(x_train) if batch_size == -1 else batch_size
-        train_dataloader = DataLoader(x_train, y_train, batch_size, self.model.device)
+        train_dataloader = Dataloader(x_train, y_train, batch_size, self.model.device)
         self.cache["t"] = 0
         self.cache["epochs"] = epochs
         self.cache["train_steps"] = len(train_dataloader)
@@ -114,16 +119,16 @@ class Trainer:
         y : Tensor
             Target tensor.
         batch_size : int, optional
-            Number of inputs processed in parallel, by default 32.
+            Number of inputs processed in parallel. Defaults to ``32``.
 
         Returns
         ----------
-        ScalarLike
+        _ScalarLike
             Loss value.
-        ScalarLike, optional
+        _ScalarLike, optional
             Metric score.
         """
-        dataloader = DataLoader(
+        dataloader = Dataloader(
             x,
             y,
             batch_size=batch_size,

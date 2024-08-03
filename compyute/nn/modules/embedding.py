@@ -14,42 +14,49 @@ __all__ = ["Embedding"]
 
 
 class Embedding(Module):
-    """Lookup embedding layer.
+    r"""Lookup embedding layer.
 
-    Input: (B, T)
-        B ... batch, T ... time
-    Output: (B, T, E)
-        B ... batch, T ... time, E ... embedding dim
+    Shapes:
+        - Input :math:`(B, S)`
+        - Output :math:`(B, S, E)`
+    where
+        - :math:`B` ... batch axis
+        - :math:`S` ... sequence
+        - :math:`E` ... embedding dimension
 
     Parameters
     ----------
-    vocab_size : int
-        Vocabulary size.
+    n_embeddings : int
+        Number of embedding vectors.
     embedding_dim : int
-        Embedding dimensionality.
+        Embedding vector dimensions.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Embeddings are initialized from :math:`\mathcal{N}(0, 1)`.
     """
 
     def __init__(
         self,
-        vocab_size: int,
+        n_embeddings: int,
         embedding_dim: int,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
         super().__init__(label, training)
-        self.vocab_size = vocab_size
+        self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
         self.dtype = Dtype(dtype)
 
         # init weights
-        self.w = Parameter(normal((vocab_size, embedding_dim), dtype=dtype), label="emb_w")
+        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype), label="emb_w")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])

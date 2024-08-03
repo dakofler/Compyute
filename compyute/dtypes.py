@@ -6,7 +6,17 @@ from typing import Literal, TypeAlias
 import cupy
 import numpy
 
-__all__ = ["int32", "int64", "float16", "float32", "float64", "complex64", "complex128"]
+__all__ = [
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "float16",
+    "float32",
+    "float64",
+    "complex64",
+    "complex128",
+]
 
 
 class Dtype(Enum):
@@ -29,6 +39,8 @@ class Dtype(Enum):
         return self.__repr__()
 
 
+int8 = Dtype.INT8
+int16 = Dtype.INT16
 int32 = Dtype.INT32
 int64 = Dtype.INT64
 float16 = Dtype.FLOAT16

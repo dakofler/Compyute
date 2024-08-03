@@ -20,12 +20,22 @@ __all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
 
 
 class Convolution1d(Module):
-    """Convolutional layer used for temporal information and feature extraction.
+    r"""Applies a 1D convolution to the input for feature extraction.
 
-    Input: (B, Ci, Ti)
-        B ... batch, Ci ... input channels, Ti ... input time
-    Output: (B, Co, To)
-        B ... batch, Co ... output channels, To ... output time
+    .. math::
+        y = b + \sum_{k=0}^{C_{in}-1} w_{k}*x_{k}
+
+    where :math:`*` is the cross-correlation operator.
+
+    Shapes:
+        - Input :math:`(B, C_{in}, S_{in})`
+        - Output :math:`(B, C_{out}, S_{out})`
+    where
+        - :math:`B` ... batch axis
+        - :math:`C_{in}` ... input channels
+        - :math:`S_{in}` ... input sequence
+        - :math:`C_{out}` ... output channels
+        - :math:`S_{out}` ... output sequence
 
     Parameters
     ----------
@@ -35,20 +45,25 @@ class Convolution1d(Module):
         Number of output channels (filters).
     kernel_size : int
         Size of each kernel.
-    padding : int, optional
-        Padding applied to the input tensor, by default 0.
+    padding : _PaddingLike, optional
+        Padding applied before convolution. Defaults to ``valid``.
     stride : int, optional
-        Stride used for the convolution operation, by default 1.
+        Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter, by default 1.
+        Dilation used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in} * k * k}}`. Biases are initialized as zeros.
     """
 
     def __init__(
@@ -107,42 +122,59 @@ class Convolution1d(Module):
 
 
 class Convolution2d(Module):
-    """Convolutional layer used for spacial information and feature extraction.
+    r"""Applies a 2D convolution to the input for feature extraction.
 
-    Input: (B, Ci, Yi, Xi)
-        B ... batch, Ci ... input channels, Yi ... input height, Xi ... input width
-    Output: (B, Co, Yo, Xo)
-        B ... batch, Co ... output channels, Yo ... output height, Xo ... output width
+    .. math::
+        y = b + \sum_{k=0}^{C_{in}-1} w_{k}*x_{k}
+
+    where :math:`*` is the cross-correlation operator.
+
+    Shapes:
+        - Input :math:`(B, C_{in}, Y_{in}, X_{in})`
+        - Output :math:`(B, C_{out}, Y_{out}, X_{out})`
+    where
+        - :math:`B` ... batch axis
+        - :math:`C_{in}` ... input channels
+        - :math:`Y_{in}` ... input height
+        - :math:`X_{in}` ... input width
+        - :math:`C_{out}` ... output channels
+        - :math:`Y_{out}` ... output height
+        - :math:`X_{out}` ... output width
 
     Parameters
     ----------
     in_channels : int
         Number of input channels (color channels).
     out_channels : int
-        Number of output channels (filters).
-    kernel_size : int, optional
-        Size of each kernel, by default 3.
+        Number of output channels (filters or feature maps).
+    kernel_size : int
+        Size of each kernel.
     padding : _PaddingLike, optional
-        Padding applied to a tensor before the convolution, by default "valid".
+        Padding applied before convolution. Defaults to ``valid``.
     stride : int , optional
-        Strides used for the convolution operation, by default 1.
+        Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
-        Dilations used for each axis of the filter, by default 1.
+        Dilations used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
-        Whether to use bias values, by default True.
+        Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases, by default Dtype.FLOAT32.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
+
+
+    .. note::
+        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in} * k * k}}`. Biases are initialized as zeros.
     """
 
     def __init__(
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int = 3,
+        kernel_size: int,
         padding: _PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
@@ -196,11 +228,11 @@ class MaxPooling2d(Module):
     Parameters
     ----------
     kernel_size : int, optional
-        Size of the pooling window used for the pooling operation, by default 2.
+        Size of the pooling window used for the pooling operation. Defaults to ``2``.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(
@@ -223,11 +255,11 @@ class AvgPooling2d(Module):
     Parameters
     ----------
     kernel_size : int, optional
-        Size of the pooling window used for the pooling operation, by default 2.
+        Size of the pooling window used for the pooling operation. Defaults to ``2``.
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(

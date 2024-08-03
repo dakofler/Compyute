@@ -21,9 +21,9 @@ class Module(ABC):
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
@@ -46,7 +46,13 @@ class Module(ABC):
         return self._device
 
     def to_device(self, device: _DeviceLike) -> None:
-        """Moves the module parameters and buffers to the specified device."""
+        """Moves the module parameters and buffers to the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the module parameters and buffers to.
+        """
         device = Device(device)
         if device == self._device:
             return
@@ -66,7 +72,13 @@ class Module(ABC):
         return self._trainable
 
     def set_trainable(self, value: bool) -> None:
-        """Whether the module parameters are trainable."""
+        """Set module parameters to be trainable.
+
+        Parameters
+        ----------
+        value : bool
+            Whether the module parameters should be trainable.
+        """
         if self._trainable == value:
             return
         self._trainable = value
@@ -76,12 +88,24 @@ class Module(ABC):
 
     @property
     def parameters(self) -> Iterator[Parameter]:
-        """Returns module parameters."""
+        """Returns an iterator of module parameters.
+
+        Returns
+        -------
+        Iterator[Parameter]
+            Iterator of module parameters.
+        """
         return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
-        """Returns module buffers."""
+        """Returns an iterator of module buffers.
+
+        Returns
+        -------
+        Iterator[Buffer]
+            Iterator of module buffers.
+        """
         return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
@@ -89,12 +113,21 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     def set_retain_values(self, value: bool) -> None:
-        """Sets module to retain intermedate values."""
+        """Set the module to retain intermediate values such as outputs and gradients.
+
+        Parameters
+        ----------
+        value : bool
+            Whether the module should retain intermediate values.
+        """
         self._retain_values = value
 
     @contextmanager
     def retain_values(self):
-        """Context manager for setting the module to retain intermediate values."""
+        """
+        Context manager for setting the module to retain intermediate values
+        such as outputs and gradients.
+        """
         retain_values = self._retain_values
         self.set_retain_values(True)
         try:
@@ -103,12 +136,18 @@ class Module(ABC):
             self.set_retain_values(retain_values)
 
     def set_training(self, value: bool) -> None:
-        """Sets the training mode of the module."""
+        """Set the module's training mode.
+
+        Parameters
+        ----------
+        value : bool
+            Whether the module should be in training mode.
+        """
         self._training = value
 
     @contextmanager
     def training(self):
-        """Context manager for putting the module in training state."""
+        """Context manager for putting the module into training mode."""
         training = self._training
         self.set_training(True)
         try:
@@ -132,6 +171,18 @@ class Module(ABC):
         return repr_string + ", ".join(attributes) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
+        """Performs a forward pass through the module.
+
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor.
+
+        Returns
+        ----------
+        Tensor
+            Computed module output.
+        """
         y = self.forward(x)
         self._set_y(y)
         return y
@@ -160,7 +211,7 @@ class Module(ABC):
 
         Parameters
         ----------
-        dy : Tensor
+        dy : :class:`compyute.Tensor`
             Output gradient tensor.
 
         Returns
@@ -185,13 +236,6 @@ class Module(ABC):
         return dy
 
     def _set_y(self, y: Tensor) -> None:
-        """Saves the module output to y tensor.
-
-        Parameters
-        ----------
-        y : Tensor
-            Module output tensor.
-        """
         if not self._retain_values:
             return
         if self.y is None:
@@ -200,18 +244,17 @@ class Module(ABC):
             self.y.data = y.data.copy()
 
     def _set_dy(self, dy: Tensor) -> None:
-        """Saves the module output gradients to y tensor.
-
-        Parameters
-        ----------
-        dy : Tensor
-            Module output tensor gradients.
-        """
         if self._retain_values and self.y is not None:
             self.y.grad = dy.copy()
 
     def cleanup(self, force: bool = False) -> None:
-        """Resets temporary values like outputs and gradients."""
+        """Resets temporary values like outputs and gradients.
+
+        Parameters
+        ----------
+        force : bool, optional
+            Whether to force cleanup and ignore ``retain_values``. Defaults to ``False``.
+        """
         if self._retain_values and not force:
             return
         self.y = None
@@ -221,20 +264,7 @@ class Module(ABC):
             p.grad = None
 
     def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
-        """Checks if a tensors dimensions match desired target dimensions.
-
-        Parameters
-        ----------
-        x : Tensor
-            Tensor whose dimensions are checked.
-        valid_dims : Iterable[int]
-            Valid numbers of dimension the tensor should have.
-
-        Raises
-        ------
-        ShapeError
-            If the tensor's dimensions do not match the target dimensions.
-        """
+        """Checks if the number of dimensions match the valid dimensions."""
         if x.ndim in valid_dims:
             return
         vdims = ", ".join(str(d) for d in valid_dims)
@@ -249,14 +279,14 @@ class Module(ABC):
 
 
 class Identity(Module):
-    """Identity module.
+    """Identity module that just forwards inputs and gradients.
 
     Parameters
     ----------
     label : str, optional
-        Module label.
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
-        Whether the module should be in training mode, by default False.
+        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -269,14 +299,14 @@ class ModelDefinitionError(Exception):
 
 
 def save_module(module: Module, filepath: str) -> None:
-    """Saves a model as a binary file.
+    """Saves a module to a binary file.
 
     Parameters
     ----------
-    model : Model
-        Model to be saved.
+    module : Module
+        Module to be saved.
     filepath : str
-        Path to the file.
+        Where to save the file to.
     """
 
     module.to_device(Device.CPU)
@@ -287,17 +317,17 @@ def save_module(module: Module, filepath: str) -> None:
 
 
 def load_module(filepath: str) -> Module:
-    """Load a module from a previously saved binary file.
+    """Load a module from a binary file.
 
     Parameters
     ----------
     filepath : str
-        Path to the file.
+        Filepath of the binary module file.
 
     Returns
     -------
-    Model
-        Loaded model.
+    Module
+        Loaded module.
     """
     with open(filepath, "rb") as file:
         obj = pickle.load(file)

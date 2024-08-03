@@ -43,11 +43,11 @@ def batchnorm1d(
     b : Tensor
         Bias tensor for shifting the distribution.
     m : float, optional
-        Momentum used for running mean and variance computation, by default 0.1.
+        Momentum used for running mean and variance computation. Defaults to ``0.1``.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -137,11 +137,11 @@ def batchnorm2d(
     b : Tensor
         Bias tensor for shifting the distribution.
     m : float, optional
-        Momentum used for running mean and variance computation, by default 0.1.
+        Momentum used for running mean and variance computation. Defaults to ``0.1``.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -221,9 +221,9 @@ def layernorm(
     b : Tensor
         Bias tensor for shifting the distribution.
     eps : float, optional
-        Constant for numerical stability, by default 1e-5.
+        Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function, by default False.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------

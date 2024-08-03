@@ -35,7 +35,7 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
     values : Tensor
         Values to append.
     axis : int, optional
-        Axis alowng which to append the values, by default -1.
+        Axis alowng which to append the values. Defaults to ``-1``.
 
     Returns
     -------
@@ -60,13 +60,13 @@ def arange(
     stop : float
         Stop value (not included).
     start : float, optional
-        Start value, by default 0.
+        Start value. Defaults to ``0``.
     step : int | float, optional
-        Spacing between values, by default 1.
+        Spacing between values. Defaults to ``1``.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -85,7 +85,7 @@ def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
     tensors : Sequence[Tensor]
         Sequence of Tensors to be joined.
     axis : AxisLike, optional
-        Axis along which to join the tensors, by default -1.
+        Axis along which to join the tensors. Defaults to ``-1``.
 
     Returns
     -------
@@ -106,9 +106,9 @@ def empty(
     shape : ShapeLike
         Shape of the new tensor.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -150,9 +150,9 @@ def full(
     value : ScalarLike
         Value to fill the tensor.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -184,16 +184,16 @@ def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
 def identity(
     n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
-    """Returns a diagonal tensor of shape (n, n).
+    """Returns a diagonal tensor of shape ``(n, n)``.
 
     Parameters
     ----------
     n : int
-        Size of the new tensor. The shape will be (n, n).
+        Size of the new tensor. The shape will be ``(n, n)``.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -212,7 +212,7 @@ def linspace(
     device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
-    a given interval [start, stop].
+    a given interval :math:`[start, stop]`.
 
     Parameters
     ----------
@@ -223,9 +223,9 @@ def linspace(
     num : int
         Number of samples.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -246,9 +246,9 @@ def ones(
     shape : ShapeLike
         Shape of the new tensor.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
@@ -283,10 +283,11 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     x : Tensor
         Input tensor.
     splits : int | list[int]
-        `int`: tensor is split into n equally sized tensors.
-        `Sequence[int]`: tensor is split at the given indices.
+        Where to split the tensor.
+            - ``int``: the tensor is split into n equally sized tensors.
+            - ``Sequence[int]``: the tensor is split at the given indices.
     axis : int, optional
-        Axis along which to split the tensor, by default -1.
+        Axis along which to split the tensor. Defaults to ``-1``.
 
     Returns
     -------
@@ -304,7 +305,7 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
     tensors : Sequence[Tensor]
         Sequence of Tensors to be stacked.
     axis : AxisLike, optional
-        Axis along which to stack the tensors, by default 0.
+        Axis along which to stack the tensors. Defaults to ``0``.
 
     Returns
     -------
@@ -325,9 +326,9 @@ def zeros(
     shape : ShapeLike
         Shape of the new tensor.
     dtype : DtypeLike, optional
-        Datatype of the tensor data, by default None.
+        Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on, by default Device.CPU.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------

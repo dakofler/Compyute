@@ -24,9 +24,9 @@ def split_train_val_test(
     x : Tensor
         Input tensor.
     ratio_val : float, optional
-        Size ratio of the validation split, by default 0.1.
+        Size ratio of the validation split. Defaults to ``0.1``.
     ratio_test : float, optional
-        Size ratio of the test split, by default 0.1.
+        Size ratio of the test split. Defaults to ``0.1``.
 
     Returns
     -------
@@ -59,12 +59,12 @@ def normalize(
     x : Tensor
         Input tensor.
     axis : _AxisLike, optional
-        Axes over which normalization is applied, by default None.
+        Axes over which normalization is applied. Defaults to ``None``.
         If None, the flattended tensor is normalized.
     l_bound : int, optional
-        Lower bound of output values, by default 0.
+        Lower bound of output values. Defaults to ``0``.
     u_bound : int, optional
-        Upper bound of output values, by default 1.
+        Upper bound of output values. Defaults to ``1``.
 
     Returns
     -------
@@ -88,13 +88,13 @@ def standardize(
     x : Tensor
         Tensor to be standardized.
     axis : _AxisLike, optional
-        Axes over which standardization is applied, by default None.
+        Axes over which standardization is applied. Defaults to ``None``.
         If None, the flattended tensor is standardized.
 
     Returns
     -------
     Tensor
-        Standardized tensor with mean 0 and variance 1.
+        Standardized tensor with mean ``0`` and variance ``1``.
     """
 
     return (x - mean(x, axis=axis)) / var(x, axis=axis)
@@ -106,10 +106,10 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     Parameters
     ----------
     x : Tensor
-        Tensor containing categorical columns of type `int`.
+        Tensor containing categorical columns of type ``int``.
     num_classes : int
         Number of classes to be considered when encoding.
-        Defines axis -1 of the output tensor.
+        Defines axis ``-1`` of the output tensor.
 
     Returns
     -------
@@ -119,7 +119,7 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     Raises
     -------
     ValueError
-        If the tensor dtype is not int.
+        If the tensor dtype is not ``int``.
     """
     if x.dtype not in {Dtype.INT8, Dtype.INT16, Dtype.INT32, Dtype.INT64}:
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")

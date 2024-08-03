@@ -1,6 +1,7 @@
-Trainer module
-----------------------------------
+compyute.nn.trainer
+===================
+.. automodule:: compyute.nn.trainer
+.. currentmodule:: compyute.nn.trainer
 
-.. automodule:: compyute.nn.trainer.trainer
+.. autoclass:: Trainer
    :members:
-   :show-inheritance:

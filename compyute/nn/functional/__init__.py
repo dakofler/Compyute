@@ -6,3 +6,4 @@ from .embeddings import *
 from .linear import *
 from .losses import *
 from .metrics import *
+from .normalizatons import *
