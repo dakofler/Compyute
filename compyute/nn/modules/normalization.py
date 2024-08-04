@@ -65,12 +65,12 @@ class Batchnorm1d(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype), label="bn1d_w")
-        self.b = Parameter(zeros((channels,), dtype), label="bn1d_b")
+        self.w = Parameter(ones((channels,), dtype))
+        self.b = Parameter(zeros((channels,), dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype), label="bn1d_rmean")
-        self.rvar = Buffer(ones((channels,), dtype), label="bn1d_rvar")
+        self.rmean = Buffer(zeros((channels,), dtype))
+        self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
@@ -148,12 +148,12 @@ class Batchnorm2d(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype), label="bn2d_w")
-        self.b = Parameter(zeros((channels,), dtype), label="bn2d_b")
+        self.w = Parameter(ones((channels,), dtype))
+        self.b = Parameter(zeros((channels,), dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype), label="bn2d_rmean")
-        self.rvar = Buffer(ones((channels,), dtype), label="bn2d_rvar")
+        self.rmean = Buffer(zeros((channels,), dtype))
+        self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
@@ -223,8 +223,8 @@ class Layernorm(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones(normalized_shape, dtype), label="ln_w")
-        self.b = Parameter(zeros(normalized_shape, dtype), label="ln_b")
+        self.w = Parameter(ones(normalized_shape, dtype))
+        self.b = Parameter(zeros(normalized_shape, dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         x = x.as_type(self.dtype)

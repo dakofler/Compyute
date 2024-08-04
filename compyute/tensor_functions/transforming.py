@@ -283,7 +283,7 @@ def inner(*tensors: Tensor) -> Tensor:
 
     Parameters
     ----------
-    tensors : Tensor
+    *tensors : Tensor
         Tensors to compute the inner product of.
 
     Returns
@@ -522,7 +522,7 @@ def outer(*tensors: Tensor) -> Tensor:
 
     Parameters
     ----------
-    tensors : Tensor
+    *tensors : Tensor
         Tensors to compute the outer product of.
 
     Returns

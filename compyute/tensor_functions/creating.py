@@ -3,7 +3,7 @@
 from typing import Optional, Sequence
 
 from ..base_tensor import Tensor, _AxisLike, _ShapeLike
-from ..dtypes import _DtypeLike, _ScalarLike, dtype_to_str
+from ..dtypes import Dtype, _DtypeLike, _ScalarLike
 from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
@@ -73,7 +73,7 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
@@ -115,7 +115,7 @@ def empty(
     Tensor
         Tensor with uninitialized values.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
 
 
@@ -159,7 +159,7 @@ def full(
     Tensor
         Tensor with all values being one.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).full(shape, value, dtype=dtype))
 
 
@@ -200,7 +200,7 @@ def identity(
     Tensor
         Diagonal tensor.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).identity(n, dtype=dtype))
 
 
@@ -232,7 +232,7 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
@@ -255,7 +255,7 @@ def ones(
     Tensor
         Tensor with all values being one.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
@@ -283,9 +283,9 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     x : Tensor
         Input tensor.
     splits : int | list[int]
-        Where to split the tensor.
-            - ``int``: the tensor is split into n equally sized tensors.
-            - ``Sequence[int]``: the tensor is split at the given indices.
+        | Where to split the tensor.
+        | ``int``: the tensor is split into n equally sized tensors.
+        | ``Sequence[int]``: the tensor is split at the given indices.
     axis : int, optional
         Axis along which to split the tensor. Defaults to ``-1``.
 
@@ -335,7 +335,7 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    dtype = Dtype(dtype).value if dtype is not None else dtype
     return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 

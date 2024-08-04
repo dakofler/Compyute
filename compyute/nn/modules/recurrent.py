@@ -80,12 +80,12 @@ class Recurrent(Module):
         k = h_channels**-0.5
 
         # init input weights and biases
-        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="rec_w_i")
-        self.b_i = Parameter(zeros((h_channels,), dtype), label="rec_b_i") if bias else None
+        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_i = Parameter(zeros((h_channels,), dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="rec_w_h")
-        self.b_h = Parameter(zeros((h_channels,), dtype), label="rec_b_h") if bias else None
+        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_h = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
@@ -220,24 +220,24 @@ class LSTM(Module):
         k = h_channels**-0.5
 
         # init input weights and biases
-        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ii")
-        self.b_ii = Parameter(zeros((h_channels,), dtype), label="lstm_b_ii") if bias else None
-        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_if")
-        self.b_if = Parameter(zeros((h_channels,), dtype), label="lstm_b_if") if bias else None
-        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ig")
-        self.b_ig = Parameter(zeros((h_channels,), dtype), label="lstm_b_ig") if bias else None
-        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_io")
-        self.b_io = Parameter(zeros((h_channels,), dtype), label="lstm_b_io") if bias else None
+        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_ii = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_if = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_ig = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_io = Parameter(zeros((h_channels,), dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hi")
-        self.b_hi = Parameter(zeros((h_channels,), dtype), label="lstm_b_hi") if bias else None
-        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hf")
-        self.b_hf = Parameter(zeros((h_channels,), dtype), label="lstm_b_hf") if bias else None
-        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hg")
-        self.b_hg = Parameter(zeros((h_channels,), dtype), label="lstm_b_hg") if bias else None
-        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_ho")
-        self.b_ho = Parameter(zeros((h_channels,), dtype), label="lstm_b_ho") if bias else None
+        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hi = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hf = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hg = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_ho = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
@@ -475,20 +475,20 @@ class GRU(Module):
         k = h_channels**-0.5
 
         # init input weights and biases
-        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_ir")
-        self.b_ir = Parameter(zeros((h_channels,), dtype), label="lstm_b_ir") if bias else None
-        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_iz")
-        self.b_iz = Parameter(zeros((h_channels,), dtype), label="lstm_b_iz") if bias else None
-        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype), label="lstm_w_in")
-        self.b_in = Parameter(zeros((h_channels,), dtype), label="lstm_b_in") if bias else None
+        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_ir = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_iz = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
+        self.b_in = Parameter(zeros((h_channels,), dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hr")
-        self.b_hr = Parameter(zeros((h_channels,), dtype), label="lstm_b_hr") if bias else None
-        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hz")
-        self.b_hz = Parameter(zeros((h_channels,), dtype), label="lstm_b_hz") if bias else None
-        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype), label="lstm_w_hn")
-        self.b_hn = Parameter(zeros((h_channels,), dtype), label="lstm_b_hn") if bias else None
+        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hr = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hz = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
+        self.b_hn = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])

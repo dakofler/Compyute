@@ -56,7 +56,7 @@ class Embedding(Module):
         self.dtype = Dtype(dtype)
 
         # init weights
-        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype), label="emb_w")
+        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])

@@ -178,10 +178,10 @@ def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...])
     x : Tensor
         Input tensor.
     pad_width : int | tuple[int, int] | tuple[tuple[int, int], ...]
-        Padding width(s).
-            - ``int``: same padding width at the begining and end of all axes.
-            - ``tuple[int, int]``: specific widths at the beginning and end of all axes.
-            - ``tuple[tuple[int, int]]``: specific widths in the beginning and end for each axis.
+        | Padding width(s).
+        | ``int``: same padding width at the begining and end of all axes.
+        | ``tuple[int, int]``: specific widths at the beginning and end of all axes.
+        | ``tuple[tuple[int, int]]``: specific widths in the beginning and end for each axis.
 
     Returns
     -------
@@ -254,10 +254,10 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis alown which to flip the tensor. Defaults to ``None``.
-            - ``None``: all axes are flipped
-            - ``int``: only the specified axis is flipped.
-            - ``tuple[int, ...]``: all specified axes are flipped.
+        | Axis alown which to flip the tensor. Defaults to ``None``.
+        | ``None``: all axes are flipped
+        | ``int``: only the specified axis is flipped.
+        | ``tuple[int, ...]``: all specified axes are flipped.
 
     Returns
     -------
