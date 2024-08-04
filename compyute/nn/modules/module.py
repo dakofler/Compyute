@@ -9,7 +9,7 @@ from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _DeviceLike, assert_device_available
+from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "save_module", "load_module"]
@@ -57,7 +57,7 @@ class Module(ABC):
         if device == self._device:
             return
 
-        assert_device_available(device)
+        available(device)
         self._device = device
 
         if self.y is not None:

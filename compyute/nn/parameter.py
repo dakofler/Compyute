@@ -1,5 +1,7 @@
 """Neural network parameter and buffer classes."""
 
+from typing import Optional
+
 from ..base_tensor import Tensor
 
 __all__ = ["Buffer", "Parameter"]
@@ -11,13 +13,15 @@ class Parameter(Tensor):
     Parameters
     ----------
     data : Tensor
-        Data to initialize the parameter.
-    requires_grad : bool, optional
-        Whether the parameter requires gradients. Defaults to ``True``.
+        Parameter data.
+    label : str, optional
+        Parameter label. Defaults to ``None``.
     """
 
-    def __init__(self, data: Tensor, requires_grad: bool = True) -> None:
-        super().__init__(data.data, requires_grad=requires_grad)
+    def __init__(self, data: Tensor, label: Optional[str] = None) -> None:
+        super().__init__(data.data)
+        self.grad = data.grad
+        self.label = label
 
 
 class Buffer(Tensor):
@@ -26,8 +30,11 @@ class Buffer(Tensor):
     Parameters
     ----------
     data : Tensor
-        Data to initialize the buffer.
+        Buffer data.
+    label : str, optional
+        Buffer label. Defaults to ``None``.
     """
 
-    def __init__(self, data: Tensor) -> None:
+    def __init__(self, data: Tensor, label: Optional[str] = None) -> None:
         super().__init__(data.data, requires_grad=False)
+        self.label = label

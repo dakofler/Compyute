@@ -3,9 +3,9 @@
 from contextlib import contextmanager
 from typing import Optional
 
-from ..base_tensor import Tensor, _ShapeLike
-from ..dtypes import _DtypeLike, select_dtype
-from ..engine import Device, _DeviceLike, get_engine, select_device_or_cpu
+from ..base_tensor import Tensor, _ShapeLike, tensor
+from ..dtypes import _DtypeLike, dtype_to_str
+from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
     "normal",
@@ -55,7 +55,7 @@ def normal(
     mean: float = 0.0,
     std: float = 1.0,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with values drawn from a normal distribution.
 
@@ -70,19 +70,15 @@ def normal(
     dtype : _DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor of normally distributed samples.
     """
-    device = select_device_or_cpu(device)
-    dtype = select_dtype(dtype)
-    data = get_engine(device).random.normal(mean, std, shape)
-    if dtype is not None:
-        return Tensor(data).as_type(dtype)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
 def uniform(
@@ -90,7 +86,7 @@ def uniform(
     low: float = -1.0,
     high: float = 1.0,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with values drawn from a uniform distribution.
 
@@ -105,19 +101,15 @@ def uniform(
     dtype : _DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor of uniformly distributed samples.
     """
-    device = select_device_or_cpu(device)
-    dtype = select_dtype(dtype)
-    data = get_engine(device).random.uniform(low, high, shape)
-    if dtype is not None:
-        return Tensor(data).as_type(dtype)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
 def uniform_int(
@@ -125,7 +117,7 @@ def uniform_int(
     low: int,
     high: int,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with integer values drawn from a discrete uniform distribution.
 
@@ -140,23 +132,19 @@ def uniform_int(
     dtype : _DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
-    device = select_device_or_cpu(device)
-    dtype = select_dtype(dtype)
-    data = get_engine(device).random.randint(low, high, shape)
-    if dtype is not None:
-        return Tensor(data).as_type(dtype)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
 def permutation(
-    n: int, dtype: Optional[_DtypeLike] = None, device: Optional[_DeviceLike] = None
+    n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns a tensor containing a permuted range of a specified length.
 
@@ -167,19 +155,15 @@ def permutation(
     dtype : _DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : _DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Permuted tensor.
     """
-    device = select_device_or_cpu(device)
-    dtype = select_dtype(dtype)
-    data = get_engine(device).random.permutation(n)
-    if dtype is not None:
-        return Tensor(data).as_type(dtype)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else None
+    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
@@ -205,7 +189,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
     return Tensor(get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
 
 
-def multinulli(p: float, shape: _ShapeLike, device: Optional[_DeviceLike] = None) -> Tensor:
+def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) -> Tensor:
     """Returns a tensor of repeated bernoulli experiments using a given probability.
 
     Parameters
@@ -215,7 +199,7 @@ def multinulli(p: float, shape: _ShapeLike, device: Optional[_DeviceLike] = None
     shape : _ShapeLike
         Shape of the new tensor.
     device : _DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------

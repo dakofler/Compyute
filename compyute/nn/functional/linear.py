@@ -22,7 +22,7 @@ def linear(
     b : Tensor, optional
         Bias tensor. Defaults to ``None``. If ``None``, no bias is added.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -3,8 +3,8 @@
 from typing import Optional, Sequence
 
 from ..base_tensor import Tensor, _AxisLike, _ShapeLike
-from ..dtypes import _DtypeLike, _ScalarLike, select_dtype_str
-from ..engine import _DeviceLike, get_engine, select_device_or_cpu
+from ..dtypes import _DtypeLike, _ScalarLike, dtype_to_str
+from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
     "append",
@@ -50,7 +50,7 @@ def arange(
     start: int = 0,
     step: int | float = 1,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
     a given interval [start, stop).
@@ -66,17 +66,15 @@ def arange(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor of evenly spaced samples.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).arange(start, stop, step, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
 def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
@@ -99,7 +97,7 @@ def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
 
 
 def empty(
-    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: Optional[_DeviceLike] = None
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns an tensor with uninitialized values.
 
@@ -110,17 +108,15 @@ def empty(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor with uninitialized values.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).empty(shape=shape, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -143,7 +139,7 @@ def full(
     shape: _ShapeLike,
     value: _ScalarLike,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -156,17 +152,15 @@ def full(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor with all values being one.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).full(shape, value, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).full(shape, value, dtype=dtype))
 
 
 def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
@@ -188,7 +182,7 @@ def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
 
 
 def identity(
-    n: int, dtype: Optional[_DtypeLike] = None, device: Optional[_DeviceLike] = None
+    n: int, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns a diagonal tensor of shape ``(n, n)``.
 
@@ -199,17 +193,15 @@ def identity(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Diagonal tensor.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).identity(n, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).identity(n, dtype=dtype))
 
 
 def linspace(
@@ -217,7 +209,7 @@ def linspace(
     stop: float,
     num: int,
     dtype: Optional[_DtypeLike] = None,
-    device: Optional[_DeviceLike] = None,
+    device: _DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
     a given interval :math:`[start, stop]`.
@@ -233,21 +225,19 @@ def linspace(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor of evenly spaced samples.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).linspace(start, stop, num, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
 def ones(
-    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: Optional[_DeviceLike] = None
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -258,17 +248,15 @@ def ones(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor with all values being one.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).ones(shape, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
 def ones_like(x: Tensor) -> Tensor:
@@ -329,7 +317,7 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
 
 
 def zeros(
-    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: Optional[_DeviceLike] = None
+    shape: _ShapeLike, dtype: Optional[_DtypeLike] = None, device: _DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
@@ -340,17 +328,15 @@ def zeros(
     dtype : DtypeLike, optional
         Datatype of the tensor data. Defaults to ``None``.
     device : DeviceLike, optional
-        The device the tensor is stored on. Defaults to ``None``.
+        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
     Returns
     -------
     Tensor
         Tensor with all values being zero.
     """
-    device = select_device_or_cpu(device)
-    dtype_str = select_dtype_str(dtype)
-    data = get_engine(device).zeros(shape, dtype=dtype_str)
-    return Tensor(data)
+    dtype = dtype_to_str(dtype) if dtype is not None else dtype
+    return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 
 def zeros_like(x: Tensor) -> Tensor:

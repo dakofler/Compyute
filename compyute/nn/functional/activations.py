@@ -7,7 +7,7 @@ from ...tensor_functions.creating import identity
 from ...tensor_functions.reshaping import insert_dim, reshape, tile
 from ...tensor_functions.transforming import exp
 from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import maximum, sech
+from ...tensor_functions.transforming import maximum, minimum, sech
 from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import tanh as cptanh
 
@@ -34,7 +34,7 @@ def relu(
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     ----------
@@ -66,7 +66,7 @@ def leaky_relu(
     alpha : float, optional
         Slope of the negative output. Defaults to ``0.01``.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     ----------
@@ -97,7 +97,7 @@ def gelu(
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -135,7 +135,7 @@ def sigmoid(
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -165,7 +165,7 @@ def tanh(
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -198,7 +198,7 @@ def softmax(
     x : Tensor
         Input tensor.
     return_grad_fn : bool, optional
-        Whether to also return the corresponding gradient function. Defaults to ``False``.
+        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...base_tensor import Tensor, _ShapeLike
-from ...dtypes import _DtypeLike, select_dtype_or_float
+from ...dtypes import Dtype, _DtypeLike
 from ...tensor_functions.creating import ones, zeros
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm
 from ..parameter import Buffer, Parameter
@@ -37,7 +37,7 @@ class Batchnorm1d(Module):
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -54,7 +54,7 @@ class Batchnorm1d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[_DtypeLike] = None,
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -62,15 +62,15 @@ class Batchnorm1d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = select_dtype_or_float(dtype)
+        self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), self.dtype))
-        self.b = Parameter(zeros((channels,), self.dtype))
+        self.w = Parameter(ones((channels,), dtype), label="bn1d_w")
+        self.b = Parameter(zeros((channels,), dtype), label="bn1d_b")
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), self.dtype))
-        self.rvar = Buffer(ones((channels,), self.dtype))
+        self.rmean = Buffer(zeros((channels,), dtype), label="bn1d_rmean")
+        self.rvar = Buffer(ones((channels,), dtype), label="bn1d_rvar")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
@@ -120,7 +120,7 @@ class Batchnorm2d(Module):
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -137,7 +137,7 @@ class Batchnorm2d(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[_DtypeLike] = None,
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -145,15 +145,15 @@ class Batchnorm2d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = select_dtype_or_float(dtype)
+        self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), self.dtype))
-        self.b = Parameter(zeros((channels,), self.dtype))
+        self.w = Parameter(ones((channels,), dtype), label="bn2d_w")
+        self.b = Parameter(zeros((channels,), dtype), label="bn2d_b")
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), self.dtype))
-        self.rvar = Buffer(ones((channels,), self.dtype))
+        self.rmean = Buffer(zeros((channels,), dtype), label="bn2d_rmean")
+        self.rvar = Buffer(ones((channels,), dtype), label="bn2d_rvar")
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
@@ -198,7 +198,7 @@ class Layernorm(Module):
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
+        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -213,18 +213,18 @@ class Layernorm(Module):
         self,
         normalized_shape: _ShapeLike,
         eps: float = 1e-5,
-        dtype: Optional[_DtypeLike] = None,
+        dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
         super().__init__(label, training)
         self.normalized_shape = normalized_shape
         self.eps = eps
-        self.dtype = select_dtype_or_float(dtype)
+        self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones(normalized_shape, self.dtype))
-        self.b = Parameter(zeros(normalized_shape, self.dtype))
+        self.w = Parameter(ones(normalized_shape, dtype), label="ln_w")
+        self.b = Parameter(zeros(normalized_shape, dtype), label="ln_b")
 
     def forward(self, x: Tensor) -> Tensor:
         x = x.as_type(self.dtype)

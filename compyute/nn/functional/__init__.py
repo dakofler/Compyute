@@ -1,7 +1,4 @@
-"""
-Functions used in neural network modules.
-All functions optionally return the corresponding gradient function for a given input.
-"""
+"""Neural network functions."""
 
 from .activations import *
 from .convolutions import *
