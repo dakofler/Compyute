@@ -5,7 +5,7 @@ from itertools import accumulate, chain
 from typing import Iterator, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
-from ...dtypes import Dtype, _DtypeLike
+from ...dtypes import _DtypeLike
 from ...engine import Device, _DeviceLike
 from ...tensor_functions.creating import concatenate, ones, split
 from ...tensor_functions.transforming import tensorsum
@@ -129,7 +129,7 @@ class Container(Module):
         for module in self.modules:
             module.cleanup(force)
 
-    def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
+    def get_summary(self, input_shape: _ShapeLike, input_dtype: Optional[_DtypeLike] = None) -> str:
         """Returns information about the container and its modules.
 
         Parameters

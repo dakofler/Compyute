@@ -22,7 +22,7 @@ def lookup_embedding(
     embedding_table : Tensor
         Tensor of embedding values.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import Dtype, _DtypeLike
+from ...dtypes import _DtypeLike, select_dtype_or_float
 from ...random.random import normal
 from ...tensor_functions.creating import zeros_like
 from ..functional.embeddings import lookup_embedding
@@ -31,7 +31,7 @@ class Embedding(Module):
     embedding_dim : int
         Embedding vector dimensions.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -46,17 +46,17 @@ class Embedding(Module):
         self,
         n_embeddings: int,
         embedding_dim: int,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
         super().__init__(label, training)
         self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
-        self.dtype = Dtype(dtype)
+        self.dtype = select_dtype_or_float(dtype)
 
         # init weights
-        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype), label="emb_w")
+        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=self.dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])

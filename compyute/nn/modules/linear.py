@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import Dtype, _DtypeLike
+from ...dtypes import _DtypeLike, select_dtype_or_float
 from ...random.random import uniform
 from ...tensor_functions.creating import zeros
 from ..functional.linear import linear
@@ -36,7 +36,7 @@ class Linear(Module):
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -53,7 +53,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -61,14 +61,14 @@ class Linear(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = bias
-        self.dtype = Dtype(dtype)
+        self.dtype = select_dtype_or_float(dtype)
 
         # init weights
         k = in_channels**-0.5
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype), label="lin_w")
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, self.dtype))
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype), label="lin_b") if bias else None
+        self.b = Parameter(zeros((out_channels,), self.dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3, 4, 5])

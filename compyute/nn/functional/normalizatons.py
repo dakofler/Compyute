@@ -47,7 +47,7 @@ def batchnorm1d(
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -141,7 +141,7 @@ def batchnorm2d(
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -223,7 +223,7 @@ def layernorm(
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------

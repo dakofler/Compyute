@@ -25,7 +25,7 @@ def mean_squared_error(
     y_true : Tensor
         Target values.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -60,7 +60,7 @@ def cross_entropy(
     eps : float, optional
         Constant used for numerical stability. Defaults to ``1e-8``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -90,7 +90,7 @@ def cross_entropy(
 def binary_cross_entropy(
     y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
-    """Computes the cross entropy loss.
+    """Computes the binary cross entropy loss.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def binary_cross_entropy(
     y_true : Tensor
         Binary target class labels, must be either ``0`` or ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -3,7 +3,7 @@
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import Dtype, _DtypeLike
+from ...dtypes import _DtypeLike, select_dtype_or_float
 from ...random.random import uniform
 from ...tensor_functions.creating import zeros
 from ..functional.convolutions import (
@@ -54,7 +54,7 @@ class Convolution1d(Module):
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -75,7 +75,7 @@ class Convolution1d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -87,18 +87,14 @@ class Convolution1d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
+        self.dtype = select_dtype_or_float(dtype)
 
         # init weights
         k = (in_channels * kernel_size) ** -0.5
-        w = uniform((out_channels, in_channels, kernel_size), -k, k, dtype=dtype)
-        self.w = Parameter(w, label="conv1d_w")
+        self.w = Parameter(uniform((out_channels, in_channels, kernel_size), -k, k, self.dtype))
 
         # init biases
-        self.b = None
-        if bias:
-            b = zeros((out_channels,), dtype=dtype)
-            self.b = Parameter(b, label="conv1d_b")
+        self.b = Parameter(zeros((out_channels,), self.dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
@@ -158,7 +154,7 @@ class Convolution2d(Module):
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     training : bool, optional
@@ -179,7 +175,7 @@ class Convolution2d(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -191,15 +187,16 @@ class Convolution2d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
+        self.dtype = select_dtype_or_float(dtype)
 
         # init weights
-        k = (in_channels * self.kernel_size**2) ** -0.5
-        w = uniform((out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k, dtype)
-        self.w = Parameter(w, label="conv2d_w")
+        k = (in_channels * kernel_size**2) ** -0.5
+        self.w = Parameter(
+            uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, self.dtype)
+        )
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype), label="conv2d_b") if bias else None
+        self.b = Parameter(zeros((out_channels,), self.dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])

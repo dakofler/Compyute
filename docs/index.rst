@@ -9,6 +9,7 @@ Compyute is a toolbox for building and training and analyzing neural networks on
     :caption: Python API
 
     compyute
+    compyute.dtypes
     compyute.engine
     compyute.nn
     compyute.nn.functional

@@ -60,7 +60,7 @@ def convolve1d(
     dilation : int, optional
         Dilation factor to use for each axis of the filter. Defaults to ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -125,7 +125,7 @@ def dilate1d(
     dilation : int
         Dilation factor to use.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -167,7 +167,7 @@ def pad1d(
     padding : tuple[int, int]
         Padding width applied to the beginning and end of the last axis.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -257,7 +257,7 @@ def convolve2d(
     dilation : int, optional
         Dilation factor to use for each axis of the filter. Defaults to ``1``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -325,7 +325,7 @@ def dilate2d(
     dilation : tuple[int, int]
         Dilation factor to use.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -376,7 +376,7 @@ def pad2d(
     padding : tuple[tuple[int, int], tuple[int, int]]
         Padding width applied to the beginning and end of the last two axes.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -493,7 +493,7 @@ def maxpooling2d(
     kernel_size : tuple[int, int], optional
         Size of the pooling window. Defaults to ``(2, 2)``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------
@@ -542,7 +542,7 @@ def avgpooling2d(
     kernel_size : tuple[int, int], optional
         Size of the pooling window. Defaults to ``(2, 2)``.
     return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+        Whether to also return the corresponding gradient function. Defaults to ``False``.
 
     Returns
     -------

@@ -6,7 +6,7 @@ from typing import Any, Optional, TypeAlias
 
 import numpy
 
-from .dtypes import Dtype, _DtypeLike, _ScalarLike, dtype_to_str
+from .dtypes import Dtype, _DtypeLike, _ScalarLike, select_dtype_str
 from .engine import (
     Device,
     _ArrayLike,
@@ -15,6 +15,7 @@ from .engine import (
     get_engine,
     infer_device,
     move_data_to_device,
+    select_device_or_infer,
 )
 
 __all__ = ["tensor", "Tensor"]
@@ -42,21 +43,40 @@ def tensor(
     data : _ArrayLike | _ScalarLike
         Data to initialize the tensor.
     device : _DeviceLike, optional
-        Device the tensor should be stored on. If None it is inferred from the data.
+        Device the tensor should be stored on. If ``None``, the default device is used.
+        If no default device is set, it is inferred from the data.
     dtype : _DtypeLike, optional
-        Data type of tensor data. If None it is inferred from the data.
+        Data type of tensor data. If ``None``, the default data type is used.
+        If no default data type is set, it is inferred from the data.
     copy : bool, optional
         If true, the data object is copied (may impact performance). Defaults to ``False``.
     requires_grad : bool, optional
         Whether the tensor requires gradients. Defaults to ``True``.
         If false gradients are not computed within neural network modules for this tensor.
+
+    Returns
+    -------
+    Tensor
+        The initialized tensor.
     """
-    if isinstance(data, _ArrayLike) and device is None and dtype is None:
+    if isinstance(data, _ArrayLike):
         return Tensor(data)
-    device = infer_device(type(data)) if device is None else device
-    dtype = dtype_to_str(dtype) if dtype is not None else dtype
-    data = get_engine(device).array(data, copy=copy, dtype=dtype)
+
+    device = select_device_or_infer(data, device)
+    dtype_str = select_dtype_str(dtype)
+    data = get_engine(device).array(data, copy=copy, dtype=dtype_str)
+
     return Tensor(data, requires_grad)
+
+
+def _tensor(data: _ArrayLike | _ScalarLike) -> Tensor:
+    if isinstance(data, _ArrayLike):
+        return Tensor(data)
+
+    device = infer_device(data)
+    data = get_engine(device).array(data, copy=False)
+
+    return Tensor(data)
 
 
 class Tensor:
@@ -84,7 +104,7 @@ class Tensor:
     ) -> None:
         self.data = data
         self.requires_grad = requires_grad
-        self.grad: Optional[Tensor] = None
+        self.grad = None
         self._iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -111,9 +131,20 @@ class Tensor:
         self._data = value
 
     @property
+    def grad(self) -> Optional[Tensor]:
+        """Tensor data gradients."""
+        return self._grad
+
+    @grad.setter
+    def grad(self, value: Optional[Tensor]) -> None:
+        if value is not None and not self.requires_grad:
+            raise ValueError("Gradients are not required for this tensor.")
+        self._grad = value
+
+    @property
     def device(self) -> Device:
         """Device the tensor is stored on."""
-        return infer_device(type(self._data))
+        return infer_device(self._data)
 
     def to_device(self, device: _DeviceLike) -> None:
         """Moves the tensor to a specified device.
@@ -167,7 +198,7 @@ class Tensor:
 
     def __getitem__(self, key: Any) -> Tensor:
         i = tuple(self._as_array(j) for j in key) if isinstance(key, tuple) else self._as_array(key)
-        return tensor(self._data[i])
+        return tensor(self._data[i], self.device, self.dtype)
 
     def __setitem__(self, key: Any, value: Tensor | _ScalarLike) -> None:
         self._data[self._as_array(key)] = self._as_array(value)
@@ -183,68 +214,68 @@ class Tensor:
         raise StopIteration
 
     def __add__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data + self._as_array(other))
+        return _tensor(self._data + self._as_array(other))
 
     def __radd__(self, other: Optional[_ScalarLike]) -> Tensor:
         other = other or 0.0  # for gradient accumulation
         return self + other
 
     def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data * self._as_array(other))
+        return _tensor(self._data * self._as_array(other))
 
     def __rmul__(self, other: _ScalarLike) -> Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data ** self._as_array(other))
+        return _tensor(self._data ** self._as_array(other))
 
     def __rpow__(self, other: _ScalarLike) -> Tensor:
-        return tensor(other, self.device) ** self
+        return tensor(other, self.device, self.dtype) ** self
 
     def __neg__(self) -> Tensor:
         return self * -1
 
     def __sub__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data - self._as_array(other))
+        return _tensor(self._data - self._as_array(other))
 
     def __rsub__(self, other: _ScalarLike) -> Tensor:
         return -self + other
 
     def __truediv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data / self._as_array(other))
+        return _tensor(self._data / self._as_array(other))
 
     def __rtruediv__(self, other: _ScalarLike) -> Tensor:
         return self**-1 * other
 
     def __floordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data // self._as_array(other))
+        return _tensor(self._data // self._as_array(other))
 
     def __rfloordiv__(self, other: _ScalarLike) -> Tensor:
         return (other // self).as_type(self.dtype)
 
     def __mod__(self, other: int) -> Tensor:
-        return tensor(self._data % other)
+        return _tensor(self._data % other)
 
     def __matmul__(self, other: Tensor) -> Tensor:
-        return tensor(self._data @ other.data)
+        return _tensor(self._data @ other.data)
 
     def __lt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data < self._as_array(other))
+        return _tensor(self._data < self._as_array(other))
 
     def __gt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data > self._as_array(other))
+        return _tensor(self._data > self._as_array(other))
 
     def __le__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data <= self._as_array(other))
+        return _tensor(self._data <= self._as_array(other))
 
     def __ge__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data >= self._as_array(other))
+        return _tensor(self._data >= self._as_array(other))
 
     def __eq__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data == self._as_array(other))
+        return _tensor(self._data == self._as_array(other))
 
     def __ne__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data != self._as_array(other))
+        return _tensor(self._data != self._as_array(other))
 
     def __iadd__(self, other: Tensor | _ScalarLike) -> Tensor:
         self._data += self._as_array(other)
@@ -288,7 +319,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def as_type(self, dtype: _DtypeLike) -> Tensor:
-        """Returns a converted tensor of a given datatype.
+        """Returns a copy of the tensor of a given data type.
 
         Parameters
         ----------
@@ -298,32 +329,75 @@ class Tensor:
         Returns
         -------
         Tensor
-            Tensor of dtype.
+            Tensor of a given data type.
         """
-        return tensor(self._data, self.device, dtype=dtype)
+        dtype = Dtype(dtype)
+        if dtype == self.dtype:
+            return self
+
+        new_tensor = Tensor(self._data.astype(dtype.value))
+        if self.grad is not None:
+            new_tensor.grad = self.grad.as_type(dtype)
+        return new_tensor
 
     def int(self) -> Tensor:
-        """Returns a copy of the tensor with integer values."""
+        """Returns a copy of the tensor with data type :class:`compyute.int32`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.int32`.
+        """
         return self.as_type(Dtype.INT32)
 
     def long(self) -> Tensor:
-        """Returns a copy of the tensor with long integer values."""
+        """Returns a copy of the tensor with data type :class:`compyute.int64`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.int64`.
+        """
         return self.as_type(Dtype.INT64)
 
     def half(self) -> Tensor:
-        """Returns a copy of the tensor with half precision values."""
+        """Returns a copy of the tensor with data type :class:`compyute.float16`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.float16`.
+        """
         return self.as_type(Dtype.FLOAT16)
 
     def float(self) -> Tensor:
-        """Returns a copy of the tensor with single precision values."""
+        """Returns a copy of the tensor with data type :class:`compyute.float32`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.float32`.
+        """
         return self.as_type(Dtype.FLOAT32)
 
     def double(self) -> Tensor:
-        """Returns a copy of the tensor with double precision values."""
+        """Returns a copy of the tensor with data type :class:`compyute.float64`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.float64`.
+        """
         return self.as_type(Dtype.FLOAT64)
 
     def complex(self) -> Tensor:
-        """Returns a copy of the tensor with complex values."""
+        """Returns a copy of the tensor with data type :class:`compyute.complex64`.
+
+        Returns
+        -------
+        Tensor
+            Tensor with data type :class:`compyute.complex64`.
+        """
         return self.as_type(Dtype.COMPLEX64)
 
     # ----------------------------------------------------------------------------------------------

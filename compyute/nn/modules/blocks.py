@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...dtypes import Dtype, _DtypeLike
+from ...dtypes import _DtypeLike
 from ..functional.convolutions import _PaddingLike
 from ..initializers import _InitializerLike, get_initializer
 from ..parameter import Parameter
@@ -66,18 +66,18 @@ class DenseBlock(Sequential):
         weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: _InitializerLike = "zeros",
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype, training=training)
 
         w_init = get_initializer(weight_init, dtype, activation)
-        linear.w = Parameter(w_init((out_channels, in_channels)), "lin_w")
+        linear.w = Parameter(w_init((out_channels, in_channels)))
 
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
-            linear.b = Parameter(b_init((out_channels,)), "lin_b")
+            linear.b = Parameter(b_init((out_channels,)))
 
         super().__init__(linear, get_activation(activation), label=label, training=training)
 
@@ -156,7 +156,7 @@ class Convolution1dBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -173,11 +173,11 @@ class Convolution1dBlock(Sequential):
         )
 
         w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)), "conv1d_w")
+        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
 
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)), "conv1d_b")
+            conv.b = Parameter(b_init((out_channels,)))
 
         if batchnorm:
             bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
@@ -262,7 +262,7 @@ class Convolution2dBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[_DtypeLike] = None,
         label: Optional[str] = None,
         training: bool = False,
     ) -> None:
@@ -279,13 +279,11 @@ class Convolution2dBlock(Sequential):
         )
 
         w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(
-            w_init((out_channels, in_channels, kernel_size, kernel_size)), "conv2d_w"
-        )
+        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
 
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)), "conv2d_b")
+            conv.b = Parameter(b_init((out_channels,)))
 
         if batchnorm:
             bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
