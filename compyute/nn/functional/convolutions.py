@@ -42,7 +42,7 @@ def convolve1d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
     """Computes the convolution of two tensors over their last axis.
 
     Parameters
@@ -66,7 +66,7 @@ def convolve1d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]], optional
         Gradient function.
 
 
@@ -77,7 +77,6 @@ def convolve1d(
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
-    f_.requires_grad = f.requires_grad
 
     # pad input and add a fake output dimension
     p = _pad1d_from_str(padding, f_.shape[-1])
@@ -93,7 +92,7 @@ def convolve1d(
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
             dx, df = conv_grad_fn(dy_)
             dx = pad_grad_fn(cpsum(dx, 1))
@@ -101,7 +100,7 @@ def convolve1d(
             if df is not None:
                 df = dil_grad_fn(cpsum(df, 0))
 
-            if b is not None and b.requires_grad:
+            if b is not None:
                 db = cpsum(dy, (0, 2))
             else:
                 db = None
@@ -194,7 +193,7 @@ def _convolve1d(
     f: Tensor,
     stride: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
     f_ = flip(f, -1)
     conv = _fft_conv1d(x, f_)
     stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
@@ -202,7 +201,7 @@ def _convolve1d(
 
     if return_grad_fn:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
             # fill elements skipped by strides with zeros
             dy_, _ = dilate1d(dy, stride)
             dy_ = pad_to_shape(dy_, conv.shape)
@@ -211,7 +210,7 @@ def _convolve1d(
             dx = _fft_conv1d(dy_, f)
 
             dy_ = flip(dy_, axis=-1)
-            df = _fft_conv1d(dy_, x) if f.requires_grad else None
+            df = _fft_conv1d(dy_, x)
 
             return dx, df
 
@@ -239,7 +238,7 @@ def convolve2d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
     """Computes the convolution of two tensors over their last two axes.
 
     Parameters
@@ -276,7 +275,6 @@ def convolve2d(
     d = (dilation, dilation)
     f, dil_grad_fn = dilate2d(f, d, return_grad_fn)  # (Co, Ci, Fy, Fx)
     f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
-    f_.requires_grad = f.requires_grad
 
     # pad input and add a fake output dimension
     p = _pad2d_from_str(padding, f_.shape[-1])
@@ -293,7 +291,7 @@ def convolve2d(
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
             dx, df = conv_grad_fn(dy_)
             dx = pad_grad_fn(cpsum(dx, 1))  # sum over out channels
@@ -301,7 +299,7 @@ def convolve2d(
             if df is not None:
                 df = dil_grad_fn(cpsum(df, 0))  # sum over batches
 
-            if b is not None and b.requires_grad:
+            if b is not None:
                 db = cpsum(dy, (0, 2, 3))  # sum over batches, Y and X
             else:
                 db = None
@@ -403,7 +401,7 @@ def pad2d(
 
 def _convolve2d(
     x: Tensor, f: Tensor, strides: tuple[int, int] = (1, 1), return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
     f_ = flip(f, (-2, -1))
     conv = _fft_conv2d(x, f_)
     stride_slice = [slice(None)] * (x.ndim - 2) + [
@@ -414,7 +412,7 @@ def _convolve2d(
 
     if return_grad_fn:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
             # fill elements skipped by strides with zeros
             dy_, _ = dilate2d(dy, strides)
             dy_ = pad_to_shape(dy_, conv.shape)
@@ -426,7 +424,7 @@ def _convolve2d(
             dx = _fft_conv2d(dy_, f)
 
             dy_ = flip(dy_, axis=(-2, -1))
-            df = _fft_conv2d(dy_, x) if f.requires_grad else None
+            df = _fft_conv2d(dy_, x)
 
             return dx, df
 

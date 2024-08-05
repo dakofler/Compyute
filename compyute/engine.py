@@ -18,7 +18,7 @@ class Device(Enum):
     CUDA = "cuda"
 
     def __repr__(self) -> str:
-        return f"compyute.{self.value}"
+        return f"Dtype('{self.value}')"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -32,7 +32,7 @@ cuda = Device.CUDA
 def _cuda_available() -> bool:
     try:
         return cupy.is_available()
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -45,7 +45,13 @@ _ENGINE_TO_DEVICE: dict[type, Device] = {numpy.ndarray: Device.CPU, cupy.ndarray
 
 
 def gpu_available() -> bool:
-    """Returns True, if one or more GPUs are available."""
+    """Checks, whether one or more GPUs are available.
+
+    Returns
+    -------
+    bool
+        True, if one or more GPUs are available.
+    """
     return Device.CUDA in _AVAILABLE_DEVICES
 
 
@@ -65,21 +71,13 @@ def get_engine(device: _DeviceLike) -> ModuleType:
 
 
 @cache
-def infer_device(data_type: type) -> Device:
+def infer_device(array_type: type) -> Device:
     """Infers the device by type."""
-    return _ENGINE_TO_DEVICE.get(data_type, Device.CPU)
+    return _ENGINE_TO_DEVICE.get(array_type, Device.CPU)
 
 
-def same_device(data1: _ArrayLike, data2: _ArrayLike) -> None:
-    """Checks if two arrays are on the same device."""
-    if infer_device(type(data1)) == infer_device(type(data2)):
-        raise AttributeError("Device mismatch.")
-
-
-def move_data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
+def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     """Moves the data to the specified device."""
-    if device == infer_device(type(data)):
-        return data
     if device == Device.CPU:
         return cupy.asnumpy(data)
     available(device)

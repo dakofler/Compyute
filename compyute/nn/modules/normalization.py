@@ -65,16 +65,16 @@ class Batchnorm1d(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype), label="bn1d_w")
-        self.b = Parameter(zeros((channels,), dtype), label="bn1d_b")
+        self.w = Parameter(ones((channels,), dtype))
+        self.b = Parameter(zeros((channels,), dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype), label="bn1d_rmean")
-        self.rvar = Buffer(ones((channels,), dtype), label="bn1d_rvar")
+        self.rmean = Buffer(zeros((channels,), dtype))
+        self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_fn = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
@@ -83,7 +83,7 @@ class Batchnorm1d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -148,16 +148,16 @@ class Batchnorm2d(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype), label="bn2d_w")
-        self.b = Parameter(zeros((channels,), dtype), label="bn2d_b")
+        self.w = Parameter(ones((channels,), dtype))
+        self.b = Parameter(zeros((channels,), dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype), label="bn2d_rmean")
-        self.rvar = Buffer(ones((channels,), dtype), label="bn2d_rvar")
+        self.rmean = Buffer(zeros((channels,), dtype))
+        self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_fn = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
@@ -166,7 +166,7 @@ class Batchnorm2d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -223,18 +223,18 @@ class Layernorm(Module):
         self.dtype = Dtype(dtype)
 
         # parameters
-        self.w = Parameter(ones(normalized_shape, dtype), label="ln_w")
-        self.b = Parameter(zeros(normalized_shape, dtype), label="ln_b")
+        self.w = Parameter(ones(normalized_shape, dtype))
+        self.b = Parameter(zeros(normalized_shape, dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

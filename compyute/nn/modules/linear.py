@@ -65,20 +65,20 @@ class Linear(Module):
 
         # init weights
         k = in_channels**-0.5
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype), label="lin_w")
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype))
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype), label="lin_b") if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3, 4, 5])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = linear(x, self.w, self.b, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

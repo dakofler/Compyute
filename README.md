@@ -2,7 +2,7 @@
 
 [![CI/CD](https://github.com/dakofler/Compyute/actions/workflows/tests.yml/badge.svg)](https://github.com/dakofler/Compyute/actions/workflows/tests.yml)
 
-`Compyute` is a toolbox for building and training and analyzing neural networks only using `NumPy`/`CuPy` under the hood to perform computations.
+Machine learning toolbox developed in pure `NumPy`/`CuPy` for tensor-based computation and building neural networks.
 
 ## Installation
 
@@ -32,18 +32,18 @@ x = cp.tensor([1, 2, 3], dtype=cp.int32)
 x = cp.tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
-y = x.as_type(cp.float32)
-y = x.float()
-y = x.int()
+y = x.to_type(cp.float32)
+y = x.to_float()
+y = x.to_int()
 
 # define the device the tensor is stored on
 c = cp.tensor([1, 2, 3], device=cp.cuda)
 c = cp.tensor([1, 2, 3], device="cuda")
 
 # change devices
-c.to_device(cp.cpu)
-c.to_device("cpu")
-c = c.cpu()
+c = c.to_device(cp.cpu)
+c = c.to_device("cpu")
+c = c.to_cpu()
 ```
 
 The `Tensor` object supports most operations also known from `PyTorch` tensors or `NumPy` arrays. Here are some examples:
@@ -101,6 +101,8 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(16, 3),
 )
+
+model.to_device(cp.cuda)  # move model to GPU
 ```
 
 Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Container` class.
@@ -216,6 +218,7 @@ Model checkpoints can also be saved and loaded later on.
 
 ```python
 nn.save_module(model, "my_model.cp")
+loaded_model = nn.load_module("my_model.cp")
 ```
 
 ## Author

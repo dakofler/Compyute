@@ -1,30 +1,36 @@
-name: documentation
+name: build-sphinx-docs
 
 on:
   push:
-    branches: [ "dev", "main" ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
-permissions:
-  contents: write
+  workflow_dispatch:
 
-jobs:
-  docs:
+jobs: 
+  build: 
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-    - name: Install dependencies
-      run: |
-        pip install sphinx sphinx_rtd_theme myst_parser
-    - name: Sphinx build
-      run: |
-        sphinx-build docs docs/_build
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-#     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
-      with:
-        publish_branch: gh-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/_build/
-        force_orphan: true
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+           python-version: "3.11"
+        
+      - name: Install dependencies
+        run: |
+          cd docs/
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+
+      - name: Build HTML
+        run: | 
+          cd docs/
+          make html
+
+      - name: Run ghp-import
+        run: | 
+          ghp-import -n -p -f docs/_build/html

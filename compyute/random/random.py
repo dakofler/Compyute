@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from ..base_tensor import Tensor, _ShapeLike, tensor
-from ..dtypes import _DtypeLike, dtype_to_str
+from ..dtypes import Dtype, _DtypeLike
 from ..engine import Device, _DeviceLike, get_engine
 
 __all__ = [
@@ -16,6 +16,7 @@ __all__ = [
     "set_seed",
     "shuffle",
     "multinomial",
+    "multinulli",
 ]
 
 
@@ -77,7 +78,7 @@ def normal(
     Tensor
         Tensor of normally distributed samples.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else None
+    dtype = Dtype(dtype).value if dtype is not None else None
     return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
 
 
@@ -108,7 +109,7 @@ def uniform(
     Tensor
         Tensor of uniformly distributed samples.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else None
+    dtype = Dtype(dtype).value if dtype is not None else None
     return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
 
 
@@ -139,7 +140,7 @@ def uniform_int(
     Tensor
         Tensor of samples.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else None
+    dtype = Dtype(dtype).value if dtype is not None else None
     return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
 
 
@@ -162,7 +163,7 @@ def permutation(
     Tensor
         Permuted tensor.
     """
-    dtype = dtype_to_str(dtype) if dtype is not None else None
+    dtype = Dtype(dtype).value if dtype is not None else None
     return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
 
 

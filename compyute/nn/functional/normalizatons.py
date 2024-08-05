@@ -26,7 +26,7 @@ def batchnorm1d(
     Tensor,
     Tensor,
     Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]],
+    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
 ]:
     """Performs 1D batch normalization on a tensor.
 
@@ -86,7 +86,7 @@ def batchnorm1d(
 
     if return_grad_fn:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
             n = reduce(mul, x.shape) / x.shape[1]
 
@@ -95,10 +95,10 @@ def batchnorm1d(
             dx = weights * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
 
             # gamma grads
-            dw = squeeze(dy_x_std_sum) if w.requires_grad else None
+            dw = squeeze(dy_x_std_sum)
 
             # beta grads
-            db = squeeze(dy_sum) if b.requires_grad else None
+            db = squeeze(dy_sum)
 
             return dx, dw, db
 
@@ -120,7 +120,7 @@ def batchnorm2d(
     Tensor,
     Tensor,
     Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]],
+    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
 ]:
     """Performs 2D batch normalization on a tensor.
 
@@ -179,7 +179,7 @@ def batchnorm2d(
 
     if return_grad_fn:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
             n = reduce(mul, x.shape) / x.shape[1]
 
@@ -188,10 +188,10 @@ def batchnorm2d(
             dx = weights * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
 
             # gamma grads
-            dw = squeeze(dy_x_std_sum) if w.requires_grad else None
+            dw = squeeze(dy_x_std_sum)
 
             # beta grads
-            db = squeeze(dy_sum) if b.requires_grad else None
+            db = squeeze(dy_sum)
 
             return dx, dw, db
 
@@ -208,7 +208,7 @@ def layernorm(
     return_grad_fn: bool = False,
 ) -> tuple[
     Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]],
+    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
 ]:
     """Performs layer normalization on a tensor.
 
@@ -239,7 +239,7 @@ def layernorm(
 
     if return_grad_fn:
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
             n = reduce(mul, x.shape[1:])
 
@@ -248,10 +248,10 @@ def layernorm(
             dx = w * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
 
             # gamma grads
-            dw = cpsum(dy * x_std, axis=0) if w.requires_grad else None
+            dw = cpsum(dy * x_std, axis=0)
 
             # beta grads
-            db = cpsum(dy, axis=0) if b.requires_grad else None
+            db = cpsum(dy, axis=0)
 
             return dx, dw, db
 

@@ -1,7 +1,7 @@
 Compyute documentation
 ======================
 
-Compyute is a toolbox for building and training and analyzing neural networks only using NumPy/CuPy under the hood to perform computations.
+Machine learning toolbox developed in pure NumPy/CuPy for tensor-based computation and building neural networks.
 
 .. toctree::
     :glob:

@@ -7,3 +7,4 @@ from .linear import *
 from .losses import *
 from .metrics import *
 from .normalizatons import *
+from .regularizations import *

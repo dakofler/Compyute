@@ -38,10 +38,10 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal. Defaults to ``0``.
-            - ``0``: main diagonal
-            - ``> 0``: above main diagonal
-            - ``< 0``: below main diagonal
+        | Index of the diagonal. Defaults to ``0``.
+        | ``0``: main diagonal
+        | ``> 0``: above main diagonal
+        | ``< 0``: below main diagonal
 
     Returns
     -------
@@ -60,10 +60,10 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal. Defaults to ``0``.
-            - ``0``: main diagonal
-            - ``> 0``: above main diagonal
-            - ``< 0``: below main diagonal
+        | Index of the diagonal. Defaults to ``0``.
+        | ``0``: main diagonal
+        | ``> 0``: above main diagonal
+        | ``< 0``: below main diagonal
 
     Returns
     -------
@@ -82,10 +82,10 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     x : Tensor
         Input tensor.
     d : int, optional
-        Index of the diagonal. Defaults to ``0``.
-            - ``0``: main diagonal
-            - ``> 0``: above main diagonal
-            - ``< 0``: below main diagonal
+        | Index of the diagonal. Defaults to ``0``.
+        | ``0``: main diagonal
+        | ``> 0``: above main diagonal
+        | ``< 0``: below main diagonal
 
     Returns
     -------

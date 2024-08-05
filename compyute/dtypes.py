@@ -7,6 +7,7 @@ import cupy
 import numpy
 
 __all__ = [
+    "bool",
     "int8",
     "int16",
     "int32",
@@ -22,6 +23,7 @@ __all__ = [
 class Dtype(Enum):
     """Data type enum."""
 
+    BOOL = "bool"
     INT8 = "int8"
     INT16 = "int16"
     INT32 = "int32"
@@ -33,12 +35,34 @@ class Dtype(Enum):
     COMPLEX128 = "complex128"
 
     def __repr__(self) -> str:
-        return f"compyute.{self.value}"
+        return f"Dtype('{self.value}')"
 
     def __str__(self) -> str:
         return self.__repr__()
 
 
+DTYPES = [d.value for d in Dtype]
+FLOAT_DTYPES = [d for d in DTYPES if "float" in d]
+
+
+def validate_dtype(dtype: str) -> None:
+    """Check if a data type is valid.
+
+    Parameters
+    ----------
+    dtype : str
+        Data type to check.
+
+    Raises
+    ------
+    TypeError
+        If the data type is not valid.
+    """
+    if dtype not in DTYPES:
+        raise TypeError(f"Invalid dtype: {dtype}.")
+
+
+bool = Dtype.BOOL
 int8 = Dtype.INT8
 int16 = Dtype.INT16
 int32 = Dtype.INT32
@@ -62,26 +86,4 @@ _FloatLike: TypeAlias = NumpyFloat | CupyFloat | float
 _ComplexLike: TypeAlias = NumpyComplex | CupyComplex | complex
 
 _ScalarLike: TypeAlias = _IntLike | _FloatLike | _ComplexLike
-_DtypeLike: TypeAlias = (
-    Dtype
-    | Literal[
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "float16",
-        "float32",
-        "float64",
-        "complex64",
-        "complex128",
-    ]
-)
-
-
-def dtype_to_str(
-    dtype: _DtypeLike,
-) -> Literal[
-    "int8", "int16", "int32", "int64", "float16", "float32", "float64", "complex64", "complex128"
-]:
-    """Returns the string representation of a dtype."""
-    return Dtype(dtype).value
+_DtypeLike: TypeAlias = Dtype | Literal[*DTYPES]

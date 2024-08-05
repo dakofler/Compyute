@@ -56,7 +56,7 @@ class Embedding(Module):
         self.dtype = Dtype(dtype)
 
         # init weights
-        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype), label="emb_w")
+        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2])
@@ -65,7 +65,7 @@ class Embedding(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dw = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 return zeros_like(x)

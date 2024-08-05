@@ -91,18 +91,14 @@ class Convolution1d(Module):
 
         # init weights
         k = (in_channels * kernel_size) ** -0.5
-        w = uniform((out_channels, in_channels, kernel_size), -k, k, dtype=dtype)
-        self.w = Parameter(w, label="conv1d_w")
+        self.w = Parameter(uniform((out_channels, in_channels, kernel_size), -k, k, dtype))
 
         # init biases
-        self.b = None
-        if bias:
-            b = zeros((out_channels,), dtype=dtype)
-            self.b = Parameter(b, label="conv1d_b")
+        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = convolve1d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
@@ -110,7 +106,7 @@ class Convolution1d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -194,16 +190,17 @@ class Convolution2d(Module):
         self.dtype = Dtype(dtype)
 
         # init weights
-        k = (in_channels * self.kernel_size**2) ** -0.5
-        w = uniform((out_channels, in_channels, self.kernel_size, self.kernel_size), -k, k, dtype)
-        self.w = Parameter(w, label="conv2d_w")
+        k = (in_channels * kernel_size**2) ** -0.5
+        self.w = Parameter(
+            uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype)
+        )
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype), label="conv2d_b") if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = convolve2d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
@@ -211,7 +208,7 @@ class Convolution2d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

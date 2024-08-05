@@ -38,7 +38,7 @@ def mean_squared_error(
     --------
     :class:`compyute.nn.MeanSquaredError`
     """
-    dif = y_pred.float() - y_true.float()
+    dif = y_pred.to_float() - y_true.to_float()
     loss = mean(dif**2)
 
     grad_fn = (lambda: dif * 2 / reduce(mul, y_pred.shape)) if return_grad_fn else None
@@ -73,8 +73,8 @@ def cross_entropy(
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-    probs, _ = softmax(y_pred.float(), False)
-    y_true = one_hot_encode(y_true.int(), y_pred.shape[-1])
+    probs, _ = softmax(y_pred.to_float(), False)
+    y_true = one_hot_encode(y_true.to_int(), y_pred.shape[-1])
     loss = -mean(log(cpsum((probs + eps) * y_true, axis=-1)))
 
     if return_grad_fn:

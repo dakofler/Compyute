@@ -1,3 +1,5 @@
+.. _callbacks:
+
 compyute.nn.trainer.callbacks
 =============================
 .. automodule:: compyute.nn.trainer.callbacks

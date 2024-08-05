@@ -135,11 +135,11 @@ Reshape
 .. autoclass:: Moveaxis
    :show-inheritance:
 
-Parameter
----------
-.. autoclass:: Buffer
+Parameter and Buffer
+--------------------
+.. autoclass:: Parameter
    :members:
    :show-inheritance:
-.. autoclass:: Parameter
+.. autoclass:: Buffer
    :members:
    :show-inheritance:
