@@ -89,7 +89,7 @@ class Recurrent(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         grad_functions = []
         h = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
@@ -112,7 +112,7 @@ class Recurrent(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 
@@ -241,7 +241,7 @@ class LSTM(Module):
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         grad_functions = []
         i = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
@@ -306,7 +306,7 @@ class LSTM(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dc = zeros_like(c)
                 dh = 0
@@ -492,7 +492,7 @@ class GRU(Module):
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
 
         grad_functions = []
         r = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
@@ -544,7 +544,7 @@ class GRU(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 

@@ -1,6 +1,9 @@
 """Neural network parameter and buffer classes."""
 
-from ..base_tensor import Tensor
+from __future__ import annotations
+
+from ..base_tensor import Tensor, _ArrayLike
+from ..engine import Device, _DeviceLike, data_to_device
 
 __all__ = ["Buffer", "Parameter"]
 
@@ -10,15 +13,36 @@ class Parameter(Tensor):
 
     Parameters
     ----------
-    data : Tensor
+    data : Tensor | _ArrayLike
         Data to initialize the parameter.
     requires_grad : bool, optional
         Whether the parameter requires gradients. Defaults to ``True``.
         If ``False`` gradients are not computed within neural network modules for this parameter.
     """
 
-    def __init__(self, data: Tensor, requires_grad: bool = True) -> None:
-        super().__init__(data.data, requires_grad)
+    def __init__(self, data: Tensor | _ArrayLike, requires_grad: bool = True) -> None:
+        if isinstance(data, Tensor):
+            data = data.data
+        super().__init__(data, requires_grad)
+
+    def to_device(self, device: _DeviceLike) -> Parameter:
+        """Returns a copy of the parameter on the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the parameter to.
+
+        Returns
+        -------
+        Parameter
+            Parameter on the specified device.
+        """
+        new_data = data_to_device(self._data, Device(device))
+        new_param = Parameter(new_data, self.requires_grad)
+        if self.grad is not None:
+            new_param.grad = self.grad.to_device(device)
+        return new_param
 
 
 class Buffer(Tensor):
@@ -26,9 +50,27 @@ class Buffer(Tensor):
 
     Parameters
     ----------
-    data : Tensor
+    data : Tensor | _ArrayLike
         Data to initialize the buffer.
     """
 
-    def __init__(self, data: Tensor) -> None:
-        super().__init__(data.data, requires_grad=False)
+    def __init__(self, data: Tensor | _ArrayLike) -> None:
+        if isinstance(data, Tensor):
+            data = data.data
+        super().__init__(data, False)
+
+    def to_device(self, device: _DeviceLike) -> Buffer:
+        """Returns a copy of the buffer on the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the buffer to.
+
+        Returns
+        -------
+        Buffer
+            Buffer on the specified device.
+        """
+        new_data = data_to_device(self._data, Device(device))
+        return Buffer(new_data)

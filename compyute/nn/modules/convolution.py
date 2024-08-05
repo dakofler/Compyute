@@ -98,7 +98,7 @@ class Convolution1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = convolve1d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
@@ -106,7 +106,7 @@ class Convolution1d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -200,7 +200,7 @@ class Convolution2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = convolve2d(
             x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
         )
@@ -208,7 +208,7 @@ class Convolution2d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

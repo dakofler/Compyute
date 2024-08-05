@@ -72,13 +72,13 @@ class Linear(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3, 4, 5])
-        x = x.as_type(self.dtype)
+        x = x.to_type(self.dtype)
         y, grad_fn = linear(x, self.w, self.b, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

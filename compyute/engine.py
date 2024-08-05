@@ -76,7 +76,7 @@ def infer_device(array_type: type) -> Device:
     return _ENGINE_TO_DEVICE.get(array_type, Device.CPU)
 
 
-def move_data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
+def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     """Moves the data to the specified device."""
     if device == infer_device(type(data)):
         return data

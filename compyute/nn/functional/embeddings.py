@@ -37,7 +37,7 @@ def lookup_embedding(
     if not return_grad_fn:
         return embedding_table[x], None
 
-    x = one_hot_encode(x, embedding_table.shape[0]).as_type(embedding_table.dtype)
+    x = one_hot_encode(x, embedding_table.shape[0]).to_type(embedding_table.dtype)
     y = x @ embedding_table
 
     def grad_fn(dy: Tensor) -> Optional[Tensor]:

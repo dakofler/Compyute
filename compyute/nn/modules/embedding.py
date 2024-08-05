@@ -65,7 +65,7 @@ class Embedding(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.as_type(self.dtype)
+                dy = dy.to_type(self.dtype)
                 dw = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 return zeros_like(x)

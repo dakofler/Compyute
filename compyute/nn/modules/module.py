@@ -42,16 +42,16 @@ class Module(ABC):
 
     @property
     def device(self) -> _DeviceLike:
-        """Device the module parametes and buffers are stored on."""
+        """Device the module parametes and variables are stored on."""
         return self._device
 
     def to_device(self, device: _DeviceLike) -> None:
-        """Moves the module parameters and buffers to the specified device.
+        """Moves the module parameters and variables to the specified device.
 
         Parameters
         ----------
         device : _DeviceLike
-            Device to move the module parameters and buffers to.
+            Device to move the module parameters and variables to.
         """
         device = Device(device)
         if device == self._device:
@@ -61,10 +61,12 @@ class Module(ABC):
         self._device = device
 
         if self.y is not None:
-            self.y.to_device(device)
+            self.y = self.y.to_device(device)
 
-        for i in chain(self.buffers, self.parameters):
-            i.to_device(device)
+        for item in self.__dict__:
+            item_value = getattr(self, item)
+            if isinstance(item_value, (Parameter, Buffer)):
+                setattr(self, item, item_value.to_device(device))
 
     @property
     def trainable(self) -> bool:
@@ -103,7 +105,7 @@ class Module(ABC):
 
         Returns
         -------
-        Iterator[Buffer]
+        Iterator[Variable]
             Iterator of module buffers.
         """
         return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
@@ -159,16 +161,9 @@ class Module(ABC):
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
-    @staticmethod
-    def _reprattr(a: str, v: Any) -> bool:
-        return all([a != "label", not a.startswith("_"), not isinstance(v, Tensor), v is not None])
-
     def __repr__(self) -> str:
-        repr_string = f"{self.label}("
-        attributes = [
-            f"{a}={getattr(self, a)}" for a in self.__dict__ if self._reprattr(a, getattr(self, a))
-        ]
-        return repr_string + ", ".join(attributes) + ")"
+        attrs = [f"{a}={getattr(self, a)}" for a in self.__dict__ if _reprattr(a, getattr(self, a))]
+        return f"{self.label}(" + ", ".join(attrs) + ")"
 
     def __call__(self, x: Tensor) -> Tensor:
         """Performs a forward pass through the module.
@@ -332,3 +327,7 @@ def load_module(filepath: str) -> Module:
     with open(filepath, "rb") as file:
         obj = pickle.load(file)
     return obj
+
+
+def _reprattr(a: str, v: Any) -> bool:
+    return all([a != "label", not a.startswith("_"), not isinstance(v, Tensor), v is not None])
