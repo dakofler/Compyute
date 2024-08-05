@@ -19,9 +19,10 @@ jobs:
            python-version: "3.11"
         
       - name: Install dependencies
-        run: | 
+        run: |
+          cd docs/
           python -m pip install --upgrade pip
-          pip install Sphinx>=7.4.7 sphinx_rtd_theme>=2.0.0
+          pip install -r requirements-docs.txt
 
       - name: Build HTML
         run: | 
