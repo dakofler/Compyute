@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.preprocessing.basic &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">compyute.preprocessing.basic</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for compyute.preprocessing.basic</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Basic data preprocessing utilities.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">..base_tensor</span> <span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">_AxisLike</span>
+<span class="kn">from</span> <span class="nn">..dtypes</span> <span class="kn">import</span> <span class="n">Dtype</span>
+<span class="kn">from</span> <span class="nn">..random.random</span> <span class="kn">import</span> <span class="n">shuffle</span>
+<span class="kn">from</span> <span class="nn">..tensor_functions.creating</span> <span class="kn">import</span> <span class="n">identity</span>
+<span class="kn">from</span> <span class="nn">..tensor_functions.transforming</span> <span class="kn">import</span> <span class="nb">max</span> <span class="k">as</span> <span class="n">cpmax</span>
+<span class="kn">from</span> <span class="nn">..tensor_functions.transforming</span> <span class="kn">import</span> <span class="n">mean</span>
+<span class="kn">from</span> <span class="nn">..tensor_functions.transforming</span> <span class="kn">import</span> <span class="nb">min</span> <span class="k">as</span> <span class="n">cpmin</span>
+<span class="kn">from</span> <span class="nn">..tensor_functions.transforming</span> <span class="kn">import</span> <span class="n">var</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;split_train_val_test&quot;</span><span class="p">,</span> <span class="s2">&quot;normalize&quot;</span><span class="p">,</span> <span class="s2">&quot;standardize&quot;</span><span class="p">,</span> <span class="s2">&quot;one_hot_encode&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="split_train_val_test">
+<a class="viewcode-back" href="../../../compyute.preprocessing.html#compyute.preprocessing.split_train_val_test">[docs]</a>
+<span class="k">def</span> <span class="nf">split_train_val_test</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">ratio_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">ratio_test</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Splits a tensor along axis 0 into three seperate tensors using a given ratio.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    ratio_val : float, optional</span>
+<span class="sd">        Size ratio of the validation split. Defaults to ``0.1``.</span>
+<span class="sd">    ratio_test : float, optional</span>
+<span class="sd">        Size ratio of the test split. Defaults to ``0.1``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Train split.</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Validation split.</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Test split.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_shuffled</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">n1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_shuffled</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio_val</span> <span class="o">-</span> <span class="n">ratio_test</span><span class="p">))</span>
+    <span class="n">n2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_shuffled</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio_test</span><span class="p">))</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">x_shuffled</span><span class="p">[:</span><span class="n">n1</span><span class="p">]</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">x_shuffled</span><span class="p">[</span><span class="n">n1</span><span class="p">:</span><span class="n">n2</span><span class="p">]</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">x_shuffled</span><span class="p">[</span><span class="n">n2</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">train</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">test</span></div>
+
+
+
+<div class="viewcode-block" id="normalize">
+<a class="viewcode-back" href="../../../compyute.preprocessing.html#compyute.preprocessing.normalize">[docs]</a>
+<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_AxisLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">l_bound</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">u_bound</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes a tensor using min-max feature scaling.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    axis : _AxisLike, optional</span>
+<span class="sd">        Axes over which normalization is applied. Defaults to ``None``.</span>
+<span class="sd">        If ``None``, the flattended tensor is normalized.</span>
+<span class="sd">    l_bound : int, optional</span>
+<span class="sd">        Lower bound of output values. Defaults to ``0``.</span>
+<span class="sd">    u_bound : int, optional</span>
+<span class="sd">        Upper bound of output values. Defaults to ``1``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Normalized tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x_min</span> <span class="o">=</span> <span class="n">cpmin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">x_max</span> <span class="o">=</span> <span class="n">cpmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">u_bound</span> <span class="o">-</span> <span class="n">l_bound</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span> <span class="o">+</span> <span class="n">l_bound</span></div>
+
+
+
+<div class="viewcode-block" id="standardize">
+<a class="viewcode-back" href="../../../compyute.preprocessing.html#compyute.preprocessing.standardize">[docs]</a>
+<span class="k">def</span> <span class="nf">standardize</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_AxisLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standardizes a tensor to mean 0 and variance 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor to be standardized.</span>
+<span class="sd">    axis : _AxisLike, optional</span>
+<span class="sd">        Axes over which standardization is applied. Defaults to ``None``.</span>
+<span class="sd">        If ``None``, the flattended tensor is standardized.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Standardized tensor with mean ``0`` and variance ``1``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span> <span class="o">/</span> <span class="n">var</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="one_hot_encode">
+<a class="viewcode-back" href="../../../compyute.preprocessing.html#compyute.preprocessing.one_hot_encode">[docs]</a>
+<span class="k">def</span> <span class="nf">one_hot_encode</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One-hot-encodes a tensor, by adding an additional encoding dimension.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor containing categorical columns of type ``int``.</span>
+<span class="sd">    num_classes : int</span>
+<span class="sd">        Number of classes to be considered when encoding.</span>
+<span class="sd">        Defines axis ``-1`` of the output tensor.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        One-hot-encoded tensor.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    -------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the tensor dtype is not ``int``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">Dtype</span><span class="o">.</span><span class="n">INT8</span><span class="p">,</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">INT16</span><span class="p">,</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">INT32</span><span class="p">,</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">INT64</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input must be an integer, got &#39;</span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="n">x</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

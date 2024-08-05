@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.nn.trainer.trainer &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">compyute.nn.trainer.trainer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for compyute.nn.trainer.trainer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Model trainer.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">...base_tensor</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">...dtypes</span> <span class="kn">import</span> <span class="n">_ScalarLike</span>
+<span class="kn">from</span> <span class="nn">..dataloaders</span> <span class="kn">import</span> <span class="n">Dataloader</span>
+<span class="kn">from</span> <span class="nn">..losses</span> <span class="kn">import</span> <span class="n">_LossLike</span><span class="p">,</span> <span class="n">get_loss_function</span>
+<span class="kn">from</span> <span class="nn">..metrics</span> <span class="kn">import</span> <span class="n">_MetricLike</span><span class="p">,</span> <span class="n">get_metric_function</span>
+<span class="kn">from</span> <span class="nn">..modules.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">..optimizers</span> <span class="kn">import</span> <span class="n">_OptimizerLike</span><span class="p">,</span> <span class="n">get_optimizer</span>
+<span class="kn">from</span> <span class="nn">.callbacks</span> <span class="kn">import</span> <span class="n">Callback</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Trainer&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Trainer">
+<a class="viewcode-back" href="../../../../compyute.nn.trainer.html#compyute.nn.trainer.Trainer">[docs]</a>
+<span class="k">class</span> <span class="nc">Trainer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trainer utility used to train neural network models.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Module</span>
+<span class="sd">        Model to be trained.</span>
+<span class="sd">    optimizer : _OptimizerLike</span>
+<span class="sd">        Optimizer algorithm used to update model parameters based on gradients.</span>
+<span class="sd">        See :ref:`optimizers` for more details.</span>
+<span class="sd">    loss : _LossLike</span>
+<span class="sd">        Loss function used to quantify the model performance.</span>
+<span class="sd">        See :ref:`losses` for more details.</span>
+<span class="sd">    metric : _MetricLike, optional</span>
+<span class="sd">        Metric function used to evaluate the model. Defaults to ``None``.</span>
+<span class="sd">        See :ref:`metrics` for more details.</span>
+<span class="sd">    callbacks : list[Callback], optional</span>
+<span class="sd">        Callback functions that are executing each training epoch and step. Defaults to ``None``.</span>
+<span class="sd">        See :ref:`callbacks` for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">_OptimizerLike</span><span class="p">,</span>
+        <span class="n">loss</span><span class="p">:</span> <span class="n">_LossLike</span><span class="p">,</span>
+        <span class="n">metric</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_MetricLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">callbacks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Callback</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">get_optimizer</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">get_loss_function</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">get_metric_function</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_name</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">callbacks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;abort&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+<div class="viewcode-block" id="Trainer.train">
+<a class="viewcode-back" href="../../../../compyute.nn.trainer.html#compyute.nn.trainer.Trainer.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">val_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trains the model using samples and targets.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X_train : Tensor</span>
+<span class="sd">            Input tensor.</span>
+<span class="sd">        y_train : Tensor</span>
+<span class="sd">            Target tensor.</span>
+<span class="sd">        epochs : int, optional</span>
+<span class="sd">            Number of training iterations. Defaults to ``100``.</span>
+<span class="sd">        val_data : tuple[Tensor, Tensor], optional</span>
+<span class="sd">            Data used for the validaton every epoch. Defaults to ``None``.</span>
+<span class="sd">        batch_size : int, optional</span>
+<span class="sd">            Number of inputs processed in parallel. Defaults to ``32``.</span>
+<span class="sd">            If ``-1``, all samples are used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">batch_size</span>
+        <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">Dataloader</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;epochs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">epochs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;train_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span><span class="p">(</span><span class="s2">&quot;epoch_start&quot;</span><span class="p">)</span>
+
+            <span class="c1"># training</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">training</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">train_dataloader</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_train_step</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span><span class="p">(</span><span class="s2">&quot;step&quot;</span><span class="p">)</span>
+
+            <span class="c1"># validation</span>
+            <span class="k">if</span> <span class="n">val_data</span><span class="p">:</span>
+                <span class="n">loss</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_model</span><span class="p">(</span><span class="o">*</span><span class="n">val_data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;val_loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;val_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_name</span><span class="si">}</span><span class="s2">_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span><span class="p">(</span><span class="s2">&quot;epoch_end&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;abort&quot;</span><span class="p">]:</span>
+                <span class="k">break</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Trainer.evaluate_model">
+<a class="viewcode-back" href="../../../../compyute.nn.trainer.html#compyute.nn.trainer.Trainer.evaluate_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">evaluate_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">_ScalarLike</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_ScalarLike</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluates the model using a defined metric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : Tensor</span>
+<span class="sd">            Input tensor.</span>
+<span class="sd">        y : Tensor</span>
+<span class="sd">            Target tensor.</span>
+<span class="sd">        batch_size : int, optional</span>
+<span class="sd">            Number of inputs processed in parallel. Defaults to ``32``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        _ScalarLike</span>
+<span class="sd">            Loss value.</span>
+<span class="sd">        _ScalarLike, optional</span>
+<span class="sd">            Metric score.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dataloader</span> <span class="o">=</span> <span class="n">Dataloader</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">shuffle_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">losses</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="c1"># compute loss/score for each batch to save memory</span>
+        <span class="k">for</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">():</span>
+            <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
+            <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="n">loss</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="s2">&quot;epoch_start&quot;</span><span class="p">,</span> <span class="s2">&quot;epoch_end&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">:</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="n">callback</span><span class="o">.</span><span class="n">on_init</span><span class="p">,</span>
+                <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">callback</span><span class="o">.</span><span class="n">on_step</span><span class="p">,</span>
+                <span class="s2">&quot;epoch_start&quot;</span><span class="p">:</span> <span class="n">callback</span><span class="o">.</span><span class="n">on_epoch_start</span><span class="p">,</span>
+                <span class="s2">&quot;epoch_end&quot;</span><span class="p">:</span> <span class="n">callback</span><span class="o">.</span><span class="n">on_epoch_end</span><span class="p">,</span>
+            <span class="p">}[</span><span class="n">on</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># prepare data</span>
+        <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
+
+        <span class="c1"># forward pass</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
+
+        <span class="c1"># compute loss and metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_name</span><span class="si">}</span><span class="s2">_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="c1"># backward pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">reset_grads</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">())</span>
+
+        <span class="c1"># update parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

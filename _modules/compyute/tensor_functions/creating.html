@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.tensor_functions.creating &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">compyute.tensor_functions.creating</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for compyute.tensor_functions.creating</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Tensor creation and combination functions.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">..base_tensor</span> <span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">_AxisLike</span><span class="p">,</span> <span class="n">_ShapeLike</span>
+<span class="kn">from</span> <span class="nn">..dtypes</span> <span class="kn">import</span> <span class="n">Dtype</span><span class="p">,</span> <span class="n">_DtypeLike</span><span class="p">,</span> <span class="n">_ScalarLike</span>
+<span class="kn">from</span> <span class="nn">..engine</span> <span class="kn">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">_DeviceLike</span><span class="p">,</span> <span class="n">get_engine</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;append&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;arange&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;concatenate&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;empty&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;empty_like&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;full&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;full_like&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;identity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;linspace&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ones&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ones_like&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;split&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stack&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;zeros&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;zeros_like&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="append">
+<a class="viewcode-back" href="../../../compyute.html#compyute.append">[docs]</a>
+<span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a copy of the tensor with appended values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    values : Tensor</span>
+<span class="sd">        Values to append.</span>
+<span class="sd">    axis : int, optional</span>
+<span class="sd">        Axis alowng which to append the values. Defaults to ``-1``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor containing appended values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">values</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="arange">
+<a class="viewcode-back" href="../../../compyute.html#compyute.arange">[docs]</a>
+<span class="k">def</span> <span class="nf">arange</span><span class="p">(</span>
+    <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of evenly spaced values using a step size within</span>
+<span class="sd">    a given interval [start, stop).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stop : float</span>
+<span class="sd">        Stop value (not included).</span>
+<span class="sd">    start : float, optional</span>
+<span class="sd">        Start value. Defaults to ``0``.</span>
+<span class="sd">    step : int | float, optional</span>
+<span class="sd">        Spacing between values. Defaults to ``1``.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor of evenly spaced samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="concatenate">
+<a class="viewcode-back" href="../../../compyute.html#compyute.concatenate">[docs]</a>
+<span class="k">def</span> <span class="nf">concatenate</span><span class="p">(</span><span class="n">tensors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="n">_AxisLike</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a new tensor by joining a sequence of tensors along a given axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tensors : Sequence[Tensor]</span>
+<span class="sd">        Sequence of Tensors to be joined.</span>
+<span class="sd">    axis : AxisLike, optional</span>
+<span class="sd">        Axis along which to join the tensors. Defaults to ``-1``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Concatenated tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="empty">
+<a class="viewcode-back" href="../../../compyute.html#compyute.empty">[docs]</a>
+<span class="k">def</span> <span class="nf">empty</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an tensor with uninitialized values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : ShapeLike</span>
+<span class="sd">        Shape of the new tensor.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with uninitialized values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="empty_like">
+<a class="viewcode-back" href="../../../compyute.html#compyute.empty_like">[docs]</a>
+<span class="k">def</span> <span class="nf">empty_like</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor based on a given other tensor with uninitialized values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor whose shape, dtype and device is used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with uninitialized values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">empty</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="full">
+<a class="viewcode-back" href="../../../compyute.html#compyute.full">[docs]</a>
+<span class="k">def</span> <span class="nf">full</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">_ScalarLike</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of a given shape with all values being one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : ShapeLike</span>
+<span class="sd">        Shape of the new tensor.</span>
+<span class="sd">    value : ScalarLike</span>
+<span class="sd">        Value to fill the tensor.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="full_like">
+<a class="viewcode-back" href="../../../compyute.html#compyute.full_like">[docs]</a>
+<span class="k">def</span> <span class="nf">full_like</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">_ScalarLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of a given shape with all values being one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor whose shape, dtype and device is used.</span>
+<span class="sd">    value : ScalarLike</span>
+<span class="sd">        Value to fill the tensor.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">full</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="identity">
+<a class="viewcode-back" href="../../../compyute.html#compyute.identity">[docs]</a>
+<span class="k">def</span> <span class="nf">identity</span><span class="p">(</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a diagonal tensor of shape ``(n, n)``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Size of the new tensor. The shape will be ``(n, n)``.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Diagonal tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="linspace">
+<a class="viewcode-back" href="../../../compyute.html#compyute.linspace">[docs]</a>
+<span class="k">def</span> <span class="nf">linspace</span><span class="p">(</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of num evenly spaced values within</span>
+<span class="sd">    a given interval :math:`[start, stop]`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    start : float</span>
+<span class="sd">        Start value.</span>
+<span class="sd">    stop : float</span>
+<span class="sd">        Stop value.</span>
+<span class="sd">    num : int</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor of evenly spaced samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ones">
+<a class="viewcode-back" href="../../../compyute.html#compyute.ones">[docs]</a>
+<span class="k">def</span> <span class="nf">ones</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of a given shape with all values being one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : ShapeLike</span>
+<span class="sd">        Shape of the new tensor.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ones_like">
+<a class="viewcode-back" href="../../../compyute.html#compyute.ones_like">[docs]</a>
+<span class="k">def</span> <span class="nf">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor based on a given other tensor with all values being one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor whose shape, dtype and device is used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="split">
+<a class="viewcode-back" href="../../../compyute.html#compyute.split">[docs]</a>
+<span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">splits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a list of new tensors by splitting the tensor.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    splits : int | list[int]</span>
+<span class="sd">        | Where to split the tensor.</span>
+<span class="sd">        | ``int``: the tensor is split into n equally sized tensors.</span>
+<span class="sd">        | ``Sequence[int]``: the tensor is split at the given indices.</span>
+<span class="sd">    axis : int, optional</span>
+<span class="sd">        Axis along which to split the tensor. Defaults to ``-1``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list[Tensor]</span>
+<span class="sd">        List of tensors containing the split data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">Tensor</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">get_engine</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">splits</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="stack">
+<a class="viewcode-back" href="../../../compyute.html#compyute.stack">[docs]</a>
+<span class="k">def</span> <span class="nf">stack</span><span class="p">(</span><span class="n">tensors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="n">_AxisLike</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a new tensor by stacking a sequence of tensors along a given axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tensors : Sequence[Tensor]</span>
+<span class="sd">        Sequence of Tensors to be stacked.</span>
+<span class="sd">    axis : AxisLike, optional</span>
+<span class="sd">        Axis along which to stack the tensors. Defaults to ``0``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Stacked tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="zeros">
+<a class="viewcode-back" href="../../../compyute.html#compyute.zeros">[docs]</a>
+<span class="k">def</span> <span class="nf">zeros</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DtypeLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span> <span class="o">=</span> <span class="n">Device</span><span class="o">.</span><span class="n">CPU</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor of a given shape with all values being zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : ShapeLike</span>
+<span class="sd">        Shape of the new tensor.</span>
+<span class="sd">    dtype : DtypeLike, optional</span>
+<span class="sd">        Datatype of the tensor data. Defaults to ``None``.</span>
+<span class="sd">    device : DeviceLike, optional</span>
+<span class="sd">        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">get_engine</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="zeros_like">
+<a class="viewcode-back" href="../../../compyute.html#compyute.zeros_like">[docs]</a>
+<span class="k">def</span> <span class="nf">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a tensor based on a given other tensor with all values being zero.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor whose shape, dtype and device is used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Tensor with all values being zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

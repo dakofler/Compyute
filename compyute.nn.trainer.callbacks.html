@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.nn.trainer.callbacks &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=92734c54"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="compyute.preprocessing" href="compyute.preprocessing.html" />
+    <link rel="prev" title="compyute.nn.trainer" href="compyute.nn.trainer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">compyute.nn.trainer.callbacks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback"><code class="docutils literal notranslate"><span class="pre">Callback</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">Callback.on_epoch_end()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback.on_epoch_start"><code class="docutils literal notranslate"><span class="pre">Callback.on_epoch_start()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback.on_init"><code class="docutils literal notranslate"><span class="pre">Callback.on_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback.on_step"><code class="docutils literal notranslate"><span class="pre">Callback.on_step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#early-stopping">Early stopping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.EarlyStopping"><code class="docutils literal notranslate"><span class="pre">EarlyStopping</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.ProgressBar"><code class="docutils literal notranslate"><span class="pre">ProgressBar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#learning-rate-schedulers">Learning Rate Schedulers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler"><code class="docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.AdaptiveLrScheduler"><code class="docutils literal notranslate"><span class="pre">AdaptiveLrScheduler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.CosineAnnealingLrScheduler"><code class="docutils literal notranslate"><span class="pre">CosineAnnealingLrScheduler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.ExponentialLrScheduler"><code class="docutils literal notranslate"><span class="pre">ExponentialLrScheduler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.StepLrScheduler"><code class="docutils literal notranslate"><span class="pre">StepLrScheduler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.trainer.callbacks.MultistepLrScheduler"><code class="docutils literal notranslate"><span class="pre">MultistepLrScheduler</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">compyute.nn.trainer.callbacks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/compyute.nn.trainer.callbacks.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-compyute.nn.trainer.callbacks">
+<span id="compyute-nn-trainer-callbacks"></span><span id="callbacks"></span><h1>compyute.nn.trainer.callbacks<a class="headerlink" href="#module-compyute.nn.trainer.callbacks" title="Link to this heading"></a></h1>
+<p>Trainer callbacks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.Callback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">Callback</span></span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/callback.html#Callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.Callback" title="Link to this definition"></a></dt>
+<dd><p>Trainig callback base class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.Callback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/callback.html#Callback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.Callback.on_epoch_end" title="Link to this definition"></a></dt>
+<dd><p>Does someting at the end of each epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trainer_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Trainer cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.Callback.on_epoch_start">
+<span class="sig-name descname"><span class="pre">on_epoch_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/callback.html#Callback.on_epoch_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.Callback.on_epoch_start" title="Link to this definition"></a></dt>
+<dd><p>Does someting at the start of each epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trainer_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Trainer cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.Callback.on_init">
+<span class="sig-name descname"><span class="pre">on_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/callback.html#Callback.on_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.Callback.on_init" title="Link to this definition"></a></dt>
+<dd><p>Does someting at initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trainer_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Trainer cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.Callback.on_step">
+<span class="sig-name descname"><span class="pre">on_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/callback.html#Callback.on_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.Callback.on_step" title="Link to this definition"></a></dt>
+<dd><p>Does someting after each step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trainer_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – Trainer cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="early-stopping">
+<h2>Early stopping<a class="headerlink" href="#early-stopping" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.EarlyStopping">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">EarlyStopping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_best_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/early_stopping.html#EarlyStopping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.EarlyStopping" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback" title="compyute.nn.trainer.callbacks.callback.Callback"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></a></p>
+<p>Aborts the training process if the model stops improving.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="compyute.nn.html#compyute.nn.Module" title="compyute.nn.Module"><em>Module</em></a>) – Model to be trained.</p></li>
+<li><p><strong>patience</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Number of epocs without improvement, before the training is aborted. Defaults to <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p></li>
+<li><p><strong>use_best_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to reset the model parameters to the best values found. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>optional</em>) – Metric to consider. Defaults to <code class="docutils literal notranslate"><span class="pre">loss</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.History">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">History</span></span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/logging.html#History"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.History" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback" title="compyute.nn.trainer.callbacks.callback.Callback"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></a></p>
+<p>Training history.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.ProgressBar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">ProgressBar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'step'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/logging.html#ProgressBar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.ProgressBar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback" title="compyute.nn.trainer.callbacks.callback.Callback"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></a></p>
+<p>Callback used for displaying the training progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>&quot;step&quot;</em><em>, </em><em>&quot;epoch&quot;</em><em>]</em><em>, </em><em>optional</em>) – Progress bar update mode. Defaults to <code class="docutils literal notranslate"><span class="pre">step</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">epoch</span></code>, one progress bar is shown and updated for each epoch.
+If <code class="docutils literal notranslate"><span class="pre">step</span></code>, a new progress bar is shown per epoch and updated for each step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="learning-rate-schedulers">
+<h2>Learning Rate Schedulers<a class="headerlink" href="#learning-rate-schedulers" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.LrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">LrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#LrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.LrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.Callback" title="compyute.nn.trainer.callbacks.callback.Callback"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></a></p>
+<p>Learning rate scheduler base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.AdaptiveLrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">AdaptiveLrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_downscale_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_upscale_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#AdaptiveLrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.AdaptiveLrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler" title="compyute.nn.trainer.callbacks.lr_schedulers.LrScheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></p>
+<p>Sets an optimizers learning based on the trend of a specified metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>optional</em>) – Metric to consider. Defaults to <code class="docutils literal notranslate"><span class="pre">loss</span></code>.</p></li>
+<li><p><strong>scope</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Number of past epochs to consider when computing the trend. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>lr_downscale_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Factor to scale the learning rate down by if the metric is not improing.
+Defaults to <code class="docutils literal notranslate"><span class="pre">0.5</span></code>.</p></li>
+<li><p><strong>lr_upscale_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Factor to scale the learning rate up by if the metric is improing. Defaults to <code class="docutils literal notranslate"><span class="pre">1.0</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.CosineAnnealingLrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">CosineAnnealingLrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_warmup_lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#CosineAnnealingLrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.CosineAnnealingLrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler" title="compyute.nn.trainer.callbacks.lr_schedulers.LrScheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></p>
+<p>Sets an optimizers learning rate using a cosine schedule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>target_lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Target learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">0.1</span></code>.</p></li>
+<li><p><strong>decay_steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – How many times (epochs) the update is applied. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>warmup_steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Number of warmup steps. Defaults to <code class="docutils literal notranslate"><span class="pre">5</span></code>.</p></li>
+<li><p><strong>max_warmup_lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Maximum learning rate after warmup. Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.ExponentialLrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">ExponentialLrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#ExponentialLrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.ExponentialLrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler" title="compyute.nn.trainer.callbacks.lr_schedulers.LrScheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></p>
+<p>Decays an optimizers learning rate each epoch exponentially.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>lr_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Decay factor the learning rate is multiplied by each step. Defaults to <code class="docutils literal notranslate"><span class="pre">0.5</span></code>.</p></li>
+<li><p><strong>decay_steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – How many times (epochs) the update is applied. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.StepLrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">StepLrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#StepLrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.StepLrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler" title="compyute.nn.trainer.callbacks.lr_schedulers.LrScheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></p>
+<p>Decays an optimizers learning rate after a specified epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>lr_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0.1</span></code>.</p></li>
+<li><p><strong>t_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Epoch, at which the update is applied. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.trainer.callbacks.MultistepLrScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.trainer.callbacks.</span></span><span class="sig-name descname"><span class="pre">MultistepLrScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_decay_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/trainer/callbacks/lr_schedulers.html#MultistepLrScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.trainer.callbacks.MultistepLrScheduler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.trainer.callbacks.LrScheduler" title="compyute.nn.trainer.callbacks.lr_schedulers.LrScheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">LrScheduler</span></code></a></p>
+<p>Decays an optimizers learning rate each time a specified number of epochs has elapsed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> (<a class="reference internal" href="compyute.nn.optimizers.html#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><em>Optimizer</em></a>) – Optimizer, whose learning rate will be adapted.</p></li>
+<li><p><strong>lr_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0.5</span></code>.</p></li>
+<li><p><strong>t_decay_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Number of epochs, at which the update is applied. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print the learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="compyute.nn.trainer.html" class="btn btn-neutral float-left" title="compyute.nn.trainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="compyute.preprocessing.html" class="btn btn-neutral float-right" title="compyute.preprocessing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

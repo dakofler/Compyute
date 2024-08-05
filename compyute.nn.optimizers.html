@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.nn.optimizers &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=92734c54"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="compyute.nn.trainer" href="compyute.nn.trainer.html" />
+    <link rel="prev" title="compyute.nn.initializers" href="compyute.nn.initializers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">compyute.nn.optimizers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.optimizers.Optimizer"><code class="docutils literal notranslate"><span class="pre">Optimizer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.optimizers.Optimizer.parameters"><code class="docutils literal notranslate"><span class="pre">Optimizer.parameters</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.optimizers.Optimizer.reset_grads"><code class="docutils literal notranslate"><span class="pre">Optimizer.reset_grads()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.nn.optimizers.Optimizer.step"><code class="docutils literal notranslate"><span class="pre">Optimizer.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.optimizers.SGD"><code class="docutils literal notranslate"><span class="pre">SGD</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.optimizers.Adam"><code class="docutils literal notranslate"><span class="pre">Adam</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.optimizers.AdamW"><code class="docutils literal notranslate"><span class="pre">AdamW</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compyute.nn.optimizers.NAdam"><code class="docutils literal notranslate"><span class="pre">NAdam</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">compyute.nn.optimizers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/compyute.nn.optimizers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-compyute.nn.optimizers">
+<span id="compyute-nn-optimizers"></span><span id="optimizers"></span><h1>compyute.nn.optimizers<a class="headerlink" href="#module-compyute.nn.optimizers" title="Link to this heading"></a></h1>
+<p>Parameter optimizers.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.Optimizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.optimizers.</span></span><span class="sig-name descname"><span class="pre">Optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#Optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.Optimizer" title="Link to this definition"></a></dt>
+<dd><p>Optimizer base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>Iterator</em><em>[</em><a class="reference internal" href="compyute.nn.html#compyute.nn.Parameter" title="compyute.nn.Parameter"><em>Parameter</em></a><em>]</em><em>, </em><em>optional</em>) – Paramters to optimize. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-3</span></code>.</p></li>
+<li><p><strong>grad_clip_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Clips the gradient of all parameter to the set value. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.Optimizer.parameters">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#compyute.nn.optimizers.Optimizer.parameters" title="Link to this definition"></a></dt>
+<dd><p>Optimizer parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.Optimizer.reset_grads">
+<span class="sig-name descname"><span class="pre">reset_grads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#Optimizer.reset_grads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.Optimizer.reset_grads" title="Link to this definition"></a></dt>
+<dd><p>Resets parameter gradients to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.Optimizer.step">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#Optimizer.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.Optimizer.step" title="Link to this definition"></a></dt>
+<dd><p>Updates parameters using their gradients.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.SGD">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.optimizers.</span></span><span class="sig-name descname"><span class="pre">SGD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">momentum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nesterov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#SGD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.SGD" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Updates parameters using stochastic gradient descent (with momentum).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>Iterator</em><em>[</em><a class="reference internal" href="compyute.nn.html#compyute.nn.Parameter" title="compyute.nn.Parameter"><em>Parameter</em></a><em>]</em><em>, </em><em>optional</em>) – Paramters to optimize. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-3</span></code>.</p></li>
+<li><p><strong>momentum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Momentum factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>nesterov</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use the neterov momentum algorithm. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>weight_deyas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Weight decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>grad_clip_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Clips the gradient of all parameter to the set value. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.Adam">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.optimizers.</span></span><span class="sig-name descname"><span class="pre">Adam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#Adam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.Adam" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Updates parameters following the Adam learning algorithm
+as described by Kingma et al., 2014.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>Iterator</em><em>[</em><a class="reference internal" href="compyute.nn.html#compyute.nn.Parameter" title="compyute.nn.Parameter"><em>Parameter</em></a><em>]</em><em>, </em><em>optional</em>) – Paramters to optimize. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-3</span></code>.</p></li>
+<li><p><strong>beta1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 1st momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.9</span></code>.</p></li>
+<li><p><strong>beta2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 2nd momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.999</span></code>.</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Constant for numerical stability. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-08</span></code>.</p></li>
+<li><p><strong>weight_deyas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Weight decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>grad_clip_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Clips the gradient of all parameter to the set value. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.AdamW">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.optimizers.</span></span><span class="sig-name descname"><span class="pre">AdamW</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#AdamW"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.AdamW" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Updates parameters following the AdamW learning algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>Iterator</em><em>[</em><a class="reference internal" href="compyute.nn.html#compyute.nn.Parameter" title="compyute.nn.Parameter"><em>Parameter</em></a><em>]</em><em>, </em><em>optional</em>) – Paramters to optimize. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-3</span></code>.</p></li>
+<li><p><strong>beta1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 1st momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.9</span></code>.</p></li>
+<li><p><strong>beta2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 2nd momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.999</span></code>.</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Constant for numerical stability. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-08</span></code>.</p></li>
+<li><p><strong>weight_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Weight decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-2</span></code>.</p></li>
+<li><p><strong>grad_clip_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Clips the gradient of all parameter to the set value. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.nn.optimizers.NAdam">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.nn.optimizers.</span></span><span class="sig-name descname"><span class="pre">NAdam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.002</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">momentum_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.004</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/nn/optimizers.html#NAdam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.nn.optimizers.NAdam" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#compyute.nn.optimizers.Optimizer" title="compyute.nn.optimizers.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Updates parameters following the NAdam learning algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>Iterator</em><em>[</em><a class="reference internal" href="compyute.nn.html#compyute.nn.Parameter" title="compyute.nn.Parameter"><em>Parameter</em></a><em>]</em><em>, </em><em>optional</em>) – Paramters to optimize. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Learning rate. Defaults to <code class="docutils literal notranslate"><span class="pre">2e-3</span></code>.</p></li>
+<li><p><strong>beta1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 1st momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.9</span></code>.</p></li>
+<li><p><strong>beta2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Exponential decay rate for the 2nd momentum estimates. Defaults to <code class="docutils literal notranslate"><span class="pre">0.999</span></code>.</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Constant for numerical stability. Defaults to <code class="docutils literal notranslate"><span class="pre">1e-08</span></code>.</p></li>
+<li><p><strong>weight_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Weight decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>momentum_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Momentum decay factor. Defaults to <code class="docutils literal notranslate"><span class="pre">4e-3</span></code>.</p></li>
+<li><p><strong>grad_clip_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Clips the gradient of all parameter to the set value. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="compyute.nn.initializers.html" class="btn btn-neutral float-left" title="compyute.nn.initializers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="compyute.nn.trainer.html" class="btn btn-neutral float-right" title="compyute.nn.trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

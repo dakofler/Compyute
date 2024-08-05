@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=92734c54"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="compyute.engine" href="compyute.engine.html" />
+    <link rel="prev" title="Compyute documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">compyute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tensors">Tensors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.Tensor"><code class="docutils literal notranslate"><span class="pre">Tensor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.T"><code class="docutils literal notranslate"><span class="pre">Tensor.T</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.copy"><code class="docutils literal notranslate"><span class="pre">Tensor.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.data"><code class="docutils literal notranslate"><span class="pre">Tensor.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.device"><code class="docutils literal notranslate"><span class="pre">Tensor.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.dtype"><code class="docutils literal notranslate"><span class="pre">Tensor.dtype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.item"><code class="docutils literal notranslate"><span class="pre">Tensor.item()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.ndim"><code class="docutils literal notranslate"><span class="pre">Tensor.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.shape"><code class="docutils literal notranslate"><span class="pre">Tensor.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.size"><code class="docutils literal notranslate"><span class="pre">Tensor.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.strides"><code class="docutils literal notranslate"><span class="pre">Tensor.strides</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_complex"><code class="docutils literal notranslate"><span class="pre">Tensor.to_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_cpu"><code class="docutils literal notranslate"><span class="pre">Tensor.to_cpu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_cuda"><code class="docutils literal notranslate"><span class="pre">Tensor.to_cuda()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_device"><code class="docutils literal notranslate"><span class="pre">Tensor.to_device()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_double"><code class="docutils literal notranslate"><span class="pre">Tensor.to_double()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_float"><code class="docutils literal notranslate"><span class="pre">Tensor.to_float()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_half"><code class="docutils literal notranslate"><span class="pre">Tensor.to_half()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_int"><code class="docutils literal notranslate"><span class="pre">Tensor.to_int()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_long"><code class="docutils literal notranslate"><span class="pre">Tensor.to_long()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_numpy"><code class="docutils literal notranslate"><span class="pre">Tensor.to_numpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_shape"><code class="docutils literal notranslate"><span class="pre">Tensor.to_shape()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.Tensor.to_type"><code class="docutils literal notranslate"><span class="pre">Tensor.to_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.tensor"><code class="docutils literal notranslate"><span class="pre">tensor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-and-combining-operations">Creating and Combining Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.append"><code class="docutils literal notranslate"><span class="pre">append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.arange"><code class="docutils literal notranslate"><span class="pre">arange()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.concatenate"><code class="docutils literal notranslate"><span class="pre">concatenate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.empty"><code class="docutils literal notranslate"><span class="pre">empty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.empty_like"><code class="docutils literal notranslate"><span class="pre">empty_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.full"><code class="docutils literal notranslate"><span class="pre">full()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.full_like"><code class="docutils literal notranslate"><span class="pre">full_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.identity"><code class="docutils literal notranslate"><span class="pre">identity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.linspace"><code class="docutils literal notranslate"><span class="pre">linspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.ones"><code class="docutils literal notranslate"><span class="pre">ones()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.ones_like"><code class="docutils literal notranslate"><span class="pre">ones_like()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.split"><code class="docutils literal notranslate"><span class="pre">split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.stack"><code class="docutils literal notranslate"><span class="pre">stack()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.zeros"><code class="docutils literal notranslate"><span class="pre">zeros()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.zeros_like"><code class="docutils literal notranslate"><span class="pre">zeros_like()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reshaping-operations">Reshaping Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.diagonal"><code class="docutils literal notranslate"><span class="pre">diagonal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.reshape"><code class="docutils literal notranslate"><span class="pre">reshape()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.flatten"><code class="docutils literal notranslate"><span class="pre">flatten()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.transpose"><code class="docutils literal notranslate"><span class="pre">transpose()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.insert_dim"><code class="docutils literal notranslate"><span class="pre">insert_dim()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.add_dims"><code class="docutils literal notranslate"><span class="pre">add_dims()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.resize"><code class="docutils literal notranslate"><span class="pre">resize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.repeat"><code class="docutils literal notranslate"><span class="pre">repeat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tile"><code class="docutils literal notranslate"><span class="pre">tile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.pad"><code class="docutils literal notranslate"><span class="pre">pad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.pad_to_shape"><code class="docutils literal notranslate"><span class="pre">pad_to_shape()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.moveaxis"><code class="docutils literal notranslate"><span class="pre">moveaxis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.squeeze"><code class="docutils literal notranslate"><span class="pre">squeeze()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.flip"><code class="docutils literal notranslate"><span class="pre">flip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.broadcast_to"><code class="docutils literal notranslate"><span class="pre">broadcast_to()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-operations">Selecting Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.argmax"><code class="docutils literal notranslate"><span class="pre">argmax()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.get_diagonal"><code class="docutils literal notranslate"><span class="pre">get_diagonal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tril"><code class="docutils literal notranslate"><span class="pre">tril()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.triu"><code class="docutils literal notranslate"><span class="pre">triu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.unique"><code class="docutils literal notranslate"><span class="pre">unique()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#transforming-and-computing-operations">Transforming and Computing Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.abs"><code class="docutils literal notranslate"><span class="pre">abs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.clip"><code class="docutils literal notranslate"><span class="pre">clip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.cos"><code class="docutils literal notranslate"><span class="pre">cos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.cosh"><code class="docutils literal notranslate"><span class="pre">cosh()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.dot"><code class="docutils literal notranslate"><span class="pre">dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.einsum"><code class="docutils literal notranslate"><span class="pre">einsum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.exp"><code class="docutils literal notranslate"><span class="pre">exp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.fft1d"><code class="docutils literal notranslate"><span class="pre">fft1d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.fft2d"><code class="docutils literal notranslate"><span class="pre">fft2d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.histogram"><code class="docutils literal notranslate"><span class="pre">histogram()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.inner"><code class="docutils literal notranslate"><span class="pre">inner()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.ifft1d"><code class="docutils literal notranslate"><span class="pre">ifft1d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.ifft2d"><code class="docutils literal notranslate"><span class="pre">ifft2d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.log"><code class="docutils literal notranslate"><span class="pre">log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.log2"><code class="docutils literal notranslate"><span class="pre">log2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.log10"><code class="docutils literal notranslate"><span class="pre">log10()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.max"><code class="docutils literal notranslate"><span class="pre">max()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.maximum"><code class="docutils literal notranslate"><span class="pre">maximum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.mean"><code class="docutils literal notranslate"><span class="pre">mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.min"><code class="docutils literal notranslate"><span class="pre">min()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.minimum"><code class="docutils literal notranslate"><span class="pre">minimum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.outer"><code class="docutils literal notranslate"><span class="pre">outer()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.prod"><code class="docutils literal notranslate"><span class="pre">prod()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.real"><code class="docutils literal notranslate"><span class="pre">real()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.round"><code class="docutils literal notranslate"><span class="pre">round()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.sech"><code class="docutils literal notranslate"><span class="pre">sech()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.sin"><code class="docutils literal notranslate"><span class="pre">sin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.sinh"><code class="docutils literal notranslate"><span class="pre">sinh()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.sqrt"><code class="docutils literal notranslate"><span class="pre">sqrt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.std"><code class="docutils literal notranslate"><span class="pre">std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tan"><code class="docutils literal notranslate"><span class="pre">tan()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tanh"><code class="docutils literal notranslate"><span class="pre">tanh()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tensorprod"><code class="docutils literal notranslate"><span class="pre">tensorprod()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.tensorsum"><code class="docutils literal notranslate"><span class="pre">tensorsum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.sum"><code class="docutils literal notranslate"><span class="pre">sum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compyute.var"><code class="docutils literal notranslate"><span class="pre">var()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-types">Data Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.int8"><code class="docutils literal notranslate"><span class="pre">int8</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.int16"><code class="docutils literal notranslate"><span class="pre">int16</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.int32"><code class="docutils literal notranslate"><span class="pre">int32</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.int64"><code class="docutils literal notranslate"><span class="pre">int64</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.float16"><code class="docutils literal notranslate"><span class="pre">float16</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.float32"><code class="docutils literal notranslate"><span class="pre">float32</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.float64"><code class="docutils literal notranslate"><span class="pre">float64</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.complex64"><code class="docutils literal notranslate"><span class="pre">complex64</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.complex128"><code class="docutils literal notranslate"><span class="pre">complex128</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#devices">Devices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.cpu"><code class="docutils literal notranslate"><span class="pre">cpu</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compyute.cuda"><code class="docutils literal notranslate"><span class="pre">cuda</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">compyute</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/compyute.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-compyute">
+<span id="compyute"></span><h1>compyute<a class="headerlink" href="#module-compyute" title="Link to this heading"></a></h1>
+<p>Compyute is a toolbox for building and training and analyzing neural networks
+only using NumPy/CuPy under the hood to perform computations.</p>
+<section id="tensors">
+<h2>Tensors<a class="headerlink" href="#tensors" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="compyute.Tensor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">Tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Tensor object used for storing multidimensional data.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tensors can only be initialized with NumPy or CuPy arrays.
+For other data types use the <a class="reference internal" href="#compyute.tensor" title="compyute.tensor"><code class="xref py py-func docutils literal notranslate"><span class="pre">tensor()</span></code></a> function. It automatically
+infers the data type and device if not specified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>_ArrayLike</em>) – Data to initialize the tensor. Must be a NumPy array or CuPy array.
+for other data use the <a class="reference internal" href="#compyute.tensor" title="compyute.tensor"><code class="xref py py-func docutils literal notranslate"><span class="pre">tensor()</span></code></a> function.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.T">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">T</span></span><a class="headerlink" href="#compyute.Tensor.T" title="Link to this definition"></a></dt>
+<dd><p>Returns a transposed view of the tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.copy" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Copy of the tensor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#compyute.Tensor.data" title="Link to this definition"></a></dt>
+<dd><p>Tensor data.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#compyute.Tensor.device" title="Link to this definition"></a></dt>
+<dd><p>Device the tensor data is stored on.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.dtype">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#compyute.Tensor.dtype" title="Link to this definition"></a></dt>
+<dd><p>Tensor data type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.item">
+<span class="sig-name descname"><span class="pre">item</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.item" title="Link to this definition"></a></dt>
+<dd><p>Returns the scalar value of the tensor data.
+Only works for scalar tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Scalar value of the tensor data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>_ScalarLike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#compyute.Tensor.ndim" title="Link to this definition"></a></dt>
+<dd><p>Number of tensor dimensions.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#compyute.Tensor.shape" title="Link to this definition"></a></dt>
+<dd><p>Tensor shape.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#compyute.Tensor.size" title="Link to this definition"></a></dt>
+<dd><p>Tensor size (number of elements).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="compyute.Tensor.strides">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">strides</span></span><a class="headerlink" href="#compyute.Tensor.strides" title="Link to this definition"></a></dt>
+<dd><p>Tensor strides.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_complex">
+<span class="sig-name descname"><span class="pre">to_complex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_complex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_complex" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with complex values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.complex64" title="compyute.complex64"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.complex64</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_cpu">
+<span class="sig-name descname"><span class="pre">to_cpu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_cpu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_cpu" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor on the CPU.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor on the CPU.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_cuda">
+<span class="sig-name descname"><span class="pre">to_cuda</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_cuda" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor on the GPU.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor on the GPU.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_device">
+<span class="sig-name descname"><span class="pre">to_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_device" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor on the specified device.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>device</strong> (<em>_DeviceLike</em>) – Device to move the tensor to.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor on the specified device.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_double">
+<span class="sig-name descname"><span class="pre">to_double</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_double"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_double" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with double precision values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.float64" title="compyute.float64"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.float64</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_float">
+<span class="sig-name descname"><span class="pre">to_float</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_float" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with single precision values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.float32" title="compyute.float32"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.float32</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_half">
+<span class="sig-name descname"><span class="pre">to_half</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_half"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_half" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with half precision values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.float16" title="compyute.float16"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.float16</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_int">
+<span class="sig-name descname"><span class="pre">to_int</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_int" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with integer values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.int32" title="compyute.int32"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.int32</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_long">
+<span class="sig-name descname"><span class="pre">to_long</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_long"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_long" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with long integer values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor with <a class="reference internal" href="#compyute.int64" title="compyute.int64"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.int64</span></code></a> values.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_numpy">
+<span class="sig-name descname"><span class="pre">to_numpy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_numpy" title="Link to this definition"></a></dt>
+<dd><p>Returns the tensor data as a NumPy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NumPy array of the tensor data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_shape">
+<span class="sig-name descname"><span class="pre">to_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_shape" title="Link to this definition"></a></dt>
+<dd><p>Returns a view of the tensor of a given shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shape</strong> (<em>_ShapeLike</em>) – Shape of the view.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>View of the tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="compyute.Tensor.to_type">
+<span class="sig-name descname"><span class="pre">to_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#Tensor.to_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.Tensor.to_type" title="Link to this definition"></a></dt>
+<dd><p>Returns a new tensor with elements cast to the given dtype.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dtype</strong> (<em>_DtypeLike</em>) – Datatype to cast tensor-elements to.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with elements cast to the given dtype.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tensor">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/base_tensor.html#tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tensor" title="Link to this definition"></a></dt>
+<dd><p>Creates a tensor object from arbitrary data.
+The data type and device are inferred from the data if not specified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>_ArrayLike</em><em> | </em><em>_ScalarLike</em>) – Data to initialize the tensor.</p></li>
+<li><p><strong>device</strong> (<em>_DeviceLike</em><em>, </em><em>optional</em>) – Device the tensor should be stored on. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it is inferred from the data.</p></li>
+<li><p><strong>dtype</strong> (<em>_DtypeLike</em><em>, </em><em>optional</em>) – Data type of tensor data. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it is inferred from the data.</p></li>
+<li><p><strong>copy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the data object is copied (may impact performance, uses more memory).
+Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="creating-and-combining-operations">
+<h3>Creating and Combining Operations<a class="headerlink" href="#creating-and-combining-operations" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.append">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.append" title="Link to this definition"></a></dt>
+<dd><p>Returns a copy of the tensor with appended values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>values</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Values to append.</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Axis alowng which to append the values. Defaults to <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing appended values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.arange">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">arange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#arange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.arange" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of evenly spaced values using a step size within
+a given interval [start, stop).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Stop value (not included).</p></li>
+<li><p><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Start value. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Spacing between values. Defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of evenly spaced samples.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.concatenate">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">concatenate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#concatenate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.concatenate" title="Link to this definition"></a></dt>
+<dd><p>Returns a new tensor by joining a sequence of tensors along a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>]</em>) – Sequence of Tensors to be joined.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis along which to join the tensors. Defaults to <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Concatenated tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.empty">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#empty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.empty" title="Link to this definition"></a></dt>
+<dd><p>Returns an tensor with uninitialized values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Shape of the new tensor.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with uninitialized values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.empty_like">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">empty_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#empty_like"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.empty_like" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor based on a given other tensor with uninitialized values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensor whose shape, dtype and device is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with uninitialized values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.full">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">full</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#full"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.full" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of a given shape with all values being one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Shape of the new tensor.</p></li>
+<li><p><strong>value</strong> (<em>ScalarLike</em>) – Value to fill the tensor.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being one.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.full_like">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">full_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#full_like"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.full_like" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of a given shape with all values being one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensor whose shape, dtype and device is used.</p></li>
+<li><p><strong>value</strong> (<em>ScalarLike</em>) – Value to fill the tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being one.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.identity">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.identity" title="Link to this definition"></a></dt>
+<dd><p>Returns a diagonal tensor of shape <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Size of the new tensor. The shape will be <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diagonal tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.linspace">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">linspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#linspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.linspace" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of num evenly spaced values within
+a given interval <span class="math notranslate nohighlight">\([start, stop]\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Start value.</p></li>
+<li><p><strong>stop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Stop value.</p></li>
+<li><p><strong>num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Number of samples.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of evenly spaced samples.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.ones">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">ones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#ones"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.ones" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of a given shape with all values being one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Shape of the new tensor.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being one.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.ones_like">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">ones_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#ones_like"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.ones_like" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor based on a given other tensor with all values being one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensor whose shape, dtype and device is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being one.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.split">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#split"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.split" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of new tensors by splitting the tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>splits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) – <div class="line-block">
+<div class="line">Where to split the tensor.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">int</span></code>: the tensor is split into n equally sized tensors.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">Sequence[int]</span></code>: the tensor is split at the given indices.</div>
+</div>
+</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Axis along which to split the tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of tensors containing the split data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>[<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.stack">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">stack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#stack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.stack" title="Link to this definition"></a></dt>
+<dd><p>Returns a new tensor by stacking a sequence of tensors along a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>]</em>) – Sequence of Tensors to be stacked.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis along which to stack the tensors. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Stacked tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.zeros">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">zeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Dtype('cpu')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#zeros"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.zeros" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor of a given shape with all values being zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Shape of the new tensor.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the tensor data. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>device</strong> (<em>DeviceLike</em><em>, </em><em>optional</em>) – The device the tensor is stored on. Defaults to <a class="reference internal" href="#compyute.cpu" title="compyute.cpu"><code class="xref py py-class docutils literal notranslate"><span class="pre">compyute.cpu</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being zero.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.zeros_like">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">zeros_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/creating.html#zeros_like"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.zeros_like" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor based on a given other tensor with all values being zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensor whose shape, dtype and device is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with all values being zero.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="reshaping-operations">
+<h3>Reshaping Operations<a class="headerlink" href="#reshaping-operations" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.diagonal">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">diagonal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#diagonal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.diagonal" title="Link to this definition"></a></dt>
+<dd><p>Expands a tensor by turning the last dim into a diagonal matrix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.reshape">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">reshape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#reshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.reshape" title="Link to this definition"></a></dt>
+<dd><p>Returns a new view of the tensor of a given shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>shape</strong> (<em>_ShapeLike</em>) – Shape of the new tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reshaped tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.flatten">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">flatten</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#flatten"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.flatten" title="Link to this definition"></a></dt>
+<dd><p>Returns a flattened, one-dimensional tensor.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.transpose">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-2,</span> <span class="pre">-1)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.transpose" title="Link to this definition"></a></dt>
+<dd><p>Transposes a tensor by swapping two axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em><em>, </em><em>optional</em>) – Transpose axes. Defaults to <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">-1)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transposed tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.insert_dim">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">insert_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#insert_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.insert_dim" title="Link to this definition"></a></dt>
+<dd><p>Returns a view of the tensor containing an added dimension at a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em>) – Where to insert the new dimension.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with an added dimension.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.add_dims">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">add_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_dims</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#add_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.add_dims" title="Link to this definition"></a></dt>
+<dd><p>Returns a view of the tensor with added trailing dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>target_dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Total number of dimensions needed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with specified number of dimensions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.resize">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.resize" title="Link to this definition"></a></dt>
+<dd><p>Returns a new tensor with the specified shape.
+If the new tensor is larger than the original one, it is filled with zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Shape of the new tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Resized tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.repeat">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_repeats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.repeat" title="Link to this definition"></a></dt>
+<dd><p>Repeat elements of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n_repeats</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Number of repeats.</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Axis, along which the values are repeated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with repeated values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tile">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_repeats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tile" title="Link to this definition"></a></dt>
+<dd><p>Repeat elements of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n_repeats</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Number of repeats.</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Axis, along which the values are repeated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with repeated values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.pad">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">pad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#pad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.pad" title="Link to this definition"></a></dt>
+<dd><p>Returns a padded tensor using zero padding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>pad_width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em><em>, </em><em>...</em><em>]</em>) – <div class="line-block">
+<div class="line">Padding width(s).</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">int</span></code>: same padding width at the begining and end of all axes.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">tuple[int,</span> <span class="pre">int]</span></code>: specific widths at the beginning and end of all axes.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">tuple[tuple[int,</span> <span class="pre">int]]</span></code>: specific widths in the beginning and end for each axis.</div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Padded tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.pad_to_shape">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">pad_to_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#pad_to_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.pad_to_shape" title="Link to this definition"></a></dt>
+<dd><p>Returns a padded tensor using zero padding that matches a specified shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>shape</strong> (<em>ShapeLike</em>) – Final shape of the padded tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Padded tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.moveaxis">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">moveaxis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#moveaxis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.moveaxis" title="Link to this definition"></a></dt>
+<dd><p>Move axes of an array to new positions. Other axes remain in their original order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>from_axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Original position of the axis to move.</p></li>
+<li><p><strong>to_axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – New position of the axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with a moved axes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.squeeze">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">squeeze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#squeeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.squeeze" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor with removed axes where <code class="docutils literal notranslate"><span class="pre">dim=1</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor with removed axes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.flip">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">flip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#flip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.flip" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor with flipped elements along given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – <div class="line-block">
+<div class="line">Axis alown which to flip the tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">None</span></code>: all axes are flipped</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">int</span></code>: only the specified axis is flipped.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">tuple[int,</span> <span class="pre">...]</span></code>: all specified axes are flipped.</div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing flipped values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.broadcast_to">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">broadcast_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/reshaping.html#broadcast_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.broadcast_to" title="Link to this definition"></a></dt>
+<dd><p>Broadcast a tensor to a new shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>shape</strong> (<em>_ShapeLike</em>) – Shape of the new tensor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Broadcasted tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="selecting-operations">
+<h3>Selecting Operations<a class="headerlink" href="#selecting-operations" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.argmax">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">argmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/selecting.html#argmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.argmax" title="Link to this definition"></a></dt>
+<dd><p>Returns the indices of maximum values along a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>_AxisLike</em><em>, </em><em>optional</em>) – Axes, along which the maximum value is located. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code> it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+If false the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.get_diagonal">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">get_diagonal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/selecting.html#get_diagonal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.get_diagonal" title="Link to this definition"></a></dt>
+<dd><p>Extract a diagonal or construct a diagonal tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – <div class="line-block">
+<div class="line">Index of the diagonal. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code>: above main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">0</span></code>: below main diagonal</div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The extracted diagonal or constructed diagonal tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tril">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tril</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/selecting.html#tril"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tril" title="Link to this definition"></a></dt>
+<dd><p>Returns the lower triangle of a tensor below the
+d-th diagonal of the last two dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – <div class="line-block">
+<div class="line">Index of the diagonal. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code>: above main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">0</span></code>: below main diagonal</div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lower triangle tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.triu">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">triu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/selecting.html#triu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.triu" title="Link to this definition"></a></dt>
+<dd><p>Returns the upper triangle of a tensor above the
+d-th diagonal of the last two dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – <div class="line-block">
+<div class="line">Index of the diagonal. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code>: above main diagonal</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">&lt;</span> <span class="pre">0</span></code>: below main diagonal</div>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Upper triangle tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.unique">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">unique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/selecting.html#unique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.unique" title="Link to this definition"></a></dt>
+<dd><p>Returns the unique ordered values of the tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing unique values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="transforming-and-computing-operations">
+<h3>Transforming and Computing Operations<a class="headerlink" href="#transforming-and-computing-operations" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.abs">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">abs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#abs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.abs" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise absolute value of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise absolute value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.clip">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">clip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#clip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.clip" title="Link to this definition"></a></dt>
+<dd><p>Returns a tensor with values clipped to min_value and max_value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>min_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) – Lower bound. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, no clipping is performed on this edge.</p></li>
+<li><p><strong>max_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Upper bound. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, no clipping is performed on this edge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing clipped values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.cos">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">cos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#cos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.cos" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise cosine of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise cosine.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.cosh">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">cosh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#cosh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.cosh" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise hyperbolic cosine of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise hyperbolic cosine.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.dot">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.dot" title="Link to this definition"></a></dt>
+<dd><p>Computes the dot product of two tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – First tensor.</p></li>
+<li><p><strong>y</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Second tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dot product of the tensors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.einsum">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">einsum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subscripts</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#einsum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.einsum" title="Link to this definition"></a></dt>
+<dd><p>Computes the Einstein summation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subscripts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Specifies the subscripts for summation as a comma separated list of subscript labels.
+An implicit (classical Einstein summation) calculation is performed unless the explicit
+indicator “-&gt;” is included as well as subscript labels of the precise output form.</p></li>
+<li><p><strong>tensors</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensors to evaluate the Einstein summation for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the Einstein summation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.exp">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">exp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#exp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.exp" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise exponential of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise exponential.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.fft1d">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">fft1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#fft1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.fft1d" title="Link to this definition"></a></dt>
+<dd><p>Computes the 1D Fast Fourier Transform over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Length of the transformed axis of the output. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Axis over which to compute the FFT. Defaults to <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>_DtypeLike</em><em>, </em><em>optional</em>) – Complex datatype of the output tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Complex tensor containing the 1D FFT.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.fft2d">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">fft2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-2,</span> <span class="pre">-1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#fft2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.fft2d" title="Link to this definition"></a></dt>
+<dd><p>Computes the 2D Fast Fourier Transform over given axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n</strong> (<em>ShapeLike</em><em>, </em><em>optional</em>) – Shape (length of each transformed axis) of the output. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em><em>, </em><em>optional</em>) – Axes over which to compute the FFT. Defaults to <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">-1)</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>_DtypeLike</em><em>, </em><em>optional</em>) – Complex datatype of the output tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Complex tensor containing the 2D FFT.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.histogram">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binrange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#histogram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.histogram" title="Link to this definition"></a></dt>
+<dd><p>Computes the histogram of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> | </em><em>1D Tensor</em>) – <dl class="simple">
+<dt>The number of bins to use for the histogram. Defaults to 10.</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">int</span></code>:defines the number of equal-width bins.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Tensor</span></code>: defines the sequence of bin edges including the rightmost edge.</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>]</em><em>, </em><em>optional</em>) – Defines the range of the bins. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>density</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to compute the density instead of the count. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>weights</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>, </em><em>optional</em>) – Each value in input contributes its associated weight
+towards its bin’s result. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>Tensor</em> – Tensor containing the histogram values.</p></li>
+<li><p><em>Tensor</em> – Tensor containing the bin edges.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.inner">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">inner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#inner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.inner" title="Link to this definition"></a></dt>
+<dd><p>Computes the inner product of two or more tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*tensors</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensors to compute the inner product of.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the inner product.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.ifft1d">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">ifft1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#ifft1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.ifft1d" title="Link to this definition"></a></dt>
+<dd><p>Computes the inverse 1D Fast Fourier Transform over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Length of the transformed axis of the output. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – Axis over which to compute the inverse FFT. Defaults to <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>_DtypeLike</em><em>, </em><em>optional</em>) – Complex datatype of the output tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Float tensor containing the inverse 1D FFT.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.ifft2d">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">ifft2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-2,</span> <span class="pre">-1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#ifft2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.ifft2d" title="Link to this definition"></a></dt>
+<dd><p>Computes the inverse 2D Fast Fourier Transform over given axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>n</strong> (<em>ShapeLike</em><em>, </em><em>optional</em>) – Shape (length of each transformed axis) of the output. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em><em>, </em><em>optional</em>) – Axes over which to compute the inverse FFT. Defaults to <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">-1)</span></code>.</p></li>
+<li><p><strong>dtype</strong> (<em>_DtypeLike</em><em>, </em><em>optional</em>) – Complex datatype of the output tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Float tensor containing the inverse 2D FFT.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.log">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.log" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise natural log of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise natural log.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.log2">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">log2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#log2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.log2" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise log base 2 of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise log base 2.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.log10">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">log10</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#log10"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.log10" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise log base 10 of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise log base 10.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.max">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.max" title="Link to this definition"></a></dt>
+<dd><p>Computes the maximum of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the maximum is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If none it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the maximum of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.maximum">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">maximum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#maximum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.maximum" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise maximum of two tensors or a tensor and a scalar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – First tensor.</p></li>
+<li><p><strong>y</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em> | </em><em>_ScalarLike</em>) – Second tensor or scalar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise maximum.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.mean">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.mean" title="Link to this definition"></a></dt>
+<dd><p>Computes the mean of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the mean is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If None it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the mean of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.min">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">min</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#min"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.min" title="Link to this definition"></a></dt>
+<dd><p>Computes the minimum of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the minimum is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If None it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the minimum of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.minimum">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.minimum" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise minimum of two tensors or a tensor and a scalar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – First tensor.</p></li>
+<li><p><strong>y</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em> | </em><em>_ScalarLike</em>) – Second tensor or scalar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise minimum.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.outer">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">outer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#outer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.outer" title="Link to this definition"></a></dt>
+<dd><p>Computes the outer product of two or more tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*tensors</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Tensors to compute the outer product of.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the outer product.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.prod">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">prod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#prod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.prod" title="Link to this definition"></a></dt>
+<dd><p>Computes the product of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the product is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If None it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the product of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.real">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">real</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#real"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.real" title="Link to this definition"></a></dt>
+<dd><p>Returns the real part of a complex tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>dtype</strong> (<em>DtypeLike</em><em>, </em><em>optional</em>) – Datatype of the output tensor. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing real values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.round">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimals</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.round" title="Link to this definition"></a></dt>
+<dd><p>Rounds tensor elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>decimals</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Decimal places of rounded values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing rounded elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.sech">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">sech</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#sech"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.sech" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise secant of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise secant.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.sin">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">sin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#sin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.sin" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise sine of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise sine.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.sinh">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">sinh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#sinh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.sinh" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise hyperbolic sine of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise hyperbolic sine.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.sqrt">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">sqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#sqrt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.sqrt" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise square root of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise square root.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.std">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.std" title="Link to this definition"></a></dt>
+<dd><p>Computes the standard deviation of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the standard deviation is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code> it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the standard deviation of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tan">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#tan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tan" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise tangent of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise tangent.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tanh">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tanh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#tanh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tanh" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise hyperbolic tangent of a tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the element-wise hyperbolic tangent.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tensorprod">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tensorprod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#tensorprod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tensorprod" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise product of any number of two or more tensors over their first axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensors</strong> (<em>Iterable</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>] </em><em>| </em><em>Iterator</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>]</em>) – Iterable or Iterator of tensors to be multiplied.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing element-wise products.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.tensorsum">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">tensorsum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#tensorsum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.tensorsum" title="Link to this definition"></a></dt>
+<dd><p>Computes the element-wise sum of any number of two or more tensors over their first axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensors</strong> (<em>Iterable</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>] </em><em>| </em><em>Iterator</em><em>[</em><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a><em>]</em>) – Iterable or Iterator of tensors to be sumed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing element-wise sums.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.sum">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.sum" title="Link to this definition"></a></dt>
+<dd><p>Computes the sum of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the sum is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code> it is computed over the flattened tensor.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+if <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the sum of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="compyute.var">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddof</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/compyute/tensor_functions/transforming.html#var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#compyute.var" title="Link to this definition"></a></dt>
+<dd><p>Computes the variance of tensor elements over a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor"><em>Tensor</em></a>) – Input tensor.</p></li>
+<li><p><strong>axis</strong> (<em>AxisLike</em><em>, </em><em>optional</em>) – Axis over which the variance is computed. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+If None it is computed over the flattened tensor.</p></li>
+<li><p><strong>ddof</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – “Delta Degrees of Freedom”: the divisor used in the calculation is <span class="math notranslate nohighlight">\(N - ddof\)</span>,
+where <span class="math notranslate nohighlight">\(N\)</span> represents the number of elements. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>keepdims</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to keep the tensors dimensions. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code> the tensor is collapsed along the given axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the variance of elements.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#compyute.Tensor" title="compyute.Tensor">Tensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="data-types">
+<h2>Data Types<a class="headerlink" href="#data-types" title="Link to this heading"></a></h2>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.int8">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">int8</span></span><a class="headerlink" href="#compyute.int8" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘int8’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.int16">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">int16</span></span><a class="headerlink" href="#compyute.int16" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘int16’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.int32">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">int32</span></span><a class="headerlink" href="#compyute.int32" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘int32’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.int64">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">int64</span></span><a class="headerlink" href="#compyute.int64" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘int64’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.float16">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">float16</span></span><a class="headerlink" href="#compyute.float16" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘float16’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.float32">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">float32</span></span><a class="headerlink" href="#compyute.float32" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘float32’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.float64">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">float64</span></span><a class="headerlink" href="#compyute.float64" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘float64’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.complex64">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">complex64</span></span><a class="headerlink" href="#compyute.complex64" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘complex64’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.complex128">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">complex128</span></span><a class="headerlink" href="#compyute.complex128" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘complex128’)</p>
+</dd></dl>
+
+</section>
+<section id="devices">
+<h2>Devices<a class="headerlink" href="#devices" title="Link to this heading"></a></h2>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.cpu">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">cpu</span></span><a class="headerlink" href="#compyute.cpu" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘cpu’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="compyute.cuda">
+<span class="sig-prename descclassname"><span class="pre">compyute.</span></span><span class="sig-name descname"><span class="pre">cuda</span></span><a class="headerlink" href="#compyute.cuda" title="Link to this definition"></a></dt>
+<dd><p>alias of Dtype(‘cuda’)</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Compyute documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="compyute.engine.html" class="btn btn-neutral float-right" title="compyute.engine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.nn.modules.containers &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">compyute.nn.modules.containers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for compyute.nn.modules.containers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Neural network container modules.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">accumulate</span><span class="p">,</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">...base_tensor</span> <span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">_ShapeLike</span>
+<span class="kn">from</span> <span class="nn">...dtypes</span> <span class="kn">import</span> <span class="n">Dtype</span><span class="p">,</span> <span class="n">_DtypeLike</span>
+<span class="kn">from</span> <span class="nn">...engine</span> <span class="kn">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">_DeviceLike</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.creating</span> <span class="kn">import</span> <span class="n">concatenate</span><span class="p">,</span> <span class="n">ones</span><span class="p">,</span> <span class="n">split</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.transforming</span> <span class="kn">import</span> <span class="n">tensorsum</span>
+<span class="kn">from</span> <span class="nn">..parameter</span> <span class="kn">import</span> <span class="n">Buffer</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Container&quot;</span><span class="p">,</span> <span class="s2">&quot;Sequential&quot;</span><span class="p">,</span> <span class="s2">&quot;ParallelConcat&quot;</span><span class="p">,</span> <span class="s2">&quot;ParallelAdd&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Container">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container">[docs]</a>
+<span class="k">class</span> <span class="nc">Container</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container base module.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *modules : Module</span>
+<span class="sd">        Modules used in the container.</span>
+<span class="sd">    label : str, optional</span>
+<span class="sd">        Container label. Defaults to ``None``. If ``None``, the class name is used.</span>
+<span class="sd">    training : bool, optional</span>
+<span class="sd">        Whether the container and its modules should be in training mode. Defaults to ``False``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">training</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+    <span class="c1"># PROPERTIES</span>
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Container.to_device">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.to_device">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">_DeviceLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="n">Device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Module</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the list of container modules.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[Module]</span>
+<span class="sd">            List of container modules.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">Module</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="Container.add_module">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.add_module">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Appends a module to the container.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : Module</span>
+<span class="sd">            Module to append to the container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> <span class="o">=</span> <span class="p">[</span><span class="n">module</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Parameter</span><span class="p">]:</span>
+        <span class="n">self_parameters</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">module_parameters</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chain</span><span class="p">(</span><span class="n">self_parameters</span><span class="p">,</span> <span class="n">module_parameters</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">buffers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Buffer</span><span class="p">]:</span>
+        <span class="n">self_buffers</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">buffers</span>
+        <span class="n">module_buffers</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">buffers</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chain</span><span class="p">(</span><span class="n">self_buffers</span><span class="p">,</span> <span class="n">module_buffers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Container.set_retain_values">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.set_retain_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_retain_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retain_values</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_retain_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">set_retain_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container.set_trainable">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.set_trainable">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_trainable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainable</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container.set_training">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.set_training">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_training</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">set_training</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+    <span class="c1"># MAGIC METHODS</span>
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">rep</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">rep</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">module</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">rep</span>
+
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+    <span class="c1"># OTHER OPERATIONS</span>
+    <span class="c1"># ----------------------------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Container.forward">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.forward">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="Container.cleanup">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.cleanup">[docs]</a>
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">cleanup</span><span class="p">(</span><span class="n">force</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Container.get_summary">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Container.get_summary">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span> <span class="n">input_dtype</span><span class="p">:</span> <span class="n">_DtypeLike</span> <span class="o">=</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">FLOAT32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns information about the container and its modules.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_shape : _ShapeLike</span>
+<span class="sd">            Shape of the container input ignoring the batch dimension.</span>
+<span class="sd">        input_dtype : _DtypeLike, optional</span>
+<span class="sd">            Data type of the expected input data. Defaults to :class:`compyute.float32`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Summary of the container and its modules.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">divider</span> <span class="o">=</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+
+        <span class="n">summary</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+            <span class="n">divider</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Layer&#39;</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Output Shape&#39;</span><span class="si">:</span><span class="s2">20s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;# Parameters&#39;</span><span class="si">:</span><span class="s2">&gt;15s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;trainable&#39;</span><span class="si">:</span><span class="s2">&gt;12s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">divider</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">input_dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">retain_values</span><span class="p">():</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">module_summaries</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">def</span> <span class="nf">build_module_summary</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span> <span class="n">summaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># add summary of current module</span>
+                <span class="n">summaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">module</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+                        <span class="s2">&quot;out_shape&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">module</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(),</span>
+                        <span class="s2">&quot;n_params&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span>
+                        <span class="s2">&quot;trainable&quot;</span><span class="p">:</span> <span class="n">module</span><span class="o">.</span><span class="n">trainable</span><span class="p">,</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;container&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Container</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;module&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+
+                <span class="c1"># get summary of child modules</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">modules</span><span class="p">):</span>
+                        <span class="n">child_prefix</span> <span class="o">=</span> <span class="n">prefix</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">prefix</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;├-&quot;</span><span class="p">:</span>
+                            <span class="n">child_prefix</span> <span class="o">+=</span> <span class="s2">&quot;│ &quot;</span>
+                        <span class="k">elif</span> <span class="n">prefix</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;└-&quot;</span><span class="p">:</span>
+                            <span class="n">child_prefix</span> <span class="o">+=</span> <span class="s2">&quot;  &quot;</span>
+
+                        <span class="n">child_prefix</span> <span class="o">+=</span> <span class="s2">&quot;└-&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">modules</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;├-&quot;</span>
+
+                        <span class="n">build_module_summary</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">summaries</span><span class="p">,</span> <span class="n">child_prefix</span><span class="p">)</span>
+
+            <span class="n">build_module_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_summaries</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+            <span class="c1"># convert dict to list of strings</span>
+            <span class="n">n_parameters</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">n_train_parameters</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">module_summaries</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+                <span class="n">out_shape</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;out_shape&quot;</span><span class="p">])</span>
+                <span class="n">n_params</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;n_params&quot;</span><span class="p">]</span>
+                <span class="n">trainable</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;trainable&quot;</span><span class="p">])</span>
+                <span class="n">n_parameters</span> <span class="o">+=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;n_params&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;module&quot;</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">n_train_parameters</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="n">s</span><span class="p">[</span><span class="s2">&quot;n_params&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;trainable&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;module&quot;</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="p">)</span>
+                <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">out_shape</span><span class="si">:</span><span class="s2">20s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n_params</span><span class="si">:</span><span class="s2">15d</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">trainable</span><span class="si">:</span><span class="s2">&gt;12s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
+        <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">divider</span><span class="p">)</span>
+        <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameters: </span><span class="si">{</span><span class="n">n_parameters</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trainable parameters: </span><span class="si">{</span><span class="n">n_train_parameters</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Sequential">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.Sequential">[docs]</a>
+<span class="k">class</span> <span class="nc">Sequential</span><span class="p">(</span><span class="n">Container</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container that processes modules sequentially.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *modules : Module</span>
+<span class="sd">        Modules used in the container.</span>
+<span class="sd">    label : str, optional</span>
+<span class="sd">        Container label. Defaults to ``None``. If ``None``, the class name is used.</span>
+<span class="sd">    training : bool, optional</span>
+<span class="sd">        Whether the container and its modules should be in training mode. Defaults to ``False``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EmptyContainerError</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">_backward</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">):</span>
+                    <span class="n">dy</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">dy</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+
+        <span class="k">return</span> <span class="n">x</span></div>
+
+
+
+<div class="viewcode-block" id="ParallelConcat">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.ParallelConcat">[docs]</a>
+<span class="k">class</span> <span class="nc">ParallelConcat</span><span class="p">(</span><span class="n">Container</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container that processes modules in parallel and concatenates their outputs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *modules : Module</span>
+<span class="sd">        Modules used in the parallel container.</span>
+<span class="sd">    concat_axis : int, optional</span>
+<span class="sd">        Axis along which the output of the parallel modules</span>
+<span class="sd">        shall be concatinated. Defaults to ``-1``.</span>
+<span class="sd">    label : str, optional</span>
+<span class="sd">        Container label. Defaults to ``None``. If ``None``, the class name is used.</span>
+<span class="sd">    training : bool, optional</span>
+<span class="sd">        Whether the container and its modules should be in training mode. Defaults to ``False``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">modules</span><span class="p">:</span> <span class="n">Module</span><span class="p">,</span>
+        <span class="n">concat_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">concat_axis</span> <span class="o">=</span> <span class="n">concat_axis</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EmptyContainerError</span><span class="p">()</span>
+
+        <span class="n">ys</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">concat_axis</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training</span><span class="p">:</span>
+            <span class="n">splits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">accumulate</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">concat_axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+            <span class="k">def</span> <span class="nf">_backward</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+                <span class="n">dy_splits</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">splits</span><span class="o">=</span><span class="n">splits</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">concat_axis</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">tensorsum</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span> <span class="n">dy_splits</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+
+        <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<div class="viewcode-block" id="ParallelAdd">
+<a class="viewcode-back" href="../../../../compyute.nn.html#compyute.nn.ParallelAdd">[docs]</a>
+<span class="k">class</span> <span class="nc">ParallelAdd</span><span class="p">(</span><span class="n">Container</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container that processes modules in parallel and sums their outputs element-wise.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *modules : Module</span>
+<span class="sd">        Modules used in the container.</span>
+<span class="sd">    label : str, optional</span>
+<span class="sd">        Container label. Defaults to ``None``. If ``None``, the class name is used.</span>
+<span class="sd">    training : bool, optional</span>
+<span class="sd">        Whether the container and its modules should be in training mode. Defaults to ``False``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EmptyContainerError</span><span class="p">()</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">tensorsum</span><span class="p">(</span><span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">tensorsum</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">EmptyContainerError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception for empty containers.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Container has no modules.&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

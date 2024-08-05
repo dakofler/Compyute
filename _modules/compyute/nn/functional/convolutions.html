@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compyute.nn.functional.convolutions &mdash; Compyute 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Compyute
+          </a>
+              <div class="version">
+                0.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.html">compyute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.engine.html">compyute.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.html">compyute.nn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.functional.html">compyute.nn.functional</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.initializers.html">compyute.nn.initializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.optimizers.html">compyute.nn.optimizers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.html">compyute.nn.trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.nn.trainer.callbacks.html">compyute.nn.trainer.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.html">compyute.preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.preprocessing.text.html">compyute.preprocessing.text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../compyute.random.html">compyute.random</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Compyute</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">compyute.nn.functional.convolutions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for compyute.nn.functional.convolutions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Neural network convolution functions.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">...base_tensor</span> <span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">_ShapeLike</span>
+<span class="kn">from</span> <span class="nn">...dtypes</span> <span class="kn">import</span> <span class="n">Dtype</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.creating</span> <span class="kn">import</span> <span class="n">zeros</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.reshaping</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">broadcast_to</span><span class="p">,</span>
+    <span class="n">flip</span><span class="p">,</span>
+    <span class="n">insert_dim</span><span class="p">,</span>
+    <span class="n">pad</span><span class="p">,</span>
+    <span class="n">pad_to_shape</span><span class="p">,</span>
+    <span class="n">repeat</span><span class="p">,</span>
+    <span class="n">reshape</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.transforming</span> <span class="kn">import</span> <span class="n">fft1d</span><span class="p">,</span> <span class="n">fft2d</span><span class="p">,</span> <span class="n">ifft1d</span><span class="p">,</span> <span class="n">ifft2d</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.transforming</span> <span class="kn">import</span> <span class="nb">max</span> <span class="k">as</span> <span class="n">cpmax</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.transforming</span> <span class="kn">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">real</span>
+<span class="kn">from</span> <span class="nn">...tensor_functions.transforming</span> <span class="kn">import</span> <span class="nb">sum</span> <span class="k">as</span> <span class="n">cpsum</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;convolve1d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dilate1d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pad1d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;convolve2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dilate2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pad2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;upsample2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;maxpooling2d&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;avgpooling2d&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">_PaddingLike</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="convolve1d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.convolve1d">[docs]</a>
+<span class="k">def</span> <span class="nf">convolve1d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">_PaddingLike</span> <span class="o">=</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the convolution of two tensors over their last axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    f : Tensor</span>
+<span class="sd">        Filter tensor.</span>
+<span class="sd">    b : Tensor, optional</span>
+<span class="sd">        Bias tensor. Defaults to ``None``. If ``None``, no bias is added.</span>
+<span class="sd">    padding : _PaddingLike, optional</span>
+<span class="sd">        Padding applied to the input tensor. Defaults to ``valid``.</span>
+<span class="sd">    stride : int, optional</span>
+<span class="sd">        Stride used in the convolution operation. Defaults to ``1``.</span>
+<span class="sd">    dilation : int, optional</span>
+<span class="sd">        Dilation factor to use for each axis of the filter. Defaults to ``1``.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]], optional</span>
+<span class="sd">        Gradient function.</span>
+
+
+<span class="sd">    See Also</span>
+<span class="sd">    ----------</span>
+<span class="sd">    :class:`compyute.nn.Convolution1d`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># dilate filter and add a fake batch dimension</span>
+    <span class="n">f</span><span class="p">,</span> <span class="n">dil_grad_fn</span> <span class="o">=</span> <span class="n">dilate1d</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dilation</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (Co, Ci, F)</span>
+    <span class="n">f_</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (1, Co, Ci, F)</span>
+
+    <span class="c1"># pad input and add a fake output dimension</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">_pad1d_from_str</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="n">f_</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">pad_grad_fn</span> <span class="o">=</span> <span class="n">pad1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (B, Ci, T)</span>
+    <span class="n">x_</span> <span class="o">=</span> <span class="n">insert_dim</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># (B, 1, Ci, T)</span>
+
+    <span class="c1"># perform convolution and sum over input dimension</span>
+    <span class="n">conv</span><span class="p">,</span> <span class="n">conv_grad_fn</span> <span class="o">=</span> <span class="n">_convolve1d</span><span class="p">(</span><span class="n">x_</span><span class="p">,</span> <span class="n">f_</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (B, Co, Ci, T)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">cpsum</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># (B, Co, T)</span>
+
+    <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">conv_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pad_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dil_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">broadcast_to</span><span class="p">(</span><span class="n">insert_dim</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">conv</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">df</span> <span class="o">=</span> <span class="n">conv_grad_fn</span><span class="p">(</span><span class="n">dy_</span><span class="p">)</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">pad_grad_fn</span><span class="p">(</span><span class="n">cpsum</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">dil_grad_fn</span><span class="p">(</span><span class="n">cpsum</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">db</span> <span class="o">=</span> <span class="n">cpsum</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">db</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">db</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="dilate1d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.dilate1d">[docs]</a>
+<span class="k">def</span> <span class="nf">dilate1d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dilates a tensor in its last axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    dilation : int</span>
+<span class="sd">        Dilation factor to use.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dilation</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">)</span>
+
+    <span class="n">dil_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dilation</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,)</span>
+    <span class="n">x_dil</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dil_shape</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">dil_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dilation</span><span class="p">)]</span>
+    <span class="n">x_dil</span><span class="p">[</span><span class="o">*</span><span class="n">dil_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x_dil</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">[</span><span class="o">*</span><span class="n">dil_slice</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">x_dil</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_pad1d_from_str</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="n">_PaddingLike</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="s2">&quot;valid&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">kernel_size</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="pad1d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.pad1d">[docs]</a>
+<span class="k">def</span> <span class="nf">pad1d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pads a tensor in its last axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    padding : tuple[int, int]</span>
+<span class="sd">        Padding width applied to the beginning and end of the last axis.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">)</span>
+
+    <span class="n">widths</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">padding</span><span class="p">])</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">widths</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+        <span class="n">pad_grad_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">[</span><span class="o">*</span><span class="n">pad_grad_slice</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_convolve1d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]]:</span>
+    <span class="n">f_</span> <span class="o">=</span> <span class="n">flip</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">_fft_conv1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">f_</span><span class="p">)</span>
+    <span class="n">stride_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stride</span><span class="p">)]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">conv</span><span class="p">[</span><span class="o">*</span><span class="n">stride_slice</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+            <span class="c1"># fill elements skipped by strides with zeros</span>
+            <span class="n">dy_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dilate1d</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">pad_to_shape</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">conv</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="n">dy_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pad1d</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># full pad dy</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">_fft_conv1d</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">flip</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">_fft_conv1d</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">df</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_fft_conv1d</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">cdtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">COMPLEX64</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span>
+        <span class="n">ifft1d</span><span class="p">(</span><span class="n">fft1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">fft1d</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">),</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">out_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="o">-</span><span class="n">out</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">conv</span><span class="p">[</span><span class="o">*</span><span class="n">out_slice</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="convolve2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.convolve2d">[docs]</a>
+<span class="k">def</span> <span class="nf">convolve2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">_PaddingLike</span> <span class="o">=</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the convolution of two tensors over their last two axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    f : Tensor</span>
+<span class="sd">        Filter tensor.</span>
+<span class="sd">    b : Tensor, optional</span>
+<span class="sd">        Bias tensor. Defaults to ``None. If ``None``, no bias is added.</span>
+<span class="sd">    padding : _PaddingLike, optional</span>
+<span class="sd">        Padding applied to the input tensor. Defaults to ``valid``.</span>
+<span class="sd">    stride : int, optional</span>
+<span class="sd">        Stride used in the convolution operation. Defaults to ``1``.</span>
+<span class="sd">    dilation : int, optional</span>
+<span class="sd">        Dilation factor to use for each axis of the filter. Defaults to ``1``.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional</span>
+<span class="sd">        Gradient function.</span>
+
+
+<span class="sd">    See Also</span>
+<span class="sd">    ----------</span>
+<span class="sd">    :class:`compyute.nn.Convolution2d`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># dilate filter and add a fake batch dimension</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="p">)</span>
+    <span class="n">f</span><span class="p">,</span> <span class="n">dil_grad_fn</span> <span class="o">=</span> <span class="n">dilate2d</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (Co, Ci, Fy, Fx)</span>
+    <span class="n">f_</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (1, Co, Ci, Fy, Fx)</span>
+
+    <span class="c1"># pad input and add a fake output dimension</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">_pad2d_from_str</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="n">f_</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">pad_grad_fn</span> <span class="o">=</span> <span class="n">pad2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (B, Ci, Y, X)</span>
+    <span class="n">x_</span> <span class="o">=</span> <span class="n">insert_dim</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># (B, 1, Ci, Y, X)</span>
+
+    <span class="c1"># perform convolution and sum over input dimension</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">stride</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+    <span class="n">conv</span><span class="p">,</span> <span class="n">conv_grad_fn</span> <span class="o">=</span> <span class="n">_convolve2d</span><span class="p">(</span><span class="n">x_</span><span class="p">,</span> <span class="n">f_</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">return_grad_fn</span><span class="p">)</span>  <span class="c1"># (B, Co, Ci, Y, X)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">cpsum</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># (B, Co, Y, X)</span>
+
+    <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">conv_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pad_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dil_grad_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">broadcast_to</span><span class="p">(</span><span class="n">insert_dim</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">conv</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">df</span> <span class="o">=</span> <span class="n">conv_grad_fn</span><span class="p">(</span><span class="n">dy_</span><span class="p">)</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">pad_grad_fn</span><span class="p">(</span><span class="n">cpsum</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># sum over out channels</span>
+
+            <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">dil_grad_fn</span><span class="p">(</span><span class="n">cpsum</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c1"># sum over batches</span>
+
+            <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">db</span> <span class="o">=</span> <span class="n">cpsum</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>  <span class="c1"># sum over batches, Y and X</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">db</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">db</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="dilate2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.dilate2d">[docs]</a>
+<span class="k">def</span> <span class="nf">dilate2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dilation</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dilates a tensor in its last two axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    dilation : tuple[int, int]</span>
+<span class="sd">        Dilation factor to use.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dilation</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">)</span>
+
+    <span class="n">dil_shape</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">dilation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">dilation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">x_dil</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">dil_shape</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">dil_slice</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dilation</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dilation</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="p">)</span>
+    <span class="n">x_dil</span><span class="p">[</span><span class="o">*</span><span class="n">dil_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x_dil</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">[</span><span class="o">*</span><span class="n">dil_slice</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">x_dil</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_pad2d_from_str</span><span class="p">(</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">_PaddingLike</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="s2">&quot;valid&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">kernel_size</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="pad2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.pad2d">[docs]</a>
+<span class="k">def</span> <span class="nf">pad2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pads a tensor in its last two axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    padding : tuple[tuple[int, int], tuple[int, int]]</span>
+<span class="sd">        Padding width applied to the beginning and end of the last two axes.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">)</span>
+
+    <span class="n">widths</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="o">*</span><span class="n">padding</span><span class="p">])</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">widths</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+        <span class="n">pad_grad_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="nb">slice</span><span class="p">(</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="nb">slice</span><span class="p">(</span><span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">dy</span><span class="p">:</span> <span class="n">dy</span><span class="p">[</span><span class="o">*</span><span class="n">pad_grad_slice</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_convolve2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">strides</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]]:</span>
+    <span class="n">f_</span> <span class="o">=</span> <span class="n">flip</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">_fft_conv2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">f_</span><span class="p">)</span>
+    <span class="n">stride_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">strides</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">conv</span><span class="p">[</span><span class="o">*</span><span class="n">stride_slice</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+            <span class="c1"># fill elements skipped by strides with zeros</span>
+            <span class="n">dy_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dilate2d</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">strides</span><span class="p">)</span>
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">pad_to_shape</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">conv</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="c1"># full pad dy</span>
+            <span class="n">dy_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pad2d</span><span class="p">(</span>
+                <span class="n">dy_</span><span class="p">,</span> <span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">_fft_conv2d</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+            <span class="n">dy_</span> <span class="o">=</span> <span class="n">flip</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">_fft_conv2d</span><span class="p">(</span><span class="n">dy_</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">df</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_fft_conv2d</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="n">cdtype</span> <span class="o">=</span> <span class="n">Dtype</span><span class="o">.</span><span class="n">COMPLEX64</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span>
+        <span class="n">ifft2d</span><span class="p">(</span><span class="n">fft2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">fft2d</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cdtype</span><span class="p">),</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">out_y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">out_x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">out_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="o">-</span><span class="n">out_y</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="o">-</span><span class="n">out_x</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">conv</span><span class="p">[</span><span class="o">*</span><span class="n">out_slice</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="upsample2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.upsample2d">[docs]</a>
+<span class="k">def</span> <span class="nf">upsample2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">scaling_factors</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">_ShapeLike</span><span class="p">,</span>
+    <span class="n">axes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upsamples a tensor by repeating it&#39;s elements over given axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Tensor to be stretched out.</span>
+<span class="sd">    scaling_factors : tuple[int, int]</span>
+<span class="sd">        Number of repeating values along each axis.</span>
+<span class="sd">    shape : ShapeLike</span>
+<span class="sd">        Shape of the target tensor. If the shape does not match after upsampling,</span>
+<span class="sd">        remaining values are filled with zeroes.</span>
+<span class="sd">    axes : tuple[int, int], optional</span>
+<span class="sd">        Axes along which to stretch the tensor. Defaults to ``(-2, -1)``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Upsampled tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sf1</span><span class="p">,</span> <span class="n">sf2</span> <span class="o">=</span> <span class="n">scaling_factors</span>
+    <span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">axes</span>
+    <span class="n">x_str</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sf1</span><span class="p">,</span> <span class="n">ax1</span><span class="p">),</span> <span class="n">sf2</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x_str</span> <span class="k">if</span> <span class="n">x_str</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shape</span> <span class="k">else</span> <span class="n">pad_to_shape</span><span class="p">(</span><span class="n">x_str</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="maxpooling2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.maxpooling2d">[docs]</a>
+<span class="k">def</span> <span class="nf">maxpooling2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs max pooling over the last two axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    kernel_size : tuple[int, int], optional</span>
+<span class="sd">        Size of the pooling window. Defaults to ``(2, 2)``.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_height</span><span class="p">,</span> <span class="n">x_width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">kernel_height</span><span class="p">,</span> <span class="n">kernel_width</span> <span class="o">=</span> <span class="n">kernel_size</span>
+
+    <span class="c1"># maxpooling</span>
+    <span class="n">crop_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x_height</span> <span class="o">//</span> <span class="n">kernel_height</span> <span class="o">*</span> <span class="n">kernel_height</span><span class="p">),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x_width</span> <span class="o">//</span> <span class="n">kernel_width</span> <span class="o">*</span> <span class="n">kernel_width</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">x_crop</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">*</span><span class="n">crop_slice</span><span class="p">]</span>
+    <span class="n">pool_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="n">x_height</span> <span class="o">//</span> <span class="n">kernel_height</span><span class="p">,</span>
+        <span class="n">kernel_height</span><span class="p">,</span>
+        <span class="n">x_width</span> <span class="o">//</span> <span class="n">kernel_width</span><span class="p">,</span>
+        <span class="n">kernel_width</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">cpmax</span><span class="p">(</span><span class="n">reshape</span><span class="p">(</span><span class="n">x_crop</span><span class="p">,</span> <span class="n">pool_shape</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+        <span class="n">y_ups</span> <span class="o">=</span> <span class="n">upsample2d</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">upsample2d</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y_ups</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="avgpooling2d">
+<a class="viewcode-back" href="../../../../compyute.nn.functional.html#compyute.nn.functional.avgpooling2d">[docs]</a>
+<span class="k">def</span> <span class="nf">avgpooling2d</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">return_grad_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs average pooling over the last two axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : Tensor</span>
+<span class="sd">        Input tensor.</span>
+<span class="sd">    kernel_size : tuple[int, int], optional</span>
+<span class="sd">        Size of the pooling window. Defaults to ``(2, 2)``.</span>
+<span class="sd">    return_grad_fn : bool, optional</span>
+<span class="sd">        Whether to also return the according gradient function. Defaults to ``False``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tensor</span>
+<span class="sd">        Output tensor.</span>
+<span class="sd">    Callable[[Tensor], Tensor]], optional</span>
+<span class="sd">        Gradient function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_height</span><span class="p">,</span> <span class="n">x_width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">kernel_height</span><span class="p">,</span> <span class="n">kernel_width</span> <span class="o">=</span> <span class="n">kernel_size</span>
+
+    <span class="c1"># avgpooling</span>
+    <span class="n">crop_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x_height</span> <span class="o">//</span> <span class="n">kernel_height</span> <span class="o">*</span> <span class="n">kernel_height</span><span class="p">),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x_width</span> <span class="o">//</span> <span class="n">kernel_width</span> <span class="o">*</span> <span class="n">kernel_width</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">x_crop</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">*</span><span class="n">crop_slice</span><span class="p">]</span>
+    <span class="n">pool_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="n">x_height</span> <span class="o">//</span> <span class="n">kernel_height</span><span class="p">,</span>
+        <span class="n">kernel_height</span><span class="p">,</span>
+        <span class="n">x_width</span> <span class="o">//</span> <span class="n">kernel_width</span><span class="p">,</span>
+        <span class="n">kernel_width</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">reshape</span><span class="p">(</span><span class="n">x_crop</span><span class="p">,</span> <span class="n">pool_shape</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">return_grad_fn</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">grad_fn</span><span class="p">(</span><span class="n">dy</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">upsample2d</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">kernel_height</span> <span class="o">*</span> <span class="n">kernel_width</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">grad_fn</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Daniel Kofler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
