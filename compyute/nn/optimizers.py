@@ -57,7 +57,35 @@ class Optimizer(ABC):
 
 
 class SGD(Optimizer):
-    """Updates parameters using stochastic gradient descent (with momentum).
+    r"""Updates parameters using Stochastic Gradient Descent (with optional momentum).
+
+    .. math::
+        \begin{aligned}
+            & \rule{115mm}{1pt} \\
+            & \textbf{Stochastic Gradient Descent} \\
+            & \text{initialize: } v_0 \leftarrow 0 \\
+            & \rule{115mm}{1pt} \\
+            & \text{ 1: } \textbf{if } \lambda > 0 \\
+            & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
+            & \text{ 3: } \textbf{if } \mu = 0 \\
+            & \text{ 4: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta g_t \\
+            & \text{ 5: } \textbf{else} \\
+            & \text{ 6: } \hspace{5mm} v_t \leftarrow \mu v_{t-1} - \eta g_t \\
+            & \text{ 7: } \hspace{5mm} \textbf{if } nesterov \\
+            & \text{ 8: } \hspace{10mm} p_t \leftarrow p_t + \mu v_t - \eta g_t \\
+            & \text{ 9: } \hspace{5mm} \textbf{else} \\
+            & \text{10: } \hspace{10mm} p_t \leftarrow p_{t-1} + v_t \\
+            & \rule{115mm}{1pt} \\
+        \end{aligned}
+
+    where
+        - :math:`p` ... parameter value
+        - :math:`g` ... parameter gradient value
+        - :math:`\eta` ... learning rate
+        - :math:`\lambda` ... weight decay
+        - :math:`\mu` ... momentum
+        - :math:`v` ... velocity
+
 
     Parameters
     ----------
@@ -69,7 +97,7 @@ class SGD(Optimizer):
         Momentum factor. Defaults to ``0``.
     nesterov : bool, optional
         Whether to use the neterov momentum algorithm. Defaults to ``False``.
-    weight_deyas : float, optional
+    weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
     grad_clip_value : float, optional
         Clips the gradient of all parameter to the set value. Defaults to ``None``.
@@ -120,8 +148,35 @@ class SGD(Optimizer):
 
 
 class Adam(Optimizer):
-    """Updates parameters following the Adam learning algorithm
+    r"""Updates parameters following the Adam learning algorithm
     as described by Kingma et al., 2014.
+
+    .. math::
+        \begin{aligned}
+            & \rule{115mm}{1pt} \\
+            & \textbf{Adam} \\
+            & \text{initialize: } m_0 \leftarrow 0,  v_0 \leftarrow 0 \\
+            & \rule{115mm}{1pt} \\
+            & \text{ 1: } \textbf{if } \lambda > 0 \\
+            & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
+            & \text{ 3: } m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
+            & \text{ 4: } v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
+            & \text{ 5: } \hat{m_t} \leftarrow \frac{m_t}{1 - \beta_1^t} \\
+            & \text{ 6: } \hat{v_t} \leftarrow \frac{v_t}{1 - \beta_2^t} \\
+            & \text{ 7: } p_t \leftarrow p_{t-1} - \frac{\eta \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} \\
+            & \rule{115mm}{1pt} \\
+        \end{aligned}
+
+    where
+        - :math:`p` ... parameter value
+        - :math:`g` ... parameter gradient value
+        - :math:`\eta` ... learning rate
+        - :math:`\lambda` ... weight decay
+        - :math:`\beta_1` ... exponential decay rate for the 1st momentum estimate
+        - :math:`\beta_2` ... exponential decay rate for the 2nd momentum estimate
+        - :math:`\epsilon` ... constant for numerical stability
+        - :math:`m` ... first moment estimate (exponential moving average)
+        - :math:`v` ... second moment estimate (squared gradient)
 
     Parameters
     ----------
@@ -130,12 +185,12 @@ class Adam(Optimizer):
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
     beta1 : float, optional
-        Exponential decay rate for the 1st momentum estimates. Defaults to ``0.9``.
+        Exponential decay rate for the 1st momentum estimate. Defaults to ``0.9``.
     beta2 : float, optional
-        Exponential decay rate for the 2nd momentum estimates. Defaults to ``0.999``.
+        Exponential decay rate for the 2nd momentum estimate. Defaults to ``0.999``.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-08``.
-    weight_deyas : float, optional
+    weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
     grad_clip_value : float, optional
         Clips the gradient of all parameter to the set value. Defaults to ``None``.
@@ -190,7 +245,34 @@ class Adam(Optimizer):
 
 
 class AdamW(Optimizer):
-    """Updates parameters following the AdamW learning algorithm.
+    r"""Updates parameters following the AdamW learning algorithm.
+
+    .. math::
+        \begin{aligned}
+            & \rule{115mm}{1pt} \\
+            & \textbf{AdamW} \\
+            & \text{initialize: } m_0 \leftarrow 0,  v_0 \leftarrow 0 \\
+            & \rule{115mm}{1pt} \\
+            & \text{ 1: } \textbf{if } \lambda > 0 \\
+            & \text{ 2: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta \lambda p_{t-1} \\
+            & \text{ 3: } m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
+            & \text{ 4: } v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
+            & \text{ 5: } \hat{m_t} \leftarrow \frac{m_t}{1 - \beta_1^t} \\
+            & \text{ 6: } \hat{v_t} \leftarrow \frac{v_t}{1 - \beta_2^t} \\
+            & \text{ 7: } p_t \leftarrow p_{t-1} - \frac{\eta \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} \\
+            & \rule{115mm}{1pt} \\
+        \end{aligned}
+
+    where
+        - :math:`p` ... parameter value
+        - :math:`g` ... parameter gradient value
+        - :math:`\eta` ... learning rate
+        - :math:`\lambda` ... weight decay
+        - :math:`\beta_1` ... exponential decay rate for the 1st momentum estimate
+        - :math:`\beta_2` ... exponential decay rate for the 2nd momentum estimate
+        - :math:`\epsilon` ... constant for numerical stability
+        - :math:`m` ... first moment estimate (exponential moving average)
+        - :math:`v` ... second moment estimate (squared gradient)
 
     Parameters
     ----------
@@ -199,9 +281,9 @@ class AdamW(Optimizer):
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
     beta1 : float, optional
-        Exponential decay rate for the 1st momentum estimates. Defaults to ``0.9``.
+        Exponential decay rate for the 1st momentum estimate. Defaults to ``0.9``.
     beta2 : float, optional
-        Exponential decay rate for the 2nd momentum estimates. Defaults to ``0.999``.
+        Exponential decay rate for the 2nd momentum estimate. Defaults to ``0.999``.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-08``.
     weight_decay : float, optional
@@ -236,7 +318,9 @@ class AdamW(Optimizer):
                 p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
 
             if self.weight_decay > 0:
-                p.data -= self.lr * self.weight_decay * p.data
+                p -= self.lr * self.weight_decay * p
+
+            assert p.grad is not None  # just so pylance is happy
 
             # first moment estimate (exponential moving average)
             prev_m = self.state[p].get("m", 0)
@@ -257,7 +341,39 @@ class AdamW(Optimizer):
 
 
 class NAdam(Optimizer):
-    """Updates parameters following the NAdam learning algorithm.
+    r"""Updates parameters following the NAdam learning algorithm.
+
+    .. math::
+        \begin{aligned}
+            & \rule{115mm}{1pt} \\
+            & \textbf{NAdam} \\
+            & \text{initialize: } m_0 \leftarrow 0,  v_0 \leftarrow 0 \\
+            & \rule{115mm}{1pt} \\
+            & \text{ 1: } \textbf{if } \lambda > 0 \\
+            & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
+            & \text{ 3: } \mu_t = \beta_1 \cdot (1 - \frac{1}{2} 0.96^{t \psi}) \\
+            & \text{ 4: } \mu_{t+1} = \beta_1 \cdot (1 - \frac{1}{2} 0.96^{(t + 1) \psi}) \\
+            & \text{ 5: } m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
+            & \text{ 6: } v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
+            & \text{ 7: } \hat{m_t} \leftarrow \frac{\mu_{t+1} m_t}{1 - \prod_{i = 1}^{t + 1} \mu_i} + \frac{1 - \mu_t}{1 - \prod_{i = 1}^{t} \mu_i} \\
+            & \text{ 8: } \hat{v_t} \leftarrow \frac{v_t}{1 - \beta_2^t} \\
+            & \text{ 9: } p_t \leftarrow p_{t-1} - \frac{\eta \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} \\
+            & \rule{115mm}{1pt} \\
+        \end{aligned}
+
+    where
+        - :math:`p` ... parameter value
+        - :math:`g` ... parameter gradient value
+        - :math:`\eta` ... learning rate
+        - :math:`\lambda` ... weight decay
+        - :math:`\psi` ... momentum decay
+        - :math:`\beta_1` ... exponential decay rate for the 1st momentum estimate
+        - :math:`\beta_2` ... exponential decay rate for the 2nd momentum estimate
+        - :math:`\epsilon` ... constant for numerical stability
+        - :math:`\mu` ... momentum coefficient
+        - :math:`m` ... first moment estimate (exponential moving average)
+        - :math:`v` ... second moment estimate (squared gradient)
+        
 
     Parameters
     ----------
@@ -266,9 +382,9 @@ class NAdam(Optimizer):
     lr : float, optional
         Learning rate. Defaults to ``2e-3``.
     beta1 : float, optional
-        Exponential decay rate for the 1st momentum estimates. Defaults to ``0.9``.
+        Exponential decay rate for the 1st momentum estimate. Defaults to ``0.9``.
     beta2 : float, optional
-        Exponential decay rate for the 2nd momentum estimates. Defaults to ``0.999``.
+        Exponential decay rate for the 2nd momentum estimate. Defaults to ``0.999``.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-08``.
     weight_decay : float, optional
