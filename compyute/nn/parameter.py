@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..base_tensor import Tensor, _ArrayLike
+from ..dtypes import FLOAT_DTYPES
 from ..engine import Device, _DeviceLike, data_to_device
 
 __all__ = ["Buffer", "Parameter"]
@@ -14,15 +15,22 @@ class Parameter(Tensor):
     Parameters
     ----------
     data : Tensor | _ArrayLike
-        Data to initialize the parameter.
+        Data to initialize the parameter. Must be of type ``float``.
     requires_grad : bool, optional
         Whether the parameter requires gradients. Defaults to ``True``.
         If ``False`` gradients are not computed within neural network modules for this parameter.
+
+    Raises
+    ------
+    TypeError
+        If an invalid data type is provided.
     """
 
     def __init__(self, data: Tensor | _ArrayLike, requires_grad: bool = True) -> None:
         if isinstance(data, Tensor):
             data = data.data
+        if str(data.dtype) not in FLOAT_DTYPES:
+            raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data, requires_grad)
 
     def to_device(self, device: _DeviceLike) -> Parameter:

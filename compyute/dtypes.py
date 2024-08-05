@@ -42,6 +42,7 @@ class Dtype(Enum):
 
 
 DTYPES = [d.value for d in Dtype]
+FLOAT_DTYPES = [d for d in DTYPES if "float" in d]
 
 
 def validate_dtype(dtype: str) -> None:
