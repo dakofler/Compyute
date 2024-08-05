@@ -49,3 +49,7 @@ Normalization
 .. autofunction:: batchnorm1d
 .. autofunction:: batchnorm2d
 .. autofunction:: layernorm
+
+Regularization
+--------------
+.. autofunction:: dropout

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...random.random import multinulli
+from ..functional.regularizations import dropout
 from .module import Module
 
 __all__ = ["Dropout"]
@@ -30,7 +30,5 @@ class Dropout(Module):
         if not self._training:
             return x
 
-        dropout_map = multinulli(self.p, x.shape, device=self.device) / (1 - self.p)
-        y = x * dropout_map
-        self._backward = lambda dy: dy * dropout_map
+        y, self._backward = dropout(x, self.p, self._training)
         return y
