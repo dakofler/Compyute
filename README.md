@@ -2,7 +2,7 @@
 
 [![CI/CD](https://github.com/dakofler/Compyute/actions/workflows/tests.yml/badge.svg)](https://github.com/dakofler/Compyute/actions/workflows/tests.yml)
 
-`Compyute` is a toolbox for building and training and analyzing neural networks only using `NumPy`/`CuPy` under the hood to perform computations.
+Machine learning toolbox developed in pure `NumPy`/`CuPy` for tensor-based computation and building neural networks.
 
 ## Installation
 
@@ -218,6 +218,7 @@ Model checkpoints can also be saved and loaded later on.
 
 ```python
 nn.save_module(model, "my_model.cp")
+loaded_model = nn.load_module("my_model.cp")
 ```
 
 ## Author
