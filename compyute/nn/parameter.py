@@ -16,9 +16,6 @@ class Parameter(Tensor):
     ----------
     data : Tensor | _ArrayLike
         Data to initialize the parameter. Must be of type ``float``.
-    requires_grad : bool, optional
-        Whether the parameter requires gradients. Defaults to ``True``.
-        If ``False`` gradients are not computed within neural network modules for this parameter.
 
     Raises
     ------
@@ -26,12 +23,12 @@ class Parameter(Tensor):
         If an invalid data type is provided.
     """
 
-    def __init__(self, data: Tensor | _ArrayLike, requires_grad: bool = True) -> None:
+    def __init__(self, data: Tensor | _ArrayLike) -> None:
         if isinstance(data, Tensor):
             data = data.data
         if str(data.dtype) not in FLOAT_DTYPES:
             raise TypeError("Invalid data type for parameter. Must be float.")
-        super().__init__(data, requires_grad)
+        super().__init__(data)
 
     def to_device(self, device: _DeviceLike) -> Parameter:
         """Returns a copy of the parameter on the specified device.
@@ -51,14 +48,14 @@ class Parameter(Tensor):
             return self
 
         new_data = data_to_device(self._data, device)
-        new_param = Parameter(new_data, self.requires_grad)
+        new_param = Parameter(new_data)
         if self.grad is not None:
             new_param.grad = self.grad.to_device(device)
         return new_param
 
 
 class Buffer(Tensor):
-    """Non-trainable neural network buffer variable.
+    """Neural network buffer variable.
 
     Parameters
     ----------
@@ -69,7 +66,7 @@ class Buffer(Tensor):
     def __init__(self, data: Tensor | _ArrayLike) -> None:
         if isinstance(data, Tensor):
             data = data.data
-        super().__init__(data, False)
+        super().__init__(data)
 
     def to_device(self, device: _DeviceLike) -> Buffer:
         """Returns a copy of the buffer on the specified device.

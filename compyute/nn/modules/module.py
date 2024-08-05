@@ -5,7 +5,6 @@ from __future__ import annotations
 import pickle
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
@@ -81,12 +80,7 @@ class Module(ABC):
         value : bool
             Whether the module parameters should be trainable.
         """
-        if self._trainable == value:
-            return
         self._trainable = value
-
-        for parameter in self.parameters:
-            parameter.requires_grad = value
 
     @property
     def parameters(self) -> Iterator[Parameter]:
@@ -226,7 +220,7 @@ class Module(ABC):
 
         self._set_dy(dy)
 
-        if self._backward is not None:
+        if self._backward is not None and self._trainable:
             return self._backward(dy)
         return dy
 

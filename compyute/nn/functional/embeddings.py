@@ -12,7 +12,7 @@ __all__ = ["lookup_embedding"]
 
 def lookup_embedding(
     x: Tensor, embedding_table: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Optional[Tensor]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Performs lookup embedding on a tensor of indices.
 
     Parameters
@@ -39,10 +39,4 @@ def lookup_embedding(
 
     x = one_hot_encode(x, embedding_table.shape[0]).to_type(embedding_table.dtype)
     y = x @ embedding_table
-
-    def grad_fn(dy: Tensor) -> Optional[Tensor]:
-        # embedding table grads
-        if embedding_table.requires_grad:
-            return cpsum(x.T @ dy, axis=0)
-
-    return y, grad_fn
+    return y, lambda dy: cpsum(x.T @ dy, axis=0)

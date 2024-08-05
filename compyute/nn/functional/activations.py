@@ -79,11 +79,11 @@ def leaky_relu(
     --------
     :class:`compyute.nn.LeakyReLU`
     """
-    x = x.float()
+    x = x.to_float()
     y = maximum(alpha * x, x)
 
     if return_grad_fn:
-        return y, (lambda dy: ((y > 0).float() + (y < 0).float() * alpha) * dy)
+        return y, (lambda dy: ((y > 0).to_float() + (y < 0).to_float() * alpha) * dy)
     return y, None
 
 

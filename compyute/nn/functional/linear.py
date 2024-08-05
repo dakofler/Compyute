@@ -10,7 +10,7 @@ __all__ = ["linear"]
 
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]]]:
+) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
     """Applies a linear transformation to the input.
 
     Parameters
@@ -43,23 +43,15 @@ def linear(
     if return_grad_fn:
         batch_dims = "abcdef"[: x.ndim - 1]
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             # input grads
             dx = dy @ w
 
-            # weight grads
-            if w.requires_grad:
-                # analogous to dy.T @ x and summing oer all batch dims
-                dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
-            else:
-                dw = None
+            # weight grads, analogous to dy.T @ x and summing oer all batch dims
+            dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
 
-            # bias grads
-            if b is not None and b.requires_grad:
-                # analogous to summing oer all batch dims
-                db = einsum(f"{batch_dims}o->o", dy)
-            else:
-                db = None
+            # bias grads, analogous to summing oer all batch dims
+            db = einsum(f"{batch_dims}o->o", dy) if b is not None else None
 
             return dx, dw, db
 

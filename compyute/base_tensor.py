@@ -32,7 +32,6 @@ def tensor(
     device: Optional[_DeviceLike] = None,
     dtype: Optional[_DtypeLike] = None,
     copy: bool = False,
-    requires_grad: bool = True,
 ) -> Tensor:
     """Creates a tensor object from arbitrary data.
     The data type and device are inferred from the data if not specified.
@@ -48,9 +47,6 @@ def tensor(
     copy : bool, optional
         If ``True``, the data object is copied (may impact performance, uses more memory).
         Defaults to ``False``.
-    requires_grad : bool, optional
-        Whether the tensor requires gradients. Defaults to ``True``.
-        If ``False`` gradients are not computed within neural network modules for this tensor.
 
     Returns
     -------
@@ -58,14 +54,14 @@ def tensor(
         Tensor object.
     """
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
-        return Tensor(data, requires_grad)
+        return Tensor(data)
 
     device = infer_device(type(data)) if device is None else device
     dtype = Dtype(dtype).value if dtype is not None else None
     data_array = get_engine(device).array(data, dtype, copy=copy)
     validate_dtype(str(data_array.dtype))
 
-    return Tensor(data_array, requires_grad)
+    return Tensor(data_array)
 
 
 class Tensor:
@@ -81,18 +77,10 @@ class Tensor:
     data : _ArrayLike
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
         for other data use the :func:`tensor` function.
-    requires_grad : bool, optional
-        Whether the tensor requires gradients. Defaults to ``True``.
-        If ``False`` gradients are not computed within neural network modules for this tensor.
     """
 
-    def __init__(
-        self,
-        data: _ArrayLike,
-        requires_grad: bool = True,
-    ) -> None:
+    def __init__(self, data: _ArrayLike) -> None:
         self.data = data
-        self.requires_grad = requires_grad
         self.grad: Optional[Tensor] = None
         self._device = infer_device(type(data))
         self._iterator: int = 0
@@ -135,7 +123,7 @@ class Tensor:
 
         self._device = device
         new_data = data_to_device(self._data, device)
-        new_tensor = Tensor(new_data, requires_grad=self.requires_grad)
+        new_tensor = Tensor(new_data)
         if self.grad is not None:
             new_tensor.grad = self.grad.to_device(device)
         return new_tensor
@@ -315,7 +303,7 @@ class Tensor:
         """
         return Tensor(self._data.astype(Dtype(dtype).value))
 
-    def int(self) -> Tensor:
+    def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.
 
         Returns
@@ -325,7 +313,7 @@ class Tensor:
         """
         return self.to_type(Dtype.INT32)
 
-    def long(self) -> Tensor:
+    def to_long(self) -> Tensor:
         """Returns a copy of the tensor with long integer values.
 
         Returns
@@ -335,7 +323,7 @@ class Tensor:
         """
         return self.to_type(Dtype.INT64)
 
-    def half(self) -> Tensor:
+    def to_half(self) -> Tensor:
         """Returns a copy of the tensor with half precision values.
 
         Returns
@@ -345,7 +333,7 @@ class Tensor:
         """
         return self.to_type(Dtype.FLOAT16)
 
-    def float(self) -> Tensor:
+    def to_float(self) -> Tensor:
         """Returns a copy of the tensor with single precision values.
 
         Returns
@@ -355,7 +343,7 @@ class Tensor:
         """
         return self.to_type(Dtype.FLOAT32)
 
-    def double(self) -> Tensor:
+    def to_double(self) -> Tensor:
         """Returns a copy of the tensor with double precision values.
 
         Returns
@@ -365,7 +353,7 @@ class Tensor:
         """
         return self.to_type(Dtype.FLOAT64)
 
-    def complex(self) -> Tensor:
+    def to_complex(self) -> Tensor:
         """Returns a copy of the tensor with complex values.
 
         Returns
@@ -387,7 +375,7 @@ class Tensor:
         Tensor
             Copy of the tensor.
         """
-        new_tensor = Tensor(self._data.copy(), requires_grad=self.requires_grad)
+        new_tensor = Tensor(self._data.copy())
         if self.grad is not None:
             new_tensor.grad = self.grad.copy()
         return new_tensor
@@ -403,7 +391,7 @@ class Tensor:
         """
         return self._data.item()
 
-    def cpu(self) -> Tensor:
+    def to_cpu(self) -> Tensor:
         """Returns a copy of the tensor on the CPU.
 
         Returns
@@ -413,7 +401,7 @@ class Tensor:
         """
         return self.to_device(Device.CPU)
 
-    def cuda(self) -> Tensor:
+    def to_cuda(self) -> Tensor:
         """Returns a copy of the tensor on the GPU.
 
         Returns
@@ -435,7 +423,7 @@ class Tensor:
         numpy.ndarray
             NumPy array of the tensor data.
         """
-        return self.cpu().data
+        return self.to_cpu().data
 
     def to_shape(self, shape: _ShapeLike) -> Tensor:
         """Returns a view of the tensor of a given shape.
