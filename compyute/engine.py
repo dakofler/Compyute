@@ -78,8 +78,6 @@ def infer_device(array_type: type) -> Device:
 
 def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     """Moves the data to the specified device."""
-    if device == infer_device(type(data)):
-        return data
     if device == Device.CPU:
         return cupy.asnumpy(data)
     available(device)

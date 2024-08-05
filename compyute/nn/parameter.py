@@ -46,7 +46,11 @@ class Parameter(Tensor):
         Parameter
             Parameter on the specified device.
         """
-        new_data = data_to_device(self._data, Device(device))
+        device = Device(device)
+        if self._device == device:
+            return self
+
+        new_data = data_to_device(self._data, device)
         new_param = Parameter(new_data, self.requires_grad)
         if self.grad is not None:
             new_param.grad = self.grad.to_device(device)
@@ -80,5 +84,9 @@ class Buffer(Tensor):
         Buffer
             Buffer on the specified device.
         """
-        new_data = data_to_device(self._data, Device(device))
+        device = Device(device)
+        if self._device == device:
+            return self
+
+        new_data = data_to_device(self._data, device)
         return Buffer(new_data)

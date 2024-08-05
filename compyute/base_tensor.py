@@ -58,7 +58,7 @@ def tensor(
         Tensor object.
     """
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
-        return Tensor(data)
+        return Tensor(data, requires_grad)
 
     device = infer_device(type(data)) if device is None else device
     dtype = Dtype(dtype).value if dtype is not None else None
