@@ -94,6 +94,7 @@ class Tensor:
         self.data = data
         self.requires_grad = requires_grad
         self.grad: Optional[Tensor] = None
+        self._device = infer_device(type(data))
         self._iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -107,15 +108,13 @@ class Tensor:
     @data.setter
     def data(self, value: _ArrayLike) -> None:
         if not isinstance(value, _ArrayLike):
-            raise ValueError(
-                f"Invalid data type {type(value)}. Use ``compyute.tensor()`` to initialize tensors."
-            )
+            raise TypeError("Invalid data type. Use ``compyute.tensor()`` to initialize tensors.")
         self._data = value
 
     @property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
-        return infer_device(type(self._data))
+        return self._device
 
     def to_device(self, device: _DeviceLike) -> Tensor:
         """Returns a copy of the tensor on the specified device.
@@ -130,7 +129,12 @@ class Tensor:
         Tensor
             Tensor on the specified device.
         """
-        new_data = data_to_device(self._data, Device(device))
+        device = Device(device)
+        if self._device == device:
+            return self
+
+        self._device = device
+        new_data = data_to_device(self._data, device)
         new_tensor = Tensor(new_data, requires_grad=self.requires_grad)
         if self.grad is not None:
             new_tensor.grad = self.grad.to_device(device)
