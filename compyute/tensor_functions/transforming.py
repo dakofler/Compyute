@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 from typing import Iterable, Iterator, Optional
 
-from ..base_tensor import Tensor, _AxisLike, _ShapeLike, tensor
+from ..base_tensor import ShapeError, Tensor, _AxisLike, _ShapeLike, tensor
 from ..dtypes import _DtypeLike, _ScalarLike
 from ..engine import get_engine
 
@@ -61,7 +61,7 @@ def abs(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise absolute value.
     """
-    return Tensor(get_engine(x.device).abs(x.data))
+    return tensor(get_engine(x.device).abs(x.data))
 
 
 def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None) -> Tensor:
@@ -81,7 +81,7 @@ def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float
     Tensor
         Tensor containing clipped values.
     """
-    return Tensor(get_engine(x.device).clip(x.data, min_value, max_value))
+    return tensor(get_engine(x.device).clip(x.data, min_value, max_value))
 
 
 def cos(x: Tensor) -> Tensor:
@@ -97,7 +97,7 @@ def cos(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise cosine.
     """
-    return Tensor(get_engine(x.device).cos(x.data))
+    return tensor(get_engine(x.device).cos(x.data))
 
 
 def cosh(x: Tensor) -> Tensor:
@@ -113,7 +113,7 @@ def cosh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic cosine.
     """
-    return Tensor(get_engine(x.device).cosh(x.data))
+    return tensor(get_engine(x.device).cosh(x.data))
 
 
 def dot(x: Tensor, y: Tensor) -> Tensor:
@@ -132,7 +132,7 @@ def dot(x: Tensor, y: Tensor) -> Tensor:
         Dot product of the tensors.
     """
     if x.ndim != 1 or y.ndim != 1:
-        raise AttributeError("Inputs must be 1D-tensors.")
+        raise ShapeError("Inputs must be 1D-tensors.")
     return inner(x, y)
 
 
@@ -170,7 +170,7 @@ def exp(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise exponential.
     """
-    return Tensor(get_engine(x.device).exp(x.data))
+    return tensor(get_engine(x.device).exp(x.data))
 
 
 def fft1d(
@@ -362,7 +362,7 @@ def histogram(
     hist, bin_edges = get_engine(x.device).histogram(
         x.data, bins=b, range=binrange, density=density, weights=w
     )
-    return Tensor(hist), Tensor(bin_edges)
+    return tensor(hist), tensor(bin_edges)
 
 
 def log(x: Tensor) -> Tensor:
@@ -378,7 +378,7 @@ def log(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise natural log.
     """
-    return Tensor(get_engine(x.device).log(x.data))
+    return tensor(get_engine(x.device).log(x.data))
 
 
 def log2(x: Tensor) -> Tensor:
@@ -394,7 +394,7 @@ def log2(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise log base 2.
     """
-    return Tensor(get_engine(x.device).log2(x.data))
+    return tensor(get_engine(x.device).log2(x.data))
 
 
 def log10(x: Tensor) -> Tensor:
@@ -410,7 +410,7 @@ def log10(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise log base 10.
     """
-    return Tensor(get_engine(x.device).log10(x.data))
+    return tensor(get_engine(x.device).log10(x.data))
 
 
 def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -451,7 +451,7 @@ def maximum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
         Tensor containing the element-wise maximum.
     """
     _y = y.data if isinstance(y, Tensor) else y
-    return Tensor(get_engine(x.device).maximum(x.data, _y))
+    return tensor(get_engine(x.device).maximum(x.data, _y))
 
 
 def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -514,7 +514,7 @@ def minimum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
         Tensor containing the element-wise minimum.
     """
     _y = y.data if isinstance(y, Tensor) else y
-    return Tensor(get_engine(x.device).minimum(x.data, _y))
+    return tensor(get_engine(x.device).minimum(x.data, _y))
 
 
 def outer(*tensors: Tensor) -> Tensor:
@@ -531,7 +531,7 @@ def outer(*tensors: Tensor) -> Tensor:
         Tensor containing the outer product.
     """
     device = tensors[0].device
-    return Tensor(get_engine(device).outer(*[t.data for t in tensors]))
+    return tensor(get_engine(device).outer(*[t.data for t in tensors]))
 
 
 def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -589,7 +589,7 @@ def round(x: Tensor, decimals: int) -> Tensor:
     Tensor
         Tensor containing rounded elements.
     """
-    return Tensor(x.data.round(decimals))
+    return tensor(x.data.round(decimals))
 
 
 def sech(x: Tensor) -> Tensor:
@@ -621,7 +621,7 @@ def sin(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise sine.
     """
-    return Tensor(get_engine(x.device).sin(x.data))
+    return tensor(get_engine(x.device).sin(x.data))
 
 
 def sinh(x: Tensor) -> Tensor:
@@ -637,7 +637,7 @@ def sinh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic sine.
     """
-    return Tensor(get_engine(x.device).sinh(x.data))
+    return tensor(get_engine(x.device).sinh(x.data))
 
 
 def sqrt(x: Tensor) -> Tensor:
@@ -653,7 +653,7 @@ def sqrt(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise square root.
     """
-    return Tensor(get_engine(x.device).sqrt(x.data))
+    return tensor(get_engine(x.device).sqrt(x.data))
 
 
 def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -713,7 +713,7 @@ def tan(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise tangent.
     """
-    return Tensor(get_engine(x.device).tan(x.data))
+    return tensor(get_engine(x.device).tan(x.data))
 
 
 def tanh(x: Tensor) -> Tensor:
@@ -729,7 +729,7 @@ def tanh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic tangent.
     """
-    return Tensor(get_engine(x.device).tanh(x.data))
+    return tensor(get_engine(x.device).tanh(x.data))
 
 
 def tensorprod(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:

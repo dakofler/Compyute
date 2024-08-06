@@ -12,7 +12,7 @@ from ...tensor_functions.transforming import tensorsum
 from ..parameter import Buffer, Parameter
 from .module import Module
 
-__all__ = ["Container", "Sequential", "ParallelConcat", "ParallelAdd"]
+__all__ = ["Container", "ParallelAdd", "ParallelConcat", "Residual", "Sequential"]
 
 
 class Container(Module):
@@ -212,6 +212,9 @@ class Container(Module):
 class Sequential(Container):
     """Container that processes modules sequentially.
 
+    .. math::
+        y = f_n( ... f_2(f_1(x)) ... )
+
     Parameters
     ----------
     *modules : Module
@@ -243,6 +246,9 @@ class Sequential(Container):
 
 class ParallelConcat(Container):
     """Container that processes modules in parallel and concatenates their outputs.
+
+    .. math::
+        y = concatenate(f_1(x), f_2(x), ..., f_n(x))
 
     Parameters
     ----------
@@ -287,7 +293,10 @@ class ParallelConcat(Container):
 
 
 class ParallelAdd(Container):
-    """Container that processes modules in parallel and sums their outputs element-wise.
+    r"""Container that processes modules in parallel and sums their outputs element-wise.
+
+    .. math::
+        y = \sum_i f_i(x)
 
     Parameters
     ----------
@@ -307,6 +316,58 @@ class ParallelAdd(Container):
 
         if self._training:
             self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
+
+        return y
+
+
+class Residual(Container):
+    """Residual container implementing a residual connection around a block of modules.
+    Modules in the residual block are processed sequentially.
+
+    .. math::
+        y = x + f(x)
+
+    Parameters
+    ----------
+    *modules : Module
+        Modules used in the residual block. They are processed sequentially.
+    residual_projection : Module, optional
+        Module used as a projection in the residual pathway to achieve matching dimensions.
+        Defaults to ``None``. Using a projection within the residual pathway should be avoided,
+        and instead projections should be part of the residual block.
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
+    training : bool, optional
+        Whether the module should be in training mode. Defaults to ``False``.
+    """
+
+    def __init__(
+        self,
+        *modules: Module,
+        residual_proj: Optional[Module] = None,
+        label: Optional[str] = None,
+        training: bool = False,
+    ) -> None:
+        if len(modules) == 0:
+            raise EmptyContainerError("Residual container requires at least one module.")
+        self.block = modules[0] if len(modules) == 1 else Sequential(*modules, training=training)
+        self.residual_proj = residual_proj
+        if residual_proj is not None:
+            super().__init__(self.block, residual_proj, label=label, training=training)
+        super().__init__(self.block, label=label, training=training)
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = self.block(x)
+        y += x if self.residual_proj is None else self.residual_proj(x)
+
+        if self._training:
+
+            def _backward(dy: Tensor) -> Tensor:
+                dx = self.block.backward(dy)
+                dx += dy if self.residual_proj is None else self.residual_proj.backward(dy)
+                return dx
+
+            self._backward = _backward
 
         return y
 

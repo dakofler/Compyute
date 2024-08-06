@@ -36,7 +36,7 @@ class Batchnorm1d(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -119,7 +119,7 @@ class Batchnorm2d(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -183,7 +183,7 @@ class Layernorm(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over all non-batch axes.
+    where :math:`E[x]` and :math:`Var[x]` are computed over feature axes.
 
     Shapes:
         - Input :math:`(B, ...)`
@@ -193,11 +193,11 @@ class Layernorm(Module):
 
     Parameters
     ----------
-    normalized_shape : ShapeLike
-        Shape of the normalized tensor ignoring the batch dimension.
+    normalized_shape : _ShapeLike
+        Shape of the normalized tensor.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.

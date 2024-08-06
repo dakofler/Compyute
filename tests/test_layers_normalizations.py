@@ -1,5 +1,6 @@
 """Normalization module tests"""
 
+import pytest
 import torch
 
 from compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
@@ -63,15 +64,17 @@ def test_batchnorm2d() -> None:
     assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
 
 
-def test_layernorm() -> None:
+@pytest.mark.parametrize(
+    "normalized_shape",
+    [SHAPE3D[1:], SHAPE3D[2:]],
+)
+def test_layernorm(normalized_shape) -> None:
     """Test for the layernorm layer."""
-    shape_x = SHAPE3D
-
     # init compyute module
-    compyute_module = Layernorm(shape_x[1:], training=True)
+    compyute_module = Layernorm(normalized_shape, training=True)
 
     # init torch module
-    torch_module = torch.nn.LayerNorm(shape_x[1:])
+    torch_module = torch.nn.LayerNorm(normalized_shape)
 
     # forward
     compyute_x, torch_x = get_random_floats(SHAPE3D)

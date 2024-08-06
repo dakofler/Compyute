@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _AxisLike, tensor
+from ..base_tensor import ShapeError, Tensor, _AxisLike, tensor
 from ..engine import get_engine
 
 __all__ = ["argmax", "get_diagonal", "tril", "triu", "unique"]
@@ -48,6 +48,8 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         The extracted diagonal or constructed diagonal tensor.
     """
+    if x.ndim < 2:
+        raise ShapeError("Input tensor must have at least 2 dimensions.")
     return Tensor(get_engine(x.device).diag(x.data, k=d))
 
 
@@ -70,6 +72,8 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         Lower triangle tensor.
     """
+    if x.ndim < 2:
+        raise ShapeError("Input tensor must have at least 2 dimensions.")
     return Tensor(get_engine(x.device).tril(x.data, k=d))
 
 
@@ -92,6 +96,8 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     Tensor
         Upper triangle tensor.
     """
+    if x.ndim < 2:
+        raise ShapeError("Input tensor must have at least 2 dimensions.")
     return Tensor(get_engine(x.device).triu(x.data, k=d))
 
 
@@ -108,4 +114,4 @@ def unique(x: Tensor) -> Tensor:
     Tensor
         Tensor containing unique values.
     """
-    return Tensor(get_engine(x.device).unique(x.data))
+    return tensor(get_engine(x.device).unique(x.data))

@@ -7,13 +7,12 @@ from ..functional.convolutions import _PaddingLike
 from ..initializers import _InitializerLike, get_initializer
 from ..parameter import Parameter
 from .activations import _ActivationLike, get_activation
-from .containers import ParallelAdd, Sequential
+from .containers import Sequential
 from .convolution import Convolution1d, Convolution2d
 from .linear import Linear
-from .module import Identity, Module
 from .normalization import Batchnorm1d, Batchnorm2d
 
-__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBlock"]
+__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock"]
 
 
 class DenseBlock(Sequential):
@@ -290,36 +289,3 @@ class Convolution2dBlock(Sequential):
             super().__init__(conv, bn, get_activation(activation), label=label, training=training)
         else:
             super().__init__(conv, get_activation(activation), label=label, training=training)
-
-
-class ResidualBlock(ParallelAdd):
-    """Residual block implementing a residual connection around a block of modules.
-    Modules in the residual block are processed sequentially.
-
-    Parameters
-    ----------
-    *modules : Module
-        Modules used in the residual block. They are processed sequentially.
-    residual_projection : Module, optional
-        Module used as a projection to achieve matching dimensions. Defaults to ``None``.
-        If ``None``, the identity function is used.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
-    """
-
-    def __init__(
-        self,
-        *modules: Module,
-        residual_proj: Optional[Module] = None,
-        label: Optional[str] = None,
-        training: bool = False,
-    ) -> None:
-        proj = residual_proj if residual_proj is not None else Identity(training=training)
-
-        if len(modules) == 1:
-            super().__init__(modules[0], proj, label=label, training=training)
-        else:
-            module_block = Sequential(*modules, label=label, training=training)
-            super().__init__(module_block, proj, label=label, training=training)

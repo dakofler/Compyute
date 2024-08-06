@@ -232,26 +232,25 @@ def layernorm(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
-    axes = tuple([i for i in range(1, x.ndim)])
+    axes = tuple(-i - 1 for i in range(w.ndim))
     inv_std = (_var(x, axis=axes, keepdims=True) + eps) ** -0.5
     x_std = (x - _mean(x, axis=axes, keepdims=True)) * inv_std
     y = w * x_std + b
 
     if return_grad_fn:
+        sum_axes = tuple(range(x.ndim - w.ndim))
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape[1:])
-
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
             dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
-            dx = w * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
+            dx = w * inv_std / w.size * (w.size * dy - dy_sum - x_std * dy_x_std_sum)
 
             # gamma grads
-            dw = cpsum(dy * x_std, axis=0)
+            dw = cpsum(dy * x_std, axis=sum_axes)
 
             # beta grads
-            db = cpsum(dy, axis=0)
+            db = cpsum(dy, axis=sum_axes)
 
             return dx, dw, db
 

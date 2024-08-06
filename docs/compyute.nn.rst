@@ -67,8 +67,6 @@ Blocks
    :show-inheritance:
 .. autoclass:: DenseBlock
    :show-inheritance:
-.. autoclass:: ResidualBlock
-   :show-inheritance:
 
 Containers
 ~~~~~~~~~~
@@ -80,6 +78,8 @@ Containers
 .. autoclass:: ParallelConcat
    :show-inheritance:
 .. autoclass:: ParallelAdd
+   :show-inheritance:
+.. autoclass:: Residual
    :show-inheritance:
 
 Convolution
