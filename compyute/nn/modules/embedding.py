@@ -59,7 +59,7 @@ class Embedding(Module):
         self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [2])
+        self._check_dims(x, [1, 2, 3, 4, 5])
         y, grad_fn = lookup_embedding(x, self.w, self._training)
 
         if self._training:

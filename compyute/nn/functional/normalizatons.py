@@ -1,7 +1,5 @@
 """Neural network normalization functions."""
 
-from functools import reduce
-from operator import mul
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
@@ -88,7 +86,7 @@ def batchnorm1d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape) / x.shape[1]
+            n = x.size / x.shape[1]
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
             dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
@@ -181,7 +179,7 @@ def batchnorm2d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape) / x.shape[1]
+            n = x.size / x.shape[1]
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
             dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
