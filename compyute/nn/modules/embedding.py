@@ -17,10 +17,10 @@ class Embedding(Module):
     r"""Lookup embedding layer.
 
     Shapes:
-        - Input :math:`(B, S)`
-        - Output :math:`(B, S, E)`
+        - Input :math:`(B_1, ... , B_n, S)`
+        - Output :math:`(B_1, ... , B_n, S, E)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B_1, ... , B_n` ... batch axes
         - :math:`S` ... sequence
         - :math:`E` ... embedding dimension
 
