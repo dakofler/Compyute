@@ -30,28 +30,22 @@ class Parameter(Tensor):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data)
 
-    def to_device(self, device: _DeviceLike) -> Parameter:
-        """Returns a copy of the parameter on the specified device.
+    def move_to_device(self, device: _DeviceLike) -> None:
+        """Moves the parameter to the specified device.
 
         Parameters
         ----------
         device : _DeviceLike
             Device to move the parameter to.
-
-        Returns
-        -------
-        Parameter
-            Parameter on the specified device.
         """
         device = Device(device)
         if self._device == device:
-            return self
+            return
 
-        new_data = data_to_device(self._data, device)
-        new_param = Parameter(new_data)
+        self._device = device
+        self.data = data_to_device(self._data, device)
         if self.grad is not None:
-            new_param.grad = self.grad.to_device(device)
-        return new_param
+            self.grad = self.grad.to_device(device)
 
 
 class Buffer(Tensor):
@@ -68,22 +62,17 @@ class Buffer(Tensor):
             data = data.data
         super().__init__(data)
 
-    def to_device(self, device: _DeviceLike) -> Buffer:
-        """Returns a copy of the buffer on the specified device.
+    def move_to_device(self, device: _DeviceLike) -> None:
+        """Moves the buffer to the specified device.
 
         Parameters
         ----------
         device : _DeviceLike
             Device to move the buffer to.
-
-        Returns
-        -------
-        Buffer
-            Buffer on the specified device.
         """
         device = Device(device)
         if self._device == device:
-            return self
+            return
 
-        new_data = data_to_device(self._data, device)
-        return Buffer(new_data)
+        self._device = device
+        self.data = data_to_device(self._data, device)

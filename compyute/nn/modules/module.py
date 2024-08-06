@@ -5,6 +5,7 @@ from __future__ import annotations
 import pickle
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...base_tensor import ShapeError, Tensor
@@ -62,10 +63,8 @@ class Module(ABC):
         if self.y is not None:
             self.y = self.y.to_device(device)
 
-        for item in self.__dict__:
-            item_value = getattr(self, item)
-            if isinstance(item_value, (Parameter, Buffer)):
-                setattr(self, item, item_value.to_device(device))
+        for p in chain(self.buffers, self.parameters):
+            p.move_to_device(device)
 
     @property
     def trainable(self) -> bool:
