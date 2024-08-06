@@ -296,12 +296,12 @@ def save_module(module: Module, filepath: str) -> None:
     filepath : str
         Where to save the file to.
     """
-
+    device = module.device
     module.to_device(Device.CPU)
     module.cleanup(force=True)
-
     with open(filepath, "wb") as file:
         pickle.dump(module, file)
+    module.to_device(device)
 
 
 def load_module(filepath: str) -> Module:

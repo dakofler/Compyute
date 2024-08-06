@@ -46,8 +46,8 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
 
 
 def arange(
-    stop: int,
-    start: int = 0,
+    stop: int | float,
+    start: int | float = 0,
     step: int | float = 1,
     dtype: Optional[_DtypeLike] = None,
     device: _DeviceLike = Device.CPU,
@@ -57,9 +57,9 @@ def arange(
 
     Parameters
     ----------
-    stop : float
+    stop : int | float
         Stop value (not included).
-    start : float, optional
+    start : int | float, optional
         Start value. Defaults to ``0``.
     step : int | float, optional
         Spacing between values. Defaults to ``1``.

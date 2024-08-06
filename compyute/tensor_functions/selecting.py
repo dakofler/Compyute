@@ -5,7 +5,7 @@ from typing import Optional
 from ..base_tensor import ShapeError, Tensor, _AxisLike, tensor
 from ..engine import get_engine
 
-__all__ = ["argmax", "get_diagonal", "tril", "triu", "unique"]
+__all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
 
 
 def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -51,6 +51,38 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     if x.ndim < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
     return Tensor(get_engine(x.device).diag(x.data, k=d))
+
+
+def topk(x: Tensor, k: int, axis: _AxisLike = -1) -> tuple[Tensor, Tensor]:
+    """Returns the k largest elements along a given axis.
+    Implementation by https://hippocampus-garden.com/numpy_topk/.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    k : int
+        Number of top elements to select.
+    axis : AxisLike
+        Axis, along which the top elements are selected. Defaults to ``-1``.
+
+    Returns
+    -------
+    tuple[Tensor, Tensor]
+        Tuple containing the top k elements and their indices.
+    """
+    engine = get_engine(x.device)
+    array = x.data
+    ind = engine.argpartition(-array, k, axis=axis)
+    ind = engine.take(ind, engine.arange(k), axis=axis)
+    array = engine.take_along_axis(-array, ind, axis=axis)
+
+    # sort within k elements
+    ind_part = engine.argsort(array, axis=axis)
+    ind = engine.take_along_axis(ind, ind_part, axis=axis)
+
+    val = engine.take_along_axis(-array, ind_part, axis=axis)
+    return tensor(val), tensor(ind)
 
 
 def tril(x: Tensor, d: int = 0) -> Tensor:
