@@ -70,15 +70,15 @@ class DenseBlock(Sequential):
         training: bool = False,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype, training=training)
-
         w_init = get_initializer(weight_init, dtype, activation)
         linear.w = Parameter(w_init((out_channels, in_channels)))
-
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             linear.b = Parameter(b_init((out_channels,)))
 
-        super().__init__(linear, get_activation(activation), label=label, training=training)
+        act = get_activation(activation)(training=training)
+
+        super().__init__(linear, act, label=label, training=training)
 
 
 class Convolution1dBlock(Sequential):
@@ -170,19 +170,19 @@ class Convolution1dBlock(Sequential):
             dtype,
             training=training,
         )
-
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
-
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)))
 
+        act = get_activation(activation)(training=training)
+
         if batchnorm:
             bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+            super().__init__(conv, bn, act, label=label, training=training)
         else:
-            super().__init__(conv, get_activation(activation), label=label, training=training)
+            super().__init__(conv, act, label=label, training=training)
 
 
 class Convolution2dBlock(Sequential):
@@ -276,16 +276,16 @@ class Convolution2dBlock(Sequential):
             dtype,
             training=training,
         )
-
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
-
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)))
 
+        act = get_activation(activation)(training=training)
+
         if batchnorm:
             bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+            super().__init__(conv, bn, act, label=label, training=training)
         else:
-            super().__init__(conv, get_activation(activation), label=label, training=training)
+            super().__init__(conv, act, label=label, training=training)

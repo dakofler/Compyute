@@ -120,9 +120,9 @@ ACTIVATIONS = {
 }
 
 
-def get_activation(activation: _ActivationLike) -> Module:
-    """Returns an instance of an actiation function."""
+def get_activation(activation: _ActivationLike) -> type[Module]:
+    """Returns an actiation function class."""
 
     if activation not in ACTIVATIONS:
         raise ValueError(f"Unknown activation function: {activation}.")
-    return ACTIVATIONS[activation]()
+    return ACTIVATIONS[activation]
