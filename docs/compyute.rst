@@ -76,6 +76,7 @@ Transforming and Computing Operations
 .. autofunction:: mean
 .. autofunction:: min
 .. autofunction:: minimum
+.. autofunction:: norm
 .. autofunction:: outer
 .. autofunction:: prod
 .. autofunction:: real

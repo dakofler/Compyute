@@ -3,12 +3,6 @@ compyute.nn
 .. automodule:: compyute.nn
 .. currentmodule:: compyute.nn
 
-Dataloaders
------------
-.. autoclass:: Dataloader
-   :members:
-   :special-members: __call__
-
 .. _losses:
 
 Losses

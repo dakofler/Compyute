@@ -4,8 +4,8 @@ from typing import Optional
 
 from ...dtypes import Dtype, _DtypeLike
 from ..functional.convolutions import _PaddingLike
-from ..initializers import _InitializerLike, get_initializer
 from ..parameter import Parameter
+from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
 from .containers import Sequential
 from .convolution import Convolution1d, Convolution2d

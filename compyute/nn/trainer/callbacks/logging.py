@@ -4,14 +4,14 @@ from typing import Any, Iterable, Literal
 
 from tqdm.auto import tqdm
 
-from ....utils.tensorboard import SummaryWriter
+from ...utils.tensorboard import SummaryWriter
 from .callback import Callback
 
 __all__ = ["History", "ProgressBar", "Tensorboard"]
 
 
 class History(Callback):
-    """Training history."""
+    """Training history saved as a dictionary."""
 
     def __init__(self) -> None:
         self.cache: dict[str, list[float]] = {}
@@ -45,9 +45,9 @@ class ProgressBar(Callback):
     Parameters
     ----------
     mode : Literal["step", "epoch"], optional
-        Progress bar update mode. Defaults to ``step``.
-        If ``epoch``, one progress bar is shown and updated for each epoch.
-        If ``step``, a new progress bar is shown per epoch and updated for each step.
+        | Progress bar update mode. Defaults to ``step``.
+        | ``epoch``: one progress bar is shown and updated for each epoch.
+        | ``step``: a new progress bar is shown per epoch and updated for each step.
     """
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
@@ -95,6 +95,10 @@ class Tensorboard(Callback):
     ----------
     logdir : str
         Directory to save Tensorboard logs, e.g. "./runs/my_run".
+
+    See Also
+    --------
+    :class:`compyute.nn.utils.tensorboard`
     """
 
     def __init__(self, logdir: str) -> None:

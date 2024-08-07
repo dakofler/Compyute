@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Literal, Optional
 
-from ..tensor_functions.transforming import clip, tensorprod
+from ..tensor_functions.transforming import tensorprod
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -18,20 +18,12 @@ class Optimizer(ABC):
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
-    grad_clip_value : float, optional
-        Clips the gradient of all parameter to the set value. Defaults to ``None``.
     """
 
-    def __init__(
-        self,
-        parameters: Optional[Iterator[Parameter]] = None,
-        lr: float = 1e-3,
-        grad_clip_value: Optional[float] = None,
-    ) -> None:
+    def __init__(self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3) -> None:
         self.lr = lr
         self.state: dict = {}
         self.t: int = 1
-        self.grad_clip_value = grad_clip_value
 
         if parameters is not None:
             self.parameters = parameters
@@ -99,8 +91,6 @@ class SGD(Optimizer):
         Whether to use the neterov momentum algorithm. Defaults to ``False``.
     weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
-    grad_clip_value : float, optional
-        Clips the gradient of all parameter to the set value. Defaults to ``None``.
     """
 
     def __init__(
@@ -110,9 +100,8 @@ class SGD(Optimizer):
         momentum: float = 0,
         nesterov: bool = False,
         weight_decay: float = 0,
-        grad_clip_value: Optional[float] = None,
     ) -> None:
-        super().__init__(parameters, lr, grad_clip_value)
+        super().__init__(parameters, lr)
         self.momentum = momentum
         self.nesterov = nesterov
         self.weight_decay = weight_decay
@@ -122,10 +111,6 @@ class SGD(Optimizer):
         for p in self.parameters:
             if p.grad is None:
                 continue
-
-            # gradient clipping
-            if self.grad_clip_value is not None:
-                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
 
             grad = p.grad.copy()
 
@@ -192,8 +177,6 @@ class Adam(Optimizer):
         Constant for numerical stability. Defaults to ``1e-08``.
     weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
-    grad_clip_value : float, optional
-        Clips the gradient of all parameter to the set value. Defaults to ``None``.
     """
 
     def __init__(
@@ -204,9 +187,8 @@ class Adam(Optimizer):
         beta2: float = 0.999,
         eps: float = 1e-8,
         weight_decay: float = 0,
-        grad_clip_value: Optional[float] = None,
     ) -> None:
-        super().__init__(parameters, lr, grad_clip_value)
+        super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -216,10 +198,6 @@ class Adam(Optimizer):
         for p in self.parameters:
             if p.grad is None:
                 continue
-
-            # gradient clipping
-            if self.grad_clip_value is not None:
-                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
 
             grad = p.grad.copy()
 
@@ -288,8 +266,6 @@ class AdamW(Optimizer):
         Constant for numerical stability. Defaults to ``1e-08``.
     weight_decay : float, optional
         Weight decay factor. Defaults to ``1e-2``.
-    grad_clip_value : float, optional
-        Clips the gradient of all parameter to the set value. Defaults to ``None``.
     """
 
     def __init__(
@@ -300,9 +276,8 @@ class AdamW(Optimizer):
         beta2: float = 0.999,
         eps: float = 1e-8,
         weight_decay: float = 1e-2,
-        grad_clip_value: Optional[float] = None,
     ) -> None:
-        super().__init__(parameters, lr, grad_clip_value)
+        super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -312,10 +287,6 @@ class AdamW(Optimizer):
         for p in self.parameters:
             if p.grad is None:
                 continue
-
-            # gradient clipping
-            if self.grad_clip_value is not None:
-                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
 
             if self.weight_decay > 0:
                 p -= self.lr * self.weight_decay * p
@@ -391,8 +362,6 @@ class NAdam(Optimizer):
         Weight decay factor. Defaults to ``0``.
     momentum_decay : float, optional
         Momentum decay factor. Defaults to ``4e-3``.
-    grad_clip_value : float, optional
-        Clips the gradient of all parameter to the set value. Defaults to ``None``.
     """
 
     def __init__(
@@ -404,9 +373,8 @@ class NAdam(Optimizer):
         eps: float = 1e-8,
         weight_decay: float = 0,
         momentum_decay: float = 4e-3,
-        grad_clip_value: Optional[float] = None,
     ) -> None:
-        super().__init__(parameters, lr, grad_clip_value)
+        super().__init__(parameters, lr)
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -424,10 +392,6 @@ class NAdam(Optimizer):
         for p in self.parameters:
             if p.grad is None:
                 continue
-
-            # gradient clipping
-            if self.grad_clip_value is not None:
-                p.grad = clip(p.grad, -self.grad_clip_value, self.grad_clip_value)
 
             grad = p.grad.copy()
 

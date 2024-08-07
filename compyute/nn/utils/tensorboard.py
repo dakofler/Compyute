@@ -1,4 +1,4 @@
-"""Tensorboard util."""
+"""Tensorboard integration using `TensorboardX <https://tensorboardx.readthedocs.io/en/latest/tensorboard.html>`_."""
 
 from tensorboardX import SummaryWriter as SR
 

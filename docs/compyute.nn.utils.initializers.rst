@@ -1,9 +1,9 @@
 .. _initializers:
 
-compyute.nn.initializers
-========================
-.. automodule:: compyute.nn.initializers
-.. currentmodule:: compyute.nn.initializers
+compyute.nn.utils.initializers
+==============================
+.. automodule:: compyute.nn.utils.initializers
+.. currentmodule:: compyute.nn.utils.initializers
 
 .. autoclass:: Initializer
     :members:

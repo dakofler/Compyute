@@ -4,11 +4,11 @@ from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
-from ..dataloaders import Dataloader
 from ..losses import _LossLike, get_loss_function
 from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
 from ..optimizers import _OptimizerLike, get_optimizer
+from ..utils import Dataloader
 from .callbacks import Callback
 
 __all__ = ["Trainer"]
@@ -153,7 +153,7 @@ class Trainer:
             return loss, sum(scores) / len(scores)
         return loss, None
 
-    def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end"]) -> None:
+    def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end", "end"]) -> None:
         if self.callbacks is None:
             return
         for callback in self.callbacks:

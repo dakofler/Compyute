@@ -1,14 +1,14 @@
-"""Parameter initializers."""
+"""Neural network parameter initializers."""
 
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Literal, Optional
 
-from ..base_tensor import Tensor, _ShapeLike
-from ..dtypes import Dtype, _DtypeLike
-from ..random.random import normal, uniform
-from ..tensor_functions.creating import ones, zeros
+from ...base_tensor import Tensor, _ShapeLike
+from ...dtypes import Dtype, _DtypeLike
+from ...random.random import normal, uniform
+from ...tensor_functions.creating import ones, zeros
 
 __all__ = [
     "KaimingNormal",

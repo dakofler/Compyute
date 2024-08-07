@@ -30,6 +30,7 @@ __all__ = [
     "mean",
     "min",
     "minimum",
+    "norm",
     "outer",
     "prod",
     "real",
@@ -463,7 +464,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
         Input tensor.
     axis : AxisLike, optional
         Axis over which the mean is computed. Defaults to ``None``.
-        If None it is computed over the flattened tensor.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
         if ``False`` the tensor is collapsed along the given axis.
@@ -485,7 +486,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
         Input tensor.
     axis : AxisLike, optional
         Axis over which the minimum is computed. Defaults to ``None``.
-        If None it is computed over the flattened tensor.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
         if ``False`` the tensor is collapsed along the given axis.
@@ -517,6 +518,28 @@ def minimum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
     return tensor(get_engine(x.device).minimum(x.data, _y))
 
 
+def norm(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+    """Computes the norm of tensor elements over a given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    axis : AxisLike, optional
+        Axis over which the norm is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the norm of elements.
+    """
+    return tensor(get_engine(x.device).linalg.norm(x.data, axis=axis, keepdims=keepdims))
+
+
 def outer(*tensors: Tensor) -> Tensor:
     """Computes the outer product of two or more tensors.
 
@@ -543,7 +566,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
         Input tensor.
     axis : AxisLike, optional
         Axis over which the product is computed. Defaults to ``None``.
-        If None it is computed over the flattened tensor.
+        If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
         if ``False`` the tensor is collapsed along the given axis.
@@ -775,7 +798,7 @@ def var(
         Input tensor.
     axis : AxisLike, optional
         Axis over which the variance is computed. Defaults to ``None``.
-        If None it is computed over the flattened tensor.
+        If ``None`` it is computed over the flattened tensor.
     ddof : int, optional
         "Delta Degrees of Freedom": the divisor used in the calculation is :math:`N - ddof`,
         where :math:`N` represents the number of elements. Defaults to ``0``.
