@@ -9,6 +9,7 @@ Activations
 .. autofunction:: leaky_relu
 .. autofunction:: gelu
 .. autofunction:: sigmoid
+.. autofunction:: silu
 .. autofunction:: tanh
 .. autofunction:: softmax
 .. autofunction:: temperature_softmax

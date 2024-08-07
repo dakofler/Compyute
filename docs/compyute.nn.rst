@@ -56,6 +56,8 @@ Activations
    :show-inheritance:
 .. autoclass:: Sigmoid
    :show-inheritance:
+.. autoclass:: SiLU
+   :show-inheritance:
 .. autoclass:: Tanh
    :show-inheritance:
 

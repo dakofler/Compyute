@@ -7,7 +7,7 @@ from ...tensor_functions.creating import identity
 from ...tensor_functions.reshaping import insert_dim, reshape, tile
 from ...tensor_functions.transforming import exp
 from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import maximum, minimum, sech
+from ...tensor_functions.transforming import maximum, sech
 from ...tensor_functions.transforming import sum as cpsum
 from ...tensor_functions.transforming import tanh as cptanh
 
@@ -16,6 +16,7 @@ __all__ = [
     "leaky_relu",
     "gelu",
     "sigmoid",
+    "silu",
     "tanh",
     "softmax",
     "temperature_softmax",
@@ -152,6 +153,37 @@ def sigmoid(
 
     if return_grad_fn:
         return y, (lambda dy: (y * (1 - y)) * dy)
+    return y, None
+
+
+def silu(
+    x: Tensor, return_grad_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Applies the Sigmoid Linear Unit activation function to an input tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    return_grad_fn : bool, optional
+        Whether to also return the according gradient function. Defaults to ``False``.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.SiLU`
+    """
+    sig, sigmoid_grad_fn = sigmoid(x, return_grad_fn=return_grad_fn)
+    y = sig * x
+
+    if return_grad_fn and sigmoid_grad_fn is not None:
+        return y, (lambda dy: x * sigmoid_grad_fn(dy) + sig * dy)
     return y, None
 
 

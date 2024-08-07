@@ -3,10 +3,10 @@
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
-from ..functional.activations import gelu, leaky_relu, relu, sigmoid, tanh
+from ..functional.activations import gelu, leaky_relu, relu, sigmoid, silu, tanh
 from .module import Module
 
-__all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "Tanh"]
+__all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "SiLU", "Tanh"]
 
 
 class ReLU(Module):
@@ -54,7 +54,7 @@ class LeakyReLU(Module):
 
 
 class GELU(Module):
-    r"""Gaussian Error Linear Unit activation function.
+    r"""Gaussian Error Linear Unit activation function (using the :math:`tanh` approximation).
 
     .. math::
         y = 0.5 \cdot x \cdot (1 + \tanh(\sqrt{\frac{2}{pi}} \cdot (x + 0.044715 \cdot x^3)))
@@ -107,6 +107,25 @@ class Sigmoid(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = sigmoid(x, self._training)
+        return y
+
+
+class SiLU(Module):
+    r"""Sigmoid Linear Unit activation function.
+
+    .. math::
+        y = \frac{x}{1 + e^{-x}}
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
+    training : bool, optional
+        Whether the module should be in training mode. Defaults to ``False``.
+    """
+
+    def forward(self, x: Tensor) -> Tensor:
+        y, self._backward = silu(x, self._training)
         return y
 
 
