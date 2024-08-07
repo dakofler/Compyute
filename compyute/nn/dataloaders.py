@@ -65,25 +65,28 @@ class Dataloader:
 
         # shuffle data
         if self.shuffle:
-            self.x, idx = shuffle(self.x)
-            self.y = self.y[idx] if self.y is not None else None
+            x, idx = shuffle(self.x)
+            y = self.y[idx] if self.y is not None else None
+        else:
+            x = self.x
+            y = self.y
 
         # yield batches
         for i in range(n_steps):
-            x_batch = self.x[i * b : (i + 1) * b].to_device(self.device)
+            x_batch = x[i * b : (i + 1) * b].to_device(self.device)
 
-            if self.y is not None:
-                y_batch = self.y[i * b : (i + 1) * b].to_device(self.device)
+            if y is not None:
+                y_batch = y[i * b : (i + 1) * b].to_device(self.device)
                 yield x_batch, y_batch
             else:
                 yield x_batch, None
 
         # yield remaining
         if not self.drop_remaining and n_trunc < n:
-            x_batch = self.x[n_trunc:].to_device(self.device)
+            x_batch = x[n_trunc:].to_device(self.device)
 
-            if self.y is not None:
-                y_batch = self.y[n_trunc:].to_device(self.device)
+            if y is not None:
+                y_batch = y[n_trunc:].to_device(self.device)
                 yield x_batch, y_batch
             else:
                 yield x_batch, None

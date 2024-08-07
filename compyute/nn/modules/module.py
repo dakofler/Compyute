@@ -64,7 +64,7 @@ class Module(ABC):
             self.y = self.y.to_device(device)
 
         for p in chain(self.buffers, self.parameters):
-            p.move_to_device(device)
+            p._to_device(device)
 
     @property
     def trainable(self) -> bool:

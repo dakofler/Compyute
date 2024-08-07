@@ -128,6 +128,23 @@ class Tensor:
             new_tensor.grad = self.grad.to_device(device)
         return new_tensor
 
+    def _to_device(self, device: _DeviceLike) -> None:
+        """Moves the tensor to the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the tensor to.
+        """
+        device = Device(device)
+        if self._device == device:
+            return
+
+        self._device = device
+        self.data = data_to_device(self._data, device)
+        if self.grad is not None:
+            self.grad = self.grad.to_device(device)
+
     @property
     def dtype(self) -> Dtype:
         """Tensor data type."""
@@ -157,6 +174,11 @@ class Tensor:
     def T(self) -> Tensor:
         """Returns a transposed view of the tensor."""
         return Tensor(get_engine(self.device).moveaxis(self._data, -2, -1))
+
+    @property
+    def ptr(self) -> int:
+        """Returns the pointer to the tensor data."""
+        return id(self._data.ctypes.data)
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -289,7 +311,7 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
 
     def to_type(self, dtype: _DtypeLike) -> Tensor:
-        """Returns a new tensor with elements cast to the given dtype.
+        """Returns a copy of the tensor with elements cast to the given dtype.
 
         Parameters
         ----------
@@ -302,6 +324,20 @@ class Tensor:
             Tensor with elements cast to the given dtype.
         """
         return Tensor(self._data.astype(Dtype(dtype).value))
+
+    def _to_type(self, dtype: _DtypeLike) -> None:
+        """Casts tensor elements to the given dtype.
+
+        Parameters
+        ----------
+        dtype : _DtypeLike
+            Datatype to cast tensor-elements to.
+        """
+        dtype = Dtype(dtype)
+        if self.dtype == dtype:
+            return
+
+        self.data = self._data.astype(dtype.value)
 
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.

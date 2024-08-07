@@ -44,3 +44,12 @@ class Callback(ABC):
         trainer_cache : dict[str, Any]
             Trainer cache.
         """
+
+    def on_training_end(self, trainer_cache: dict[str, Any]) -> None:
+        """Does someting at the end of the training run.
+
+        Parameters
+        ----------
+        trainer_cache : dict[str, Any]
+            Trainer cache.
+        """

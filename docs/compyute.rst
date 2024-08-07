@@ -7,7 +7,6 @@ Tensors
 -------
 .. autoclass:: Tensor
     :members:
-    :show-inheritance:
 .. autofunction:: tensor
 
 Creating and Combining Operations

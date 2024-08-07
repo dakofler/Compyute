@@ -36,6 +36,7 @@ setup(
         "numpy>=1.26.4,<2.0.0",
         "regex>=2023.12.25",
         "tqdm>=4.66.2",
+        "tensorboardX>=2.6.2.2",
     ],
     extras_require={
         "dev": [

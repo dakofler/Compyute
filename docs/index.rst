@@ -19,3 +19,5 @@ Machine learning toolbox developed in pure NumPy/CuPy for tensor-based computati
     compyute.preprocessing
     compyute.preprocessing.text
     compyute.random
+    compyute.utils
+    compyute.utils.tensorboard

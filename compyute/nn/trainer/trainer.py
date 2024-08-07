@@ -86,11 +86,13 @@ class Trainer:
 
         for _ in range(1, epochs + 1):
             self.cache["t"] += 1
+            self.cache["step"] = 0
             self._callback("epoch_start")
 
             # training
             with self.model.training():
                 for batch in train_dataloader():
+                    self.cache["step"] += 1
                     self._train_step(batch)
                     self._callback("step")
 
@@ -105,6 +107,7 @@ class Trainer:
             if self.cache["abort"]:
                 break
 
+        self._callback("end")
         self.model.cleanup()
 
     def evaluate_model(
@@ -159,6 +162,7 @@ class Trainer:
                 "step": callback.on_step,
                 "epoch_start": callback.on_epoch_start,
                 "epoch_end": callback.on_epoch_end,
+                "end": callback.on_training_end,
             }[on](self.cache)
 
     def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:

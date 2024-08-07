@@ -5,7 +5,7 @@ only using NumPy/CuPy under the hood to perform computations.
 
 import pathlib
 
-from . import engine, nn, preprocessing, random
+from . import engine, nn, preprocessing, random, utils
 from .base_tensor import *
 from .dtypes import *
 from .engine import *
