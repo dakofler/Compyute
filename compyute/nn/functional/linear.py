@@ -41,7 +41,7 @@ def linear(
         y += b
 
     if return_grad_fn:
-        batch_dims = "abcdef"[: x.ndim - 1]
+        batch_dims = "abcdef"[: x.n_axes - 1]
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             # input grads

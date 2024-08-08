@@ -58,7 +58,7 @@ def batchnorm1d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
-    dim2 = x.ndim == 2
+    dim2 = x.n_axes == 2
     axes = 0 if dim2 else (0, 2)
 
     if return_grad_fn:
@@ -230,13 +230,13 @@ def layernorm(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
     """
-    axes = tuple(-i - 1 for i in range(w.ndim))
+    axes = tuple(-i - 1 for i in range(w.n_axes))
     inv_std = (_var(x, axis=axes, keepdims=True) + eps) ** -0.5
     x_std = (x - _mean(x, axis=axes, keepdims=True)) * inv_std
     y = w * x_std + b
 
     if return_grad_fn:
-        sum_axes = tuple(range(x.ndim - w.ndim))
+        sum_axes = tuple(range(x.n_axes - w.n_axes))
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads

@@ -138,7 +138,7 @@ def dilate1d(
 
     dil_shape = (dilation * x.shape[-1] - 1,)
     x_dil = zeros(x.shape[:-1] + dil_shape, x.dtype, x.device)
-    dil_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
+    dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
     x_dil[*dil_slice] = x
 
     if return_grad_fn:
@@ -178,11 +178,11 @@ def pad1d(
     if padding == (0, 0):
         return x, (lambda dy: dy)
 
-    widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
+    widths = tuple([(0, 0)] * (x.n_axes - 1) + [padding])
     y = pad(x, widths)
 
     if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.ndim - 1) + [slice(padding[0], -padding[0])]
+        pad_grad_slice = [slice(None)] * (x.n_axes - 1) + [slice(padding[0], -padding[0])]
         return y, (lambda dy: dy[*pad_grad_slice])
 
     return y, None
@@ -196,7 +196,7 @@ def _convolve1d(
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
     f_ = flip(f, -1)
     conv = _fft_conv1d(x, f_)
-    stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
+    stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
     y = conv[*stride_slice]
 
     if return_grad_fn:
@@ -226,7 +226,7 @@ def _fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
         dtype=x.dtype,
     )
     out = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.ndim - 1) + [slice(-out, None)]
+    out_slice = [slice(None)] * (x.n_axes - 1) + [slice(-out, None)]
     return conv[*out_slice]
 
 
@@ -341,7 +341,7 @@ def dilate2d(
     )
     x_dil = zeros(x.shape[:-2] + dil_shape, x.dtype, x.device)
     dil_slice = (
-        [slice(None)] * (x.ndim - 2)
+        [slice(None)] * (x.n_axes - 2)
         + [slice(None, None, dilation[0])]
         + [slice(None, None, dilation[1])]
     )
@@ -386,11 +386,11 @@ def pad2d(
     if padding == ((0, 0), (0, 0)):
         return x, (lambda dy: dy)
 
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
+    widths = tuple([(0, 0)] * (x.n_axes - 2) + [*padding])
     y = pad(x, widths)
 
     if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.ndim - 2) + [
+        pad_grad_slice = [slice(None)] * (x.n_axes - 2) + [
             slice(padding[0][0], -padding[0][1]),
             slice(padding[1][0], -padding[1][1]),
         ]
@@ -404,7 +404,7 @@ def _convolve2d(
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
     f_ = flip(f, (-2, -1))
     conv = _fft_conv2d(x, f_)
-    stride_slice = [slice(None)] * (x.ndim - 2) + [
+    stride_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, None, strides[0]),
         slice(None, None, strides[1]),
     ]
@@ -441,7 +441,7 @@ def _fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
     )
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.ndim - 2) + [
+    out_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(-out_y, None),
         slice(-out_x, None),
     ]
@@ -504,7 +504,7 @@ def maxpooling2d(
     kernel_height, kernel_width = kernel_size
 
     # maxpooling
-    crop_slice = [slice(None)] * (x.ndim - 2) + [
+    crop_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, x_height // kernel_height * kernel_height),
         slice(None, x_width // kernel_width * kernel_width),
     ]
@@ -553,7 +553,7 @@ def avgpooling2d(
     kernel_height, kernel_width = kernel_size
 
     # avgpooling
-    crop_slice = [slice(None)] * (x.ndim - 2) + [
+    crop_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, x_height // kernel_height * kernel_height),
         slice(None, x_width // kernel_width * kernel_width),
     ]

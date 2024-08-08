@@ -68,7 +68,7 @@ def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
     Tensor
         Transposed tensor.
     """
-    if x.ndim < 2:
+    if x.n_axes < 2:
         return x
     return moveaxis(x, from_axis=axes[0], to_axis=axes[1])
 
@@ -106,7 +106,7 @@ def add_dims(x: Tensor, target_dims: int) -> Tensor:
     Tensor
         Tensor with specified number of dimensions.
     """
-    return reshape(x, x.shape + (1,) * (target_dims - x.ndim))
+    return reshape(x, x.shape + (1,) * (target_dims - x.n_axes))
 
 
 def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -165,7 +165,7 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     Tensor
         Tensor with repeated values.
     """
-    repeats = [1] * x.ndim
+    repeats = [1] * x.n_axes
     repeats[axis] = n_repeats
     return Tensor(get_engine(x.device).tile(x.data, tuple(repeats)))
 
@@ -206,7 +206,7 @@ def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Padded tensor.
     """
-    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.ndim))
+    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.n_axes))
     return pad(x, padding)
 
 

@@ -217,8 +217,8 @@ for epoch in range(epochs):
 Model checkpoints can also be saved and loaded later on.
 
 ```python
-nn.save_module(model, "my_model.cp")
-loaded_model = nn.load_module("my_model.cp")
+model.save(model, "my_model.cp")
+loaded_model = nn.Module.load("my_model.cp")
 ```
 
 ## Author

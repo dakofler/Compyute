@@ -12,7 +12,7 @@ from ...base_tensor import ShapeError, Tensor
 from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
-__all__ = ["Module", "save_module", "load_module"]
+__all__ = ["Module", "Identity"]
 
 
 class Module(ABC):
@@ -83,24 +83,12 @@ class Module(ABC):
 
     @property
     def parameters(self) -> Iterator[Parameter]:
-        """Returns an iterator of module parameters.
-
-        Returns
-        -------
-        Iterator[Parameter]
-            Iterator of module parameters.
-        """
+        """Iterator of module parameters."""
         return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
 
     @property
     def buffers(self) -> Iterator[Buffer]:
-        """Returns an iterator of module buffers.
-
-        Returns
-        -------
-        Iterator[Variable]
-            Iterator of module buffers.
-        """
+        """Iterator of module buffers."""
         return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
 
     # ----------------------------------------------------------------------------------------------
@@ -249,14 +237,14 @@ class Module(ABC):
         self._backward = None
 
         for p in self.parameters:
-            p.grad = None
+            p._cleanup()
 
     def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
         """Checks if the number of dimensions match the valid dimensions."""
-        if x.ndim in valid_dims:
+        if x.n_axes in valid_dims:
             return
         vdims = ", ".join(str(d) for d in valid_dims)
-        raise ShapeError(f"{self.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}.")
+        raise ShapeError(f"{self.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}.")
 
     @staticmethod
     def _update_parameter_grad(parameter: Optional[Parameter], grad: Optional[Tensor]) -> None:
@@ -264,6 +252,41 @@ class Module(ABC):
         if parameter is None or grad is None:
             return
         parameter.grad += grad
+
+    def save(self, filepath: str) -> None:
+        """Saves the module to a binary file.
+
+        Parameters
+        ----------
+        module : Module
+            Module to be saved.
+        filepath : str
+            Where to save the file to.
+        """
+        device = self.device
+        self.to_device(Device.CPU)
+        self.cleanup(force=True)
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+        self.to_device(device)
+
+    @classmethod
+    def load(cls, filepath: str) -> Module:
+        """Load a module from a binary file.
+
+        Parameters
+        ----------
+        filepath : str
+            Filepath of the binary module file.
+
+        Returns
+        -------
+        Module
+            Loaded module.
+        """
+        with open(filepath, "rb") as file:
+            module = pickle.load(file)
+        return module
 
 
 class Identity(Module):
@@ -284,42 +307,6 @@ class Identity(Module):
 
 class ModelDefinitionError(Exception):
     """Model definition error."""
-
-
-def save_module(module: Module, filepath: str) -> None:
-    """Saves a module to a binary file.
-
-    Parameters
-    ----------
-    module : Module
-        Module to be saved.
-    filepath : str
-        Where to save the file to.
-    """
-    device = module.device
-    module.to_device(Device.CPU)
-    module.cleanup(force=True)
-    with open(filepath, "wb") as file:
-        pickle.dump(module, file)
-    module.to_device(device)
-
-
-def load_module(filepath: str) -> Module:
-    """Load a module from a binary file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the binary module file.
-
-    Returns
-    -------
-    Module
-        Loaded module.
-    """
-    with open(filepath, "rb") as file:
-        obj = pickle.load(file)
-    return obj
 
 
 def _reprattr(a: str, v: Any) -> bool:

@@ -132,7 +132,7 @@ def dot(x: Tensor, y: Tensor) -> Tensor:
     Tensor
         Dot product of the tensors.
     """
-    if x.ndim != 1 or y.ndim != 1:
+    if x.n_axes != 1 or y.n_axes != 1:
         raise ShapeError("Inputs must be 1D-tensors.")
     return inner(x, y)
 

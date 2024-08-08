@@ -42,3 +42,4 @@ html_static_path = ["_static"]
 autodoc_typehints = "none"
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+autodoc_member_order = "groupwise"

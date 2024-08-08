@@ -124,8 +124,8 @@ class Tensor:
         return self._engine
 
     @property
-    def ndim(self) -> int:
-        """Number of tensor dimensions."""
+    def n_axes(self) -> int:
+        """Number of tensor axes."""
         return self._data.ndim
 
     @property
@@ -145,13 +145,20 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Returns a transposed view of the tensor."""
+        """Transposed view of the tensor (last two axes)."""
         return Tensor(self.engine.moveaxis(self._data, -2, -1))
 
     @property
     def ptr(self) -> int:
-        """Returns the pointer to the tensor data."""
+        """Pointer to the tensor data."""
         return id(self._data.ctypes.data)
+
+    def _cleanup(self) -> None:
+        """Resets chached information."""
+        self._engine = None
+        self._device = None
+        self._dtype = None
+        self.grad = None
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
