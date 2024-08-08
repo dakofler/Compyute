@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
 import numpy
@@ -82,7 +83,9 @@ class Tensor:
     def __init__(self, data: _ArrayLike) -> None:
         self.data = data
         self.grad: Optional[Tensor] = None
-        self._device = infer_device(type(data))
+        self._engine: Optional[ModuleType] = None
+        self._device: Optional[Device] = None
+        self._dtype: Optional[Dtype] = None
         self._iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
@@ -102,53 +105,23 @@ class Tensor:
     @property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
+        if self._device is None:
+            self._device = infer_device(type(self._data))
         return self._device
-
-    def to_device(self, device: _DeviceLike) -> Tensor:
-        """Returns a copy of the tensor on the specified device.
-
-        Parameters
-        ----------
-        device : _DeviceLike
-            Device to move the tensor to.
-
-        Returns
-        -------
-        Tensor
-            Tensor on the specified device.
-        """
-        device = Device(device)
-        if self._device == device:
-            return self
-
-        self._device = device
-        new_data = data_to_device(self._data, device)
-        new_tensor = Tensor(new_data)
-        if self.grad is not None:
-            new_tensor.grad = self.grad.to_device(device)
-        return new_tensor
-
-    def _to_device(self, device: _DeviceLike) -> None:
-        """Moves the tensor to the specified device.
-
-        Parameters
-        ----------
-        device : _DeviceLike
-            Device to move the tensor to.
-        """
-        device = Device(device)
-        if self._device == device:
-            return
-
-        self._device = device
-        self.data = data_to_device(self._data, device)
-        if self.grad is not None:
-            self.grad = self.grad.to_device(device)
 
     @property
     def dtype(self) -> Dtype:
         """Tensor data type."""
-        return Dtype(str(self._data.dtype))
+        if self._dtype is None:
+            self._dtype = Dtype(str(self._data.dtype))
+        return self._dtype
+
+    @property
+    def engine(self) -> ModuleType:
+        """Computation engine."""
+        if self._engine is None:
+            self._engine = get_engine(self.device)
+        return self._engine
 
     @property
     def ndim(self) -> int:
@@ -173,7 +146,7 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """Returns a transposed view of the tensor."""
-        return Tensor(get_engine(self.device).moveaxis(self._data, -2, -1))
+        return Tensor(self.engine.moveaxis(self._data, -2, -1))
 
     @property
     def ptr(self) -> int:
@@ -307,6 +280,51 @@ class Tensor:
         return self.to_numpy()
 
     # ----------------------------------------------------------------------------------------------
+    # DEVICE CONVERSIONS
+    # ----------------------------------------------------------------------------------------------
+
+    def to_device(self, device: _DeviceLike) -> Tensor:
+        """Returns a copy of the tensor on the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the tensor to.
+
+        Returns
+        -------
+        Tensor
+            Tensor on the specified device.
+        """
+        device = Device(device)
+        if self._device == device:
+            return self
+
+        new_data = data_to_device(self._data, device)
+        new_tensor = Tensor(new_data)
+        if self.grad is not None:
+            new_tensor.grad = self.grad.to_device(device)
+        return new_tensor
+
+    def _to_device(self, device: _DeviceLike) -> None:
+        """Moves the tensor to the specified device.
+
+        Parameters
+        ----------
+        device : _DeviceLike
+            Device to move the tensor to.
+        """
+        device = Device(device)
+        if self._device == device:
+            return
+
+        self._device = device
+        self._engine = get_engine(self.device)
+        self.data = data_to_device(self._data, device)
+        if self.grad is not None:
+            self.grad = self.grad.to_device(device)
+
+    # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS
     # ----------------------------------------------------------------------------------------------
 
@@ -341,6 +359,7 @@ class Tensor:
         if self.dtype == dtype:
             return
 
+        self._dtype = dtype
         self.data = self._data.astype(dtype.value)
 
     def to_int(self) -> Tensor:
@@ -492,7 +511,7 @@ class Tensor:
         """
         if mask.dtype.value != "bool":
             raise AttributeError("Mask must be a boolean tensor.")
-        get_engine(self.device).putmask(self._data, mask.data, value)
+        self.engine.putmask(self._data, mask.data, value)
 
 
 def _to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:

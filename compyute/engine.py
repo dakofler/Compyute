@@ -6,8 +6,8 @@ from functools import cache
 from types import ModuleType
 from typing import Literal, TypeAlias
 
-import cupy
-import numpy
+import cupy as CUDA_ENGINE
+import numpy as CPU_ENGINE
 
 __all__ = ["cpu", "cuda", "gpu_available", "set_cuda_tf32"]
 
@@ -32,17 +32,21 @@ cuda = Device.CUDA
 @cache
 def _cuda_available() -> bool:
     try:
-        return cupy.is_available()
+        return CUDA_ENGINE.is_available()
     except Exception:
         return False
 
 
-_ArrayLike: TypeAlias = numpy.ndarray | cupy.ndarray
+_ArrayLike: TypeAlias = CPU_ENGINE.ndarray | CUDA_ENGINE.ndarray
 _DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
 
+
 _AVAILABLE_DEVICES = {Device.CPU}.union({Device.CUDA} if _cuda_available() else {})
-_DEVICE_TO_ENGINE: dict[Device, ModuleType] = {Device.CPU: numpy, Device.CUDA: cupy}
-_ENGINE_TO_DEVICE: dict[type, Device] = {numpy.ndarray: Device.CPU, cupy.ndarray: Device.CUDA}
+_DEVICE_TO_ENGINE: dict[Device, ModuleType] = {Device.CPU: CPU_ENGINE, Device.CUDA: CUDA_ENGINE}
+_ENGINE_TO_DEVICE: dict[type, Device] = {
+    CPU_ENGINE.ndarray: Device.CPU,
+    CUDA_ENGINE.ndarray: Device.CUDA,
+}
 
 
 def gpu_available() -> bool:
@@ -68,7 +72,7 @@ def get_engine(device: _DeviceLike) -> ModuleType:
     """Returns the computation engine for a given device."""
     device = Device(device)
     available(device)
-    return _DEVICE_TO_ENGINE.get(device, numpy)
+    return _DEVICE_TO_ENGINE.get(device, CPU_ENGINE)
 
 
 @cache
@@ -80,14 +84,14 @@ def infer_device(array_type: type) -> Device:
 def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     """Moves the data to the specified device."""
     if device == Device.CPU:
-        return cupy.asnumpy(data)
+        return CUDA_ENGINE.asnumpy(data)
     available(device)
-    return cupy.array(data)
+    return CUDA_ENGINE.array(data)
 
 
 def get_array_string(array: _ArrayLike) -> str:
     """Returns the array as a formatted string."""
-    return numpy.array2string(
+    return CPU_ENGINE.array2string(
         array,
         max_line_width=100,
         prefix="Tensor(",
