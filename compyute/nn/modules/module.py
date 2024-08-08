@@ -236,7 +236,7 @@ class Module(ABC):
         self.y = None
         self._backward = None
 
-        for p in self.parameters:
+        for p in chain(self.buffers, self.parameters):
             p._cleanup()
 
     def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
