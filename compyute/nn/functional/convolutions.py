@@ -4,8 +4,8 @@ from typing import Callable, Literal, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype
-from ...tensor_functions.creating import zeros
-from ...tensor_functions.reshaping import (
+from ...tensor_ops.creating import zeros
+from ...tensor_ops.reshaping import (
     broadcast_to,
     flip,
     insert_dim,
@@ -14,10 +14,10 @@ from ...tensor_functions.reshaping import (
     repeat,
     reshape,
 )
-from ...tensor_functions.transforming import fft1d, fft2d, ifft1d, ifft2d
-from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import mean, real
-from ...tensor_functions.transforming import sum as cpsum
+from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
+from ...tensor_ops.transforming import max as cpmax
+from ...tensor_ops.transforming import mean, real
+from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = [
     "convolve1d",

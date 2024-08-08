@@ -7,8 +7,8 @@ from typing import Iterator, Optional
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
 from ...engine import Device, _DeviceLike
-from ...tensor_functions.creating import concatenate, ones, split
-from ...tensor_functions.transforming import tensorsum
+from ...tensor_ops.creating import concatenate, ones, split
+from ...tensor_ops.transforming import tensorsum
 from ..parameter import Buffer, Parameter
 from .module import Module
 

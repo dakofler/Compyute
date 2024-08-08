@@ -1,4 +1,4 @@
-"""Tensor reshaping functions."""
+"""Tensor reshaping operations."""
 
 from typing import Optional
 

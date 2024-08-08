@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
-from ...tensor_functions.creating import zeros
+from ...tensor_ops.creating import zeros
 from ..functional.convolutions import (
     _PaddingLike,
     avgpooling2d,

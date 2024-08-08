@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.transforming import einsum
+from ...tensor_ops.transforming import einsum
 
 __all__ = ["linear"]
 

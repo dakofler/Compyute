@@ -1,4 +1,4 @@
-"""Tensor computation and transformation functions."""
+"""Tensor computation and transformation operations."""
 
 import operator
 from functools import reduce

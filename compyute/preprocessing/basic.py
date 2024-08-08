@@ -5,11 +5,11 @@ from typing import Optional
 from ..base_tensor import Tensor, _AxisLike
 from ..dtypes import Dtype
 from ..random.random import shuffle
-from ..tensor_functions.creating import identity
-from ..tensor_functions.transforming import max as cpmax
-from ..tensor_functions.transforming import mean
-from ..tensor_functions.transforming import min as cpmin
-from ..tensor_functions.transforming import var
+from ..tensor_ops.creating import identity
+from ..tensor_ops.transforming import max as cpmax
+from ..tensor_ops.transforming import mean
+from ..tensor_ops.transforming import min as cpmin
+from ..tensor_ops.transforming import var
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 

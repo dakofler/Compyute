@@ -5,7 +5,7 @@ from typing import Optional
 
 from ..base_tensor import Tensor, _ShapeLike, tensor
 from ..dtypes import Dtype, _DtypeLike
-from ..engine import Device, _DeviceLike, get_engine
+from ..engine import Device, _DeviceLike, get_engine, gpu_available
 
 __all__ = [
     "normal",
@@ -28,11 +28,9 @@ def set_seed(value: Optional[int] = None) -> None:
     value : int, optional
         Seed value. Defaults to ``None``. If ``None``, the seed is reset.
     """
-    try:
-        get_engine(Device.CUDA).random.seed(value)
-    except Exception:
-        pass
     get_engine(Device.CPU).random.seed(value)
+    if gpu_available():
+        get_engine(Device.CUDA).random.seed(value)
 
 
 @contextmanager

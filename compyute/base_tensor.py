@@ -323,7 +323,11 @@ class Tensor:
         Tensor
             Tensor with elements cast to the given dtype.
         """
-        return Tensor(self._data.astype(Dtype(dtype).value))
+        dtype = Dtype(dtype)
+        if self.dtype == dtype:
+            return self
+
+        return Tensor(self._data.astype(dtype.value))
 
     def _to_type(self, dtype: _DtypeLike) -> None:
         """Casts tensor elements to the given dtype.
@@ -475,6 +479,20 @@ class Tensor:
             View of the tensor.
         """
         return Tensor(self._data.reshape(shape))
+
+    def masked_fill(self, mask: Tensor, value: _ScalarLike) -> None:
+        """Sets elements of the tensor to a value, where the mask is true.
+
+        Parameters
+        ----------
+        mask : Tensor
+            Boolean mask tensor.
+        value : _ScalarLike
+            Value to set tensor elements to.
+        """
+        if mask.dtype.value != "bool":
+            raise AttributeError("Mask must be a boolean tensor.")
+        get_engine(self.device).putmask(self._data, mask.data, value)
 
 
 def _to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:

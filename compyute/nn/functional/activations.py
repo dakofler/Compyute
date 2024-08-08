@@ -3,13 +3,13 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.creating import identity
-from ...tensor_functions.reshaping import insert_dim, reshape, tile
-from ...tensor_functions.transforming import exp
-from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import maximum, sech
-from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import tanh as cptanh
+from ...tensor_ops.creating import identity
+from ...tensor_ops.reshaping import insert_dim, reshape, tile
+from ...tensor_ops.transforming import exp
+from ...tensor_ops.transforming import max as cpmax
+from ...tensor_ops.transforming import maximum, sech
+from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import tanh as cptanh
 
 __all__ = [
     "relu",

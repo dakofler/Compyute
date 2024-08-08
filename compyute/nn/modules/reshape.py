@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...base_tensor import Tensor, _ShapeLike
-from ...tensor_functions.reshaping import moveaxis, reshape
+from ...tensor_ops.reshaping import moveaxis, reshape
 from .module import Module
 
 __all__ = ["Reshape", "Flatten", "Moveaxis"]

@@ -61,7 +61,7 @@ class Module(ABC):
         self._device = device
 
         if self.y is not None:
-            self.y = self.y.to_device(device)
+            self.y._to_device(device)
 
         for p in chain(self.buffers, self.parameters):
             p._to_device(device)

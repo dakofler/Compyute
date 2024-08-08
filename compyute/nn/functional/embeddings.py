@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_functions.transforming import sum as cpsum
+from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = ["lookup_embedding"]
 

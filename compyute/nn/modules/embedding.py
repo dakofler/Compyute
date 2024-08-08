@@ -5,7 +5,7 @@ from typing import Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import normal
-from ...tensor_functions.creating import zeros_like
+from ...tensor_ops.creating import zeros_like
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter
 from .module import Module

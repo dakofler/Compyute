@@ -129,12 +129,13 @@ class SiLU(Module):
         return y
 
 
-_ActivationLike = Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]
+_ActivationLike = Literal["relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh"]
 ACTIVATIONS = {
     "relu": ReLU,
     "leaky_relu": LeakyReLU,
     "gelu": GELU,
     "sigmoid": Sigmoid,
+    "silu": SiLU,
     "tanh": Tanh,
 }
 

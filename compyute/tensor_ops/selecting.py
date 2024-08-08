@@ -1,4 +1,4 @@
-"""Tensor selection and filter functions."""
+"""Tensor selection and filter operations."""
 
 from typing import Optional
 

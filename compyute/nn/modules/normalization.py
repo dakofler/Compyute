@@ -4,7 +4,7 @@ from typing import Optional
 
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
-from ...tensor_functions.creating import ones, zeros
+from ...tensor_ops.creating import ones, zeros
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm
 from ..parameter import Buffer, Parameter
 from .module import Module

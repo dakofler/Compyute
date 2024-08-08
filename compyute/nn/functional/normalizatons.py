@@ -3,10 +3,10 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.reshaping import reshape, squeeze
-from ...tensor_functions.transforming import mean as _mean
-from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import var as _var
+from ...tensor_ops.reshaping import reshape, squeeze
+from ...tensor_ops.transforming import mean as _mean
+from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import var as _var
 
 __all__ = ["batchnorm1d", "batchnorm2d", "layernorm"]
 

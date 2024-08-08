@@ -6,7 +6,7 @@ from typing import Callable, Iterator, Optional
 from ...base_tensor import Tensor
 from ...engine import Device, _DeviceLike
 from ...random.random import shuffle
-from ...tensor_functions.creating import concatenate
+from ...tensor_ops.creating import concatenate
 
 __all__ = ["Dataloader"]
 

@@ -1,4 +1,4 @@
-"""Tensor creation and combination functions."""
+"""Tensor creation and combination operations."""
 
 from typing import Optional, Sequence
 

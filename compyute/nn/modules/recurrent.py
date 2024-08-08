@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
-from ...tensor_functions.creating import empty, empty_like, zeros, zeros_like
+from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter

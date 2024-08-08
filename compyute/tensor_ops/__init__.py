@@ -1,4 +1,4 @@
-"""Tensor functions."""
+"""Tensor operations."""
 
 from .creating import *
 from .reshaping import *

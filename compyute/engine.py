@@ -107,5 +107,5 @@ def set_cuda_tf32(value: bool) -> None:
     """
     if value:
         os.environ["CUPY_TF32"] = "1"
-    else:
+    elif "CUPY_TF32" in os.environ:
         del os.environ["CUPY_TF32"]
