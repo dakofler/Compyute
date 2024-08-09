@@ -48,8 +48,6 @@ class DenseBlock(Sequential):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -67,18 +65,17 @@ class DenseBlock(Sequential):
         bias_init: _InitializerLike = "zeros",
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        linear = Linear(in_channels, out_channels, bias, dtype, training=training)
+        linear = Linear(in_channels, out_channels, bias, dtype)
         w_init = get_initializer(weight_init, dtype, activation)
         linear.w = Parameter(w_init((out_channels, in_channels)))
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             linear.b = Parameter(b_init((out_channels,)))
 
-        act = get_activation(activation)(training=training)
+        act = get_activation(activation)()
 
-        super().__init__(linear, act, label=label, training=training)
+        super().__init__(linear, act, label=label)
 
 
 class Convolution1dBlock(Sequential):
@@ -130,8 +127,6 @@ class Convolution1dBlock(Sequential):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -157,32 +152,21 @@ class Convolution1dBlock(Sequential):
         batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        conv = Convolution1d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            padding,
-            stride,
-            dilation,
-            bias,
-            dtype,
-            training=training,
-        )
+        conv = Convolution1d(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)))
 
-        act = get_activation(activation)(training=training)
+        act = get_activation(activation)()
 
         if batchnorm:
-            bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, act, label=label, training=training)
+            bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            super().__init__(conv, bn, act, label=label)
         else:
-            super().__init__(conv, act, label=label, training=training)
+            super().__init__(conv, act, label=label)
 
 
 class Convolution2dBlock(Sequential):
@@ -236,8 +220,6 @@ class Convolution2dBlock(Sequential):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -263,29 +245,18 @@ class Convolution2dBlock(Sequential):
         batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        conv = Convolution2d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            padding,
-            stride,
-            dilation,
-            bias,
-            dtype,
-            training=training,
-        )
+        conv = Convolution2d(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)))
 
-        act = get_activation(activation)(training=training)
+        act = get_activation(activation)()
 
         if batchnorm:
-            bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, act, label=label, training=training)
+            bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            super().__init__(conv, bn, act, label=label)
         else:
-            super().__init__(conv, act, label=label, training=training)
+            super().__init__(conv, act, label=label)

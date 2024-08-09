@@ -57,14 +57,14 @@ def test_recurrent() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
 
@@ -170,56 +170,40 @@ def test_lstm() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
-    compyute_w_i_1_grad = concatenate(
-        [lstm1.w_ii.grad, lstm1.w_if.grad, lstm1.w_ig.grad, lstm1.w_io.grad], 0
-    )
+    compyute_w_i_1_grad = concatenate([lstm1.w_ii.grad, lstm1.w_if.grad, lstm1.w_ig.grad, lstm1.w_io.grad], 0)
     assert is_equal(compyute_w_i_1_grad, torch_module.weight_ih_l0.grad)
 
-    compyute_b_i_1_grad = concatenate(
-        [lstm1.b_ii.grad, lstm1.b_if.grad, lstm1.b_ig.grad, lstm1.b_io.grad], 0
-    )
+    compyute_b_i_1_grad = concatenate([lstm1.b_ii.grad, lstm1.b_if.grad, lstm1.b_ig.grad, lstm1.b_io.grad], 0)
     assert is_equal(compyute_b_i_1_grad, torch_module.bias_ih_l0.grad)
 
-    compyute_w_h_1_grad = concatenate(
-        [lstm1.w_hi.grad, lstm1.w_hf.grad, lstm1.w_hg.grad, lstm1.w_ho.grad], 0
-    )
+    compyute_w_h_1_grad = concatenate([lstm1.w_hi.grad, lstm1.w_hf.grad, lstm1.w_hg.grad, lstm1.w_ho.grad], 0)
     assert is_equal(compyute_w_h_1_grad, torch_module.weight_hh_l0.grad)
 
-    compyute_b_h_1_grad = concatenate(
-        [lstm1.b_hi.grad, lstm1.b_hf.grad, lstm1.b_hg.grad, lstm1.b_ho.grad], 0
-    )
+    compyute_b_h_1_grad = concatenate([lstm1.b_hi.grad, lstm1.b_hf.grad, lstm1.b_hg.grad, lstm1.b_ho.grad], 0)
     assert is_equal(compyute_b_h_1_grad, torch_module.bias_hh_l0.grad)
 
-    compyute_w_i_2_grad = concatenate(
-        [lstm2.w_ii.grad, lstm2.w_if.grad, lstm2.w_ig.grad, lstm2.w_io.grad], 0
-    )
+    compyute_w_i_2_grad = concatenate([lstm2.w_ii.grad, lstm2.w_if.grad, lstm2.w_ig.grad, lstm2.w_io.grad], 0)
     assert is_equal(compyute_w_i_2_grad, torch_module.weight_ih_l1.grad)
 
-    compyute_b_i_2_grad = concatenate(
-        [lstm2.b_ii.grad, lstm2.b_if.grad, lstm2.b_ig.grad, lstm2.b_io.grad], 0
-    )
+    compyute_b_i_2_grad = concatenate([lstm2.b_ii.grad, lstm2.b_if.grad, lstm2.b_ig.grad, lstm2.b_io.grad], 0)
     assert is_equal(compyute_b_i_2_grad, torch_module.bias_ih_l1.grad)
 
-    compyute_w_h_2_grad = concatenate(
-        [lstm2.w_hi.grad, lstm2.w_hf.grad, lstm2.w_hg.grad, lstm2.w_ho.grad], 0
-    )
+    compyute_w_h_2_grad = concatenate([lstm2.w_hi.grad, lstm2.w_hf.grad, lstm2.w_hg.grad, lstm2.w_ho.grad], 0)
     assert is_equal(compyute_w_h_2_grad, torch_module.weight_hh_l1.grad)
 
-    compyute_b_h_2_grad = concatenate(
-        [lstm2.b_hi.grad, lstm2.b_hf.grad, lstm2.b_hg.grad, lstm2.b_ho.grad], 0
-    )
+    compyute_b_h_2_grad = concatenate([lstm2.b_hi.grad, lstm2.b_hf.grad, lstm2.b_hg.grad, lstm2.b_ho.grad], 0)
     assert is_equal(compyute_b_h_2_grad, torch_module.bias_hh_l1.grad)
 
 
@@ -304,14 +288,14 @@ def test_gru() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    with compyute_module.training():
+    with compyute_module.do_training():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)

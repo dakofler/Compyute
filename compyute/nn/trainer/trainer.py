@@ -90,7 +90,7 @@ class Trainer:
             self._callback("epoch_start")
 
             # training
-            with self.model.training():
+            with self.model.do_training():
                 for batch in train_dataloader():
                     self.cache["step"] += 1
                     self._train_step(batch)
@@ -110,9 +110,7 @@ class Trainer:
         self._callback("end")
         self.model.cleanup()
 
-    def evaluate_model(
-        self, x: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
+    def evaluate_model(self, x: Tensor, y: Tensor, batch_size: int = 32) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters

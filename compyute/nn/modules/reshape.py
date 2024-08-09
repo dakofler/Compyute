@@ -18,14 +18,10 @@ class Reshape(Module):
         The output's target shape not including the batch dimension.
     label: str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training: bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, output_shape: _ShapeLike, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, output_shape: _ShapeLike, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.output_shape = output_shape
 
     def forward(self, x: Tensor) -> Tensor:
@@ -44,8 +40,6 @@ class Flatten(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -68,14 +62,10 @@ class Moveaxis(Module):
         Destination position.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, from_axis: int, to_axis: int, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, from_axis: int, to_axis: int, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.from_axis = from_axis
         self.to_axis = to_axis
 

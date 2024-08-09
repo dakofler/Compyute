@@ -8,15 +8,7 @@ from typing import Any, Optional, TypeAlias
 import numpy
 
 from .dtypes import Dtype, _DtypeLike, _ScalarLike, validate_dtype
-from .engine import (
-    Device,
-    _ArrayLike,
-    _DeviceLike,
-    data_to_device,
-    get_array_string,
-    get_engine,
-    infer_device,
-)
+from .engine import Device, _ArrayLike, _DeviceLike, data_to_device, get_array_string, get_engine, infer_device
 
 __all__ = ["tensor", "Tensor"]
 
@@ -151,7 +143,7 @@ class Tensor:
     @property
     def ptr(self) -> int:
         """Pointer to the tensor data."""
-        return id(self._data.ctypes.data)
+        return id(self._data)
 
     def _cleanup(self) -> None:
         """Resets chached information."""

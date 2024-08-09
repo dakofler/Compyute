@@ -66,16 +66,13 @@ Blocks
 
 Containers
 ~~~~~~~~~~
-.. autoclass:: Container
-   :show-inheritance:
-   :members:
 .. autoclass:: Sequential
    :show-inheritance:
 .. autoclass:: ParallelConcat
    :show-inheritance:
 .. autoclass:: ParallelAdd
    :show-inheritance:
-.. autoclass:: Residual
+.. autoclass:: ResidualConnection
    :show-inheritance:
 
 Convolution

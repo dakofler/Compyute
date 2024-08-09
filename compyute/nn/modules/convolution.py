@@ -6,13 +6,7 @@ from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
-from ..functional.convolutions import (
-    _PaddingLike,
-    avgpooling2d,
-    convolve1d,
-    convolve2d,
-    maxpooling2d,
-)
+from ..functional.convolutions import _PaddingLike, avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ..parameter import Parameter
 from .module import Module
 
@@ -57,8 +51,6 @@ class Convolution1d(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -77,9 +69,8 @@ class Convolution1d(Module):
         bias: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -99,9 +90,7 @@ class Convolution1d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
         x = x.to_type(self.dtype)
-        y, grad_fn = convolve1d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
-        )
+        y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
         if self._training and grad_fn is not None:
 
@@ -157,8 +146,6 @@ class Convolution2d(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -177,9 +164,8 @@ class Convolution2d(Module):
         bias: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -191,9 +177,7 @@ class Convolution2d(Module):
 
         # init weights
         k = (in_channels * kernel_size**2) ** -0.5
-        self.w = Parameter(
-            uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype)
-        )
+        self.w = Parameter(uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype))
 
         # init biases
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
@@ -201,9 +185,7 @@ class Convolution2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
         x = x.to_type(self.dtype)
-        y, grad_fn = convolve2d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
-        )
+        y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
         if self._training and grad_fn is not None:
 
@@ -228,14 +210,10 @@ class MaxPooling2d(Module):
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
@@ -255,14 +233,10 @@ class AvgPooling2d(Module):
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:

@@ -8,8 +8,10 @@ from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from ...base_tensor import ShapeError, Tensor
+from ...base_tensor import ShapeError, Tensor, _ShapeLike
+from ...dtypes import Dtype, _DtypeLike
 from ...engine import Device, _DeviceLike, available
+from ...tensor_ops.creating import ones
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity"]
@@ -26,19 +28,39 @@ class Module(ABC):
         Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(self, label: Optional[str] = None, training: bool = False) -> None:
+    def __init__(self, label: Optional[str] = None) -> None:
         self.label = label if label is not None else self.__class__.__name__
-        self._training: bool = training
 
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Tensor]] = None
         self._device: _DeviceLike = Device.CPU
+        self._modules: Optional[list[Module]] = None
         self._retain_values: bool = False
         self._trainable: bool = True
+        self._training: bool = False
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
+
+    @property
+    def self_parameters(self) -> Iterator[Parameter]:
+        """Iterator of module parameters."""
+        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
+
+    @property
+    def parameters(self) -> Iterator[Parameter]:
+        """Iterator of module and child module parameters."""
+        self_parameters = self.self_parameters
+        child_module_parameters = (p for module in self.modules for p in module.parameters)
+        return chain(self_parameters, child_module_parameters)
+
+    @property
+    def buffers(self) -> Iterator[Buffer]:
+        """Iterator of module and child module buffers."""
+        self_buffers = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
+        child_module_buffers = (b for module in self.modules for b in module.buffers)
+        return chain(self_buffers, child_module_buffers)
 
     @property
     def device(self) -> _DeviceLike:
@@ -66,36 +88,40 @@ class Module(ABC):
         for p in chain(self.buffers, self.parameters):
             p._to_device(device)
 
-    @property
-    def trainable(self) -> bool:
-        """Whether the module parameters are trainable."""
-        return self._trainable
+        for module in self.modules:
+            module.to_device(device)
 
-    def set_trainable(self, value: bool) -> None:
-        """Set module parameters to be trainable.
+    @property
+    def modules(self) -> list[Module]:
+        """Returns the list of child modules.
+
+        Returns
+        -------
+        list[Module]
+            List of child modules.
+        """
+        if self._modules is not None:
+            return self._modules
+        return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
+
+    @modules.setter
+    def modules(self, value: list[Module]) -> None:
+        """Set the list of child modules.
 
         Parameters
         ----------
-        value : bool
-            Whether the module parameters should be trainable.
+        value : list[Module]
+            List of child modules.
         """
-        self._trainable = value
+        self._modules = value
 
     @property
-    def parameters(self) -> Iterator[Parameter]:
-        """Iterator of module parameters."""
-        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
+    def retain_values(self) -> bool:
+        """Whether the module should retain intermediate values such as outputs and gradients."""
+        return self._retain_values
 
-    @property
-    def buffers(self) -> Iterator[Buffer]:
-        """Iterator of module buffers."""
-        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
-
-    # ----------------------------------------------------------------------------------------------
-    # CONTEXT MANAGERS
-    # ----------------------------------------------------------------------------------------------
-
-    def set_retain_values(self, value: bool) -> None:
+    @retain_values.setter
+    def retain_values(self, value: bool) -> None:
         """Set the module to retain intermediate values such as outputs and gradients.
 
         Parameters
@@ -104,39 +130,71 @@ class Module(ABC):
             Whether the module should retain intermediate values.
         """
         self._retain_values = value
+        for module in self.modules:
+            module.retain_values = value
+
+    @property
+    def trainable(self) -> bool:
+        """Whether the module parameters are trainable."""
+        return self._trainable
+
+    @trainable.setter
+    def trainable(self, value: bool) -> None:
+        """Set module parameters to be trainable.
+
+        Parameters
+        ----------
+        value : bool
+            Whether the module parameters should be trainable.
+        """
+        self._trainable = value
+        for module in self.modules:
+            module.trainable = value
+
+    @property
+    def training(self) -> bool:
+        """Whether the module is in training mode."""
+        return self._training
+
+    @training.setter
+    def training(self, value: bool) -> None:
+        """Set module parameters to be trainable.
+
+        Parameters
+        ----------
+        value : bool
+            Whether the module parameters should be trainable.
+        """
+        self._training = value
+        for module in self.modules:
+            module.training = value
+
+    # ----------------------------------------------------------------------------------------------
+    # CONTEXT MANAGERS
+    # ----------------------------------------------------------------------------------------------
 
     @contextmanager
-    def retain_values(self):
+    def do_retain_values(self):
         """
         Context manager for setting the module to retain intermediate values
         such as outputs and gradients.
         """
         retain_values = self._retain_values
-        self.set_retain_values(True)
+        self.retain_values = True
         try:
             yield
         finally:
-            self.set_retain_values(retain_values)
-
-    def set_training(self, value: bool) -> None:
-        """Set the module's training mode.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module should be in training mode.
-        """
-        self._training = value
+            self.retain_values = retain_values
 
     @contextmanager
-    def training(self):
+    def do_training(self):
         """Context manager for putting the module into training mode."""
         training = self._training
-        self.set_training(True)
+        self.training = True
         try:
             yield
         finally:
-            self.set_training(training)
+            self.training = training
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -144,7 +202,10 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         attrs = [f"{a}={getattr(self, a)}" for a in self.__dict__ if _reprattr(a, getattr(self, a))]
-        return f"{self.label}(" + ", ".join(attrs) + ")"
+        repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
+        for module in self.modules:
+            repr_string += "\n" + module.__repr__()
+        return repr_string
 
     def __call__(self, x: Tensor) -> Tensor:
         """Performs a forward pass through the module.
@@ -239,6 +300,9 @@ class Module(ABC):
         for p in chain(self.buffers, self.parameters):
             p._cleanup()
 
+        for module in self.modules:
+            module.cleanup(force)
+
     def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
         """Checks if the number of dimensions match the valid dimensions."""
         if x.n_axes in valid_dims:
@@ -287,6 +351,86 @@ class Module(ABC):
         with open(filepath, "rb") as file:
             module = pickle.load(file)
         return module
+
+    def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
+        """Returns information about the module and its child modules.
+
+        Parameters
+        ----------
+        input_shape : _ShapeLike
+            Shape of the container input ignoring the batch dimension.
+        input_dtype : _DtypeLike, optional
+            Data type of the expected input data. Defaults to :class:`compyute.float32`.
+
+        Returns
+        -------
+        str
+            Summary of the module and its child modules.
+        """
+
+        def get_module_summary(module: Module, prefix: str) -> None:
+            # add summary of current module
+            module_summaries.append(
+                {
+                    "name": prefix + module.label,
+                    "out_shape": (-1,) + module.y.shape[1:] if module.y is not None else (),
+                    "n_params": {p.ptr: p.size for p in module.self_parameters},
+                    "trainable": module.trainable,
+                }
+            )
+
+            # get summary of child modules
+            for i, child_module in enumerate(module.modules):
+                child_prefix = prefix[:-2]
+                if prefix[-2:] == "├-":
+                    child_prefix += "│ "
+                elif prefix[-2:] == "└-":
+                    child_prefix += "  "
+                child_prefix += "└-" if i == len(module.modules) - 1 else "├-"
+                get_module_summary(child_module, child_prefix)
+
+        # perform forward pass to get output shapes
+        x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
+        with self.do_retain_values():
+            _ = self(x)
+
+        # get model summary
+        module_summaries = []
+        get_module_summary(self, "")
+        self.cleanup()
+
+        # format summary
+        divider = "=" * 80
+        summary = [
+            self.label,
+            divider,
+            f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
+            divider,
+        ]
+
+        n_params = n_train_params = 0
+        param_ptrs = []
+
+        for m in module_summaries:
+            m_name = m["name"]
+            m_out_shape = str(m["out_shape"])
+            m_n_params = sum(m["n_params"].values())
+            m_trainable = str(m["trainable"])
+            summary.append(f"{m_name:30s} {m_out_shape:20s} {m_n_params:15d} {m_trainable:>12s}")
+
+            # count parameters without duplicates (can occur with weight sharing of modules)
+            for ptr, n in m["n_params"].items():
+                if ptr in param_ptrs:
+                    continue
+                param_ptrs.append(ptr)
+                n_params += n
+                n_train_params += n if m["trainable"] else 0
+
+        summary.append(divider)
+        summary.append(f"Parameters: {n_params}")
+        summary.append(f"Trainable parameters: {n_train_params}")
+
+        return "\n".join(summary)
 
 
 class Identity(Module):

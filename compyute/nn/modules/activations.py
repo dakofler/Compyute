@@ -19,8 +19,7 @@ class ReLU(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
+
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -40,12 +39,10 @@ class LeakyReLU(Module):
         Slope of the negative output. Defaults to ``0.01``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(self, alpha: float = 0.01, label: Optional[str] = None, training: bool = False):
-        super().__init__(label, training)
+    def __init__(self, alpha: float = 0.01, label: Optional[str] = None):
+        super().__init__(label)
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
@@ -63,8 +60,6 @@ class GELU(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -82,8 +77,6 @@ class Tanh(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -101,8 +94,6 @@ class Sigmoid(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -120,8 +111,6 @@ class SiLU(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:

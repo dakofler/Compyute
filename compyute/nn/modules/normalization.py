@@ -40,8 +40,6 @@ class Batchnorm1d(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -56,9 +54,8 @@ class Batchnorm1d(Module):
         m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.channels = channels
         self.eps = eps
         self.m = m
@@ -123,8 +120,6 @@ class Batchnorm2d(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -139,9 +134,8 @@ class Batchnorm2d(Module):
         m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.channels = channels
         self.eps = eps
         self.m = m
@@ -201,8 +195,6 @@ class Layernorm(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -215,9 +207,8 @@ class Layernorm(Module):
         eps: float = 1e-5,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.normalized_shape = normalized_shape
         self.eps = eps
         self.dtype = Dtype(dtype)

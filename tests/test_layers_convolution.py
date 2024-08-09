@@ -22,7 +22,7 @@ def test_conv1d_valid() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -33,13 +33,15 @@ def test_conv1d_valid() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -60,7 +62,7 @@ def test_conv1d_same() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -71,13 +73,15 @@ def test_conv1d_same() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -98,7 +102,7 @@ def test_conv1d_valid_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -109,13 +113,15 @@ def test_conv1d_valid_dilation2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -136,7 +142,7 @@ def test_conv1d_valid_stride2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -147,13 +153,15 @@ def test_conv1d_valid_stride2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -174,7 +182,7 @@ def test_conv1d_same_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -185,13 +193,15 @@ def test_conv1d_same_dilation2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -211,7 +221,7 @@ def test_conv2d_valid() -> None:
     compyute_w, torch_w = get_random_params(shape_w)
     compyute_b, torch_b = get_random_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -221,13 +231,15 @@ def test_conv2d_valid() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -248,7 +260,7 @@ def test_conv2d_same() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -259,13 +271,15 @@ def test_conv2d_same() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)  # error
@@ -286,7 +300,7 @@ def test_conv2d_valid_stride2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -297,13 +311,15 @@ def test_conv2d_valid_stride2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -324,7 +340,7 @@ def test_conv2d_valid_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -335,13 +351,15 @@ def test_conv2d_valid_dilation2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -362,7 +380,7 @@ def test_conv2d_same_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation, training=True)
+    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -373,13 +391,15 @@ def test_conv2d_same_dilation2() -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
@@ -391,17 +411,19 @@ def test_maxpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # init compyute module
-    compyute_module = MaxPooling2d(training=True)
+    compyute_module = MaxPooling2d()
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.max_pool2d(torch_x, 2)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
@@ -411,16 +433,18 @@ def test_avgpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # init compyute module
-    compyute_module = AvgPooling2d(training=True)
+    compyute_module = AvgPooling2d()
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.avg_pool2d(torch_x, (2, 2))
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)

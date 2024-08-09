@@ -9,6 +9,7 @@ from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import normal, uniform
 from ...tensor_ops.creating import ones, zeros
+from ..modules.activations import _ActivationLike
 
 __all__ = [
     "KaimingNormal",
@@ -103,9 +104,7 @@ class Normal(Initializer):
         Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
-    def __init__(
-        self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
-    ) -> None:
+    def __init__(self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
         super().__init__(dtype)
         self.mean = mean
         self.std = std
@@ -127,9 +126,7 @@ class Uniform(Initializer):
         Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
-    def __init__(
-        self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs
-    ) -> None:
+    def __init__(self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
         super().__init__(dtype)
         self.low = low
         self.high = high
@@ -250,7 +247,7 @@ GAINS = {
 def get_initializer(
     initializer: _InitializerLike,
     dtype: _DtypeLike,
-    activation: Optional[Literal["relu", "leaky_relu", "gelu", "sigmoid", "tanh"]] = None,
+    activation: Optional[_ActivationLike] = None,
 ) -> Initializer:
     """Returns an instance of an initializer."""
     if isinstance(initializer, Initializer):
