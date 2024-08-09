@@ -10,6 +10,7 @@ from ..engine import get_engine
 
 __all__ = [
     "abs",
+    "all",
     "clip",
     "cos",
     "cosh",
@@ -63,6 +64,22 @@ def abs(x: Tensor) -> Tensor:
         Tensor containing the element-wise absolute value.
     """
     return tensor(get_engine(x.device).abs(x.data))
+
+
+def all(x: Tensor) -> bool:
+    """Returns ``True`` if all elements in the tensor are ``True``.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    bool
+        ``True`` if all elements in the tensor are ``True``.
+    """
+    return get_engine(x.device).all(x.data)
 
 
 def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None) -> Tensor:
@@ -198,9 +215,7 @@ def fft1d(
     Tensor
         Complex tensor containing the 1D FFT.
     """
-    return tensor(
-        get_engine(x.device).fft.fft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
-    )
+    return tensor(get_engine(x.device).fft.fft(x.data, n=n, axis=axis), device=x.device, dtype=dtype)
 
 
 def fft2d(
@@ -227,9 +242,7 @@ def fft2d(
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    return tensor(
-        get_engine(x.device).fft.fft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
-    )
+    return tensor(get_engine(x.device).fft.fft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype)
 
 
 def ifft1d(
@@ -256,9 +269,7 @@ def ifft1d(
     Tensor
         Float tensor containing the inverse 1D FFT.
     """
-    return tensor(
-        get_engine(x.device).fft.ifft(x.data, n=n, axis=axis), device=x.device, dtype=dtype
-    )
+    return tensor(get_engine(x.device).fft.ifft(x.data, n=n, axis=axis), device=x.device, dtype=dtype)
 
 
 def imag(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
@@ -320,9 +331,7 @@ def ifft2d(
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    return tensor(
-        get_engine(x.device).fft.ifft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype
-    )
+    return tensor(get_engine(x.device).fft.ifft2(x.data, s=s, axes=axes), device=x.device, dtype=dtype)
 
 
 def histogram(
@@ -360,9 +369,7 @@ def histogram(
     """
     b = bins.data if isinstance(bins, Tensor) else bins
     w = weights.data if weights is not None else None
-    hist, bin_edges = get_engine(x.device).histogram(
-        x.data, bins=b, range=binrange, density=density, weights=w
-    )
+    hist, bin_edges = get_engine(x.device).histogram(x.data, bins=b, range=binrange, density=density, weights=w)
     return tensor(hist), tensor(bin_edges)
 
 
@@ -787,9 +794,7 @@ def tensorsum(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
     return reduce(operator.add, tensors)
 
 
-def var(
-    x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False
-) -> Tensor:
+def var(x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False) -> Tensor:
     """Computes the variance of tensor elements over a given axis.
 
     Parameters

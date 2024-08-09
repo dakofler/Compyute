@@ -26,7 +26,7 @@ class Sequential(Module):
     """
 
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
-        super().__init__(label=label)
+        super().__init__(label)
         self.modules = list(modules)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -66,7 +66,7 @@ class ParallelConcat(Module):
     """
 
     def __init__(self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None) -> None:
-        super().__init__(label=label)
+        super().__init__(label)
         self.modules = list(modules)
         self.concat_axis = concat_axis
 
@@ -106,7 +106,7 @@ class ParallelAdd(Module):
     """
 
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
-        super().__init__(label=label)
+        super().__init__(label)
         self.modules = list(modules)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -143,7 +143,7 @@ class ResidualConnection(Module):
     def __init__(self, *modules: Module, residual_proj: Optional[Module] = None, label: Optional[str] = None) -> None:
         if len(modules) == 0:
             raise NoChildModulesError("Residual container requires at least one module.")
-        super().__init__(label=label)
+        super().__init__(label)
 
         self.block = modules[0] if len(modules) == 1 else Sequential(*modules)
         self.residual_proj = residual_proj

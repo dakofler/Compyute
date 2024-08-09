@@ -44,7 +44,7 @@ class DenseBlock(Sequential):
     bias_init : _InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.

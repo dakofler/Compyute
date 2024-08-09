@@ -38,12 +38,17 @@ def mean_squared_error(
     --------
     :class:`compyute.nn.MeanSquaredError`
     """
-    dif = y_pred.to_float() - y_true.to_float()
+    dif = y_pred - y_true
     loss = mean(dif**2)
 
-    grad_fn = (lambda: dif * 2 / reduce(mul, y_pred.shape)) if return_grad_fn else None
+    if return_grad_fn:
 
-    return loss, grad_fn
+        def grad_fn() -> Tensor:
+            return (dif * 2 / y_pred.size).to_float()
+
+        return loss, grad_fn
+
+    return loss, None
 
 
 def cross_entropy(
@@ -73,9 +78,10 @@ def cross_entropy(
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-    probs, _ = softmax(y_pred.to_float(), False)
-    y_true = one_hot_encode(y_true.to_int(), y_pred.shape[-1])
-    loss = -mean(log(cpsum((probs + eps) * y_true, axis=-1)))
+
+    probs, _ = softmax(y_pred, False)
+    y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
+    loss = -mean(log(cpsum(((probs + eps) * y_true), axis=-1)))
 
     if return_grad_fn:
 
@@ -112,13 +118,12 @@ def binary_cross_entropy(
     --------
     :class:`compyute.nn.BinaryCrossEntropy`
     """
-    c = 100
-    loss = -mean(y_true * clip(log(y_pred), -c, c) + (1 - y_true) * clip(log(1 - y_pred), -c, c))
+    loss = -mean(y_true * clip(log(y_pred), -100, 100) + (1 - y_true) * clip(log(1 - y_pred), -100, 100))
 
     if return_grad_fn:
 
         def grad_fn() -> Tensor:
-            return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / reduce(mul, y_pred.shape)
+            return ((-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / y_pred.size).to_float()
 
         return loss, grad_fn
 

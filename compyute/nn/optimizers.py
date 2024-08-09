@@ -134,7 +134,7 @@ class SGD(Optimizer):
 
 class Adam(Optimizer):
     r"""Updates parameters following the Adam learning algorithm
-    as described by Kingma et al., 2014.
+    as described by `Kingma et al., 2014 <https://arxiv.org/abs/1412.6980>`_.
 
     .. math::
         \begin{aligned}
@@ -223,7 +223,8 @@ class Adam(Optimizer):
 
 
 class AdamW(Optimizer):
-    r"""Updates parameters following the AdamW learning algorithm.
+    r"""Updates parameters following the AdamW learning algorithm as described by
+    `Loshchilov et al., 2019 <https://arxiv.org/pdf/1711.05101>`_.
 
     .. math::
         \begin{aligned}
@@ -232,12 +233,12 @@ class AdamW(Optimizer):
             & \text{initialize: } m_0 \leftarrow 0,  v_0 \leftarrow 0 \\
             & \rule{115mm}{1pt} \\
             & \text{ 1: } \textbf{if } \lambda > 0 \\
-            & \text{ 2: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta \lambda p_{t-1} \\
+            & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
             & \text{ 3: } m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
             & \text{ 4: } v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
             & \text{ 5: } \hat{m_t} \leftarrow \frac{m_t}{1 - \beta_1^t} \\
             & \text{ 6: } \hat{v_t} \leftarrow \frac{v_t}{1 - \beta_2^t} \\
-            & \text{ 7: } p_t \leftarrow p_{t-1} - \frac{\eta \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} \\
+            & \text{ 7: } p_t \leftarrow p_{t-1} - \eta \left( \frac{ \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} + \lambda p_{t-1} \right)\\
             & \rule{115mm}{1pt} \\
         \end{aligned}
 
@@ -288,10 +289,10 @@ class AdamW(Optimizer):
             if p.grad is None:
                 continue
 
-            if self.weight_decay > 0:
-                p -= self.lr * self.weight_decay * p
+            grad = p.grad.copy()
 
-            assert p.grad is not None  # just so pylance is happy
+            if self.weight_decay > 0:
+                grad += self.lr * self.weight_decay * p
 
             # first moment estimate (exponential moving average)
             prev_m = self.state[p].get("m", 0)
@@ -306,13 +307,14 @@ class AdamW(Optimizer):
             m /= 1 - self.beta1**self.t
             v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m / (v**0.5 + self.eps)
+            p -= self.lr * (m / (v**0.5 + self.eps) + self.weight_decay * p)
 
         self.t += 1
 
 
 class NAdam(Optimizer):
-    r"""Updates parameters following the NAdam learning algorithm.
+    r"""Updates parameters following the NAdam learning algorithm as described by
+    `Dozat, 2015 <https://cs229.stanford.edu/proj2015/054_report.pdf>`_.
 
     .. math::
         \begin{aligned}

@@ -72,7 +72,6 @@ class Recurrent(Module):
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
         k = h_channels**-0.5
 
@@ -86,10 +85,9 @@ class Recurrent(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
 
         grad_functions = []
-        h = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        h = zeros((*x.shape[:2], self.h_channels), x.dtype, x.device)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
@@ -109,7 +107,6 @@ class Recurrent(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 
@@ -209,7 +206,6 @@ class LSTM(Module):
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
         k = h_channels**-0.5
 
@@ -235,10 +231,9 @@ class LSTM(Module):
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
 
         grad_functions = []
-        i = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        i = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
         f = empty_like(i)
         g = empty_like(i)
         o = empty_like(i)
@@ -300,7 +295,6 @@ class LSTM(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dc = zeros_like(c)
                 dh = 0
@@ -461,7 +455,6 @@ class GRU(Module):
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
         k = h_channels**-0.5
 
@@ -483,10 +476,9 @@ class GRU(Module):
 
     def forward(self, x: Tensor):
         self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
 
         grad_functions = []
-        r = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        r = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
         z = empty_like(r)
         n = empty_like(r)
         h_n = empty_like(r)
@@ -535,7 +527,6 @@ class GRU(Module):
         if self._training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 

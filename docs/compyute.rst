@@ -56,6 +56,7 @@ Selecting Operations
 Transforming and Computing Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: abs
+.. autofunction:: all
 .. autofunction:: clip
 .. autofunction:: cos
 .. autofunction:: cosh

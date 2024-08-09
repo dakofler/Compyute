@@ -7,7 +7,7 @@ from typing import Any, Optional, TypeAlias
 
 import numpy
 
-from .dtypes import Dtype, _DtypeLike, _ScalarLike, validate_dtype
+from .dtypes import Dtype, _DtypeLike, _ScalarLike
 from .engine import Device, _ArrayLike, _DeviceLike, data_to_device, get_array_string, get_engine, infer_device
 
 __all__ = ["tensor", "Tensor"]
@@ -52,7 +52,6 @@ def tensor(
     device = infer_device(type(data)) if device is None else device
     dtype = Dtype(dtype).value if dtype is not None else None
     data_array = get_engine(device).array(data, dtype, copy=copy)
-    validate_dtype(str(data_array.dtype))
 
     return Tensor(data_array)
 

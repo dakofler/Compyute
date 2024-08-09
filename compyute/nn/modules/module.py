@@ -24,8 +24,6 @@ class Module(ABC):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def __init__(self, label: Optional[str] = None) -> None:
@@ -266,6 +264,7 @@ class Module(ABC):
                 it to self._backward during the call of the forward method (see Compyute README)"""
             )
 
+        dy = dy.to_float()
         self._set_dy(dy)
 
         if self._backward is not None and self._trainable:

@@ -47,7 +47,7 @@ class Convolution1d(Module):
         Dilation used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -78,7 +78,6 @@ class Convolution1d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
 
         # init weights
         k = (in_channels * kernel_size) ** -0.5
@@ -89,13 +88,12 @@ class Convolution1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
+
         y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -142,10 +140,6 @@ class Convolution2d(Module):
         Dilations used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
 
 
     .. note::
@@ -173,7 +167,6 @@ class Convolution2d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
 
         # init weights
         k = (in_channels * kernel_size**2) ** -0.5
@@ -184,13 +177,12 @@ class Convolution2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.to_type(self.dtype)
+
         y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -208,8 +200,6 @@ class MaxPooling2d(Module):
     ----------
     kernel_size : int, optional
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
     def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
@@ -231,8 +221,6 @@ class AvgPooling2d(Module):
     ----------
     kernel_size : int, optional
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
     def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:

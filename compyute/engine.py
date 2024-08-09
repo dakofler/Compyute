@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from functools import cache
 from types import ModuleType
-from typing import Literal, TypeAlias
+from typing import Literal, Optional, TypeAlias
 
 import cupy as CUDA_ENGINE
 import numpy as CPU_ENGINE
@@ -19,7 +19,7 @@ class Device(Enum):
     CUDA = "cuda"
 
     def __repr__(self) -> str:
-        return f"Dtype('{self.value}')"
+        return f"Device('{self.value}')"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -42,11 +42,6 @@ _DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
 
 
 _AVAILABLE_DEVICES = {Device.CPU}.union({Device.CUDA} if _cuda_available() else {})
-_DEVICE_TO_ENGINE: dict[Device, ModuleType] = {Device.CPU: CPU_ENGINE, Device.CUDA: CUDA_ENGINE}
-_ENGINE_TO_DEVICE: dict[type, Device] = {
-    CPU_ENGINE.ndarray: Device.CPU,
-    CUDA_ENGINE.ndarray: Device.CUDA,
-}
 
 
 def gpu_available() -> bool:
@@ -68,17 +63,25 @@ def available(device: Device) -> None:
 
 
 @cache
-def get_engine(device: _DeviceLike) -> ModuleType:
+def get_engine(device: Optional[_DeviceLike]) -> ModuleType:
     """Returns the computation engine for a given device."""
+    if device is None:
+        return CPU_ENGINE
+
     device = Device(device)
+    if device == Device.CPU:
+        return CPU_ENGINE
+
     available(device)
-    return _DEVICE_TO_ENGINE.get(device, CPU_ENGINE)
+    return CUDA_ENGINE
 
 
 @cache
 def infer_device(array_type: type) -> Device:
     """Infers the device by type."""
-    return _ENGINE_TO_DEVICE.get(array_type, Device.CPU)
+    if array_type == CUDA_ENGINE.ndarray:
+        return Device.CUDA
+    return Device.CPU
 
 
 def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:

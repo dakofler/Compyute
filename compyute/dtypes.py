@@ -45,23 +45,6 @@ DTYPES = [d.value for d in Dtype]
 FLOAT_DTYPES = [d for d in DTYPES if "float" in d]
 
 
-def validate_dtype(dtype: str) -> None:
-    """Check if a data type is valid.
-
-    Parameters
-    ----------
-    dtype : str
-        Data type to check.
-
-    Raises
-    ------
-    TypeError
-        If the data type is not valid.
-    """
-    if dtype not in DTYPES:
-        raise TypeError(f"Invalid dtype: {dtype}.")
-
-
 bool = Dtype.BOOL
 int8 = Dtype.INT8
 int16 = Dtype.INT16

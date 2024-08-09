@@ -59,7 +59,6 @@ class Batchnorm1d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones((channels,), dtype))
@@ -71,7 +70,6 @@ class Batchnorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [2, 3])
-        x = x.to_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_fn = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
@@ -80,7 +78,6 @@ class Batchnorm1d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -139,7 +136,6 @@ class Batchnorm2d(Module):
         self.channels = channels
         self.eps = eps
         self.m = m
-        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones((channels,), dtype))
@@ -151,7 +147,6 @@ class Batchnorm2d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_dims(x, [4])
-        x = x.to_type(self.dtype)
 
         y, self.rmean, self.rvar, grad_fn = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
@@ -160,7 +155,6 @@ class Batchnorm2d(Module):
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -211,21 +205,18 @@ class Layernorm(Module):
         super().__init__(label)
         self.normalized_shape = normalized_shape
         self.eps = eps
-        self.dtype = Dtype(dtype)
 
         # parameters
         self.w = Parameter(ones(normalized_shape, dtype))
         self.b = Parameter(zeros(normalized_shape, dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        x = x.to_type(self.dtype)
 
         y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._training)
 
         if self._training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
