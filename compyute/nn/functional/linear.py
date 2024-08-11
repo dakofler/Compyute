@@ -34,7 +34,6 @@ def linear(
     See Also
     ----------
     :class:`compyute.nn.Linear`
-
     """
     y = x @ w.T
     if b is not None:

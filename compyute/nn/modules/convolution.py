@@ -10,10 +10,10 @@ from ..functional.convolutions import _PaddingLike, avgpooling2d, convolve1d, co
 from ..parameter import Parameter
 from .module import Module
 
-__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
+__all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
 
 
-class Convolution1d(Module):
+class Convolution1D(Module):
     r"""Applies a 1D convolution to the input for feature extraction.
 
     .. math::
@@ -104,7 +104,7 @@ class Convolution1d(Module):
         return y
 
 
-class Convolution2d(Module):
+class Convolution2D(Module):
     r"""Applies a 2D convolution to the input for feature extraction.
 
     .. math::
@@ -193,7 +193,7 @@ class Convolution2d(Module):
         return y
 
 
-class MaxPooling2d(Module):
+class MaxPooling2D(Module):
     """MaxPooling layer used for downsampling.
 
     Parameters
@@ -214,7 +214,7 @@ class MaxPooling2d(Module):
         return y
 
 
-class AvgPooling2d(Module):
+class AvgPooling2D(Module):
     """AvgPooling layer used for downsampling.
 
     Parameters

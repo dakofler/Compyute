@@ -57,9 +57,9 @@ Activations
 
 Blocks
 ~~~~~~
-.. autoclass:: Convolution1dBlock
+.. autoclass:: Convolution1DBlock
    :show-inheritance:
-.. autoclass:: Convolution2dBlock
+.. autoclass:: Convolution2DBlock
    :show-inheritance:
 .. autoclass:: DenseBlock
    :show-inheritance:
@@ -77,13 +77,13 @@ Containers
 
 Convolution
 ~~~~~~~~~~~
-.. autoclass:: Convolution1d
+.. autoclass:: Convolution1D
    :show-inheritance:
-.. autoclass:: Convolution2d
+.. autoclass:: Convolution2D
    :show-inheritance:
-.. autoclass:: MaxPooling2d
+.. autoclass:: MaxPooling2D
    :show-inheritance:
-.. autoclass:: AvgPooling2d
+.. autoclass:: AvgPooling2D
    :show-inheritance:
 
 Embedding
@@ -98,11 +98,13 @@ Linear
 
 Normalizations
 ~~~~~~~~~~~~~~
-.. autoclass:: Batchnorm1d
+.. autoclass:: BatchNorm1D
    :show-inheritance:
-.. autoclass:: Batchnorm2d
+.. autoclass:: BatchNorm2D
    :show-inheritance:
-.. autoclass:: Layernorm
+.. autoclass:: LayerNorm
+   :show-inheritance:
+.. autoclass:: RMSNorm
    :show-inheritance:
 
 Recurrent

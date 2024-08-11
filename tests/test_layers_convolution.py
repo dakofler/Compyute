@@ -2,7 +2,7 @@
 
 import torch
 
-from compyute.nn import AvgPooling2d, Convolution1d, Convolution2d, MaxPooling2d
+from compyute.nn import AvgPooling2D, Convolution1D, Convolution2D, MaxPooling2D
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
 B, Cin, Cout, Y, X, K = (10, 3, 16, 15, 15, 5)
@@ -22,7 +22,7 @@ def test_conv1d_valid() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution1D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -62,7 +62,7 @@ def test_conv1d_same() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution1D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -102,7 +102,7 @@ def test_conv1d_valid_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution1D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -142,7 +142,7 @@ def test_conv1d_valid_stride2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution1D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -182,7 +182,7 @@ def test_conv1d_same_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution1D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -221,7 +221,7 @@ def test_conv2d_valid() -> None:
     compyute_w, torch_w = get_random_params(shape_w)
     compyute_b, torch_b = get_random_params(shape_b)
 
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution2D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -260,7 +260,7 @@ def test_conv2d_same() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution2D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -300,7 +300,7 @@ def test_conv2d_valid_stride2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution2D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -340,7 +340,7 @@ def test_conv2d_valid_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution2D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -380,7 +380,7 @@ def test_conv2d_same_dilation2() -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution2d(Cin, Cout, K, pad, strides, dilation)
+    compyute_module = Convolution2D(Cin, Cout, K, pad, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -411,7 +411,7 @@ def test_maxpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # init compyute module
-    compyute_module = MaxPooling2d()
+    compyute_module = MaxPooling2D()
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
@@ -433,7 +433,7 @@ def test_avgpool2d() -> None:
     shape_x = (B, Cout, Y, X)
 
     # init compyute module
-    compyute_module = AvgPooling2d()
+    compyute_module = AvgPooling2D()
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)

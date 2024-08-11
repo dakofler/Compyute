@@ -2,8 +2,9 @@
 
 import pytest
 import torch
+import torchtune
 
-from compyute.nn import Batchnorm1d, Batchnorm2d, Layernorm
+from compyute.nn import BatchNorm1D, BatchNorm2D, LayerNorm, RMSNorm
 from tests.test_utils import get_random_floats, is_equal
 
 SHAPE3D = (10, 20, 30)
@@ -15,7 +16,7 @@ def test_batchnorm1d() -> None:
     shape_x = SHAPE3D
 
     # init compyute module
-    compyute_module = Batchnorm1d(shape_x[1])
+    compyute_module = BatchNorm1D(shape_x[1])
 
     # init torch module
     torch_module = torch.nn.BatchNorm1d(shape_x[1])
@@ -44,7 +45,7 @@ def test_batchnorm2d() -> None:
     shape_x = SHAPE4D
 
     # init compyute module
-    compyute_module = Batchnorm2d(shape_x[1])
+    compyute_module = BatchNorm2D(shape_x[1])
 
     # init torch module
     torch_module = torch.nn.BatchNorm2d(shape_x[1])
@@ -75,7 +76,7 @@ def test_batchnorm2d() -> None:
 def test_layernorm(normalized_shape) -> None:
     """Test for the layernorm layer."""
     # init compyute module
-    compyute_module = Layernorm(normalized_shape)
+    compyute_module = LayerNorm(normalized_shape)
 
     # init torch module
     torch_module = torch.nn.LayerNorm(normalized_shape)
@@ -95,3 +96,29 @@ def test_layernorm(normalized_shape) -> None:
     assert is_equal(compyute_dx, torch_x.grad)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
     assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
+
+
+def test_rmsnorm() -> None:
+    """Test for the rmsnorm layer."""
+    normalized_shape = SHAPE3D[-1]
+
+    # init compyute module
+    compyute_module = RMSNorm((normalized_shape,), eps=1e-6)
+
+    # init torch module
+    torch_module = torchtune.modules.RMSNorm(normalized_shape)
+
+    # forward
+    compyute_x, torch_x = get_random_floats(SHAPE3D)
+    with compyute_module.do_training():
+        compyute_y = compyute_module(compyute_x)
+    torch_y = torch_module(torch_x)
+    assert is_equal(compyute_y, torch_y)
+
+    # backward
+    compyute_dy, torch_dy = get_random_floats(SHAPE3D, torch_grad=False)
+    with compyute_module.do_training():
+        compyute_dx = compyute_module.backward(compyute_dy)
+    torch_y.backward(torch_dy)
+    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_equal(compyute_module.w.grad, torch_module.scale.grad)

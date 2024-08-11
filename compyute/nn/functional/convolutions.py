@@ -5,15 +5,7 @@ from typing import Callable, Literal, Optional
 from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype
 from ...tensor_ops.creating import zeros
-from ...tensor_ops.reshaping import (
-    broadcast_to,
-    flip,
-    insert_dim,
-    pad,
-    pad_to_shape,
-    repeat,
-    reshape,
-)
+from ...tensor_ops.reshaping import broadcast_to, flip, insert_dim, pad, pad_to_shape, repeat, reshape
 from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import mean, real
@@ -68,7 +60,6 @@ def convolve1d(
         Output tensor.
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]], optional
         Gradient function.
-
 
     See Also
     ----------
@@ -265,7 +256,6 @@ def convolve2d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
 
-
     See Also
     ----------
     :class:`compyute.nn.Convolution2d`
@@ -340,11 +330,7 @@ def dilate2d(
         dilation[1] * x.shape[-1] - 1,
     )
     x_dil = zeros(x.shape[:-2] + dil_shape, x.dtype, x.device)
-    dil_slice = (
-        [slice(None)] * (x.n_axes - 2)
-        + [slice(None, None, dilation[0])]
-        + [slice(None, None, dilation[1])]
-    )
+    dil_slice = [slice(None)] * (x.n_axes - 2) + [slice(None, None, dilation[0])] + [slice(None, None, dilation[1])]
     x_dil[*dil_slice] = x
 
     if return_grad_fn:
@@ -353,9 +339,7 @@ def dilate2d(
     return x_dil, None
 
 
-def _pad2d_from_str(
-    padding: _PaddingLike, kernel_size: int
-) -> tuple[tuple[int, int], tuple[int, int]]:
+def _pad2d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[tuple[int, int], tuple[int, int]]:
     if padding == "valid":
         return ((0, 0), (0, 0))
     p = kernel_size // 2
@@ -418,9 +402,7 @@ def _convolve2d(
             dy_ = pad_to_shape(dy_, conv.shape)
 
             # full pad dy
-            dy_, _ = pad2d(
-                dy_, ((f.shape[-2] - 1, f.shape[-2] - 1), (f.shape[-1] - 1, f.shape[-1] - 1))
-            )
+            dy_, _ = pad2d(dy_, ((f.shape[-2] - 1, f.shape[-2] - 1), (f.shape[-1] - 1, f.shape[-1] - 1)))
             dx = _fft_conv2d(dy_, f)
 
             dy_ = flip(dy_, axis=(-2, -1))
@@ -499,6 +481,11 @@ def maxpooling2d(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+        Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.MaxPooling2D`
     """
     x_height, x_width = x.shape[-2:]
     kernel_height, kernel_width = kernel_size
@@ -548,6 +535,10 @@ def avgpooling2d(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.AvgPooling2D`
     """
     x_height, x_width = x.shape[-2:]
     kernel_height, kernel_width = kernel_size

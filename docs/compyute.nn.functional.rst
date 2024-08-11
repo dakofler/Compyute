@@ -50,6 +50,7 @@ Normalization
 .. autofunction:: batchnorm1d
 .. autofunction:: batchnorm2d
 .. autofunction:: layernorm
+.. autofunction:: rmsnorm
 
 Regularization
 --------------

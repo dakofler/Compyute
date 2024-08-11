@@ -25,9 +25,7 @@ _GELU_S: float = 0.7978845608028654
 _GELU_C: float = 0.044715
 
 
-def relu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def relu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Rectified Linear Unit activation function to an input tensor.
 
     Parameters
@@ -88,9 +86,7 @@ def leaky_relu(
     return y, None
 
 
-def gelu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def gelu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Gaussian Error Linear Unit function to an input tensor.
 
     Parameters
@@ -117,18 +113,12 @@ def gelu(
 
     if return_grad_fn:
         return y, (
-            lambda dy: (
-                0.5 * (1 + cptanh(tmp))
-                + 0.5 * x * sech(tmp) ** 2 * _GELU_S * (1 + 3 * _GELU_C * x**2)
-            )
-            * dy
+            lambda dy: (0.5 * (1 + cptanh(tmp)) + 0.5 * x * sech(tmp) ** 2 * _GELU_S * (1 + 3 * _GELU_C * x**2)) * dy
         )
     return y, None
 
 
-def sigmoid(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def sigmoid(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the sigmoid function to an input tensor.
 
     Parameters
@@ -156,9 +146,7 @@ def sigmoid(
     return y, None
 
 
-def silu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def silu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the Sigmoid Linear Unit activation function to an input tensor.
 
     Parameters
@@ -187,9 +175,7 @@ def silu(
     return y, None
 
 
-def tanh(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def tanh(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Applies the hyperbolic tangent activationfunction to an input tensor.
 
     Parameters
@@ -217,9 +203,7 @@ def tanh(
     return y, None
 
 
-def softmax(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def softmax(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     r"""Applies the softmax function over the last axis of an input tensor.
 
     .. math::
@@ -246,9 +230,7 @@ def softmax(
 
         def grad_fn(dy: Tensor) -> Tensor:
             sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
-            return reshape(
-                sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape
-            )
+            return reshape(sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape)
 
         return y, grad_fn
     return y, None

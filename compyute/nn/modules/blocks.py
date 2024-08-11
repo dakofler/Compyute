@@ -8,11 +8,11 @@ from ..parameter import Parameter
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
 from .containers import Sequential
-from .convolution import Convolution1d, Convolution2d
+from .convolution import Convolution1D, Convolution2D
 from .linear import Linear
-from .normalization import Batchnorm1d, Batchnorm2d
+from .normalization import BatchNorm1D, BatchNorm2D
 
-__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock"]
+__all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
 
 
 class DenseBlock(Sequential):
@@ -78,7 +78,7 @@ class DenseBlock(Sequential):
         super().__init__(linear, act, label=label)
 
 
-class Convolution1dBlock(Sequential):
+class Convolution1DBlock(Sequential):
     """Convolution block containing a 1D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -153,7 +153,7 @@ class Convolution1dBlock(Sequential):
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution1d(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
+        conv = Convolution1D(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
         if bias:
@@ -163,13 +163,13 @@ class Convolution1dBlock(Sequential):
         act = get_activation(activation)()
 
         if batchnorm:
-            bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m, dtype)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)
 
 
-class Convolution2dBlock(Sequential):
+class Convolution2DBlock(Sequential):
     """Convolution block containing a 2D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -246,7 +246,7 @@ class Convolution2dBlock(Sequential):
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution2d(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
+        conv = Convolution2D(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
         if bias:
@@ -256,7 +256,7 @@ class Convolution2dBlock(Sequential):
         act = get_activation(activation)()
 
         if batchnorm:
-            bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m, dtype)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)
