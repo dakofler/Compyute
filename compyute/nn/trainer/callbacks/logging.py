@@ -28,10 +28,10 @@ class History(Callback):
             else:
                 self.cache[stat] = [trainer_cache[stat]]
 
-    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         # get stats that contain scores but are not val scores
         scores = [s for s in trainer_cache.keys() if "score" in s and "val_" not in s]
-        self._log_stats(["loss"] + scores, trainer_cache)
+        self._log_stats(["loss", "lr"] + scores, trainer_cache)
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         # get all val stats
@@ -54,11 +54,11 @@ class ProgressBar(Callback):
         self.pbar = None
         self.mode = mode
 
-    def on_init(self, trainer_cache: dict[str, Any]) -> None:
+    def on_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
             self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
 
-    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         if self.pbar is not None and self.mode == "step":
             self.pbar.update()
 
@@ -111,13 +111,13 @@ class Tensorboard(Callback):
             if "val_" in stat:
                 s = trainer_cache["t"]
             else:
-                s = (trainer_cache["t"] - 1) * trainer_cache["train_steps"] + trainer_cache["step"]
+                s = trainer_cache["t"] * trainer_cache["train_steps"] + trainer_cache["step"]
             self.writer.add_scalar(f"{stat}/stat", trainer_cache[stat], s)
 
-    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         # get stats that contain scores but are not val scores
         scores = [s for s in trainer_cache.keys() if "score" in s and "val_" not in s]
-        self._log_stats(["loss"] + scores, trainer_cache)
+        self._log_stats(["loss", "lr"] + scores, trainer_cache)
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         # get all val stats

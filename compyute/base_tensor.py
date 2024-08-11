@@ -497,6 +497,16 @@ class Tensor:
         """
         return Tensor(self._data.reshape(shape))
 
+    def to_list(self) -> list:
+        """Returns the tensor data as a list.
+
+        Returns
+        -------
+        list
+            List of the tensor data.
+        """
+        return self._data.tolist()
+
     def masked_fill(self, mask: Tensor, value: _ScalarLike) -> None:
         """Sets elements of the tensor to a value, where the mask is true.
 

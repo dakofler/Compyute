@@ -10,7 +10,7 @@ from ..parameter import Parameter
 __all__ = ["clip_grad_norm"]
 
 
-def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> None:
+def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
     """Clips gradient norm of parameters.
 
     Parameters
@@ -19,15 +19,19 @@ def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> None:
         Parameters to clip.
     max_norm : float
         Max gradient norm.
+
+    Returns
     """
     params = list(parameters)
     flattened_grads = concatenate([flatten(p.grad) for p in params if p.grad is not None])
     grad_norm = norm(flattened_grads).item()
 
     if grad_norm <= max_norm:
-        return
+        return grad_norm
 
     clip_coef = max_norm / grad_norm
     for p in params:
         if p.grad is not None:
             p.grad *= clip_coef
+
+    return grad_norm

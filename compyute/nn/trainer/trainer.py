@@ -79,22 +79,22 @@ class Trainer:
         """
         batch_size = len(x_train) if batch_size == -1 else batch_size
         train_dataloader = Dataloader(x_train, y_train, batch_size, self.model.device)
-        self.cache["t"] = 0
         self.cache["epochs"] = epochs
         self.cache["train_steps"] = len(train_dataloader)
-        self._callback("init")
+        self._callback("start")
 
-        for _ in range(1, epochs + 1):
-            self.cache["t"] += 1
-            self.cache["step"] = 0
+        for t in range(1, epochs + 1):
+            self.cache["t"] = t
             self._callback("epoch_start")
 
             # training
             with self.model.do_training():
-                for batch in train_dataloader():
-                    self.cache["step"] += 1
+                for s, batch in enumerate(train_dataloader(), 1):
+                    self.cache["step"] = s
+                    self._callback("step_start")
+                    self.cache["lr"] = self.optimizer.lr
                     self._train_step(batch)
-                    self._callback("step")
+                    self._callback("step_end")
 
             # validation
             if val_data:
@@ -151,13 +151,14 @@ class Trainer:
             return loss, sum(scores) / len(scores)
         return loss, None
 
-    def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end", "end"]) -> None:
+    def _callback(self, on: Literal["start", "step_start", "step_end", "epoch_start", "epoch_end", "end"]) -> None:
         if self.callbacks is None:
             return
         for callback in self.callbacks:
             {
-                "init": callback.on_init,
-                "step": callback.on_step,
+                "start": callback.on_start,
+                "step_start": callback.on_step_start,
+                "step_end": callback.on_step_end,
                 "epoch_start": callback.on_epoch_start,
                 "epoch_end": callback.on_epoch_end,
                 "end": callback.on_training_end,

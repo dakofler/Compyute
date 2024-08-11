@@ -20,74 +20,74 @@ __all__ = [
 
 
 class StepLrScheduler(Callback):
-    """Decays an optimizers learning rate after a specified epoch.
+    """Decays an optimizers learning rate at specified time step.
 
     Parameters
     ----------
     optimizer  : Optimizer
         Optimizer, whose learning rate will be adapted.
+    t_decay : int
+        Time step, at which the update is applied.
     lr_decay : float, optional
         Decay factor. Defaults to ``0.1``.
-    t_decay : int, optional
-        Epoch, at which the update is applied. Defaults to ``10``.
 
     See Also
     --------
     :class:`compyute.nn.utils.lr_schedulers.StepLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, lr_decay: float = 0.1, t_decay: int = 10) -> None:
-        self.scheduler = _StepLrScheduler(optimizer, lr_decay, t_decay)
+    def __init__(self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1) -> None:
+        self.scheduler = _StepLrScheduler(optimizer, t_decay, lr_decay)
 
-    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         self.scheduler.step()
 
 
 class MultistepLrScheduler(Callback):
-    """Decays an optimizers learning rate each time a specified number of epochs has elapsed.
+    """Decays an optimizers learning rate each time a specified number of time steps have elapsed.
 
     Parameters
     ----------
     optimizer: Optimizer
         Optimizer, whose learning rate will be adapted.
+    t_decay_step : int
+        Time step interval, at which the update is applied.
     lr_decay : float, optional
-        Decay factor. Defaults to ``0.5``.
-    t_decay_step : int, optional
-        Number of epochs, at which the update is applied. Defaults to ``10``.
+        Decay factor. Defaults to ``0.1``.
 
     See Also
     --------
     :class:`compyute.nn.utils.lr_schedulers.MultistepLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, lr_decay: float = 0.1, t_decay_step: int = 10) -> None:
-        self.scheduler = _MultistepLrScheduler(optimizer, lr_decay, t_decay_step)
+    def __init__(self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1) -> None:
+        self.scheduler = _MultistepLrScheduler(optimizer, t_decay_step, lr_decay)
 
-    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         self.scheduler.step()
 
 
 class ExponentialLrScheduler(Callback):
-    """Decays an optimizers learning rate each epoch exponentially.
+    """Decays an optimizers learning rate each time step exponentially.
 
     Parameters
     ----------
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
+    decay_steps : int
+        How many times the update is applied.
     lr_decay : float, optional
-        Decay factor the learning rate is multiplied by each step. Defaults to ``0.5``.
-    decay_steps : int, optional
-        How many times (epochs) the update is applied. Defaults to ``10``.
+        Decay factor the learning rate is multiplied by each step. Defaults to ``0.1``.
 
     See Also
     --------
     :class:`compyute.nn.utils.lr_schedulers.ExponentialLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, lr_decay: float = 0.5, decay_steps: int = 10) -> None:
-        self.scheduler = _ExponentialLrScheduler(optimizer, lr_decay, decay_steps)
+    def __init__(self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1) -> None:
+        self.scheduler = _ExponentialLrScheduler(optimizer, decay_steps, lr_decay)
 
-    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         self.scheduler.step()
 
 
@@ -98,50 +98,40 @@ class CosineLrScheduler(Callback):
     ----------
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
-    target_lr : float, optional
-        Target learning rate. Defaults to ``0.1``.
-    decay_steps : int, optional
-        How many times (epochs) the update is applied. Defaults to ``10``.
-    warmup_steps : int, optional
-        Number of warmup steps. Defaults to ``5``.
-    max_warmup_lr : float, optional
-        Maximum learning rate after warmup. Defaults to ``1``.
+    target_lr : float
+        Target learning rate that will be reached after all decay steps.
+    warmup_steps : int
+        Number of warmup steps. During these steps the learning rate will
+        increase linearly from ~0 to the initial optimizer learning rate.
+    decay_steps : int
+        How many times the update is applied after the warmup.
 
     See Also
     --------
     :class:`compyute.nn.utils.lr_schedulers.CosineLrScheduler`
     """
 
-    def __init__(
-        self,
-        optimizer: Optimizer,
-        target_lr: float = 0.1,
-        decay_steps: int = 10,
-        warmup_steps: int = 0,
-        max_warmup_lr: float = 1.0,
-    ) -> None:
-        self.scheduler = _CosineLrScheduler(
-            optimizer, target_lr, decay_steps, warmup_steps, max_warmup_lr
-        )
+    def __init__(self, optimizer: Optimizer, target_lr: float, warmup_steps: int, decay_steps: int) -> None:
+        self.scheduler = _CosineLrScheduler(optimizer, target_lr, warmup_steps, decay_steps)
 
-    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         self.scheduler.step()
 
 
 class AdaptiveLrScheduler(Callback):
-    """Sets an optimizers learning based on the trend of a specified metric.
+    """Sets an optimizers learning based on the trend of a specified loss metric.
 
     Parameters
     ----------
     optimizer : Optimizer
         Optimizer, whose learning rate will be adapted.
     patience : int, optional
-        Number of past epochs to consider when computing the trend. Defaults to ``10``.
+        Number of past time steps to consider when computing the trend. Defaults to ``10``.
     lr_downscale_factor : float, optional
-        Factor to scale the learning rate down by if the metric is not improing.
+        Factor to scale the learning rate down by if the metric is not improving.
         Defaults to ``0.5``.
     lr_upscale_factor : float, optional
-        Factor to scale the learning rate up by if the metric is improing. Defaults to ``1.0``.
+        Factor to scale the learning rate up by if the metric is improving. Defaults to ``1.0``.
 
     See Also
     --------
@@ -157,11 +147,9 @@ class AdaptiveLrScheduler(Callback):
         lr_upscale_factor: float = 1.0,
     ) -> None:
         self.target = target
-        self.scheduler = _AdaptiveLrScheduler(
-            optimizer, patience, lr_downscale_factor, lr_upscale_factor
-        )
+        self.scheduler = _AdaptiveLrScheduler(optimizer, patience, lr_downscale_factor, lr_upscale_factor)
 
-    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.target not in trainer_cache:
             raise AttributeError(f"Target {self.target} not found in trainer_cache")
         self.scheduler.step(**{self.target: trainer_cache[self.target]})
