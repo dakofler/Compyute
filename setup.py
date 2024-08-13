@@ -45,6 +45,7 @@ setup(
             "torch>=2.3.0",
             "torchaudio>=2.3.0",
             "torchvision>=0.18.0",
+            "torchtune>=0.2.1",
             "twine>=5.1.1",
             "wheel>=0.43.0",
             "Sphinx>=7.4.7",

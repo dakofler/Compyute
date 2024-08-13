@@ -8,7 +8,7 @@ from ...engine import Device, _DeviceLike
 from ...random.random import shuffle
 from ...tensor_ops.creating import concatenate
 
-__all__ = ["Dataloader"]
+__all__ = ["Dataloader", "batched"]
 
 
 class Dataloader:
@@ -102,19 +102,19 @@ def batched(
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:
-    """Decorator for performing input batching.
+    """Decorator for performing batched inference.
 
     Parameters
     ----------
     batch_size : int, optional
-        Size of returned batches. Defaults to ``1.
+        Size of returned batches. Defaults to ``1``.
     device : DeviceLike, optional
-        Device the tensors should be loaded to. Defaults to ``Device.CPU.
+        Device the tensors should be loaded to. Defaults to ``Device.CPU``.
     shuffle_data : bool, optional
-        Whether to shuffle the data each time the dataloader is called. Defaults to ``True.
+        Whether to shuffle the data each time the dataloader is called. Defaults to ``True``.
     drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
-        the batch_size.
+        the ``batch_size``.
     """
 
     @wraps(func)

@@ -110,3 +110,9 @@ Devices
 -------
 .. autoclass:: cpu
 .. autoclass:: cuda
+
+
+Utility Functions
+-----------------
+.. autofunction:: save
+.. autofunction:: load

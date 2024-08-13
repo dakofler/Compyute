@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import pickle
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
@@ -130,6 +130,11 @@ class Module(ABC):
         self._retain_values = value
         for module in self.modules:
             module.retain_values = value
+
+    @property
+    def state_dict(self) -> OrderedDict:
+        """Module state."""
+        return OrderedDict(enumerate(chain(self.parameters, self.buffers)))
 
     @property
     def trainable(self) -> bool:
@@ -316,40 +321,17 @@ class Module(ABC):
             return
         parameter.grad += grad
 
-    def save(self, filepath: str) -> None:
-        """Saves the module to a binary file.
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """Load module parameters and buffers from a state dict.
 
         Parameters
         ----------
-        module : Module
-            Module to be saved.
-        filepath : str
-            Where to save the file to.
+        state_dict : OrderedDict
+            State dict containing parameters and buffers.
         """
-        device = self.device
-        self.to_device(Device.CPU)
-        self.cleanup(force=True)
-        with open(filepath, "wb") as file:
-            pickle.dump(self, file)
-        self.to_device(device)
-
-    @classmethod
-    def load(cls, filepath: str) -> Module:
-        """Load a module from a binary file.
-
-        Parameters
-        ----------
-        filepath : str
-            Filepath of the binary module file.
-
-        Returns
-        -------
-        Module
-            Loaded module.
-        """
-        with open(filepath, "rb") as file:
-            module = pickle.load(file)
-        return module
+        for p, value in list(zip(chain(self.parameters, self.buffers), state_dict.values())):
+            p.data = value.data
+            p.grad = value.grad
 
     def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
         """Returns information about the module and its child modules.

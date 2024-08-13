@@ -110,9 +110,7 @@ class Tensor:
     @property
     def engine(self) -> ModuleType:
         """Computation engine."""
-        if self._engine is None:
-            self._engine = get_engine(self.device)
-        return self._engine
+        return get_engine(self.device)
 
     @property
     def n_axes(self) -> int:

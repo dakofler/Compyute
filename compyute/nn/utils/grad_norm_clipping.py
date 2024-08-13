@@ -21,6 +21,9 @@ def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
         Max gradient norm.
 
     Returns
+    ----------
+    float
+        Unclipped gradient norm.
     """
     params = list(parameters)
     flattened_grads = concatenate([flatten(p.grad) for p in params if p.grad is not None])

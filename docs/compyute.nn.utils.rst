@@ -7,6 +7,7 @@ Dataloader
 ----------
 .. autoclass:: Dataloader
     :members:
+.. autofunction:: batched
 
 Other Utils
 -----------

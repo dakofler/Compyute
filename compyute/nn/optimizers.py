@@ -1,6 +1,7 @@
 """Parameter optimizers."""
 
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from typing import Iterator, Literal, Optional
 
 from ..tensor_ops.transforming import tensorprod
@@ -22,25 +23,50 @@ class Optimizer(ABC):
 
     def __init__(self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3) -> None:
         self.lr = lr
-        self.state: dict = {}
         self.t: int = 1
+        self.state: dict = {}
 
         if parameters is not None:
             self.parameters = parameters
 
     @property
-    def parameters(self) -> Iterator[Parameter]:
-        """Optimizer parameters."""
-        return (p for p in self.state if isinstance(p, Parameter))
+    def parameters(self) -> OrderedDict:
+        """Iterator of optimizer parameters."""
+        return self._parameters
 
     @parameters.setter
-    def parameters(self, value: Iterator[Parameter]) -> None:
-        for p in value:
-            self.state[p] = {}
+    def parameters(self, parameters: Iterator[Parameter]) -> None:
+        self._parameters = OrderedDict(enumerate(parameters))
+        for i in range(len(self._parameters)):
+            self.state[i] = {}
+
+    @property
+    def state_dict(self) -> OrderedDict:
+        """Optimizer state."""
+        return OrderedDict(
+            state=self.state,
+            vars={k: v for k, v in vars(self).items() if k not in ["state", "parameters", "_parameters"]},
+        )
+
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """Load optimizer buffers from a state dict.
+
+        .. note::
+            This method only loads the optimizer state, not the parameters.
+            Parameters must be assigned additionally.
+
+        Parameters
+        ----------
+        state_dict : OrderedDict
+            State dict containing parameters and buffers.
+        """
+        self.state = state_dict["state"]
+        for k, v in state_dict["vars"].items():
+            setattr(self, k, v)
 
     def reset_grads(self) -> None:
         """Resets parameter gradients to ``None``."""
-        for p in self.parameters:
+        for p in self.parameters.values():
             p.grad = None
 
     @abstractmethod
@@ -108,7 +134,7 @@ class SGD(Optimizer):
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
-        for p in self.parameters:
+        for i, p in self.parameters.items():
             if p.grad is None:
                 continue
 
@@ -120,9 +146,9 @@ class SGD(Optimizer):
             if self.momentum == 0:
                 p -= self.lr * grad
             else:
-                prev_v = self.state[p].get("v", 0)
+                prev_v = self.state[i].get("v", 0)
                 v = self.momentum * prev_v - self.lr * grad  # velocity
-                self.state[p]["v"] = v
+                self.state[i]["v"] = v
 
                 if self.nesterov:
                     p += self.momentum * v - self.lr * grad
@@ -195,7 +221,7 @@ class Adam(Optimizer):
         self.weight_decay = weight_decay
 
     def step(self) -> None:
-        for p in self.parameters:
+        for i, p in self.parameters.items():
             if p.grad is None:
                 continue
 
@@ -205,14 +231,14 @@ class Adam(Optimizer):
                 grad += self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[p].get("m", 0)
+            prev_m = self.state[i].get("m", 0)
             m = self.beta1 * prev_m + (1 - self.beta1) * grad
-            self.state[p]["m"] = m
+            self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[p].get("v", 0)
+            prev_v = self.state[i].get("v", 0)
             v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
-            self.state[p]["v"] = v
+            self.state[i]["v"] = v
 
             m /= 1 - self.beta1**self.t
             v /= 1 - self.beta2**self.t
@@ -285,7 +311,7 @@ class AdamW(Optimizer):
         self.weight_decay = weight_decay
 
     def step(self) -> None:
-        for p in self.parameters:
+        for i, p in self.parameters.items():
             if p.grad is None:
                 continue
 
@@ -295,14 +321,14 @@ class AdamW(Optimizer):
                 grad += self.lr * self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[p].get("m", 0)
+            prev_m = self.state[i].get("m", 0)
             m = self.beta1 * prev_m + (1 - self.beta1) * p.grad
-            self.state[p]["m"] = m
+            self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[p].get("v", 0)
+            prev_v = self.state[i].get("v", 0)
             v = self.beta2 * prev_v + (1 - self.beta2) * p.grad**2
-            self.state[p]["v"] = v
+            self.state[i]["v"] = v
 
             m /= 1 - self.beta1**self.t
             v /= 1 - self.beta2**self.t
@@ -391,7 +417,7 @@ class NAdam(Optimizer):
         mu_prod = tensorprod(self.state["mus"])
         next_mu = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
 
-        for p in self.parameters:
+        for i, p in self.parameters.items():
             if p.grad is None:
                 continue
 
@@ -401,14 +427,14 @@ class NAdam(Optimizer):
                 grad += self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[p].get("m", 0)
+            prev_m = self.state[i].get("m", 0)
             m = self.beta1 * prev_m + (1 - self.beta1) * grad
-            self.state[p]["m"] = m
+            self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[p].get("v", 0)
+            prev_v = self.state[i].get("v", 0)
             v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
-            self.state[p]["v"] = v
+            self.state[i]["v"] = v
 
             m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (1 - mu_prod)
             v /= 1 - self.beta2**self.t
