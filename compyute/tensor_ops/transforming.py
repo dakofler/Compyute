@@ -6,7 +6,6 @@ from typing import Iterable, Iterator, Optional
 
 from ..base_tensor import ShapeError, Tensor, _AxisLike, _ShapeLike, tensor
 from ..dtypes import Dtype, _DtypeLike, _ScalarLike
-from ..engine import get_engine
 
 __all__ = [
     "abs",
@@ -558,8 +557,7 @@ def outer(*tensors: Tensor) -> Tensor:
     Tensor
         Tensor containing the outer product.
     """
-    device = tensors[0].device
-    return tensor(get_engine(device).outer(*[t.data for t in tensors]))
+    return tensor(tensors[0].engine.outer(*[t.data for t in tensors]))
 
 
 def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:

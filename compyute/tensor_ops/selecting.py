@@ -3,7 +3,6 @@
 from typing import Optional
 
 from ..base_tensor import ShapeError, Tensor, _AxisLike, tensor
-from ..engine import get_engine
 
 __all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
 

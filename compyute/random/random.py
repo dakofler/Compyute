@@ -182,8 +182,8 @@ def multinomial(x: Tensor | int, p: Tensor, shape: _ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return tensor(get_engine(p.device).random.choice(x, size=shape, p=p.data))
-    return Tensor(get_engine(p.device).random.choice(x.data, size=shape, p=p.data))
+        return tensor(p.engine.random.choice(x, size=shape, p=p.data))
+    return Tensor(p.engine.random.choice(x.data, size=shape, p=p.data))
 
 
 def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) -> Tensor:
