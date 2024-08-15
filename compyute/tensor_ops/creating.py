@@ -42,7 +42,7 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
     Tensor
         Tensor containing appended values.
     """
-    return Tensor(get_engine(x.device).append(x.data, values.data, axis=axis))
+    return Tensor(x.engine.append(x.data, values.data, axis=axis))
 
 
 def arange(
@@ -92,8 +92,7 @@ def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
     Tensor
         Concatenated tensor.
     """
-    device = tensors[0].device
-    return Tensor(get_engine(device).concatenate([t.data for t in tensors], axis=axis))
+    return Tensor(tensors[0].engine.concatenate([t.data for t in tensors], axis=axis))
 
 
 def empty(shape: _ShapeLike, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
@@ -288,7 +287,7 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     list[Tensor]
         List of tensors containing the split data.
     """
-    return [Tensor(s) for s in get_engine(x.device).split(x.data, splits, axis=axis)]
+    return [Tensor(s) for s in x.engine.split(x.data, splits, axis=axis)]
 
 
 def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
@@ -306,8 +305,7 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
     Tensor
         Stacked tensor.
     """
-    device = tensors[0].device
-    return Tensor(get_engine(device).stack([t.data for t in tensors], axis=axis))
+    return Tensor(tensors[0].engine.stack([t.data for t in tensors], axis=axis))
 
 
 def zeros(shape: _ShapeLike, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
