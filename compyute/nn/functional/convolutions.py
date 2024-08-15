@@ -3,7 +3,6 @@
 from typing import Callable, Literal, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
-from ...dtypes import Dtype
 from ...tensor_ops.creating import zeros
 from ...tensor_ops.reshaping import broadcast_to, flip, insert_dim, pad, pad_to_shape, repeat, reshape
 from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
@@ -211,11 +210,7 @@ def _convolve1d(
 
 
 def _fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = Dtype.COMPLEX64
-    conv = real(
-        ifft1d(fft1d(x, dtype=cdtype) * fft1d(f, n=x.shape[-1], dtype=cdtype), dtype=cdtype),
-        dtype=x.dtype,
-    )
+    conv = real(ifft1d(fft1d(x) * fft1d(f, n=x.shape[-1])), dtype=x.dtype)
     out = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.n_axes - 1) + [slice(-out, None)]
     return conv[*out_slice]
@@ -416,11 +411,7 @@ def _convolve2d(
 
 
 def _fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = Dtype.COMPLEX64
-    conv = real(
-        ifft2d(fft2d(x, dtype=cdtype) * fft2d(f, s=x.shape[-2:], dtype=cdtype), dtype=cdtype),
-        dtype=x.dtype,
-    )
+    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])), dtype=x.dtype)
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.n_axes - 2) + [
