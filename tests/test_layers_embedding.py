@@ -26,14 +26,14 @@ def test_embedding() -> None:
 
     # forward
     compyute_x, torch_x = get_random_integers(shape_x)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         _ = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_module.w.grad, torch_module.weight.grad)

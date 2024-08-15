@@ -41,7 +41,7 @@ _ArrayLike: TypeAlias = CPU_ENGINE.ndarray | CUDA_ENGINE.ndarray
 _DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
 
 
-_AVAILABLE_DEVICES = {Device.CPU}.union({Device.CUDA} if _cuda_available() else {})
+AVAILABLE_DEVICES = {Device.CPU, Device.CUDA} if _cuda_available() else {Device.CPU}
 
 
 def gpu_available() -> bool:
@@ -52,13 +52,13 @@ def gpu_available() -> bool:
     bool
         True, if one or more GPUs are available.
     """
-    return Device.CUDA in _AVAILABLE_DEVICES
+    return Device.CUDA in AVAILABLE_DEVICES
 
 
 @cache
 def available(device: Device) -> None:
     """Checks if the specified device is available."""
-    if device not in _AVAILABLE_DEVICES:
+    if device not in AVAILABLE_DEVICES:
         raise AttributeError(f"Device {device} is not available.")
 
 
@@ -77,7 +77,7 @@ def get_engine(device: Optional[_DeviceLike]) -> ModuleType:
 
 
 @cache
-def infer_device(array_type: type) -> Device:
+def get_device(array_type: type) -> Device:
     """Infers the device by type."""
     if array_type == CUDA_ENGINE.ndarray:
         return Device.CUDA

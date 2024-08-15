@@ -9,6 +9,10 @@ Dataloader
     :members:
 .. autofunction:: batched
 
-Other Utils
------------
+Module Utils
+------------
+.. autofunction:: get_module_summary
+
+Training Utils
+--------------
 .. autofunction:: clip_grad_norm

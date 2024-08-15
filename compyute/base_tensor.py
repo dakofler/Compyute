@@ -8,7 +8,7 @@ from typing import Any, Optional, TypeAlias
 import numpy
 
 from .dtypes import Dtype, _DtypeLike, _ScalarLike
-from .engine import Device, _ArrayLike, _DeviceLike, data_to_device, get_array_string, get_engine, infer_device
+from .engine import Device, _ArrayLike, _DeviceLike, data_to_device, get_array_string, get_device, get_engine
 
 __all__ = ["tensor", "Tensor"]
 
@@ -49,7 +49,7 @@ def tensor(
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
         return Tensor(data)
 
-    device = infer_device(type(data)) if device is None else device
+    device = get_device(type(data)) if device is None else device
     dtype = Dtype(dtype).value if dtype is not None else None
     data_array = get_engine(device).array(data, dtype, copy=copy)
 
@@ -97,7 +97,7 @@ class Tensor:
     def device(self) -> Device:
         """Device the tensor data is stored on."""
         if self._device is None:
-            self._device = infer_device(type(self._data))
+            self._device = get_device(type(self._data))
         return self._device
 
     @property
@@ -142,7 +142,7 @@ class Tensor:
         """Pointer to the tensor data."""
         return id(self._data)
 
-    def _cleanup(self) -> None:
+    def clean(self) -> None:
         """Resets chached information."""
         self._engine = None
         self._device = None
@@ -296,13 +296,12 @@ class Tensor:
         if self._device == device:
             return self
 
-        new_data = data_to_device(self._data, device)
-        new_tensor = Tensor(new_data)
+        new_tensor = Tensor(data_to_device(self._data, device))
         if self.grad is not None:
             new_tensor.grad = self.grad.to_device(device)
         return new_tensor
 
-    def _to_device(self, device: _DeviceLike) -> None:
+    def ito_device(self, device: _DeviceLike) -> None:
         """Moves the tensor to the specified device.
 
         Parameters
@@ -318,7 +317,7 @@ class Tensor:
         self._engine = get_engine(self.device)
         self.data = data_to_device(self._data, device)
         if self.grad is not None:
-            self.grad = self.grad.to_device(device)
+            self.grad.ito_device(device)
 
     # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS
@@ -343,7 +342,7 @@ class Tensor:
 
         return Tensor(self._data.astype(dtype.value))
 
-    def _to_type(self, dtype: _DtypeLike) -> None:
+    def ito_type(self, dtype: _DtypeLike) -> None:
         """Casts tensor elements to the given dtype.
 
         Parameters

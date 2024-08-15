@@ -7,7 +7,7 @@ from ...dtypes import Dtype, _DtypeLike
 from ...tensor_ops.creating import ones, zeros
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
 from ..parameter import Buffer, Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
 
@@ -70,7 +70,7 @@ class BatchNorm1D(Module):
         self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [2, 3])
+        validate_input_axes(self, x, [2, 3])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm1d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
@@ -148,7 +148,7 @@ class BatchNorm2D(Module):
         self.rvar = Buffer(ones((channels,), dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm2d(
             x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training

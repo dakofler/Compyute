@@ -8,7 +8,7 @@ from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ..functional.linear import linear
 from ..parameter import Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
 __all__ = ["Linear"]
 
@@ -67,7 +67,6 @@ class Linear(Module):
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [2, 3, 4, 5])
 
         y, grad_fn = linear(x, self.w, self.b, self._training)
 

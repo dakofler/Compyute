@@ -8,10 +8,8 @@ from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from ...base_tensor import ShapeError, Tensor, _ShapeLike
-from ...dtypes import Dtype, _DtypeLike
+from ...base_tensor import ShapeError, Tensor
 from ...engine import Device, _DeviceLike, available
-from ...tensor_ops.creating import ones
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity"]
@@ -42,25 +40,6 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def self_parameters(self) -> Iterator[Parameter]:
-        """Iterator of module parameters."""
-        return (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
-
-    @property
-    def parameters(self) -> Iterator[Parameter]:
-        """Iterator of module and child module parameters."""
-        self_parameters = self.self_parameters
-        child_module_parameters = (p for module in self.modules for p in module.parameters)
-        return chain(self_parameters, child_module_parameters)
-
-    @property
-    def buffers(self) -> Iterator[Buffer]:
-        """Iterator of module and child module buffers."""
-        self_buffers = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
-        child_module_buffers = (b for module in self.modules for b in module.buffers)
-        return chain(self_buffers, child_module_buffers)
-
-    @property
     def device(self) -> _DeviceLike:
         """Device the module parametes and variables are stored on."""
         return self._device
@@ -81,10 +60,10 @@ class Module(ABC):
         self._device = device
 
         if self.y is not None:
-            self.y._to_device(device)
+            self.y.ito_device(device)
 
-        for p in chain(self.buffers, self.parameters):
-            p._to_device(device)
+        for p in chain(self.get_buffers(), self.get_parameters()):
+            p.ito_device(device)
 
         for module in self.modules:
             module.to_device(device)
@@ -114,12 +93,12 @@ class Module(ABC):
         self._modules = value
 
     @property
-    def retain_values(self) -> bool:
+    def is_retaining_values(self) -> bool:
         """Whether the module should retain intermediate values such as outputs and gradients."""
         return self._retain_values
 
-    @retain_values.setter
-    def retain_values(self, value: bool) -> None:
+    @is_retaining_values.setter
+    def is_retaining_values(self, value: bool) -> None:
         """Set the module to retain intermediate values such as outputs and gradients.
 
         Parameters
@@ -129,20 +108,15 @@ class Module(ABC):
         """
         self._retain_values = value
         for module in self.modules:
-            module.retain_values = value
+            module.is_retaining_values = value
 
     @property
-    def state_dict(self) -> OrderedDict:
-        """Module state."""
-        return OrderedDict(enumerate(chain(self.parameters, self.buffers)))
-
-    @property
-    def trainable(self) -> bool:
+    def is_trainable(self) -> bool:
         """Whether the module parameters are trainable."""
         return self._trainable
 
-    @trainable.setter
-    def trainable(self, value: bool) -> None:
+    @is_trainable.setter
+    def is_trainable(self, value: bool) -> None:
         """Set module parameters to be trainable.
 
         Parameters
@@ -152,16 +126,16 @@ class Module(ABC):
         """
         self._trainable = value
         for module in self.modules:
-            module.trainable = value
+            module.is_trainable = value
 
     @property
-    def training(self) -> bool:
+    def is_training(self) -> bool:
         """Whether the module is in training mode."""
         return self._training
 
-    @training.setter
-    def training(self, value: bool) -> None:
-        """Set module parameters to be trainable.
+    @is_training.setter
+    def is_training(self, value: bool) -> None:
+        """Sets module training mode.
 
         Parameters
         ----------
@@ -170,41 +144,41 @@ class Module(ABC):
         """
         self._training = value
         for module in self.modules:
-            module.training = value
+            module.is_training = value
 
     # ----------------------------------------------------------------------------------------------
     # CONTEXT MANAGERS
     # ----------------------------------------------------------------------------------------------
 
     @contextmanager
-    def do_retain_values(self):
+    def retain_values(self):
         """
         Context manager for setting the module to retain intermediate values
         such as outputs and gradients.
         """
         retain_values = self._retain_values
-        self.retain_values = True
+        self.is_retaining_values = True
         try:
             yield
         finally:
-            self.retain_values = retain_values
+            self.is_retaining_values = retain_values
 
     @contextmanager
-    def do_training(self):
+    def train(self):
         """Context manager for putting the module into training mode."""
         training = self._training
-        self.training = True
+        self.is_training = True
         try:
             yield
         finally:
-            self.training = training
+            self.is_training = training
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        attrs = [f"{a}={getattr(self, a)}" for a in self.__dict__ if _reprattr(a, getattr(self, a))]
+        attrs = [f"{a}={getattr(self, a)}" for a in self.__dict__ if is_repr_attr(a, getattr(self, a))]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
         for module in self.modules:
             repr_string += "\n" + module.__repr__()
@@ -230,6 +204,68 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
+
+    def get_parameters(self, include_child_modules: bool = True) -> Iterator[Parameter]:
+        """Returns an Iterator of module parameters.
+
+        Parameters
+        ----------
+        include_child_modules : bool, optional
+            Whether to include child modules. Defaults to ``True``.
+
+        Returns
+        -------
+        Iterator[Parameter]
+            Iterator of module and child module parameters.
+        """
+        self_parameters = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
+        if include_child_modules:
+            child_module_parameters = (p for module in self.modules for p in module.get_parameters())
+            return chain(self_parameters, child_module_parameters)
+        else:
+            return self_parameters
+
+    def get_buffers(self, include_child_modules: bool = True) -> Iterator[Buffer]:
+        """Returns an Iterator of module buffers.
+
+        Parameters
+        ----------
+        include_child_modules : bool, optional
+            Whether to include child modules. Defaults to ``True``.
+
+        Returns
+        -------
+        Iterator[Buffer]
+            Iterator of module and child module buffers.
+        """
+        self_buffers = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
+        if include_child_modules:
+            child_module_buffers = (b for module in self.modules for b in module.get_buffers())
+            return chain(self_buffers, child_module_buffers)
+        else:
+            return self_buffers
+
+    def get_state_dict(self) -> OrderedDict:
+        """Returns a state dict containing module parameters and buffers.
+
+        Returns
+        -------
+        OrderedDict
+            State dict containing parameters and buffers.
+        """
+        return OrderedDict(enumerate(chain(self.get_parameters(), self.get_buffers())))
+
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """Loads the module state from a state dict.
+
+        Parameters
+        ----------
+        state_dict : OrderedDict
+            State dict containing parameters and buffers.
+        """
+        for p, value in list(zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())):
+            p.data = value.data
+            p.grad = value.grad
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
@@ -288,31 +324,24 @@ class Module(ABC):
         if self._retain_values and self.y is not None:
             self.y.grad = dy.copy()
 
-    def cleanup(self, force: bool = False) -> None:
-        """Resets temporary values like outputs and gradients.
+    def clean(self, force: bool = False) -> None:
+        """Removes temporary values like outputs and gradients.
 
         Parameters
         ----------
         force : bool, optional
-            Whether to force cleanup and ignore ``retain_values``. Defaults to ``False``.
+            Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
         if self._retain_values and not force:
             return
         self.y = None
         self._backward = None
 
-        for p in chain(self.buffers, self.parameters):
-            p._cleanup()
+        for p in chain(self.get_buffers(), self.get_parameters()):
+            p.clean()
 
         for module in self.modules:
-            module.cleanup(force)
-
-    def _check_dims(self, x: Tensor, valid_dims: Iterable[int]) -> None:
-        """Checks if the number of dimensions match the valid dimensions."""
-        if x.n_axes in valid_dims:
-            return
-        vdims = ", ".join(str(d) for d in valid_dims)
-        raise ShapeError(f"{self.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}.")
+            module.clean(force)
 
     @staticmethod
     def _update_parameter_grad(parameter: Optional[Parameter], grad: Optional[Tensor]) -> None:
@@ -320,98 +349,6 @@ class Module(ABC):
         if parameter is None or grad is None:
             return
         parameter.grad += grad
-
-    def load_state_dict(self, state_dict: OrderedDict) -> None:
-        """Load module parameters and buffers from a state dict.
-
-        Parameters
-        ----------
-        state_dict : OrderedDict
-            State dict containing parameters and buffers.
-        """
-        for p, value in list(zip(chain(self.parameters, self.buffers), state_dict.values())):
-            p.data = value.data
-            p.grad = value.grad
-
-    def get_summary(self, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
-        """Returns information about the module and its child modules.
-
-        Parameters
-        ----------
-        input_shape : _ShapeLike
-            Shape of the container input ignoring the batch dimension.
-        input_dtype : _DtypeLike, optional
-            Data type of the expected input data. Defaults to :class:`compyute.float32`.
-
-        Returns
-        -------
-        str
-            Summary of the module and its child modules.
-        """
-
-        def get_module_summary(module: Module, prefix: str) -> None:
-            # add summary of current module
-            module_summaries.append(
-                {
-                    "name": prefix + module.label,
-                    "out_shape": (-1,) + module.y.shape[1:] if module.y is not None else (),
-                    "n_params": {p.ptr: p.size for p in module.self_parameters},
-                    "trainable": module.trainable,
-                }
-            )
-
-            # get summary of child modules
-            for i, child_module in enumerate(module.modules):
-                child_prefix = prefix[:-2]
-                if prefix[-2:] == "├-":
-                    child_prefix += "│ "
-                elif prefix[-2:] == "└-":
-                    child_prefix += "  "
-                child_prefix += "└-" if i == len(module.modules) - 1 else "├-"
-                get_module_summary(child_module, child_prefix)
-
-        # perform forward pass to get output shapes
-        x = ones((1,) + input_shape, dtype=input_dtype, device=self.device)
-        with self.do_retain_values():
-            _ = self(x)
-
-        # get model summary
-        module_summaries = []
-        get_module_summary(self, "")
-        self.cleanup()
-
-        # format summary
-        divider = "=" * 80
-        summary = [
-            self.label,
-            divider,
-            f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
-            divider,
-        ]
-
-        n_params = n_train_params = 0
-        param_ptrs = []
-
-        for m in module_summaries:
-            m_name = m["name"]
-            m_out_shape = str(m["out_shape"])
-            m_n_params = sum(m["n_params"].values())
-            m_trainable = str(m["trainable"])
-            summary.append(f"{m_name:30s} {m_out_shape:20s} {m_n_params:15d} {m_trainable:>12s}")
-
-            # count parameters without duplicates (can occur with weight sharing of modules)
-            for ptr, n in m["n_params"].items():
-                if ptr in param_ptrs:
-                    continue
-                param_ptrs.append(ptr)
-                n_params += n
-                n_train_params += n if m["trainable"] else 0
-
-        summary.append(divider)
-        summary.append(f"Parameters: {n_params}")
-        summary.append(f"Trainable parameters: {n_train_params}")
-
-        return "\n".join(summary)
 
 
 class Identity(Module):
@@ -434,5 +371,14 @@ class ModelDefinitionError(Exception):
     """Model definition error."""
 
 
-def _reprattr(a: str, v: Any) -> bool:
-    return all([a != "label", not a.startswith("_"), not isinstance(v, Tensor), v is not None])
+def is_repr_attr(attr: str, value: Any) -> bool:
+    """Checks if an attribute should be included int the class representation."""
+    return all([attr != "label", not attr.startswith("_"), not isinstance(value, Tensor), value is not None])
+
+
+def validate_input_axes(module: Module, x: Tensor, valid_n_axes: Iterable[int]) -> None:
+    """Checks if the number of axes of a tensor is valid."""
+    if x.n_axes in valid_n_axes:
+        return
+    vdims = ", ".join(str(d) for d in valid_n_axes)
+    raise ShapeError(f"{module.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}.")

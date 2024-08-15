@@ -40,16 +40,21 @@ class Optimizer(ABC):
         for i in range(len(self._parameters)):
             self.state[i] = {}
 
-    @property
-    def state_dict(self) -> OrderedDict:
-        """Optimizer state."""
+    def get_state_dict(self) -> OrderedDict:
+        """Returns a state dict containing variables and buffers.
+
+        Returns
+        -------
+        OrderedDict
+            State dict containing variables and buffers.
+        """
         return OrderedDict(
             state=self.state,
             vars={k: v for k, v in vars(self).items() if k not in ["state", "parameters", "_parameters"]},
         )
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
-        """Load optimizer buffers from a state dict.
+        """Loads the optimizer state from a state dict.
 
         .. note::
             This method only loads the optimizer state, not the parameters.

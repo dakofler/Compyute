@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import pickle
 import re
 import string
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from typing import Optional
 
 import regex
@@ -13,25 +13,21 @@ from tqdm.auto import trange
 
 from ..base_tensor import Tensor, tensor
 
-__all__ = [
-    "CharacterTokenizer",
-    "WordTokenizer",
-    "BPETokenizer",
-    "save_tokenizer",
-    "load_tokenizer",
-]
+__all__ = ["CharacterTokenizer", "WordTokenizer", "BPETokenizer"]
 
 WORD_PATTERN = r'([,.:;?_!"()\']|--|\s)'
-BPE_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+BPE_PATTERN = (
+    r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+)
 
 
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    def __init__(self, oov_token: str = "") -> None:
+    def __init__(self, oov_token: str = "", vocab: Optional[dict] = None, ivocab: Optional[dict] = None) -> None:
         self.oov_token = oov_token
-        self.vocab: dict[int, str | bytes] = {}
-        self.ivocab: dict[str | bytes, int] = {}
+        self.vocab = vocab or {}
+        self.ivocab = ivocab or {}
 
     @property
     def vocab_size(self) -> int:
@@ -79,15 +75,30 @@ class Tokenizer(ABC):
             Decoded text.
         """
 
+    def get_state_dict(self) -> OrderedDict:
+        """Returns the tokenizer state dictionary."""
+        return OrderedDict(oov_token=self.oov_token, vocab=self.vocab, ivocab=self.ivocab)
+
+    def load_state_dict(self, state_dict: OrderedDict) -> None:
+        """Loads the tokenizer state from a state dict.
+
+        Parameters
+        ----------
+        state_dict : OrderedDict
+            State dict containing parameters and buffers.
+        """
+        for k, v in state_dict.items():
+            setattr(self, k, v)
+
 
 class CharacterTokenizer(Tokenizer):
-    """Creates character tokens."""
+    """Uses single characters as tokens. Characters are taken from ``string.printable``."""
 
     def __init__(self, oov_token: str = "<|unk|>") -> None:
-        super().__init__(oov_token)
         all_tokens = [oov_token, "\n"] + list(string.printable)
-        self.vocab = dict(enumerate(all_tokens))
-        self.ivocab = {token: idx for idx, token in self.vocab.items()}
+        vocab = dict(enumerate(all_tokens))
+        ivocab = {token: idx for idx, token in self.vocab.items()}
+        super().__init__(oov_token, vocab, ivocab)
 
     def encode(self, text: str) -> Tensor:
         preprocessed = list(text)
@@ -98,7 +109,7 @@ class CharacterTokenizer(Tokenizer):
 
 
 class WordTokenizer(Tokenizer):
-    """Creates word tokens."""
+    """Uses whole words as tokens."""
 
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__(oov_token)
@@ -124,12 +135,15 @@ class WordTokenizer(Tokenizer):
 
 
 class BPETokenizer(Tokenizer):
-    """Creates tokens using Byte-Pair-Encoding. Mostly follows the code by Andrjey Karpathy."""
+    """Uses learned sub-words as tokens by applying the Byte-Pair Encoding algorithm as described by
+    `Sennrich et al., 2016 <https://arxiv.org/pdf/1508.07909>`_.
+    Mostly follows Andrjey Karpathy's `minbpe <https://github.com/karpathy/minbpe>`_.
+    """
 
     def __init__(self) -> None:
         super().__init__()
-        self._merges = {}
-        self._pattern = regex.compile(BPE_PATTERN)
+        self.merges = {}
+        self.pattern = regex.compile(BPE_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
@@ -140,7 +154,7 @@ class BPETokenizer(Tokenizer):
         n_merges = vocab_size - 256
 
         # split text into chunks according to a regex pattern
-        text_chunks = regex.findall(self._pattern, text)
+        text_chunks = regex.findall(self.pattern, text)
 
         # encode all chunks
         token_ids = [list(chunk.encode("utf-8")) for chunk in text_chunks]
@@ -162,7 +176,7 @@ class BPETokenizer(Tokenizer):
             idx = 256 + i
             token_ids = [self._merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
 
-            self._merges[bigram] = idx
+            self.merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
@@ -177,11 +191,7 @@ class BPETokenizer(Tokenizer):
 
         while i < len(token_ids):
             # if not the last id and the bigram occurs, add new idx
-            if (
-                i < len(token_ids) - 1
-                and token_ids[i] == bigram[0]
-                and token_ids[i + 1] == bigram[1]
-            ):
+            if i < len(token_ids) - 1 and token_ids[i] == bigram[0] and token_ids[i + 1] == bigram[1]:
                 new_ids.append(idx)
                 i += 2
             else:
@@ -197,16 +207,16 @@ class BPETokenizer(Tokenizer):
             counts = self._update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))
-            if bigram not in self._merges:
+            bigram = min(counts, key=lambda p: self.merges.get(p, float("inf")))
+            if bigram not in self.merges:
                 break
 
-            idx = self._merges[bigram]
+            idx = self.merges[bigram]
             token_ids = self._merge(token_ids, bigram, idx)
         return token_ids
 
     def encode(self, text: str) -> Tensor:
-        text_chunks = regex.findall(self._pattern, text)
+        text_chunks = regex.findall(self.pattern, text)
         token_ids = []
 
         for chunk in text_chunks:
@@ -228,32 +238,8 @@ class BPETokenizer(Tokenizer):
         text_bytes = b"".join(part_bytes)
         return text_bytes.decode("utf-8", errors="replace")
 
-
-def save_tokenizer(tokenizer: Tokenizer, filepath: str) -> None:
-    """Saves a tokenizer to a binary file.
-
-    Parameters
-    ----------
-    filepath : str
-        Path where the file should be saved to.
-    """
-    with open(filepath, "wb") as file:
-        pickle.dump(tokenizer, file)
-
-
-def load_tokenizer(filepath: str) -> Tokenizer:
-    """Load a tokenizer from a binary file.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the binary file to load.
-
-    Returns
-    -------
-    Tokenizer
-        Loaded tokenizer.
-    """
-    with open(filepath, "rb") as file:
-        obj = pickle.load(file)
-    return obj
+    def get_state_dict(self) -> OrderedDict:
+        """Returns the tokenizer state dictionary."""
+        return OrderedDict(
+            oov_token=self.oov_token, vocab=self.vocab, ivocab=self.ivocab, merges=self.merges, pattern=self.pattern
+        )

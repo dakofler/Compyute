@@ -16,12 +16,12 @@ def test_dropout() -> None:
 
     # forward
     compyute_x, _ = get_random_floats(shape_x)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
 
     # backward
     compyute_dy, _ = get_random_floats(compyute_y.shape)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
 
     assert compyute_x.to_type(compyute.bool) == compyute_dx.to_type(compyute.bool)

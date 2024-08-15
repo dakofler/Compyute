@@ -41,8 +41,10 @@ class Dtype(Enum):
         return self.__repr__()
 
 
-DTYPES = [d.value for d in Dtype]
-FLOAT_DTYPES = [d for d in DTYPES if "float" in d]
+DTYPES = {d.value for d in Dtype}
+FLOAT_DTYPES = {d for d in DTYPES if "float" in d}
+INT_DTYPES = {d for d in DTYPES if "int" in d}
+COMPLEX_DTYPES = {d for d in DTYPES if "complex" in d}
 
 
 bool = Dtype.BOOL

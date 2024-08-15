@@ -1,4 +1,4 @@
-"""Gradient norm clipping utils."""
+"""Training utilities."""
 
 from typing import Iterator
 

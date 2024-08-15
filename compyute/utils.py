@@ -1,8 +1,9 @@
 """Compuyte utils."""
 
 import pickle
+from typing import Any
 
-__all__ = ["save", "load"]
+__all__ = ["load", "save"]
 
 
 def save(obj: object, filepath: str) -> None:
@@ -19,7 +20,7 @@ def save(obj: object, filepath: str) -> None:
         pickle.dump(obj, file)
 
 
-def load(filepath: str) -> object:
+def load(filepath: str) -> Any:
     """Loads an object from a binary file.
 
     Parameters
@@ -29,7 +30,7 @@ def load(filepath: str) -> object:
 
     Returns
     -------
-    object
+    Any
         Loaded object.
     """
     with open(filepath, "rb") as file:

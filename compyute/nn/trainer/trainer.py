@@ -46,7 +46,7 @@ class Trainer:
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)
-        self.optimizer.parameters = model.parameters
+        self.optimizer.parameters = model.get_parameters()
         self.loss = get_loss_function(loss)
         self.metric = None if metric is None else get_metric_function(metric)
         self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
@@ -88,7 +88,7 @@ class Trainer:
             self._callback("epoch_start")
 
             # training
-            with self.model.do_training():
+            with self.model.train():
                 for s, batch in enumerate(train_dataloader(), 1):
                     self.cache["step"] = s
                     self._callback("step_start")
@@ -108,7 +108,7 @@ class Trainer:
                 break
 
         self._callback("end")
-        self.model.cleanup()
+        self.model.clean()
 
     def evaluate_model(self, x: Tensor, y: Tensor, batch_size: int = 32) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
         """Evaluates the model using a defined metric.

@@ -9,7 +9,7 @@ from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
 
@@ -84,7 +84,7 @@ class Recurrent(Module):
         self.b_h = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [3])
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
         h = zeros((*x.shape[:2], self.h_channels), x.dtype, x.device)
@@ -230,7 +230,7 @@ class LSTM(Module):
         self.b_ho = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
-        self._check_dims(x, [3])
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
         i = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
@@ -475,7 +475,7 @@ class GRU(Module):
         self.b_hn = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
-        self._check_dims(x, [3])
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
         r = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)

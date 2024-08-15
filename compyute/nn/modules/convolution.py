@@ -8,7 +8,7 @@ from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ..functional.convolutions import _PaddingLike, avgpooling2d, convolve1d, convolve2d, maxpooling2d
 from ..parameter import Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
 
@@ -87,7 +87,7 @@ class Convolution1D(Module):
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [3])
+        validate_input_axes(self, x, [3])
 
         y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
@@ -176,7 +176,7 @@ class Convolution2D(Module):
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
 
@@ -207,7 +207,7 @@ class MaxPooling2D(Module):
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
         y, self._backward = maxpooling2d(x, kernel_size, self._training)
@@ -228,7 +228,7 @@ class AvgPooling2D(Module):
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
         y, self._backward = avgpooling2d(x, kernel_size, self._training)

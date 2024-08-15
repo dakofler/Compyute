@@ -17,7 +17,7 @@ def test_relu() -> None:
     compyute_module = ReLU()
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.relu(torch_x)
     assert is_equal(compyute_y, torch_y)
@@ -25,7 +25,7 @@ def test_relu() -> None:
     # backward
 
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
@@ -41,14 +41,14 @@ def test_leaky_relu() -> None:
     compyute_module = LeakyReLU(alpha=0.01)
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.leaky_relu(torch_x, negative_slope=0.01)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
@@ -64,14 +64,14 @@ def test_gelu() -> None:
     compyute_module = GELU()
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.gelu(torch_x, approximate="tanh")
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
@@ -87,14 +87,14 @@ def test_tanh() -> None:
     compyute_module = Tanh()
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.tanh(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
@@ -110,14 +110,14 @@ def test_sigmoid() -> None:
     compyute_module = Sigmoid()
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.sigmoid(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
@@ -133,14 +133,14 @@ def test_silu() -> None:
     compyute_module = SiLU()
 
     # forward
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.silu(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
-    with compyute_module.do_training():
+    with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
