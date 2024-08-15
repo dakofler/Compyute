@@ -97,7 +97,7 @@ class CharacterTokenizer(Tokenizer):
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         all_tokens = [oov_token, "\n"] + list(string.printable)
         vocab = dict(enumerate(all_tokens))
-        ivocab = {token: idx for idx, token in self.vocab.items()}
+        ivocab = {token: idx for idx, token in vocab.items()}
         super().__init__(oov_token, vocab, ivocab)
 
     def encode(self, text: str) -> Tensor:

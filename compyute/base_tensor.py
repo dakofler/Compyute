@@ -194,7 +194,7 @@ class Tensor:
         return tensor(other, self.device) ** self
 
     def __neg__(self) -> Tensor:
-        return self * -1
+        return tensor(-self.data)
 
     def __sub__(self, other: Tensor | _ScalarLike) -> Tensor:
         return tensor(self._data - _to_arraylike(other))

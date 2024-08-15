@@ -44,7 +44,7 @@ def mean_squared_error(
     if return_grad_fn:
 
         def grad_fn() -> Tensor:
-            return (dif * 2 / y_pred.size).to_float()
+            return dif * 2 / float(y_pred.size)
 
         return loss, grad_fn
 
@@ -86,7 +86,7 @@ def cross_entropy(
     if return_grad_fn:
 
         def grad_fn() -> Tensor:
-            return (probs - y_true) / reduce(mul, y_pred.shape[:-1])
+            return (probs - y_true) / float(reduce(mul, y_pred.shape[:-1]))
 
         return loss, grad_fn
 

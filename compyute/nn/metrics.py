@@ -48,7 +48,6 @@ class Accuracy(Metric):
         Tensor
             Accuracy score.
         """
-
         return accuracy_score(y_pred, y_true)
 
 
