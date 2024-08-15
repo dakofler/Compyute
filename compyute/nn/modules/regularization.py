@@ -25,8 +25,8 @@ class Dropout(Module):
         self.p = p
 
     def forward(self, x: Tensor) -> Tensor:
-        if not self._training:
+        if not self._is_training:
             return x
 
-        y, self._backward = dropout(x, self.p, self._training)
+        y, self._backward = dropout(x, self.p, self._is_training)
         return y

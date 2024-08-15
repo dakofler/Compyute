@@ -31,9 +31,9 @@ class Module(ABC):
         self._backward: Optional[Callable[[Tensor], Tensor]] = None
         self._device: _DeviceLike = Device.CPU
         self._modules: Optional[list[Module]] = None
-        self._retain_values: bool = False
-        self._trainable: bool = True
-        self._training: bool = False
+        self._is_retaining_values: bool = False
+        self._is_trainable: bool = True
+        self._is_training: bool = False
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -95,7 +95,7 @@ class Module(ABC):
     @property
     def is_retaining_values(self) -> bool:
         """Whether the module should retain intermediate values such as outputs and gradients."""
-        return self._retain_values
+        return self._is_retaining_values
 
     @is_retaining_values.setter
     def is_retaining_values(self, value: bool) -> None:
@@ -106,14 +106,14 @@ class Module(ABC):
         value : bool
             Whether the module should retain intermediate values.
         """
-        self._retain_values = value
+        self._is_retaining_values = value
         for module in self.modules:
             module.is_retaining_values = value
 
     @property
     def is_trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self._trainable
+        return self._is_trainable
 
     @is_trainable.setter
     def is_trainable(self, value: bool) -> None:
@@ -124,14 +124,14 @@ class Module(ABC):
         value : bool
             Whether the module parameters should be trainable.
         """
-        self._trainable = value
+        self._is_trainable = value
         for module in self.modules:
             module.is_trainable = value
 
     @property
     def is_training(self) -> bool:
         """Whether the module is in training mode."""
-        return self._training
+        return self._is_training
 
     @is_training.setter
     def is_training(self, value: bool) -> None:
@@ -142,7 +142,7 @@ class Module(ABC):
         value : bool
             Whether the module parameters should be trainable.
         """
-        self._training = value
+        self._is_training = value
         for module in self.modules:
             module.is_training = value
 
@@ -156,7 +156,7 @@ class Module(ABC):
         Context manager for setting the module to retain intermediate values
         such as outputs and gradients.
         """
-        retain_values = self._retain_values
+        retain_values = self._is_retaining_values
         self.is_retaining_values = True
         try:
             yield
@@ -166,7 +166,7 @@ class Module(ABC):
     @contextmanager
     def train(self):
         """Context manager for putting the module into training mode."""
-        training = self._training
+        training = self._is_training
         self.is_training = True
         try:
             yield
@@ -295,7 +295,7 @@ class Module(ABC):
         Tensor
             Input gradient tensor.
         """
-        if not self._training:
+        if not self._is_training:
             raise AttributeError(f"{self.label} is not in training mode.")
 
         if self._backward is None:
@@ -308,12 +308,12 @@ class Module(ABC):
         dy = dy.to_float()
         self._set_dy(dy)
 
-        if self._backward is not None and self._trainable:
+        if self._backward is not None and self._is_trainable:
             return self._backward(dy)
         return dy
 
     def _set_y(self, y: Tensor) -> None:
-        if not self._retain_values:
+        if not self._is_retaining_values:
             return
         if self.y is None:
             self.y = y.copy()
@@ -321,7 +321,7 @@ class Module(ABC):
             self.y.data = y.data.copy()
 
     def _set_dy(self, dy: Tensor) -> None:
-        if self._retain_values and self.y is not None:
+        if self._is_retaining_values and self.y is not None:
             self.y.grad = dy.copy()
 
     def clean(self, force: bool = False) -> None:
@@ -332,7 +332,7 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        if self._retain_values and not force:
+        if self._is_retaining_values and not force:
             return
         self.y = None
         self._backward = None

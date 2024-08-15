@@ -302,7 +302,7 @@ class Tensor:
         return new_tensor
 
     def ito_device(self, device: _DeviceLike) -> None:
-        """Moves the tensor to the specified device.
+        """Inplace operation to move the tensor to the specified device.
 
         Parameters
         ----------
@@ -343,7 +343,7 @@ class Tensor:
         return Tensor(self._data.astype(dtype.value))
 
     def ito_type(self, dtype: _DtypeLike) -> None:
-        """Casts tensor elements to the given dtype.
+        """Inplace operation to cast tensor elements to the given dtype.
 
         Parameters
         ----------
@@ -503,20 +503,6 @@ class Tensor:
             List of the tensor data.
         """
         return self._data.tolist()
-
-    def masked_fill(self, mask: Tensor, value: _ScalarLike) -> None:
-        """Sets elements of the tensor to a value, where the mask is true.
-
-        Parameters
-        ----------
-        mask : Tensor
-            Boolean mask tensor.
-        value : _ScalarLike
-            Value to set tensor elements to.
-        """
-        if mask.dtype.value != "bool":
-            raise AttributeError("Mask must be a boolean tensor.")
-        self.engine.putmask(self._data, mask.data, value)
 
 
 def _to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:

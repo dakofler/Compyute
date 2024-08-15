@@ -73,10 +73,10 @@ class BatchNorm1D(Module):
         validate_input_axes(self, x, [2, 3])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm1d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._is_training
         )
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
@@ -151,10 +151,10 @@ class BatchNorm2D(Module):
         validate_input_axes(self, x, [4])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm2d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._training
+            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._is_training
         )
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
@@ -215,9 +215,9 @@ class LayerNorm(Module):
 
     def forward(self, x: Tensor) -> Tensor:
 
-        y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._training)
+        y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._is_training)
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
@@ -275,9 +275,9 @@ class RMSNorm(Module):
 
     def forward(self, x: Tensor) -> Tensor:
 
-        y, grad_fn = rmsnorm(x, self.w, self.eps, self._training)
+        y, grad_fn = rmsnorm(x, self.w, self.eps, self._is_training)
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw = grad_fn(dy)

@@ -8,7 +8,7 @@ from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ..functional.linear import linear
 from ..parameter import Parameter
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["Linear"]
 
@@ -68,9 +68,9 @@ class Linear(Module):
 
     def forward(self, x: Tensor) -> Tensor:
 
-        y, grad_fn = linear(x, self.w, self.b, self._training)
+        y, grad_fn = linear(x, self.w, self.b, self._is_training)
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)

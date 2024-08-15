@@ -36,7 +36,7 @@ class Sequential(Module):
         for module in self.modules:
             x = module(x)
 
-        if self._training:
+        if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
                 for module in reversed(self.modules):
@@ -77,7 +77,7 @@ class ParallelConcat(Module):
         ys = [m(x) for m in self.modules]
         y = concatenate(ys, axis=self.concat_axis)
 
-        if self._training:
+        if self._is_training:
             splits = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
 
             def _backward(dy: Tensor) -> Tensor:
@@ -115,7 +115,7 @@ class ParallelAdd(Module):
 
         y = tensorsum(m(x) for m in self.modules)
 
-        if self._training:
+        if self._is_training:
             self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
 
         return y
@@ -157,7 +157,7 @@ class ResidualConnection(Module):
         y = self.block(x)
         y += x if self.residual_proj is None else self.residual_proj(x)
 
-        if self._training:
+        if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx = self.block.backward(dy)

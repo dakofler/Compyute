@@ -23,7 +23,7 @@ class ReLU(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = relu(x, self._training)
+        y, self._backward = relu(x, self._is_training)
         return y
 
 
@@ -46,7 +46,7 @@ class LeakyReLU(Module):
         self.alpha = alpha
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = leaky_relu(x, self.alpha, self._training)
+        y, self._backward = leaky_relu(x, self.alpha, self._is_training)
         return y
 
 
@@ -63,7 +63,7 @@ class GELU(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = gelu(x, self._training)
+        y, self._backward = gelu(x, self._is_training)
         return y
 
 
@@ -80,7 +80,7 @@ class Tanh(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = tanh(x, self._training)
+        y, self._backward = tanh(x, self._is_training)
         return y
 
 
@@ -97,7 +97,7 @@ class Sigmoid(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = sigmoid(x, self._training)
+        y, self._backward = sigmoid(x, self._is_training)
         return y
 
 
@@ -114,7 +114,7 @@ class SiLU(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y, self._backward = silu(x, self._training)
+        y, self._backward = silu(x, self._is_training)
         return y
 
 

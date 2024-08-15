@@ -89,9 +89,9 @@ class Convolution1D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
 
-        y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
+        y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._is_training)
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
@@ -178,9 +178,9 @@ class Convolution2D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
 
-        y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._training)
+        y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._is_training)
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
@@ -210,7 +210,7 @@ class MaxPooling2D(Module):
         validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = maxpooling2d(x, kernel_size, self._training)
+        y, self._backward = maxpooling2d(x, kernel_size, self._is_training)
         return y
 
 
@@ -231,5 +231,5 @@ class AvgPooling2D(Module):
         validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = avgpooling2d(x, kernel_size, self._training)
+        y, self._backward = avgpooling2d(x, kernel_size, self._is_training)
         return y
