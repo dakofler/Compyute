@@ -169,7 +169,9 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     return Tensor(x.engine.tile(x.data, tuple(repeats)))
 
 
-def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]) -> Tensor:
+def pad(
+    x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]
+) -> Tensor:
     """Returns a padded tensor using zero padding.
 
     Parameters

@@ -13,7 +13,7 @@ class Parameter(Tensor):
 
     Parameters
     ----------
-    data : Tensor | _ArrayLike
+    data : Tensor
         Data to initialize the parameter. Must be of type ``float``.
 
     Raises
@@ -22,12 +22,10 @@ class Parameter(Tensor):
         If an invalid data type is provided.
     """
 
-    def __init__(self, data: Tensor | _ArrayLike) -> None:
-        if isinstance(data, Tensor):
-            data = data.data
-        if str(data.dtype) not in FLOAT_DTYPES:
+    def __init__(self, data: Tensor) -> None:
+        if data.dtype not in FLOAT_DTYPES:
             raise TypeError("Invalid data type for parameter. Must be float.")
-        super().__init__(data)
+        super().__init__(data.data)
 
 
 class Buffer(Tensor):
@@ -35,11 +33,9 @@ class Buffer(Tensor):
 
     Parameters
     ----------
-    data : Tensor | _ArrayLike
+    data : Tensor
         Data to initialize the buffer.
     """
 
-    def __init__(self, data: Tensor | _ArrayLike) -> None:
-        if isinstance(data, Tensor):
-            data = data.data
-        super().__init__(data)
+    def __init__(self, data: Tensor) -> None:
+        super().__init__(data.data)

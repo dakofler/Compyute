@@ -1,12 +1,19 @@
 """Neural network convolution modules."""
 
+import math
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
-from ..functional.convolutions import _PaddingLike, avgpooling2d, convolve1d, convolve2d, maxpooling2d
+from ..functional.convolutions import (
+    _PaddingLike,
+    avgpooling2d,
+    convolve1d,
+    convolve2d,
+    maxpooling2d,
+)
 from ..parameter import Parameter
 from .module import Module, validate_input_axes
 
@@ -80,8 +87,10 @@ class Convolution1D(Module):
         self.bias = bias
 
         # init weights
-        k = (in_channels * kernel_size) ** -0.5
-        self.w = Parameter(uniform((out_channels, in_channels, kernel_size), -k, k, dtype))
+        k = 1 / math.sqrt(in_channels * kernel_size)
+        self.w = Parameter(
+            uniform((out_channels, in_channels, kernel_size), -k, k, dtype)
+        )
 
         # init biases
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
@@ -89,7 +98,15 @@ class Convolution1D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
 
-        y, grad_fn = convolve1d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._is_training)
+        y, grad_fn = convolve1d(
+            x,
+            self.w,
+            self.b,
+            self.padding,
+            self.stride,
+            self.dilation,
+            self._is_training,
+        )
 
         if self._is_training and grad_fn is not None:
 
@@ -169,8 +186,10 @@ class Convolution2D(Module):
         self.bias = bias
 
         # init weights
-        k = (in_channels * kernel_size**2) ** -0.5
-        self.w = Parameter(uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype))
+        k = 1 / math.sqrt(in_channels * kernel_size**2)
+        self.w = Parameter(
+            uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype)
+        )
 
         # init biases
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
@@ -178,7 +197,15 @@ class Convolution2D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
 
-        y, grad_fn = convolve2d(x, self.w, self.b, self.padding, self.stride, self.dilation, self._is_training)
+        y, grad_fn = convolve2d(
+            x,
+            self.w,
+            self.b,
+            self.padding,
+            self.stride,
+            self.dilation,
+            self._is_training,
+        )
 
         if self._is_training and grad_fn is not None:
 

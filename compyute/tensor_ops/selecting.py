@@ -7,7 +7,9 @@ from ..base_tensor import ShapeError, Tensor, _AxisLike, tensor
 __all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
 
 
-def argmax(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def argmax(
+    x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False
+) -> Tensor:
     """Returns the indices of maximum values along a given axis.
 
     Parameters

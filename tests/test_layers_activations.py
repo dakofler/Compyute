@@ -2,7 +2,8 @@
 
 import torch.nn.functional as F
 
-from compyute.nn import GELU, LeakyReLU, ReLU, Sigmoid, SiLU, Tanh
+from compyute.nn import GELU, LeakyReLU, ReLU, Sigmoid, SiLU, Softmax, Tanh
+from compyute.nn.functional import softmax
 from tests.test_utils import get_random_floats, is_equal
 
 SHAPE = (10, 20, 30)
@@ -136,6 +137,29 @@ def test_silu() -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = F.silu(torch_x)
+    assert is_equal(compyute_y, torch_y)
+
+    # backward
+    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    with compyute_module.train():
+        compyute_dx = compyute_module.backward(compyute_dy)
+    torch_y.backward(torch_dy)
+    assert is_equal(compyute_dx, torch_x.grad)
+
+
+def test_softmax() -> None:
+    """Test for the softmax layer."""
+
+    # init parameters
+    compyute_x, torch_x = get_random_floats(SHAPE)
+
+    # init compyute module
+    compyute_module = Softmax()
+
+    # forward
+    with compyute_module.train():
+        compyute_y = compyute_module(compyute_x)
+    torch_y = F.softmax(torch_x, dim=-1)
     assert is_equal(compyute_y, torch_y)
 
     # backward

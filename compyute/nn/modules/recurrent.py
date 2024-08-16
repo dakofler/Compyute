@@ -1,5 +1,6 @@
 """Neural network recurrent modules."""
 
+import math
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
@@ -73,7 +74,7 @@ class Recurrent(Module):
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -96,7 +97,9 @@ class Recurrent(Module):
             x_h, x_h_grad_fn = linear(x[:, t], self.w_i, self.b_i, self._is_training)
 
             # hidden projection
-            h_h, h_h_grad_fn = linear(h[:, t - 1], self.w_h, self.b_h, self._is_training)
+            h_h, h_h_grad_fn = linear(
+                h[:, t - 1], self.w_h, self.b_h, self._is_training
+            )
 
             # apply non-linearity
             h[:, t], act_grad_fn = self.activation(x_h + h_h, self._is_training)
@@ -207,7 +210,7 @@ class LSTM(Module):
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -456,7 +459,7 @@ class GRU(Module):
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -497,14 +500,18 @@ class GRU(Module):
             h_tprev = h[:, t - 1]
             h_r, h_r_grad_fn = linear(h_tprev, self.w_hr, self.b_hr, self._is_training)
             h_z, h_z_grad_fn = linear(h_tprev, self.w_hz, self.b_hz, self._is_training)
-            h_n[:, t], h_n_grad_fn = linear(h_tprev, self.w_hn, self.b_hn, self._is_training)
+            h_n[:, t], h_n_grad_fn = linear(
+                h_tprev, self.w_hn, self.b_hn, self._is_training
+            )
 
             # gates
             r[:, t], r_grad_fn = sigmoid(x_r + h_r, self._is_training)  # reset gate
             z[:, t], z_grad_fn = sigmoid(x_z + h_z, self._is_training)  # update gate
 
             # candidate hidden state n_t = act(x_n + r_t * h_t-1)
-            n[:, t], n_grad_fn = self.activation(x_n + r[:, t] * h_n[:, t], self._is_training)
+            n[:, t], n_grad_fn = self.activation(
+                x_n + r[:, t] * h_n[:, t], self._is_training
+            )
 
             # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
             h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]

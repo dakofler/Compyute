@@ -3,10 +3,18 @@
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
-from ..functional.activations import gelu, leaky_relu, relu, sigmoid, silu, tanh
+from ..functional.activations import (
+    gelu,
+    leaky_relu,
+    relu,
+    sigmoid,
+    silu,
+    softmax,
+    tanh,
+)
 from .module import Module
 
-__all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "SiLU", "Tanh"]
+__all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "SiLU", "Softmax", "Tanh"]
 
 
 class ReLU(Module):
@@ -115,6 +123,23 @@ class SiLU(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         y, self._backward = silu(x, self._is_training)
+        return y
+
+
+class Softmax(Module):
+    r"""Softmax activation function.
+
+    .. math::
+        softmax(x) = \frac{\exp(x)}{\sum_{i=1}^N \exp(x_i)}
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
+    """
+
+    def forward(self, x: Tensor) -> Tensor:
+        y, self._backward = softmax(x, self._is_training)
         return y
 
 

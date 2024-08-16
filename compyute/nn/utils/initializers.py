@@ -1,5 +1,6 @@
 """Neural network parameter initializers."""
 
+import math
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -66,7 +67,7 @@ class KaimingNormal(Initializer):
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
-        std = self.gain / fan_in**0.5
+        std = self.gain / math.sqrt(fan_in)
         return normal(shape, std=std, dtype=self.dtype)
 
 
@@ -87,7 +88,7 @@ class KaimingUniform(Initializer):
 
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
-        k = self.gain * (3 / fan_in) ** 0.5
+        k = self.gain * math.sqrt(3 / fan_in)
         return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
@@ -104,7 +105,13 @@ class Normal(Initializer):
         Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
-    def __init__(self, mean: float = 0.0, std: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
+    def __init__(
+        self,
+        mean: float = 0.0,
+        std: float = 1.0,
+        dtype: _DtypeLike = Dtype.FLOAT32,
+        **kwargs,
+    ) -> None:
         super().__init__(dtype)
         self.mean = mean
         self.std = std
@@ -126,7 +133,13 @@ class Uniform(Initializer):
         Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     """
 
-    def __init__(self, low: float = 0.0, high: float = 1.0, dtype: _DtypeLike = Dtype.FLOAT32, **kwargs) -> None:
+    def __init__(
+        self,
+        low: float = 0.0,
+        high: float = 1.0,
+        dtype: _DtypeLike = Dtype.FLOAT32,
+        **kwargs,
+    ) -> None:
         super().__init__(dtype)
         self.low = low
         self.high = high
@@ -153,7 +166,7 @@ class XavierNormal(Initializer):
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
-        std = self.gain * (2 / (fan_in + fan_out)) ** 0.5
+        std = self.gain * math.sqrt(2 / (fan_in + fan_out))
         return normal(shape, std=std, dtype=self.dtype)
 
 
@@ -175,7 +188,7 @@ class XavierUniform(Initializer):
     def __call__(self, shape: _ShapeLike) -> Tensor:
         fan_in = _get_fan_in(shape)
         fan_out = _get_fan_out(shape)
-        k = self.gain * (6 / (fan_in + fan_out)) ** 0.5
+        k = self.gain * math.sqrt(6 / (fan_in + fan_out))
         return uniform(shape, low=-k, high=k, dtype=self.dtype)
 
 
@@ -238,8 +251,8 @@ INITIALIZERS = {
 GAINS = {
     "sigmoid": 1,
     "tanh": 5 / 3,
-    "relu": 2**0.5,
-    "leaky_relu": (2 / (1 + 0.1**2)) ** 0.5,
+    "relu": math.sqrt(2),
+    "leaky_relu": math.sqrt(2 / (1 + 0.1**2)),
     "selu": 3 / 4,
 }
 

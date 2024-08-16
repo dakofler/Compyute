@@ -8,7 +8,9 @@ from ..modules.module import Module
 __all__ = ["get_module_summary"]
 
 
-def get_module_summary(module: Module, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32) -> str:
+def get_module_summary(
+    module: Module, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32
+) -> str:
     """Returns information about the module and its child modules.
 
     Parameters
@@ -40,11 +42,11 @@ def get_module_summary(module: Module, input_shape: _ShapeLike, input_dtype: _Dt
         # get summary of child modules
         for i, child_module in enumerate(module.modules):
             child_prefix = prefix[:-2]
-            if prefix[-2:] == "├-":
+            if prefix[-2:] == "├─":
                 child_prefix += "│ "
-            elif prefix[-2:] == "└-":
+            elif prefix[-2:] == "└─":
                 child_prefix += "  "
-            child_prefix += "└-" if i == len(module.modules) - 1 else "├-"
+            child_prefix += "└─" if i == len(module.modules) - 1 else "├─"
             build_summary(child_module, child_prefix)
 
     # perform forward pass to get output shapes
@@ -74,7 +76,9 @@ def get_module_summary(module: Module, input_shape: _ShapeLike, input_dtype: _Dt
         m_out_shape = str(m["out_shape"])
         m_n_params = sum(m["n_params"].values())
         m_trainable = str(m["trainable"])
-        summary.append(f"{m_name:30s} {m_out_shape:20s} {m_n_params:15d} {m_trainable:>12s}")
+        summary.append(
+            f"{m_name:30s} {m_out_shape:20s} {m_n_params:15d} {m_trainable:>12s}"
+        )
 
         # count parameters without duplicates (can occur with weight sharing of modules)
         for ptr, n in m["n_params"].items():

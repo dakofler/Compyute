@@ -1,5 +1,6 @@
 """Neural network linear transformation modules."""
 
+import math
 from typing import Optional
 
 from ...base_tensor import Tensor
@@ -60,7 +61,7 @@ class Linear(Module):
         self.bias = bias
 
         # init weights
-        k = in_channels**-0.5
+        k = 1 / math.sqrt(in_channels)
         self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype))
 
         # init biases

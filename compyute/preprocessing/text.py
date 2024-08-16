@@ -16,15 +16,18 @@ from ..base_tensor import Tensor, tensor
 __all__ = ["CharacterTokenizer", "WordTokenizer", "BPETokenizer"]
 
 WORD_PATTERN = r'([,.:;?_!"()\']|--|\s)'
-BPE_PATTERN = (
-    r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
-)
+BPE_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
 
 
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
-    def __init__(self, oov_token: str = "", vocab: Optional[dict] = None, ivocab: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        oov_token: str = "",
+        vocab: Optional[dict] = None,
+        ivocab: Optional[dict] = None,
+    ) -> None:
         self.oov_token = oov_token
         self.vocab = vocab or {}
         self.ivocab = ivocab or {}
@@ -77,7 +80,9 @@ class Tokenizer(ABC):
 
     def get_state_dict(self) -> OrderedDict:
         """Returns the tokenizer state dictionary."""
-        return OrderedDict(oov_token=self.oov_token, vocab=self.vocab, ivocab=self.ivocab)
+        return OrderedDict(
+            oov_token=self.oov_token, vocab=self.vocab, ivocab=self.ivocab
+        )
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
         """Loads the tokenizer state from a state dict.
@@ -191,7 +196,11 @@ class BPETokenizer(Tokenizer):
 
         while i < len(token_ids):
             # if not the last id and the bigram occurs, add new idx
-            if i < len(token_ids) - 1 and token_ids[i] == bigram[0] and token_ids[i + 1] == bigram[1]:
+            if (
+                i < len(token_ids) - 1
+                and token_ids[i] == bigram[0]
+                and token_ids[i + 1] == bigram[1]
+            ):
                 new_ids.append(idx)
                 i += 2
             else:
@@ -241,5 +250,9 @@ class BPETokenizer(Tokenizer):
     def get_state_dict(self) -> OrderedDict:
         """Returns the tokenizer state dictionary."""
         return OrderedDict(
-            oov_token=self.oov_token, vocab=self.vocab, ivocab=self.ivocab, merges=self.merges, pattern=self.pattern
+            oov_token=self.oov_token,
+            vocab=self.vocab,
+            ivocab=self.ivocab,
+            merges=self.merges,
+            pattern=self.pattern,
         )

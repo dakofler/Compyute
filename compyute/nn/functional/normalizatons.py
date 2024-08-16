@@ -1,12 +1,11 @@
 """Neural network normalization functions."""
 
-import math
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
 from ...tensor_ops.reshaping import reshape, squeeze
 from ...tensor_ops.transforming import mean as cpmean
-from ...tensor_ops.transforming import norm, sqrt
+from ...tensor_ops.transforming import sqrt
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensor_ops.transforming import var as cpvar
 
@@ -71,7 +70,7 @@ def batchnorm1d(
         # compute mean and variance from x
         mean = cpmean(x, axis=axes, keepdims=True)
         var = cpvar(x, axis=axes, keepdims=True)
-        inv_std = (var + eps) ** -0.5
+        inv_std = 1 / sqrt(var + eps)
         x_norm = (x - mean) * inv_std
 
         # keep running stats
@@ -81,7 +80,7 @@ def batchnorm1d(
         # use running mean and variance
         rvar_ = rvar if x_is_2d else rvar.to_shape((*rvar.shape, 1))
         rmean_ = rmean if x_is_2d else rmean.to_shape((*rmean.shape, 1))
-        inv_std = (rvar_ + eps) ** -0.5
+        inv_std = 1 / sqrt(rvar_ + eps)
         x_norm = (x - rmean_) * inv_std
 
     w = w if x_is_2d else reshape(w, shape=(*w.shape, 1))
@@ -92,7 +91,7 @@ def batchnorm1d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = x.size / x.shape[1]
+            n = float(x.size / x.shape[1])
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
             dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
@@ -168,14 +167,14 @@ def batchnorm2d(
         # compute mean and variance from x
         mean = cpmean(x, axis=axes, keepdims=True)
         var = cpvar(x, axis=axes, keepdims=True)
-        inv_std = (var + eps) ** -0.5
+        inv_std = 1 / sqrt(var + eps)
         x_norm = (x - mean) * inv_std
 
         rmean = rmean * (1 - m) + squeeze(mean) * m
         rvar = rvar * (1 - m) + cpvar(x, axis=axes, ddof=1) * m
     else:
         # use running mean and variance
-        inv_std = (rvar.to_shape((*rvar.shape, 1, 1)) + eps) ** -0.5
+        inv_std = 1 / sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
         x_norm = (x - rmean.to_shape((*rmean.shape, 1, 1))) * inv_std
 
     w = w.to_shape((*w.shape, 1, 1))
@@ -186,7 +185,7 @@ def batchnorm2d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = x.size / x.shape[1]
+            n = float(x.size / x.shape[1])
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
             dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
@@ -205,7 +204,9 @@ def batchnorm2d(
     return y, rmean, rvar, None
 
 
-def layernorm(x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn: bool = False) -> tuple[
+def layernorm(
+    x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
+) -> tuple[
     Tensor,
     Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
 ]:
@@ -236,7 +237,7 @@ def layernorm(x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn
     :class:`compyute.nn.LayerNorm`
     """
     axes = tuple(-i - 1 for i in range(w.n_axes))
-    inv_std = (cpvar(x, axis=axes, keepdims=True) + eps) ** -0.5
+    inv_std = 1 / sqrt(cpvar(x, axis=axes, keepdims=True) + eps)
     x_norm = (x - cpmean(x, axis=axes, keepdims=True)) * inv_std
     y = w * x_norm + b
 
@@ -262,7 +263,9 @@ def layernorm(x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn
     return y, None
 
 
-def rmsnorm(x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = False) -> tuple[
+def rmsnorm(
+    x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
+) -> tuple[
     Tensor,
     Optional[Callable[[Tensor], tuple[Tensor, Tensor]]],
 ]:
@@ -291,7 +294,7 @@ def rmsnorm(x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = Fals
     :class:`compyute.nn.RMSNorm`
     """
     axes = tuple(-i - 1 for i in range(w.n_axes))
-    rms = (cpmean(x**2, axis=axes, keepdims=True) + eps) ** 0.5
+    rms = sqrt(cpmean(x**2, axis=axes, keepdims=True) + eps)
     x_norm = x / rms
     y = w * x_norm
 
@@ -300,7 +303,8 @@ def rmsnorm(x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = Fals
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
             # input grads
-            dx = w * (dy / rms - x * cpsum(dy * x, axis=axes, keepdims=True) / (w.size * rms**3))
+            dy_x_sum = cpsum(dy * x, axis=axes, keepdims=True)
+            dx = w * (dy / rms - x * dy_x_sum / (w.size * rms**3))
 
             # gamma grads
             dw = cpsum(dy * x_norm, axis=sum_axes)

@@ -36,7 +36,9 @@ class StepLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.StepLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1
+    ) -> None:
         self.scheduler = _StepLrScheduler(optimizer, t_decay, lr_decay)
 
     def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
@@ -60,7 +62,9 @@ class MultistepLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.MultistepLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1
+    ) -> None:
         self.scheduler = _MultistepLrScheduler(optimizer, t_decay_step, lr_decay)
 
     def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
@@ -84,7 +88,9 @@ class ExponentialLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.ExponentialLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1
+    ) -> None:
         self.scheduler = _ExponentialLrScheduler(optimizer, decay_steps, lr_decay)
 
     def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
@@ -111,8 +117,16 @@ class CosineLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.CosineLrScheduler`
     """
 
-    def __init__(self, optimizer: Optimizer, target_lr: float, warmup_steps: int, decay_steps: int) -> None:
-        self.scheduler = _CosineLrScheduler(optimizer, target_lr, warmup_steps, decay_steps)
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        target_lr: float,
+        warmup_steps: int,
+        decay_steps: int,
+    ) -> None:
+        self.scheduler = _CosineLrScheduler(
+            optimizer, target_lr, warmup_steps, decay_steps
+        )
 
     def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         self.scheduler.step()
@@ -147,7 +161,9 @@ class AdaptiveLrScheduler(Callback):
         lr_upscale_factor: float = 1.0,
     ) -> None:
         self.target = target
-        self.scheduler = _AdaptiveLrScheduler(optimizer, patience, lr_downscale_factor, lr_upscale_factor)
+        self.scheduler = _AdaptiveLrScheduler(
+            optimizer, patience, lr_downscale_factor, lr_upscale_factor
+        )
 
     def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.target not in trainer_cache:

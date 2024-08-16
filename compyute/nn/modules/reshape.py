@@ -64,7 +64,9 @@ class Moveaxis(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    def __init__(self, from_axis: int, to_axis: int, label: Optional[str] = None) -> None:
+    def __init__(
+        self, from_axis: int, to_axis: int, label: Optional[str] = None
+    ) -> None:
         super().__init__(label)
         self.from_axis = from_axis
         self.to_axis = to_axis
@@ -73,6 +75,8 @@ class Moveaxis(Module):
         y = moveaxis(x, from_axis=self.from_axis, to_axis=self.to_axis)
 
         if self._is_training:
-            self._backward = lambda dy: moveaxis(dy, from_axis=self.from_axis, to_axis=self.to_axis)
+            self._backward = lambda dy: moveaxis(
+                dy, from_axis=self.from_axis, to_axis=self.to_axis
+            )
 
         return y

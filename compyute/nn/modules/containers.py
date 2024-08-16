@@ -65,7 +65,9 @@ class ParallelConcat(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    def __init__(self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None) -> None:
+    def __init__(
+        self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None
+    ) -> None:
         super().__init__(label)
         self.modules = list(modules)
         self.concat_axis = concat_axis
@@ -140,9 +142,16 @@ class ResidualConnection(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    def __init__(self, *modules: Module, residual_proj: Optional[Module] = None, label: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *modules: Module,
+        residual_proj: Optional[Module] = None,
+        label: Optional[str] = None
+    ) -> None:
         if len(modules) == 0:
-            raise NoChildModulesError("Residual container requires at least one module.")
+            raise NoChildModulesError(
+                "Residual container requires at least one module."
+            )
         super().__init__(label)
 
         self.block = modules[0] if len(modules) == 1 else Sequential(*modules)
@@ -161,7 +170,10 @@ class ResidualConnection(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx = self.block.backward(dy)
-                dx += dy if self.residual_proj is None else self.residual_proj.backward(dy)
+                if self.residual_proj is not None:
+                    dx += self.residual_proj.backward(dy)
+                else:
+                    dx += dy
                 return dx
 
             self._backward = _backward

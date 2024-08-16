@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import Dtype
+from ...dtypes import INT_DTYPES
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import sum as cpsum
 
@@ -31,7 +31,7 @@ def lookup_embedding(
     Callable[[Tensor], Tensor]], optional
         Gradient function.
     """
-    if x.dtype not in (Dtype.INT8, Dtype.INT16, Dtype.INT32, Dtype.INT64):
+    if x.dtype not in INT_DTYPES:
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
     if not return_grad_fn:

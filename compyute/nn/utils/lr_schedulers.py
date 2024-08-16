@@ -58,7 +58,9 @@ class StepLrScheduler(LrScheduler):
         Decay factor. Defaults to ``0.1``.
     """
 
-    def __init__(self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1
+    ) -> None:
         super().__init__(optimizer)
         self.t_decay = t_decay
         self.lr_decay = lr_decay
@@ -82,7 +84,9 @@ class MultistepLrScheduler(LrScheduler):
         Decay factor. Defaults to ``0.1``.
     """
 
-    def __init__(self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1
+    ) -> None:
         super().__init__(optimizer)
         self.t_decay_step = t_decay_step
         self.lr_decay = lr_decay
@@ -106,7 +110,9 @@ class ExponentialLrScheduler(LrScheduler):
         Decay factor the learning rate is multiplied by each step. Defaults to ``0.1``.
     """
 
-    def __init__(self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1) -> None:
+    def __init__(
+        self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1
+    ) -> None:
         super().__init__(optimizer)
         self.decay_steps = decay_steps
         self.lr_decay = lr_decay
@@ -133,7 +139,13 @@ class CosineLrScheduler(LrScheduler):
         How many times the update is applied after the warmup.
     """
 
-    def __init__(self, optimizer: Optimizer, target_lr: float, warmup_steps: int, decay_steps: int) -> None:
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        target_lr: float,
+        warmup_steps: int,
+        decay_steps: int,
+    ) -> None:
         super().__init__(optimizer)
         self.target_lr = target_lr
         self.warmup_steps = warmup_steps
@@ -188,7 +200,9 @@ class AdaptiveLrScheduler(LrScheduler):
 
     def step(self, **kwargs) -> None:
         if len(kwargs) != 1:
-            raise ValueError("Exactly one metric value must be passed as keyword argument.")
+            raise ValueError(
+                "Exactly one metric value must be passed as keyword argument."
+            )
 
         self._log_lr()
         metric = next(iter(kwargs.values()))

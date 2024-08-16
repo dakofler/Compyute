@@ -81,7 +81,9 @@ def all(x: Tensor) -> bool:
     return x.engine.all(x.data)
 
 
-def clip(x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None) -> Tensor:
+def clip(
+    x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None
+) -> Tensor:
     """Returns a tensor with values clipped to min_value and max_value.
 
     Parameters
@@ -366,7 +368,9 @@ def histogram(
     """
     b = bins.data if isinstance(bins, Tensor) else bins
     w = weights.data if weights is not None else None
-    hist, bin_edges = x.engine.histogram(x.data, bins=b, range=binrange, density=density, weights=w)
+    hist, bin_edges = x.engine.histogram(
+        x.data, bins=b, range=binrange, density=density, weights=w
+    )
     return tensor(hist), tensor(bin_edges)
 
 
@@ -631,7 +635,7 @@ def sech(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise secant.
     """
-    return cosh(x) ** -1
+    return 1 / cosh(x)
 
 
 def sin(x: Tensor) -> Tensor:
@@ -790,7 +794,9 @@ def tensorsum(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
     return reduce(operator.add, tensors)
 
 
-def var(x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False) -> Tensor:
+def var(
+    x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False
+) -> Tensor:
     """Computes the variance of tensor elements over a given axis.
 
     Parameters

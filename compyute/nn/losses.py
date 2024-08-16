@@ -120,7 +120,9 @@ class BinaryCrossEntropy(Loss):
         return loss
 
 
-_LossLike = Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
+_LossLike = (
+    Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
+)
 LOSSES = {
     "binary_cross_entropy": BinaryCrossEntropy,
     "cross_entropy": CrossEntropy,

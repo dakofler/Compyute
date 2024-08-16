@@ -52,6 +52,8 @@ Activations
    :show-inheritance:
 .. autoclass:: SiLU
    :show-inheritance:
+.. autoclass:: Softmax
+   :show-inheritance:
 .. autoclass:: Tanh
    :show-inheritance:
 

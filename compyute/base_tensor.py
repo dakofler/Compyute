@@ -8,7 +8,15 @@ from typing import Any, Optional, TypeAlias
 import numpy
 
 from .dtypes import Dtype, _DtypeLike, _ScalarLike
-from .engine import Device, _ArrayLike, _DeviceLike, data_to_device, get_array_string, get_device, get_engine
+from .engine import (
+    Device,
+    _ArrayLike,
+    _DeviceLike,
+    data_to_device,
+    get_array_string,
+    get_device,
+    get_engine,
+)
 
 __all__ = ["tensor", "Tensor"]
 
@@ -90,7 +98,9 @@ class Tensor:
     @data.setter
     def data(self, value: _ArrayLike) -> None:
         if not isinstance(value, _ArrayLike):
-            raise TypeError("Invalid data type. Use ``compyute.tensor()`` to initialize tensors.")
+            raise TypeError(
+                "Invalid data type. Use ``compyute.tensor()`` to initialize tensors."
+            )
         self._data = value
 
     @property
@@ -158,11 +168,15 @@ class Tensor:
         return f"Tensor({array_string})"
 
     def __getitem__(self, key: Any) -> Tensor:
-        key = tuple(_to_arraylike(k) for k in key) if isinstance(key, tuple) else _to_arraylike(key)
+        key = (
+            tuple(to_arraylike(k) for k in key)
+            if isinstance(key, tuple)
+            else to_arraylike(key)
+        )
         return tensor(self._data[key])
 
     def __setitem__(self, key: Any, value: Tensor | _ScalarLike) -> None:
-        self._data[_to_arraylike(key)] = _to_arraylike(value)
+        self._data[to_arraylike(key)] = to_arraylike(value)
 
     def __iter__(self) -> Tensor:
         self._iterator = 0
@@ -175,95 +189,97 @@ class Tensor:
         raise StopIteration
 
     def __add__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data + _to_arraylike(other))
+        return tensor(self._data + to_arraylike(other))
 
     def __radd__(self, other: Optional[_ScalarLike]) -> Tensor:
-        other = other or 0.0  # for gradient accumulation
-        return self + other
+        return self + (other or 0.0)  # for gradient accumulation
 
     def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data * _to_arraylike(other))
+        return tensor(self._data * to_arraylike(other))
 
     def __rmul__(self, other: _ScalarLike) -> Tensor:
         return self * other
 
     def __pow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data ** _to_arraylike(other))
+        return tensor(self._data ** to_arraylike(other))
 
     def __rpow__(self, other: _ScalarLike) -> Tensor:
-        return tensor(other, self.device) ** self
+        return tensor(other**self._data)
 
     def __neg__(self) -> Tensor:
-        return tensor(-self.data)
+        return tensor(-self._data)
 
     def __sub__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data - _to_arraylike(other))
+        return tensor(self._data - to_arraylike(other))
 
     def __rsub__(self, other: _ScalarLike) -> Tensor:
-        return -self + other
+        return tensor(other - self._data)
 
     def __truediv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data / _to_arraylike(other))
+        return tensor(self._data / to_arraylike(other))
 
     def __rtruediv__(self, other: _ScalarLike) -> Tensor:
-        return self**-1 * other
+        return tensor(other / self._data)
 
     def __floordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data // _to_arraylike(other))
+        return tensor(self._data // to_arraylike(other))
 
     def __rfloordiv__(self, other: _ScalarLike) -> Tensor:
-        return (other // self).to_type(self.dtype)
+        return tensor(other // self._data)
 
     def __mod__(self, other: int) -> Tensor:
         return tensor(self._data % other)
+
+    def __rmod__(self, other: int) -> Tensor:
+        return tensor(other % self._data)
 
     def __matmul__(self, other: Tensor) -> Tensor:
         return tensor(self._data @ other.data)
 
     def __lt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data < _to_arraylike(other))
+        return tensor(self._data < to_arraylike(other))
 
     def __gt__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data > _to_arraylike(other))
+        return tensor(self._data > to_arraylike(other))
 
     def __le__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data <= _to_arraylike(other))
+        return tensor(self._data <= to_arraylike(other))
 
     def __ge__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data >= _to_arraylike(other))
+        return tensor(self._data >= to_arraylike(other))
 
     def __eq__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data == _to_arraylike(other))
+        return tensor(self._data == to_arraylike(other))
 
     def __ne__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data != _to_arraylike(other))
+        return tensor(self._data != to_arraylike(other))
 
     def __iadd__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data += _to_arraylike(other)
+        self._data += to_arraylike(other)
         return self
 
     def __isub__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data -= _to_arraylike(other)
+        self._data -= to_arraylike(other)
         return self
 
     def __imul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data *= _to_arraylike(other)
+        self._data *= to_arraylike(other)
         return self
 
     def __idiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data /= _to_arraylike(other)
+        self._data /= to_arraylike(other)
         return self
 
     def __ifloordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data //= _to_arraylike(other)
+        self._data //= to_arraylike(other)
         return self
 
     def __imod__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data %= _to_arraylike(other)
+        self._data %= to_arraylike(other)
         return self
 
     def __ipow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data **= _to_arraylike(other)
+        self._data **= to_arraylike(other)
         return self
 
     def __len__(self) -> int:
@@ -505,7 +521,7 @@ class Tensor:
         return self._data.tolist()
 
 
-def _to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:
+def to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:
     """Converts a value to an array."""
     if isinstance(value, Tensor):
         return value.data

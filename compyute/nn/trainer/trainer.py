@@ -49,7 +49,9 @@ class Trainer:
         self.optimizer.parameters = model.get_parameters()
         self.loss = get_loss_function(loss)
         self.metric = None if metric is None else get_metric_function(metric)
-        self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
+        self.metric_name = (
+            None if metric is None else self.metric.__class__.__name__.lower()
+        )
         self.callbacks = callbacks
         self.cache: dict = {"abort": False, "t": 1}
 
@@ -110,7 +112,9 @@ class Trainer:
         self._callback("end")
         self.model.clean()
 
-    def evaluate_model(self, x: Tensor, y: Tensor, batch_size: int = 32) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
+    def evaluate_model(
+        self, x: Tensor, y: Tensor, batch_size: int = 32
+    ) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -151,7 +155,12 @@ class Trainer:
             return loss, sum(scores) / len(scores)
         return loss, None
 
-    def _callback(self, on: Literal["start", "step_start", "step_end", "epoch_start", "epoch_end", "end"]) -> None:
+    def _callback(
+        self,
+        on: Literal[
+            "start", "step_start", "step_end", "epoch_start", "epoch_end", "end"
+        ],
+    ) -> None:
         if self.callbacks is None:
             return
         for callback in self.callbacks:
@@ -174,7 +183,9 @@ class Trainer:
         # compute loss and metrics
         self.cache["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
+            self.cache[f"{self.metric_name}_score"] = self.metric(
+                y_pred, y_batch
+            ).item()
 
         # backward pass
         self.optimizer.reset_grads()

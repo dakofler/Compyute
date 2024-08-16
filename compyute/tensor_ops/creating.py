@@ -95,7 +95,11 @@ def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
     return Tensor(tensors[0].engine.concatenate([t.data for t in tensors], axis=axis))
 
 
-def empty(shape: _ShapeLike, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
+def empty(
+    shape: _ShapeLike,
+    dtype: _DtypeLike = Dtype.FLOAT32,
+    device: _DeviceLike = Device.CPU,
+) -> Tensor:
     """Returns an tensor with uninitialized values.
 
     Parameters
@@ -178,7 +182,9 @@ def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
     return full(x.shape, value=value, dtype=x.dtype, device=x.device)
 
 
-def identity(n: int, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
+def identity(
+    n: int, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU
+) -> Tensor:
     """Returns a diagonal tensor of shape ``(n, n)``.
 
     Parameters
@@ -231,7 +237,11 @@ def linspace(
     return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
-def ones(shape: _ShapeLike, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
+def ones(
+    shape: _ShapeLike,
+    dtype: _DtypeLike = Dtype.FLOAT32,
+    device: _DeviceLike = Device.CPU,
+) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -308,7 +318,11 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
     return Tensor(tensors[0].engine.stack([t.data for t in tensors], axis=axis))
 
 
-def zeros(shape: _ShapeLike, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU) -> Tensor:
+def zeros(
+    shape: _ShapeLike,
+    dtype: _DtypeLike = Dtype.FLOAT32,
+    device: _DeviceLike = Device.CPU,
+) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
     Parameters

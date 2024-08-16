@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Iterator, Literal, Optional
 
-from ..tensor_ops.transforming import tensorprod
+from ..tensor_ops.transforming import sqrt, tensorprod
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -21,7 +21,9 @@ class Optimizer(ABC):
         Learning rate. Defaults to ``1e-3``.
     """
 
-    def __init__(self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3) -> None:
+    def __init__(
+        self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
+    ) -> None:
         self.lr = lr
         self.t: int = 1
         self.state: dict = {}
@@ -50,7 +52,11 @@ class Optimizer(ABC):
         """
         return OrderedDict(
             state=self.state,
-            vars={k: v for k, v in vars(self).items() if k not in ["state", "parameters", "_parameters"]},
+            vars={
+                k: v
+                for k, v in vars(self).items()
+                if k not in ["state", "parameters", "_parameters"]
+            },
         )
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
@@ -248,7 +254,7 @@ class Adam(Optimizer):
             m /= 1 - self.beta1**self.t
             v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m / (v**0.5 + self.eps)
+            p -= self.lr * m / (sqrt(v) + self.eps)
 
         self.t += 1
 
@@ -338,7 +344,7 @@ class AdamW(Optimizer):
             m /= 1 - self.beta1**self.t
             v /= 1 - self.beta2**self.t
 
-            p -= self.lr * (m / (v**0.5 + self.eps) + self.weight_decay * p)
+            p -= self.lr * (m / (sqrt(v) + self.eps) + self.weight_decay * p)
 
         self.t += 1
 
@@ -441,10 +447,12 @@ class NAdam(Optimizer):
             v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
             self.state[i]["v"] = v
 
-            m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (1 - mu_prod)
+            m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (
+                1 - mu_prod
+            )
             v /= 1 - self.beta2**self.t
 
-            p -= self.lr * m_hat / (v**0.5 + self.eps)
+            p -= self.lr * m_hat / (sqrt(v) + self.eps)
 
         self.t += 1
 

@@ -153,7 +153,16 @@ class Convolution1DBlock(Sequential):
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution1D(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
+        conv = Convolution1D(
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            stride,
+            dilation,
+            bias,
+            dtype,
+        )
         w_init = get_initializer(weight_init, dtype, activation)
         conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
         if bias:
@@ -246,9 +255,20 @@ class Convolution2DBlock(Sequential):
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution2D(in_channels, out_channels, kernel_size, padding, stride, dilation, bias, dtype)
+        conv = Convolution2D(
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            stride,
+            dilation,
+            bias,
+            dtype,
+        )
         w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
+        conv.w = Parameter(
+            w_init((out_channels, in_channels, kernel_size, kernel_size))
+        )
         if bias:
             b_init = get_initializer(bias_init, dtype, activation)
             conv.b = Parameter(b_init((out_channels,)))

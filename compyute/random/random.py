@@ -77,7 +77,9 @@ def normal(
         Tensor of normally distributed samples.
     """
     dtype = Dtype(dtype).value
-    return tensor(get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.normal(mean, std, shape), device=device, dtype=dtype
+    )
 
 
 def uniform(
@@ -108,7 +110,9 @@ def uniform(
         Tensor of uniformly distributed samples.
     """
     dtype = Dtype(dtype).value
-    return tensor(get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.uniform(low, high, shape), device=device, dtype=dtype
+    )
 
 
 def uniform_int(
@@ -139,10 +143,14 @@ def uniform_int(
         Tensor of samples.
     """
     dtype = Dtype(dtype).value
-    return tensor(get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype)
+    return tensor(
+        get_engine(device).random.randint(low, high, shape), device=device, dtype=dtype
+    )
 
 
-def permutation(n: int, dtype: _DtypeLike = Dtype.INT64, device: _DeviceLike = Device.CPU) -> Tensor:
+def permutation(
+    n: int, dtype: _DtypeLike = Dtype.INT64, device: _DeviceLike = Device.CPU
+) -> Tensor:
     """Returns a tensor containing a permuted range of a specified length.
 
     Parameters
@@ -203,7 +211,10 @@ def multinulli(p: float, shape: _ShapeLike, device: _DeviceLike = Device.CPU) ->
     Tensor
         Tensor of samples.
     """
-    return Tensor(get_engine(device).random.choice([0, 1], size=shape, p=[p, 1 - p]).astype("float32"))
+    return tensor(
+        get_engine(device).random.choice([0.0, 1.0], size=shape, p=[p, 1 - p]),
+        dtype=Dtype.FLOAT32,
+    )
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:

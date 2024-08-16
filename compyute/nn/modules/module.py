@@ -79,7 +79,11 @@ class Module(ABC):
         """
         if self._modules is not None:
             return self._modules
-        return [getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Module)]
+        return [
+            getattr(self, a)
+            for a in self.__dict__
+            if isinstance(getattr(self, a), Module)
+        ]
 
     @modules.setter
     def modules(self, value: list[Module]) -> None:
@@ -178,7 +182,11 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        attrs = [f"{a}={getattr(self, a)}" for a in self.__dict__ if is_repr_attr(a, getattr(self, a))]
+        attrs = [
+            f"{a}={getattr(self, a)}"
+            for a in self.__dict__
+            if is_repr_attr(a, getattr(self, a))
+        ]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
         for module in self.modules:
             repr_string += "\n" + module.__repr__()
@@ -218,9 +226,15 @@ class Module(ABC):
         Iterator[Parameter]
             Iterator of module and child module parameters.
         """
-        self_parameters = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Parameter))
+        self_parameters = (
+            getattr(self, a)
+            for a in self.__dict__
+            if isinstance(getattr(self, a), Parameter)
+        )
         if include_child_modules:
-            child_module_parameters = (p for module in self.modules for p in module.get_parameters())
+            child_module_parameters = (
+                p for module in self.modules for p in module.get_parameters()
+            )
             return chain(self_parameters, child_module_parameters)
         else:
             return self_parameters
@@ -238,9 +252,15 @@ class Module(ABC):
         Iterator[Buffer]
             Iterator of module and child module buffers.
         """
-        self_buffers = (getattr(self, a) for a in self.__dict__ if isinstance(getattr(self, a), Buffer))
+        self_buffers = (
+            getattr(self, a)
+            for a in self.__dict__
+            if isinstance(getattr(self, a), Buffer)
+        )
         if include_child_modules:
-            child_module_buffers = (b for module in self.modules for b in module.get_buffers())
+            child_module_buffers = (
+                b for module in self.modules for b in module.get_buffers()
+            )
             return chain(self_buffers, child_module_buffers)
         else:
             return self_buffers
@@ -263,7 +283,9 @@ class Module(ABC):
         state_dict : OrderedDict
             State dict containing parameters and buffers.
         """
-        for p, value in list(zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())):
+        for p, value in list(
+            zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())
+        ):
             p.data = value.data
             p.grad = value.grad
 
@@ -344,7 +366,9 @@ class Module(ABC):
             module.clean(force)
 
     @staticmethod
-    def _update_parameter_grad(parameter: Optional[Parameter], grad: Optional[Tensor]) -> None:
+    def _update_parameter_grad(
+        parameter: Optional[Parameter], grad: Optional[Tensor]
+    ) -> None:
         """Updates the parameter gradients."""
         if parameter is None or grad is None:
             return
@@ -373,7 +397,14 @@ class ModelDefinitionError(Exception):
 
 def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
-    return all([attr != "label", not attr.startswith("_"), not isinstance(value, Tensor), value is not None])
+    return all(
+        [
+            attr != "label",
+            not attr.startswith("_"),
+            not isinstance(value, Tensor),
+            value is not None,
+        ]
+    )
 
 
 def validate_input_axes(module: Module, x: Tensor, valid_n_axes: Iterable[int]) -> None:
@@ -381,4 +412,6 @@ def validate_input_axes(module: Module, x: Tensor, valid_n_axes: Iterable[int]) 
     if x.n_axes in valid_n_axes:
         return
     vdims = ", ".join(str(d) for d in valid_n_axes)
-    raise ShapeError(f"{module.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}.")
+    raise ShapeError(
+        f"{module.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}."
+    )

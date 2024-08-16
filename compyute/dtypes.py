@@ -41,10 +41,10 @@ class Dtype(Enum):
         return self.__repr__()
 
 
-DTYPES = {d.value for d in Dtype}
-FLOAT_DTYPES = {d for d in DTYPES if "float" in d}
-INT_DTYPES = {d for d in DTYPES if "int" in d}
-COMPLEX_DTYPES = {d for d in DTYPES if "complex" in d}
+DTYPES = set(Dtype)
+FLOAT_DTYPES = {d for d in DTYPES if "float" in d.value}
+INT_DTYPES = {d for d in DTYPES if "int" in d.value}
+COMPLEX_DTYPES = {d for d in DTYPES if "complex" in d.value}
 
 
 bool = Dtype.BOOL
@@ -71,4 +71,4 @@ _FloatLike: TypeAlias = NumpyFloat | CupyFloat | float
 _ComplexLike: TypeAlias = NumpyComplex | CupyComplex | complex
 
 _ScalarLike: TypeAlias = _IntLike | _FloatLike | _ComplexLike
-_DtypeLike: TypeAlias = Dtype | Literal[*DTYPES]
+_DtypeLike: TypeAlias = Dtype | Literal[*{d.value for d in DTYPES}]

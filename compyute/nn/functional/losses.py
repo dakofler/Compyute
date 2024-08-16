@@ -8,7 +8,7 @@ from ...base_tensor import Tensor
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import clip, log, mean
 from ...tensor_ops.transforming import sum as cpsum
-from .activations import softmax
+from .activations import sigmoid, softmax
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
 
@@ -101,7 +101,7 @@ def binary_cross_entropy(
     Parameters
     ----------
     y_pred : Tensor
-        Model logits.
+        Normalized model outputs.
     y_true : Tensor
         Binary target class labels, must be either ``0`` or ``1``.
     return_grad_fn : bool, optional
@@ -118,12 +118,15 @@ def binary_cross_entropy(
     --------
     :class:`compyute.nn.BinaryCrossEntropy`
     """
-    loss = -mean(y_true * clip(log(y_pred), -100, 100) + (1 - y_true) * clip(log(1 - y_pred), -100, 100))
+    clip_value = 100
+    log_y_pred = clip(log(y_pred), -clip_value, clip_value)
+    log_one_minus_y_pred = clip(log(1 - y_pred), -clip_value, clip_value)
+    loss = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
 
     if return_grad_fn:
 
         def grad_fn() -> Tensor:
-            return ((-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / y_pred.size).to_float()
+            return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / float(y_pred.size)
 
         return loss, grad_fn
 

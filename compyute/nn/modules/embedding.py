@@ -41,7 +41,11 @@ class Embedding(Module):
     """
 
     def __init__(
-        self, n_embeddings: int, embedding_dim: int, dtype: _DtypeLike = Dtype.FLOAT32, label: Optional[str] = None
+        self,
+        n_embeddings: int,
+        embedding_dim: int,
+        dtype: _DtypeLike = Dtype.FLOAT32,
+        label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
         self.n_embeddings = n_embeddings
@@ -55,9 +59,8 @@ class Embedding(Module):
 
         if self._is_training:
 
-            def _backward(dy: Tensor) -> Tensor:
+            def _backward(dy: Tensor) -> None:
                 self._update_parameter_grad(self.w, grad_fn(dy))
-                return zeros_like(x)
 
             self._backward = _backward
 

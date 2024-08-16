@@ -111,7 +111,10 @@ class Tensorboard(Callback):
             if "val_" in stat:
                 s = trainer_cache["t"]
             else:
-                s = trainer_cache["t"] * trainer_cache["train_steps"] + trainer_cache["step"]
+                s = (
+                    trainer_cache["t"] * trainer_cache["train_steps"]
+                    + trainer_cache["step"]
+                )
             self.writer.add_scalar(f"{stat}/stat", trainer_cache[stat], s)
 
     def on_step_end(self, trainer_cache: dict[str, Any]) -> None:

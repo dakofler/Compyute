@@ -73,7 +73,14 @@ class BatchNorm1D(Module):
         validate_input_axes(self, x, [2, 3])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm1d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._is_training
+            x,
+            self.rmean,
+            self.rvar,
+            self.w,
+            self.b,
+            self.m,
+            self.eps,
+            self._is_training,
         )
 
         if self._is_training and grad_fn is not None:
@@ -151,7 +158,14 @@ class BatchNorm2D(Module):
         validate_input_axes(self, x, [4])
 
         y, self.rmean, self.rvar, grad_fn = batchnorm2d(
-            x, self.rmean, self.rvar, self.w, self.b, self.m, self.eps, self._is_training
+            x,
+            self.rmean,
+            self.rvar,
+            self.w,
+            self.b,
+            self.m,
+            self.eps,
+            self._is_training,
         )
 
         if self._is_training and grad_fn is not None:
