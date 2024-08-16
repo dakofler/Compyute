@@ -88,7 +88,7 @@ def convolve1d(
     conv, conv_grad_fn = convolve1d_(x_ext, f_ext, stride, return_grad_fn)
     y = cpsum(conv, 2)  # (B, Co, T)
 
-    if b is not None:
+    if b:
         y += reshape(b, (b.shape[0], 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
@@ -99,7 +99,7 @@ def convolve1d(
 
             dx = pad_grad_fn(cpsum(dx, 1))
             df = dil_grad_fn(cpsum(df, 0))
-            db = cpsum(dy, (0, 2)) if b is not None else None
+            db = cpsum(dy, (0, 2)) if b else None
 
             return dx, df, db
 
@@ -285,7 +285,7 @@ def convolve2d(
     conv, conv_grad_fn = convolve2d_(x_ext, f_ext, s, return_grad_fn)
     y = cpsum(conv, 2)  # (B, Co, Y, X)
 
-    if b is not None:
+    if b:
         y += reshape(b, (b.shape[0], 1, 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
@@ -296,7 +296,7 @@ def convolve2d(
 
             dx = pad_grad_fn(cpsum(dx, 1))  # sum over out channels
             df = dil_grad_fn(cpsum(df, 0))  # sum over batches
-            db = cpsum(dy, (0, 2, 3)) if b is not None else None
+            db = cpsum(dy, (0, 2, 3)) if b else None
 
             return dx, df, db
 

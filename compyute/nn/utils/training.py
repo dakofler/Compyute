@@ -26,7 +26,7 @@ def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
         Unclipped gradient norm.
     """
     params = list(parameters)
-    grads = concatenate([flatten(p.grad) for p in params if p.grad is not None])
+    grads = concatenate([flatten(p.grad) for p in params if p.grad])
     grad_norm = norm(grads).item()
 
     if grad_norm <= max_norm:
@@ -34,7 +34,7 @@ def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
 
     clip_coef = max_norm / grad_norm
     for p in params:
-        if p.grad is not None:
+        if p.grad:
             p.grad *= clip_coef
 
     return grad_norm

@@ -4,7 +4,6 @@ from typing import Optional
 
 from ...dtypes import Dtype, _DtypeLike
 from ..functional.convolutions import _PaddingLike
-from ..parameter import Parameter
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
 from .containers import Sequential
@@ -67,13 +66,13 @@ class DenseBlock(Sequential):
         label: Optional[str] = None,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype)
-        w_init = get_initializer(weight_init, dtype, activation)
-        linear.w = Parameter(w_init((out_channels, in_channels)))
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            linear.b = Parameter(b_init((out_channels,)))
+        w_init = get_initializer(weight_init, activation)
+        w_init(linear.w)
+        if linear.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(linear.b)
 
-        act = get_activation(activation)()
+        act = get_activation(activation)
 
         super().__init__(linear, act, label=label)
 
@@ -163,13 +162,13 @@ class Convolution1DBlock(Sequential):
             bias,
             dtype,
         )
-        w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)))
+        w_init = get_initializer(weight_init, activation)
+        w_init(conv.w)
+        if conv.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(conv.b)
 
-        act = get_activation(activation)()
+        act = get_activation(activation)
 
         if batchnorm:
             bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m, dtype)
@@ -265,15 +264,13 @@ class Convolution2DBlock(Sequential):
             bias,
             dtype,
         )
-        w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(
-            w_init((out_channels, in_channels, kernel_size, kernel_size))
-        )
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)))
+        w_init = get_initializer(weight_init, activation)
+        w_init(conv.w)
+        if conv.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(conv.b)
 
-        act = get_activation(activation)()
+        act = get_activation(activation)
 
         if batchnorm:
             bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m, dtype)

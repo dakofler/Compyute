@@ -1,6 +1,6 @@
 """Activation modules."""
 
-from typing import Literal, Optional
+from typing import Literal, Optional, TypeAlias
 
 from ...base_tensor import Tensor
 from ..functional.activations import (
@@ -143,7 +143,9 @@ class Softmax(Module):
         return y
 
 
-_ActivationLike = Literal["relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh"]
+_ActivationLike: TypeAlias = Literal[
+    "relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh"
+]
 ACTIVATIONS = {
     "relu": ReLU,
     "leaky_relu": LeakyReLU,
@@ -154,9 +156,9 @@ ACTIVATIONS = {
 }
 
 
-def get_activation(activation: _ActivationLike) -> type[Module]:
-    """Returns an actiation function class."""
+def get_activation(activation: _ActivationLike) -> Module:
+    """Returns an actiation function."""
 
     if activation not in ACTIVATIONS:
         raise ValueError(f"Unknown activation function: {activation}.")
-    return ACTIVATIONS[activation]
+    return ACTIVATIONS[activation]()

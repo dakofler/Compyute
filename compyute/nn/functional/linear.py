@@ -38,7 +38,7 @@ def linear(
     :class:`compyute.nn.Linear`
     """
     y = x @ w.T
-    if b is not None:
+    if b:
         y += b
 
     if return_grad_fn:
@@ -52,7 +52,7 @@ def linear(
             dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
 
             # bias grads, analogous to summing over all batch dims
-            db = einsum(f"{batch_dims}o->o", dy) if b is not None else None
+            db = einsum(f"{batch_dims}o->o", dy) if b else None
 
             return dx, dw, db
 

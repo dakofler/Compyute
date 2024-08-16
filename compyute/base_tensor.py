@@ -57,8 +57,8 @@ def tensor(
     if isinstance(data, _ArrayLike) and device is None and dtype is None:
         return Tensor(data)
 
-    device = get_device(type(data)) if device is None else device
-    dtype = Dtype(dtype).value if dtype is not None else None
+    device = get_device(type(data)) if device is None else device  # infer device
+    dtype = Dtype(dtype).value if dtype is not None else None  # infer dtype
     data_array = get_engine(device).array(data, dtype, copy=copy)
 
     return Tensor(data_array)
@@ -291,6 +291,9 @@ class Tensor:
     def __array__(self, dtype=None, copy=None):
         return self.to_numpy()
 
+    def __bool__(self) -> bool:
+        return True
+
     # ----------------------------------------------------------------------------------------------
     # DEVICE CONVERSIONS
     # ----------------------------------------------------------------------------------------------
@@ -313,7 +316,7 @@ class Tensor:
             return self
 
         new_tensor = Tensor(data_to_device(self._data, device))
-        if self.grad is not None:
+        if self.grad:
             new_tensor.grad = self.grad.to_device(device)
         return new_tensor
 
@@ -332,8 +335,28 @@ class Tensor:
         self._device = device
         self._engine = get_engine(self.device)
         self.data = data_to_device(self._data, device)
-        if self.grad is not None:
+        if self.grad:
             self.grad.ito_device(device)
+
+    def to_cpu(self) -> Tensor:
+        """Returns a copy of the tensor on the CPU.
+
+        Returns
+        -------
+        Tensor
+            Tensor on the CPU.
+        """
+        return self.to_device(Device.CPU)
+
+    def to_cuda(self) -> Tensor:
+        """Returns a copy of the tensor on the GPU.
+
+        Returns
+        -------
+        Tensor
+            Tensor on the GPU.
+        """
+        return self.to_device(Device.CUDA)
 
     # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS
@@ -434,7 +457,7 @@ class Tensor:
         return self.to_type(Dtype.COMPLEX64)
 
     # ----------------------------------------------------------------------------------------------
-    # MEMORY/DEVICE METHODS
+    # OTHER METHODS
     # ----------------------------------------------------------------------------------------------
 
     def copy(self) -> Tensor:
@@ -446,7 +469,7 @@ class Tensor:
             Copy of the tensor.
         """
         new_tensor = Tensor(self._data.copy())
-        if self.grad is not None:
+        if self.grad:
             new_tensor.grad = self.grad.copy()
         return new_tensor
 
@@ -460,30 +483,6 @@ class Tensor:
             Scalar value of the tensor data.
         """
         return self._data.item()
-
-    def to_cpu(self) -> Tensor:
-        """Returns a copy of the tensor on the CPU.
-
-        Returns
-        -------
-        Tensor
-            Tensor on the CPU.
-        """
-        return self.to_device(Device.CPU)
-
-    def to_cuda(self) -> Tensor:
-        """Returns a copy of the tensor on the GPU.
-
-        Returns
-        -------
-        Tensor
-            Tensor on the GPU.
-        """
-        return self.to_device(Device.CUDA)
-
-    # ----------------------------------------------------------------------------------------------
-    # OTHER METHODS
-    # ----------------------------------------------------------------------------------------------
 
     def to_numpy(self) -> numpy.ndarray:
         """Returns the tensor data as a NumPy array.
@@ -522,7 +521,7 @@ class Tensor:
 
 
 def to_arraylike(value: Any) -> _ArrayLike | _ScalarLike:
-    """Converts a value to an array."""
+    """Converts a value to an array like."""
     if isinstance(value, Tensor):
         return value.data
     return value

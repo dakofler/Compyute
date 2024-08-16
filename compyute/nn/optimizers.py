@@ -146,7 +146,7 @@ class SGD(Optimizer):
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
         for i, p in self.parameters.items():
-            if p.grad is None:
+            if not p.grad:
                 continue
 
             grad = p.grad.copy()
@@ -233,7 +233,7 @@ class Adam(Optimizer):
 
     def step(self) -> None:
         for i, p in self.parameters.items():
-            if p.grad is None:
+            if not p.grad:
                 continue
 
             grad = p.grad.copy()
@@ -323,7 +323,7 @@ class AdamW(Optimizer):
 
     def step(self) -> None:
         for i, p in self.parameters.items():
-            if p.grad is None:
+            if not p.grad:
                 continue
 
             grad = p.grad.copy()
@@ -429,7 +429,7 @@ class NAdam(Optimizer):
         next_mu = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
 
         for i, p in self.parameters.items():
-            if p.grad is None:
+            if not p.grad:
                 continue
 
             grad = p.grad.copy()

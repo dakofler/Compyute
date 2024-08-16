@@ -59,7 +59,7 @@ class Module(ABC):
         available(device)
         self._device = device
 
-        if self.y is not None:
+        if self.y:
             self.y.ito_device(device)
 
         for p in chain(self.get_buffers(), self.get_parameters()):
@@ -209,6 +209,9 @@ class Module(ABC):
         self._set_y(y)
         return y
 
+    def __bool__(self) -> bool:
+        return True
+
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
@@ -337,13 +340,13 @@ class Module(ABC):
     def _set_y(self, y: Tensor) -> None:
         if not self._is_retaining_values:
             return
-        if self.y is None:
-            self.y = y.copy()
-        else:
+        if self.y:
             self.y.data = y.data.copy()
+        else:
+            self.y = y.copy()
 
     def _set_dy(self, dy: Tensor) -> None:
-        if self._is_retaining_values and self.y is not None:
+        if self._is_retaining_values and self.y:
             self.y.grad = dy.copy()
 
     def clean(self, force: bool = False) -> None:
@@ -370,9 +373,8 @@ class Module(ABC):
         parameter: Optional[Parameter], grad: Optional[Tensor]
     ) -> None:
         """Updates the parameter gradients."""
-        if parameter is None or grad is None:
-            return
-        parameter.grad += grad
+        if parameter and grad:
+            parameter.grad += grad
 
 
 class Identity(Module):

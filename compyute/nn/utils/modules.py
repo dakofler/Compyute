@@ -33,7 +33,7 @@ def get_module_summary(
         module_summaries.append(
             {
                 "name": prefix + module.label,
-                "out_shape": (-1,) + module.y.shape[1:] if module.y is not None else (),
+                "out_shape": (-1,) + module.y.shape[1:] if module.y else (),
                 "n_params": {p.ptr: p.size for p in module.get_parameters(False)},
                 "trainable": module.is_trainable,
             }

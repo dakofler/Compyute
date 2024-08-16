@@ -156,24 +156,17 @@ class ResidualConnection(Module):
 
         self.block = modules[0] if len(modules) == 1 else Sequential(*modules)
         self.residual_proj = residual_proj
-
-        if residual_proj is not None:
-            self.modules = [self.block, residual_proj]
-        else:
-            self.modules = [self.block]
+        self.modules = [self.block, residual_proj] if residual_proj else [self.block]
 
     def forward(self, x: Tensor) -> Tensor:
         y = self.block(x)
-        y += x if self.residual_proj is None else self.residual_proj(x)
+        y += self.residual_proj(x) if self.residual_proj else x
 
         if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
                 dx = self.block.backward(dy)
-                if self.residual_proj is not None:
-                    dx += self.residual_proj.backward(dy)
-                else:
-                    dx += dy
+                dx += self.residual_proj.backward(dy) if self.residual_proj else dy
                 return dx
 
             self._backward = _backward
