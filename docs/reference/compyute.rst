@@ -1,5 +1,5 @@
 compyute
-========
+===========
 .. automodule:: compyute
 .. currentmodule:: compyute
 
@@ -7,7 +7,6 @@ Tensors
 -------
 .. autoclass:: Tensor
     :members:
-    :show-inheritance:
 .. autofunction:: tensor
 
 Creating and Combining Operations
@@ -57,6 +56,8 @@ Selecting Operations
 Transforming and Computing Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: abs
+.. autofunction:: all
+.. autofunction:: allclose
 .. autofunction:: clip
 .. autofunction:: cos
 .. autofunction:: cosh
@@ -77,6 +78,7 @@ Transforming and Computing Operations
 .. autofunction:: mean
 .. autofunction:: min
 .. autofunction:: minimum
+.. autofunction:: norm
 .. autofunction:: outer
 .. autofunction:: prod
 .. autofunction:: real
@@ -95,6 +97,7 @@ Transforming and Computing Operations
 
 Data Types
 ----------
+.. autoclass:: bool
 .. autoclass:: int8
 .. autoclass:: int16
 .. autoclass:: int32
@@ -109,3 +112,9 @@ Devices
 -------
 .. autoclass:: cpu
 .. autoclass:: cuda
+
+
+Utility Functions
+-----------------
+.. autofunction:: save
+.. autofunction:: load

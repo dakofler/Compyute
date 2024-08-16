@@ -12,15 +12,17 @@ def test_dropout() -> None:
     shape_x = SHAPE
 
     # init compyute module
-    compyute_module = Dropout(p=0.5, training=True)
+    compyute_module = Dropout(p=0.5)
 
     # forward
     compyute_x, _ = get_random_floats(shape_x)
-    compyute_y = compyute_module(compyute_x)
+    with compyute_module.train():
+        compyute_y = compyute_module(compyute_x)
 
     # backward
     compyute_dy, _ = get_random_floats(compyute_y.shape)
-    compyute_dx = compyute_module.backward(compyute_dy)
+    with compyute_module.train():
+        compyute_dx = compyute_module.backward(compyute_dy)
 
     assert compyute_x.to_type(compyute.bool) == compyute_dx.to_type(compyute.bool)
     assert compyute_dx == 2 * compyute_dy

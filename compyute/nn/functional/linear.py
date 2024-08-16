@@ -3,14 +3,16 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.transforming import einsum
+from ...tensor_ops.transforming import einsum
 
 __all__ = ["linear"]
 
 
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
+) -> tuple[
+    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
+]:
     """Applies a linear transformation to the input.
 
     Parameters
@@ -34,24 +36,23 @@ def linear(
     See Also
     ----------
     :class:`compyute.nn.Linear`
-
     """
     y = x @ w.T
-    if b is not None:
+    if b:
         y += b
 
     if return_grad_fn:
-        batch_dims = "abcdef"[: x.ndim - 1]
+        batch_dims = "uvxyz"[: x.n_axes - 1]
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             # input grads
             dx = dy @ w
 
-            # weight grads, analogous to dy.T @ x and summing oer all batch dims
+            # weight grads, analogous to dy.T @ x and summing over all batch dims
             dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
 
-            # bias grads, analogous to summing oer all batch dims
-            db = einsum(f"{batch_dims}o->o", dy) if b is not None else None
+            # bias grads, analogous to summing over all batch dims
+            db = einsum(f"{batch_dims}o->o", dy) if b else None
 
             return dx, dw, db
 

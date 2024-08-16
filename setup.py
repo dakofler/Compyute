@@ -36,6 +36,7 @@ setup(
         "numpy>=1.26.4,<2.0.0",
         "regex>=2023.12.25",
         "tqdm>=4.66.2",
+        "tensorboardX>=2.6.2.2",
     ],
     extras_require={
         "dev": [
@@ -44,10 +45,11 @@ setup(
             "torch>=2.3.0",
             "torchaudio>=2.3.0",
             "torchvision>=0.18.0",
+            "torchtune>=0.2.1",
             "twine>=5.1.1",
             "wheel>=0.43.0",
             "Sphinx>=7.4.7",
-            "sphinx_rtd_theme>=2.0.0",
+            "pydata_sphinx_theme>=0.15.4",
         ]
     },
     packages=find_packages(exclude=["tests", ".github", ".venv", "docs"]),

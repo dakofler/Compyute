@@ -4,11 +4,11 @@ from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import _ScalarLike
-from ..dataloaders import Dataloader
 from ..losses import _LossLike, get_loss_function
 from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
 from ..optimizers import _OptimizerLike, get_optimizer
+from ..utils import Dataloader
 from .callbacks import Callback
 
 __all__ = ["Trainer"]
@@ -46,10 +46,12 @@ class Trainer:
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)
-        self.optimizer.parameters = model.parameters
+        self.optimizer.parameters = model.get_parameters()
         self.loss = get_loss_function(loss)
         self.metric = None if metric is None else get_metric_function(metric)
-        self.metric_name = None if metric is None else self.metric.__class__.__name__.lower()
+        self.metric_name = (
+            None if metric is None else self.metric.__class__.__name__.lower()
+        )
         self.callbacks = callbacks
         self.cache: dict = {"abort": False, "t": 1}
 
@@ -79,20 +81,22 @@ class Trainer:
         """
         batch_size = len(x_train) if batch_size == -1 else batch_size
         train_dataloader = Dataloader(x_train, y_train, batch_size, self.model.device)
-        self.cache["t"] = 0
         self.cache["epochs"] = epochs
         self.cache["train_steps"] = len(train_dataloader)
-        self._callback("init")
+        self._callback("start")
 
-        for _ in range(1, epochs + 1):
-            self.cache["t"] += 1
+        for t in range(1, epochs + 1):
+            self.cache["t"] = t
             self._callback("epoch_start")
 
             # training
-            with self.model.training():
-                for batch in train_dataloader():
+            with self.model.train():
+                for s, batch in enumerate(train_dataloader(), 1):
+                    self.cache["step"] = s
+                    self._callback("step_start")
+                    self.cache["lr"] = self.optimizer.lr
                     self._train_step(batch)
-                    self._callback("step")
+                    self._callback("step_end")
 
             # validation
             if val_data:
@@ -105,7 +109,8 @@ class Trainer:
             if self.cache["abort"]:
                 break
 
-        self.model.cleanup()
+        self._callback("end")
+        self.model.clean()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -150,15 +155,22 @@ class Trainer:
             return loss, sum(scores) / len(scores)
         return loss, None
 
-    def _callback(self, on: Literal["init", "step", "epoch_start", "epoch_end"]) -> None:
+    def _callback(
+        self,
+        on: Literal[
+            "start", "step_start", "step_end", "epoch_start", "epoch_end", "end"
+        ],
+    ) -> None:
         if self.callbacks is None:
             return
         for callback in self.callbacks:
             {
-                "init": callback.on_init,
-                "step": callback.on_step,
+                "start": callback.on_start,
+                "step_start": callback.on_step_start,
+                "step_end": callback.on_step_end,
                 "epoch_start": callback.on_epoch_start,
                 "epoch_end": callback.on_epoch_end,
+                "end": callback.on_training_end,
             }[on](self.cache)
 
     def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
@@ -171,7 +183,9 @@ class Trainer:
         # compute loss and metrics
         self.cache["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.cache[f"{self.metric_name}_score"] = self.metric(y_pred, y_batch).item()
+            self.cache[f"{self.metric_name}_score"] = self.metric(
+                y_pred, y_batch
+            ).item()
 
         # backward pass
         self.optimizer.reset_grads()

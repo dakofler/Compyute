@@ -2,7 +2,7 @@ name: tests
 
 on:
   push:
-    branches: [ "dev", "main" ]
+    branches: [ dev ]
 
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
 
     - name: Install test dependencies
       run: |
-        pip install -r tests/requirements-test.txt
+        pip install -r tests/requirements.txt
 
     - name: Test with pytest
       run: |

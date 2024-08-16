@@ -3,9 +3,8 @@
 from typing import Callable, Literal, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
-from ...dtypes import Dtype
-from ...tensor_functions.creating import zeros
-from ...tensor_functions.reshaping import (
+from ...tensor_ops.creating import zeros
+from ...tensor_ops.reshaping import (
     broadcast_to,
     flip,
     insert_dim,
@@ -14,10 +13,10 @@ from ...tensor_functions.reshaping import (
     repeat,
     reshape,
 )
-from ...tensor_functions.transforming import fft1d, fft2d, ifft1d, ifft2d
-from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import mean, real
-from ...tensor_functions.transforming import sum as cpsum
+from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
+from ...tensor_ops.transforming import max as cpmax
+from ...tensor_ops.transforming import mean, real
+from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = [
     "convolve1d",
@@ -42,7 +41,9 @@ def convolve1d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
+) -> tuple[
+    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
+]:
     """Computes the convolution of two tensors over their last axis.
 
     Parameters
@@ -69,41 +70,36 @@ def convolve1d(
     Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]], optional
         Gradient function.
 
-
     See Also
     ----------
     :class:`compyute.nn.Convolution1d`
     """
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
-    f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
+    f_ext = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
 
     # pad input and add a fake output dimension
-    p = _pad1d_from_str(padding, f_.shape[-1])
+    p = pad1d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
-    x_ = insert_dim(x, 1)  # (B, 1, Ci, T)
+    x_ext = insert_dim(x, 1)  # (B, 1, Ci, T)
 
     # perform convolution and sum over input dimension
-    conv, conv_grad_fn = _convolve1d(x_, f_, stride, return_grad_fn)  # (B, Co, Ci, T)
+    # (B, Co, Ci, T)
+    conv, conv_grad_fn = convolve1d_(x_ext, f_ext, stride, return_grad_fn)
     y = cpsum(conv, 2)  # (B, Co, T)
 
-    if b is not None:
+    if b:
         y += reshape(b, (b.shape[0], 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-            dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
-            dx, df = conv_grad_fn(dy_)
+            dy_ext = broadcast_to(insert_dim(dy, 2), conv.shape)
+            dx, df = conv_grad_fn(dy_ext)
+
             dx = pad_grad_fn(cpsum(dx, 1))
-
-            if df is not None:
-                df = dil_grad_fn(cpsum(df, 0))
-
-            if b is not None:
-                db = cpsum(dy, (0, 2))
-            else:
-                db = None
+            df = dil_grad_fn(cpsum(df, 0))
+            db = cpsum(dy, (0, 2)) if b else None
 
             return dx, df, db
 
@@ -138,7 +134,7 @@ def dilate1d(
 
     dil_shape = (dilation * x.shape[-1] - 1,)
     x_dil = zeros(x.shape[:-1] + dil_shape, x.dtype, x.device)
-    dil_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, dilation)]
+    dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
     x_dil[*dil_slice] = x
 
     if return_grad_fn:
@@ -147,7 +143,8 @@ def dilate1d(
     return x_dil, None
 
 
-def _pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
+def pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
+    """Returns padding widths from a string."""
     if padding == "valid":
         return (0, 0)
     p = kernel_size // 2
@@ -178,39 +175,42 @@ def pad1d(
     if padding == (0, 0):
         return x, (lambda dy: dy)
 
-    widths = tuple([(0, 0)] * (x.ndim - 1) + [padding])
+    widths = tuple([(0, 0)] * (x.n_axes - 1) + [padding])
     y = pad(x, widths)
 
     if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.ndim - 1) + [slice(padding[0], -padding[0])]
+        pad_grad_slice = [slice(None)] * (x.n_axes - 1) + [
+            slice(padding[0], -padding[0])
+        ]
         return y, (lambda dy: dy[*pad_grad_slice])
 
     return y, None
 
 
-def _convolve1d(
+def convolve1d_(
     x: Tensor,
     f: Tensor,
     stride: int = 1,
     return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
-    f_ = flip(f, -1)
-    conv = _fft_conv1d(x, f_)
-    stride_slice = [slice(None)] * (x.ndim - 1) + [slice(None, None, stride)]
+    """Computes the 1D convolution of two tensors."""
+    f_flipped = flip(f, -1)
+    conv = fft_conv1d(x, f_flipped)
+    stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
     y = conv[*stride_slice]
 
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
             # fill elements skipped by strides with zeros
-            dy_, _ = dilate1d(dy, stride)
-            dy_ = pad_to_shape(dy_, conv.shape)
+            dy, _ = dilate1d(dy, stride)
+            dy = pad_to_shape(dy, conv.shape)
 
-            dy_, _ = pad1d(dy_, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
-            dx = _fft_conv1d(dy_, f)
+            dy, _ = pad1d(dy, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
+            dx = fft_conv1d(dy, f)
 
-            dy_ = flip(dy_, axis=-1)
-            df = _fft_conv1d(dy_, x)
+            dy = flip(dy, axis=-1)
+            df = fft_conv1d(dy, x)
 
             return dx, df
 
@@ -219,14 +219,11 @@ def _convolve1d(
     return y, None
 
 
-def _fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = Dtype.COMPLEX64
-    conv = real(
-        ifft1d(fft1d(x, dtype=cdtype) * fft1d(f, n=x.shape[-1], dtype=cdtype), dtype=cdtype),
-        dtype=x.dtype,
-    )
+def fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
+    """Computes the 1D convolution of two tensors using FFT."""
+    conv = real(ifft1d(fft1d(x) * fft1d(f, n=x.shape[-1])), dtype=x.dtype)
     out = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.ndim - 1) + [slice(-out, None)]
+    out_slice = [slice(None)] * (x.n_axes - 1) + [slice(-out, None)]
     return conv[*out_slice]
 
 
@@ -238,7 +235,9 @@ def convolve2d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]]:
+) -> tuple[
+    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
+]:
     """Computes the convolution of two tensors over their last two axes.
 
     Parameters
@@ -265,7 +264,6 @@ def convolve2d(
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
 
-
     See Also
     ----------
     :class:`compyute.nn.Convolution2d`
@@ -274,19 +272,20 @@ def convolve2d(
     # dilate filter and add a fake batch dimension
     d = (dilation, dilation)
     f, dil_grad_fn = dilate2d(f, d, return_grad_fn)  # (Co, Ci, Fy, Fx)
-    f_ = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
+    f_ext = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
 
     # pad input and add a fake output dimension
-    p = _pad2d_from_str(padding, f_.shape[-1])
+    p = pad2d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad2d(x, p, return_grad_fn)  # (B, Ci, Y, X)
-    x_ = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
+    x_ext = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
     # perform convolution and sum over input dimension
     s = (stride, stride)
-    conv, conv_grad_fn = _convolve2d(x_, f_, s, return_grad_fn)  # (B, Co, Ci, Y, X)
+    # (B, Co, Ci, Y, X)
+    conv, conv_grad_fn = convolve2d_(x_ext, f_ext, s, return_grad_fn)
     y = cpsum(conv, 2)  # (B, Co, Y, X)
 
-    if b is not None:
+    if b:
         y += reshape(b, (b.shape[0], 1, 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
@@ -294,15 +293,10 @@ def convolve2d(
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
             dx, df = conv_grad_fn(dy_)
+
             dx = pad_grad_fn(cpsum(dx, 1))  # sum over out channels
-
-            if df is not None:
-                df = dil_grad_fn(cpsum(df, 0))  # sum over batches
-
-            if b is not None:
-                db = cpsum(dy, (0, 2, 3))  # sum over batches, Y and X
-            else:
-                db = None
+            df = dil_grad_fn(cpsum(df, 0))  # sum over batches
+            db = cpsum(dy, (0, 2, 3)) if b else None
 
             return dx, df, db
 
@@ -341,7 +335,7 @@ def dilate2d(
     )
     x_dil = zeros(x.shape[:-2] + dil_shape, x.dtype, x.device)
     dil_slice = (
-        [slice(None)] * (x.ndim - 2)
+        [slice(None)] * (x.n_axes - 2)
         + [slice(None, None, dilation[0])]
         + [slice(None, None, dilation[1])]
     )
@@ -353,9 +347,10 @@ def dilate2d(
     return x_dil, None
 
 
-def _pad2d_from_str(
+def pad2d_from_str(
     padding: _PaddingLike, kernel_size: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Returns padding widths from a string."""
     if padding == "valid":
         return ((0, 0), (0, 0))
     p = kernel_size // 2
@@ -363,7 +358,9 @@ def _pad2d_from_str(
 
 
 def pad2d(
-    x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]], return_grad_fn: bool = False
+    x: Tensor,
+    padding: tuple[tuple[int, int], tuple[int, int]],
+    return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
     """Pads a tensor in its last two axes.
 
@@ -386,11 +383,11 @@ def pad2d(
     if padding == ((0, 0), (0, 0)):
         return x, (lambda dy: dy)
 
-    widths = tuple([(0, 0)] * (x.ndim - 2) + [*padding])
+    widths = tuple([(0, 0)] * (x.n_axes - 2) + [*padding])
     y = pad(x, widths)
 
     if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.ndim - 2) + [
+        pad_grad_slice = [slice(None)] * (x.n_axes - 2) + [
             slice(padding[0][0], -padding[0][1]),
             slice(padding[1][0], -padding[1][1]),
         ]
@@ -399,12 +396,16 @@ def pad2d(
     return y, None
 
 
-def _convolve2d(
-    x: Tensor, f: Tensor, strides: tuple[int, int] = (1, 1), return_grad_fn: bool = False
+def convolve2d_(
+    x: Tensor,
+    f: Tensor,
+    strides: tuple[int, int] = (1, 1),
+    return_grad_fn: bool = False,
 ) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
-    f_ = flip(f, (-2, -1))
-    conv = _fft_conv2d(x, f_)
-    stride_slice = [slice(None)] * (x.ndim - 2) + [
+    """Computes the 2D convolution of two tensors."""
+    f_flipped = flip(f, (-2, -1))
+    conv = fft_conv2d(x, f_flipped)
+    stride_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, None, strides[0]),
         slice(None, None, strides[1]),
     ]
@@ -414,17 +415,21 @@ def _convolve2d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
             # fill elements skipped by strides with zeros
-            dy_, _ = dilate2d(dy, strides)
-            dy_ = pad_to_shape(dy_, conv.shape)
+            dy, _ = dilate2d(dy, strides)
+            dy = pad_to_shape(dy, conv.shape)
 
             # full pad dy
-            dy_, _ = pad2d(
-                dy_, ((f.shape[-2] - 1, f.shape[-2] - 1), (f.shape[-1] - 1, f.shape[-1] - 1))
+            dy, _ = pad2d(
+                dy,
+                (
+                    (f.shape[-2] - 1, f.shape[-2] - 1),
+                    (f.shape[-1] - 1, f.shape[-1] - 1),
+                ),
             )
-            dx = _fft_conv2d(dy_, f)
+            dx = fft_conv2d(dy, f)
 
-            dy_ = flip(dy_, axis=(-2, -1))
-            df = _fft_conv2d(dy_, x)
+            dy = flip(dy, axis=(-2, -1))
+            df = fft_conv2d(dy, x)
 
             return dx, df
 
@@ -433,15 +438,12 @@ def _convolve2d(
     return y, None
 
 
-def _fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
-    cdtype = Dtype.COMPLEX64
-    conv = real(
-        ifft2d(fft2d(x, dtype=cdtype) * fft2d(f, s=x.shape[-2:], dtype=cdtype), dtype=cdtype),
-        dtype=x.dtype,
-    )
+def fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
+    """Computes the 2D convolution of two tensors using FFT."""
+    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])), dtype=x.dtype)
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.ndim - 2) + [
+    out_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(-out_y, None),
         slice(-out_x, None),
     ]
@@ -499,12 +501,17 @@ def maxpooling2d(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+        Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.MaxPooling2D`
     """
     x_height, x_width = x.shape[-2:]
     kernel_height, kernel_width = kernel_size
 
     # maxpooling
-    crop_slice = [slice(None)] * (x.ndim - 2) + [
+    crop_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, x_height // kernel_height * kernel_height),
         slice(None, x_width // kernel_width * kernel_width),
     ]
@@ -519,11 +526,7 @@ def maxpooling2d(
 
     if return_grad_fn:
         y_ups = upsample2d(y, kernel_size, x.shape)
-
-        def grad_fn(dy: Tensor) -> Tensor:
-            return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
-
-        return y, grad_fn
+        return y, lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
 
     return y, None
 
@@ -548,12 +551,16 @@ def avgpooling2d(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.AvgPooling2D`
     """
     x_height, x_width = x.shape[-2:]
     kernel_height, kernel_width = kernel_size
 
     # avgpooling
-    crop_slice = [slice(None)] * (x.ndim - 2) + [
+    crop_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, x_height // kernel_height * kernel_height),
         slice(None, x_width // kernel_width * kernel_width),
     ]

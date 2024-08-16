@@ -1,27 +1,29 @@
 """Neural network activation functions."""
 
+import math
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.creating import identity
-from ...tensor_functions.reshaping import insert_dim, reshape, tile
-from ...tensor_functions.transforming import exp
-from ...tensor_functions.transforming import max as cpmax
-from ...tensor_functions.transforming import maximum, minimum, sech
-from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import tanh as cptanh
+from ...tensor_ops.creating import identity
+from ...tensor_ops.reshaping import insert_dim, reshape, tile
+from ...tensor_ops.transforming import exp
+from ...tensor_ops.transforming import max as cpmax
+from ...tensor_ops.transforming import maximum, sech
+from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import tanh as cptanh
 
 __all__ = [
     "relu",
     "leaky_relu",
     "gelu",
     "sigmoid",
+    "silu",
     "tanh",
     "softmax",
     "temperature_softmax",
 ]
-_GELU_S: float = 0.7978845608028654
-_GELU_C: float = 0.044715
+GELU_SQRT: float = math.sqrt(2 / math.pi)
+GELU_CONST: float = 0.044715
 
 
 def relu(
@@ -79,11 +81,15 @@ def leaky_relu(
     --------
     :class:`compyute.nn.LeakyReLU`
     """
-    x = x.to_float()
     y = maximum(alpha * x, x)
 
     if return_grad_fn:
-        return y, (lambda dy: ((y > 0).to_float() + (y < 0).to_float() * alpha) * dy)
+
+        def grad_fn(dy: Tensor) -> Tensor:
+            return ((y >= 0) + (y < 0).to_type(x.dtype) * alpha) * dy
+
+        return y, grad_fn
+
     return y, None
 
 
@@ -111,17 +117,18 @@ def gelu(
     :class:`compyute.nn.GELU`
     """
 
-    tmp = _GELU_S * (x + _GELU_C * x**3)
+    tmp = GELU_SQRT * (x + GELU_CONST * x**3)
     y = 0.5 * x * (1 + cptanh(tmp))
 
     if return_grad_fn:
-        return y, (
-            lambda dy: (
-                0.5 * (1 + cptanh(tmp))
-                + 0.5 * x * sech(tmp) ** 2 * _GELU_S * (1 + 3 * _GELU_C * x**2)
-            )
-            * dy
-        )
+
+        def grad_fn(dy: Tensor) -> Tensor:
+            dx1 = 1 + cptanh(tmp)
+            dx2 = x * sech(tmp) ** 2 * GELU_SQRT * (1 + 3 * GELU_CONST * x**2)
+            return 0.5 * (dx1 + dx2) * dy
+
+        return y, grad_fn
+
     return y, None
 
 
@@ -148,10 +155,44 @@ def sigmoid(
     --------
     :class:`compyute.nn.Sigmoid`
     """
-    y = exp(x) * (1 + exp(x)) ** -1
+    x_exp = exp(x)
+    y = x_exp / (1 + x_exp)
 
     if return_grad_fn:
         return y, (lambda dy: (y * (1 - y)) * dy)
+
+    return y, None
+
+
+def silu(
+    x: Tensor, return_grad_fn: bool = False
+) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+    """Applies the Sigmoid Linear Unit activation function to an input tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    return_grad_fn : bool, optional
+        Whether to also return the according gradient function. Defaults to ``False``.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], Tensor]], optional
+        Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.SiLU`
+    """
+    sig, sigmoid_grad_fn = sigmoid(x, return_grad_fn=return_grad_fn)
+    y = sig * x
+
+    if return_grad_fn and sigmoid_grad_fn is not None:
+        return y, (lambda dy: x * sigmoid_grad_fn(dy) + sig * dy)
+
     return y, None
 
 
@@ -182,16 +223,14 @@ def tanh(
 
     if return_grad_fn:
         return y, (lambda dy: (1 - y**2) * dy)
+
     return y, None
 
 
 def softmax(
-    x: Tensor, return_grad_fn: bool = False
+    x_exp: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
-    r"""Applies the softmax function over the last axis of an input tensor.
-
-    .. math::
-        softmax(x) = \frac{\exp(x)}{\sum_{i=1}^N \exp(x_i)}
+    """Applies the softmax function over the last axis of an input tensor.
 
     Parameters
     ----------
@@ -206,17 +245,20 @@ def softmax(
         Output tensor.
     Callable[[Tensor], Tensor]], optional
         Gradient function.
+
+    See Also
+    --------
+    :class:`compyute.nn.Softmax`
     """
-    x = exp(x - cpmax(x, axis=-1, keepdims=True))
-    y = x / cpsum(x, axis=-1, keepdims=True)
+    x_exp = exp(x_exp - cpmax(x_exp, axis=-1, keepdims=True))
+    y = x_exp / cpsum(x_exp, axis=-1, keepdims=True)
 
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> Tensor:
-            sm_ = tile(insert_dim(y, -1), y.shape[-1], -1)
-            return reshape(
-                sm_ * (identity(y.shape[-1], device=x.device) - sm_.T) @ insert_dim(dy, -1), y.shape
-            )
+            dx = tile(insert_dim(y, -1), y.shape[-1], -1)
+            dx = dx * (identity(y.shape[-1], device=y.device) - dx.T)
+            return reshape(dx @ insert_dim(dy, -1), y.shape)
 
         return y, grad_fn
     return y, None
@@ -248,5 +290,5 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     if temperature == 0:
         raise ValueError("Temperature cannot be 0.")
 
-    x = exp((x - cpmax(x, axis=-1, keepdims=True)) / temperature)
-    return x / cpsum(x, axis=-1, keepdims=True)
+    x_exp = exp((x - cpmax(x, axis=-1, keepdims=True)) / temperature)
+    return x_exp / cpsum(x_exp, axis=-1, keepdims=True)

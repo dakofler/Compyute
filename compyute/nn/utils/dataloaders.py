@@ -3,12 +3,12 @@
 from functools import wraps
 from typing import Callable, Iterator, Optional
 
-from ..base_tensor import Tensor
-from ..engine import Device, _DeviceLike
-from ..random.random import shuffle
-from ..tensor_functions.creating import concatenate
+from ...base_tensor import Tensor
+from ...engine import Device, _DeviceLike
+from ...random.random import shuffle
+from ...tensor_ops.creating import concatenate
 
-__all__ = ["Dataloader"]
+__all__ = ["Dataloader", "batched"]
 
 
 class Dataloader:
@@ -65,25 +65,28 @@ class Dataloader:
 
         # shuffle data
         if self.shuffle:
-            self.x, idx = shuffle(self.x)
-            self.y = self.y[idx] if self.y is not None else None
+            x, idx = shuffle(self.x)
+            y = self.y[idx] if self.y else None
+        else:
+            x = self.x
+            y = self.y
 
         # yield batches
         for i in range(n_steps):
-            x_batch = self.x[i * b : (i + 1) * b].to_device(self.device)
+            x_batch = x[i * b : (i + 1) * b].to_device(self.device)
 
-            if self.y is not None:
-                y_batch = self.y[i * b : (i + 1) * b].to_device(self.device)
+            if y:
+                y_batch = y[i * b : (i + 1) * b].to_device(self.device)
                 yield x_batch, y_batch
             else:
                 yield x_batch, None
 
         # yield remaining
         if not self.drop_remaining and n_trunc < n:
-            x_batch = self.x[n_trunc:].to_device(self.device)
+            x_batch = x[n_trunc:].to_device(self.device)
 
-            if self.y is not None:
-                y_batch = self.y[n_trunc:].to_device(self.device)
+            if y:
+                y_batch = y[n_trunc:].to_device(self.device)
                 yield x_batch, y_batch
             else:
                 yield x_batch, None
@@ -99,19 +102,19 @@ def batched(
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:
-    """Decorator for performing input batching.
+    """Decorator for performing batched inference.
 
     Parameters
     ----------
     batch_size : int, optional
-        Size of returned batches. Defaults to ``1.
+        Size of returned batches. Defaults to ``1``.
     device : DeviceLike, optional
-        Device the tensors should be loaded to. Defaults to ``Device.CPU.
+        Device the tensors should be loaded to. Defaults to ``Device.CPU``.
     shuffle_data : bool, optional
-        Whether to shuffle the data each time the dataloader is called. Defaults to ``True.
+        Whether to shuffle the data each time the dataloader is called. Defaults to ``True``.
     drop_remaining : bool, optional
         Whether to drop data, that remains when the number of samples is not divisible by
-        the batch_size.
+        the ``batch_size``.
     """
 
     @wraps(func)

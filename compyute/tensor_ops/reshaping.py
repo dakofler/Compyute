@@ -1,9 +1,8 @@
-"""Tensor reshaping functions."""
+"""Tensor reshaping operations."""
 
 from typing import Optional
 
 from ..base_tensor import Tensor, _AxisLike, _ShapeLike
-from ..engine import get_engine
 from .creating import identity
 
 __all__ = [
@@ -68,7 +67,7 @@ def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
     Tensor
         Transposed tensor.
     """
-    if x.ndim < 2:
+    if x.n_axes < 2:
         return x
     return moveaxis(x, from_axis=axes[0], to_axis=axes[1])
 
@@ -88,7 +87,7 @@ def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    return Tensor(get_engine(x.device).expand_dims(x.data, axis=axis))
+    return Tensor(x.engine.expand_dims(x.data, axis=axis))
 
 
 def add_dims(x: Tensor, target_dims: int) -> Tensor:
@@ -106,7 +105,7 @@ def add_dims(x: Tensor, target_dims: int) -> Tensor:
     Tensor
         Tensor with specified number of dimensions.
     """
-    return reshape(x, x.shape + (1,) * (target_dims - x.ndim))
+    return reshape(x, x.shape + (1,) * (target_dims - x.n_axes))
 
 
 def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -125,7 +124,7 @@ def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Resized tensor.
     """
-    return Tensor(get_engine(x.device).resize(x.data, shape))
+    return Tensor(x.engine.resize(x.data, shape))
 
 
 def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
@@ -165,12 +164,14 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     Tensor
         Tensor with repeated values.
     """
-    repeats = [1] * x.ndim
+    repeats = [1] * x.n_axes
     repeats[axis] = n_repeats
-    return Tensor(get_engine(x.device).tile(x.data, tuple(repeats)))
+    return Tensor(x.engine.tile(x.data, tuple(repeats)))
 
 
-def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]) -> Tensor:
+def pad(
+    x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...]
+) -> Tensor:
     """Returns a padded tensor using zero padding.
 
     Parameters
@@ -188,7 +189,7 @@ def pad(x: Tensor, padding: int | tuple[int, int] | tuple[tuple[int, int], ...])
     Tensor
         Padded tensor.
     """
-    return Tensor(get_engine(x.device).pad(x.data, padding))
+    return Tensor(x.engine.pad(x.data, padding))
 
 
 def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -206,7 +207,7 @@ def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Padded tensor.
     """
-    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.ndim))
+    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.n_axes))
     return pad(x, padding)
 
 
@@ -227,7 +228,7 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
     Tensor
         Tensor with a moved axes.
     """
-    return Tensor(get_engine(x.device).moveaxis(x.data, from_axis, to_axis))
+    return Tensor(x.engine.moveaxis(x.data, from_axis, to_axis))
 
 
 def squeeze(x: Tensor) -> Tensor:
@@ -264,7 +265,7 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(get_engine(x.device).flip(x.data, axis=axis))
+    return Tensor(x.engine.flip(x.data, axis=axis))
 
 
 def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
@@ -282,4 +283,4 @@ def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Broadcasted tensor.
     """
-    return Tensor(get_engine(x.device).broadcast_to(x.data, shape=shape))
+    return Tensor(x.engine.broadcast_to(x.data, shape=shape))

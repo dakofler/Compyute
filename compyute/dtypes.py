@@ -35,31 +35,16 @@ class Dtype(Enum):
     COMPLEX128 = "complex128"
 
     def __repr__(self) -> str:
-        return f"Dtype('{self.value}')"
+        return f"compyute.{self.value}"
 
     def __str__(self) -> str:
         return self.__repr__()
 
 
-DTYPES = [d.value for d in Dtype]
-FLOAT_DTYPES = [d for d in DTYPES if "float" in d]
-
-
-def validate_dtype(dtype: str) -> None:
-    """Check if a data type is valid.
-
-    Parameters
-    ----------
-    dtype : str
-        Data type to check.
-
-    Raises
-    ------
-    TypeError
-        If the data type is not valid.
-    """
-    if dtype not in DTYPES:
-        raise TypeError(f"Invalid dtype: {dtype}.")
+DTYPES = set(Dtype)
+FLOAT_DTYPES = {d for d in DTYPES if "float" in d.value}
+INT_DTYPES = {d for d in DTYPES if "int" in d.value}
+COMPLEX_DTYPES = {d for d in DTYPES if "complex" in d.value}
 
 
 bool = Dtype.BOOL
@@ -86,4 +71,4 @@ _FloatLike: TypeAlias = NumpyFloat | CupyFloat | float
 _ComplexLike: TypeAlias = NumpyComplex | CupyComplex | complex
 
 _ScalarLike: TypeAlias = _IntLike | _FloatLike | _ComplexLike
-_DtypeLike: TypeAlias = Dtype | Literal[*DTYPES]
+_DtypeLike: TypeAlias = Dtype | Literal[*{d.value for d in DTYPES}]

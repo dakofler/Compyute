@@ -4,9 +4,9 @@ from functools import reduce
 from operator import mul
 
 from ...base_tensor import Tensor
-from ...tensor_functions.selecting import argmax
-from ...tensor_functions.transforming import mean
-from ...tensor_functions.transforming import sum as cpsum
+from ...tensor_ops.selecting import argmax
+from ...tensor_ops.transforming import mean
+from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = ["accuracy_score", "r2_score"]
 

@@ -19,18 +19,17 @@ Logging
    :show-inheritance:
 .. autoclass:: ProgressBar
    :show-inheritance:
+.. autoclass:: Tensorboard
+   :show-inheritance:
 
 Learning Rate Schedulers
 ------------------------
-.. autoclass:: LrScheduler
-   :show-inheritance:
-.. autoclass:: AdaptiveLrScheduler
-   :show-inheritance:
-.. autoclass:: CosineAnnealingLrScheduler
-   :show-inheritance:
-.. autoclass:: ExponentialLrScheduler
-   :show-inheritance:
 .. autoclass:: StepLrScheduler
    :show-inheritance:
 .. autoclass:: MultistepLrScheduler
    :show-inheritance:
+.. autoclass:: ExponentialLrScheduler
+   :show-inheritance:
+.. autoclass:: AdaptiveLrScheduler
+   :show-inheritance:
+.. autoclass:: CosineLrScheduler

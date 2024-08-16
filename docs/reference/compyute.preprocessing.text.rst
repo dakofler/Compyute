@@ -13,5 +13,3 @@ Tokenizers
    :show-inheritance:
 .. autoclass:: BPETokenizer
    :show-inheritance:
-.. autofunction:: save_tokenizer
-.. autofunction:: load_tokenizer

@@ -1,8 +1,6 @@
 name: build-sphinx-docs
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -13,18 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
            python-version: "3.11"
-        
-      - name: Install dependencies
+
+      - name: Build and install package
         run: |
-          cd docs/
           python -m pip install --upgrade pip
-          pip install -r requirements-docs.txt
+          pip install .
+
+      - name: Install docs dependencies
+        run: |
+          pip install -r docs/requirements.txt
 
       - name: Build HTML
         run: | 

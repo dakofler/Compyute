@@ -7,19 +7,20 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import os
-import pathlib
 import sys
+from datetime import datetime
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 project = "Compyute"
-copyright = "2024, Daniel Kofler"
 author = "Daniel Kofler"
-release = pathlib.Path("../compyute/VERSION").read_text(encoding="utf-8")
-version = pathlib.Path("../compyute/VERSION").read_text(encoding="utf-8")
+year = datetime.now().year
+copyright = f"2022-{year}, Daniel Kofler"
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+import compyute
+
+release = compyute.__version__
+version = compyute.__version__
 
 extensions = [
     "sphinx.ext.todo",
@@ -32,13 +33,28 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_theme_options = {
+    # "logo": {
+    #     "image_light": "_static/<add_logo>.svg",
+    #     "image_dark": "_static/<add_logo>.svg",
+    # },
+    "github_url": "https://github.com/dakofler/Compyute",
+    "collapse_navigation": True,
+    "header_links_before_dropdown": 6,
+    "navbar_end": [
+        "search-button",
+        "theme-switcher",
+        "navbar-icon-links",
+    ],
+    "navbar_persistent": [],
+    "show_version_warning_banner": True,
+}
+html_title = "%s v%s Manual" % (project, version)
 html_static_path = ["_static"]
+html_context = {"default_mode": "light"}
 
 autodoc_typehints = "none"
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+autodoc_member_order = "groupwise"

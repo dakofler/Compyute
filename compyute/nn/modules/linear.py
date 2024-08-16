@@ -1,11 +1,12 @@
 """Neural network linear transformation modules."""
 
+import math
 from typing import Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
-from ...tensor_functions.creating import zeros
+from ...tensor_ops.creating import zeros
 from ..functional.linear import linear
 from ..parameter import Parameter
 from .module import Module
@@ -35,12 +36,10 @@ class Linear(Module):
         Number of output channels (neurons).
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -55,30 +54,26 @@ class Linear(Module):
         bias: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = bias
-        self.dtype = Dtype(dtype)
 
         # init weights
-        k = in_channels**-0.5
+        k = 1 / math.sqrt(in_channels)
         self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype))
 
         # init biases
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [2, 3, 4, 5])
-        x = x.to_type(self.dtype)
-        y, grad_fn = linear(x, self.w, self.b, self._training)
 
-        if self._training and grad_fn is not None:
+        y, grad_fn = linear(x, self.w, self.b, self._is_training)
+
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)

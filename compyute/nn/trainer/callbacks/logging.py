@@ -4,13 +4,14 @@ from typing import Any, Iterable, Literal
 
 from tqdm.auto import tqdm
 
+from ...utils.tensorboard import SummaryWriter
 from .callback import Callback
 
-__all__ = ["History", "ProgressBar"]
+__all__ = ["History", "ProgressBar", "Tensorboard"]
 
 
 class History(Callback):
-    """Training history."""
+    """Training history saved as a dictionary."""
 
     def __init__(self) -> None:
         self.cache: dict[str, list[float]] = {}
@@ -27,10 +28,10 @@ class History(Callback):
             else:
                 self.cache[stat] = [trainer_cache[stat]]
 
-    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         # get stats that contain scores but are not val scores
         scores = [s for s in trainer_cache.keys() if "score" in s and "val_" not in s]
-        self._log_stats(["loss"] + scores, trainer_cache)
+        self._log_stats(["loss", "lr"] + scores, trainer_cache)
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         # get all val stats
@@ -44,20 +45,20 @@ class ProgressBar(Callback):
     Parameters
     ----------
     mode : Literal["step", "epoch"], optional
-        Progress bar update mode. Defaults to ``step``.
-        If ``epoch``, one progress bar is shown and updated for each epoch.
-        If ``step``, a new progress bar is shown per epoch and updated for each step.
+        | Progress bar update mode. Defaults to ``step``.
+        | ``epoch``: one progress bar is shown and updated for each epoch.
+        | ``step``: a new progress bar is shown per epoch and updated for each step.
     """
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
         self.pbar = None
         self.mode = mode
 
-    def on_init(self, trainer_cache: dict[str, Any]) -> None:
+    def on_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
             self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
 
-    def on_step(self, trainer_cache: dict[str, Any]) -> None:
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         if self.pbar is not None and self.mode == "step":
             self.pbar.update()
 
@@ -85,3 +86,46 @@ class ProgressBar(Callback):
             stats.append(f"{stat}={trainer_cache[stat]:.4f}")
         if self.pbar is not None:
             self.pbar.set_postfix_str(", ".join(stats))
+
+
+class Tensorboard(Callback):
+    """Logs statistics to Tensorboard.
+
+    Parameters
+    ----------
+    logdir : str
+        Directory to save Tensorboard logs, e.g. "./runs/my_run".
+
+    See Also
+    --------
+    :class:`compyute.nn.utils.tensorboard`
+    """
+
+    def __init__(self, logdir: str) -> None:
+        self.writer: SummaryWriter = SummaryWriter(logdir=logdir)
+
+    def _log_stats(self, stats: Iterable[str], trainer_cache: dict[str, Any]) -> None:
+        for stat in stats:
+            if stat not in trainer_cache:
+                return
+            if "val_" in stat:
+                s = trainer_cache["t"]
+            else:
+                s = (
+                    trainer_cache["t"] * trainer_cache["train_steps"]
+                    + trainer_cache["step"]
+                )
+            self.writer.add_scalar(f"{stat}/stat", trainer_cache[stat], s)
+
+    def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
+        # get stats that contain scores but are not val scores
+        scores = [s for s in trainer_cache.keys() if "score" in s and "val_" not in s]
+        self._log_stats(["loss", "lr"] + scores, trainer_cache)
+
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
+        # get all val stats
+        stats = [s for s in trainer_cache.keys() if "val_" in s]
+        self._log_stats(stats, trainer_cache)
+
+    def on_training_end(self, trainer_cache: dict[str, Any]) -> None:
+        self.writer.close()

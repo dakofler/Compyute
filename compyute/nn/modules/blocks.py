@@ -4,16 +4,14 @@ from typing import Optional
 
 from ...dtypes import Dtype, _DtypeLike
 from ..functional.convolutions import _PaddingLike
-from ..initializers import _InitializerLike, get_initializer
-from ..parameter import Parameter
+from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
-from .containers import ParallelAdd, Sequential
-from .convolution import Convolution1d, Convolution2d
+from .containers import Sequential
+from .convolution import Convolution1D, Convolution2D
 from .linear import Linear
-from .module import Identity, Module
-from .normalization import Batchnorm1d, Batchnorm2d
+from .normalization import BatchNorm1D, BatchNorm2D
 
-__all__ = ["Convolution1dBlock", "Convolution2dBlock", "DenseBlock", "ResidualBlock"]
+__all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
 
 
 class DenseBlock(Sequential):
@@ -45,12 +43,10 @@ class DenseBlock(Sequential):
     bias_init : _InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -68,21 +64,20 @@ class DenseBlock(Sequential):
         bias_init: _InitializerLike = "zeros",
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        linear = Linear(in_channels, out_channels, bias, dtype, training=training)
+        linear = Linear(in_channels, out_channels, bias, dtype)
+        w_init = get_initializer(weight_init, activation)
+        w_init(linear.w)
+        if linear.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(linear.b)
 
-        w_init = get_initializer(weight_init, dtype, activation)
-        linear.w = Parameter(w_init((out_channels, in_channels)))
+        act = get_activation(activation)
 
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            linear.b = Parameter(b_init((out_channels,)))
-
-        super().__init__(linear, get_activation(activation), label=label, training=training)
+        super().__init__(linear, act, label=label)
 
 
-class Convolution1dBlock(Sequential):
+class Convolution1DBlock(Sequential):
     """Convolution block containing a 1D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -131,8 +126,6 @@ class Convolution1dBlock(Sequential):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -158,9 +151,8 @@ class Convolution1dBlock(Sequential):
         batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        conv = Convolution1d(
+        conv = Convolution1D(
             in_channels,
             out_channels,
             kernel_size,
@@ -169,24 +161,23 @@ class Convolution1dBlock(Sequential):
             dilation,
             bias,
             dtype,
-            training=training,
         )
+        w_init = get_initializer(weight_init, activation)
+        w_init(conv.w)
+        if conv.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(conv.b)
 
-        w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size)))
-
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)))
+        act = get_activation(activation)
 
         if batchnorm:
-            bn = Batchnorm1d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            super().__init__(conv, bn, act, label=label)
         else:
-            super().__init__(conv, get_activation(activation), label=label, training=training)
+            super().__init__(conv, act, label=label)
 
 
-class Convolution2dBlock(Sequential):
+class Convolution2DBlock(Sequential):
     """Convolution block containing a 2D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -237,8 +228,6 @@ class Convolution2dBlock(Sequential):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     See Also
@@ -264,9 +253,8 @@ class Convolution2dBlock(Sequential):
         batchnorm_m: float = 0.1,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        conv = Convolution2d(
+        conv = Convolution2D(
             in_channels,
             out_channels,
             kernel_size,
@@ -275,51 +263,17 @@ class Convolution2dBlock(Sequential):
             dilation,
             bias,
             dtype,
-            training=training,
         )
+        w_init = get_initializer(weight_init, activation)
+        w_init(conv.w)
+        if conv.b:
+            b_init = get_initializer(bias_init, activation)
+            b_init(conv.b)
 
-        w_init = get_initializer(weight_init, dtype, activation)
-        conv.w = Parameter(w_init((out_channels, in_channels, kernel_size, kernel_size)))
-
-        if bias:
-            b_init = get_initializer(bias_init, dtype, activation)
-            conv.b = Parameter(b_init((out_channels,)))
+        act = get_activation(activation)
 
         if batchnorm:
-            bn = Batchnorm2d(out_channels, batchnorm_eps, batchnorm_m, dtype, training=training)
-            super().__init__(conv, bn, get_activation(activation), label=label, training=training)
+            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            super().__init__(conv, bn, act, label=label)
         else:
-            super().__init__(conv, get_activation(activation), label=label, training=training)
-
-
-class ResidualBlock(ParallelAdd):
-    """Residual block implementing a residual connection around a block of modules.
-    Modules in the residual block are processed sequentially.
-
-    Parameters
-    ----------
-    *modules : Module
-        Modules used in the residual block. They are processed sequentially.
-    residual_projection : Module, optional
-        Module used as a projection to achieve matching dimensions. Defaults to ``None``.
-        If ``None``, the identity function is used.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
-    """
-
-    def __init__(
-        self,
-        *modules: Module,
-        residual_proj: Optional[Module] = None,
-        label: Optional[str] = None,
-        training: bool = False,
-    ) -> None:
-        proj = residual_proj if residual_proj is not None else Identity(training=training)
-
-        if len(modules) == 1:
-            super().__init__(modules[0], proj, label=label, training=training)
-        else:
-            module_block = Sequential(*modules, label=label, training=training)
-            super().__init__(module_block, proj, label=label, training=training)
+            super().__init__(conv, act, label=label)

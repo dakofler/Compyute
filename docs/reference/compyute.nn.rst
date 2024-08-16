@@ -3,12 +3,6 @@ compyute.nn
 .. automodule:: compyute.nn
 .. currentmodule:: compyute.nn
 
-Dataloaders
------------
-.. autoclass:: Dataloader
-   :members:
-   :special-members: __call__
-
 .. _losses:
 
 Losses
@@ -38,6 +32,8 @@ Metrics
    :show-inheritance:
    :special-members: __call__
 
+.. _modules:
+
 Modules
 -------
 .. autoclass:: Module
@@ -56,41 +52,42 @@ Activations
    :show-inheritance:
 .. autoclass:: Sigmoid
    :show-inheritance:
+.. autoclass:: SiLU
+   :show-inheritance:
+.. autoclass:: Softmax
+   :show-inheritance:
 .. autoclass:: Tanh
    :show-inheritance:
 
 Blocks
 ~~~~~~
-.. autoclass:: Convolution1dBlock
+.. autoclass:: Convolution1DBlock
    :show-inheritance:
-.. autoclass:: Convolution2dBlock
+.. autoclass:: Convolution2DBlock
    :show-inheritance:
 .. autoclass:: DenseBlock
-   :show-inheritance:
-.. autoclass:: ResidualBlock
    :show-inheritance:
 
 Containers
 ~~~~~~~~~~
-.. autoclass:: Container
-   :show-inheritance:
-   :members:
 .. autoclass:: Sequential
    :show-inheritance:
 .. autoclass:: ParallelConcat
    :show-inheritance:
 .. autoclass:: ParallelAdd
    :show-inheritance:
+.. autoclass:: ResidualConnection
+   :show-inheritance:
 
 Convolution
 ~~~~~~~~~~~
-.. autoclass:: Convolution1d
+.. autoclass:: Convolution1D
    :show-inheritance:
-.. autoclass:: Convolution2d
+.. autoclass:: Convolution2D
    :show-inheritance:
-.. autoclass:: MaxPooling2d
+.. autoclass:: MaxPooling2D
    :show-inheritance:
-.. autoclass:: AvgPooling2d
+.. autoclass:: AvgPooling2D
    :show-inheritance:
 
 Embedding
@@ -105,11 +102,13 @@ Linear
 
 Normalizations
 ~~~~~~~~~~~~~~
-.. autoclass:: Batchnorm1d
+.. autoclass:: BatchNorm1D
    :show-inheritance:
-.. autoclass:: Batchnorm2d
+.. autoclass:: BatchNorm2D
    :show-inheritance:
-.. autoclass:: Layernorm
+.. autoclass:: LayerNorm
+   :show-inheritance:
+.. autoclass:: RMSNorm
    :show-inheritance:
 
 Recurrent

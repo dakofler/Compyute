@@ -1,16 +1,15 @@
 """Neural network normalization functions."""
 
-from functools import reduce
-from operator import mul
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_functions.reshaping import reshape, squeeze
-from ...tensor_functions.transforming import mean as _mean
-from ...tensor_functions.transforming import sum as cpsum
-from ...tensor_functions.transforming import var as _var
+from ...tensor_ops.reshaping import reshape, squeeze
+from ...tensor_ops.transforming import mean as cpmean
+from ...tensor_ops.transforming import sqrt
+from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import var as cpvar
 
-__all__ = ["batchnorm1d", "batchnorm2d", "layernorm"]
+__all__ = ["batchnorm1d", "batchnorm2d", "layernorm", "rmsnorm"]
 
 
 def batchnorm1d(
@@ -59,43 +58,47 @@ def batchnorm1d(
         New running variance.
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.BatchNorm1D`
     """
-    dim2 = x.ndim == 2
-    axes = 0 if dim2 else (0, 2)
+    x_is_2d = x.n_axes == 2
+    axes = 0 if x_is_2d else (0, 2)
 
     if return_grad_fn:
-        mean = _mean(x, axis=axes, keepdims=True)
-        var = _var(x, axis=axes, keepdims=True)
-        inv_std = (var + eps) ** -0.5
-        x_std = (x - mean) * inv_std
+        # compute mean and variance from x
+        mean = cpmean(x, axis=axes, keepdims=True)
+        var = cpvar(x, axis=axes, keepdims=True)
+        inv_std = 1 / sqrt(var + eps)
+        x_norm = (x - mean) * inv_std
 
         # keep running stats
-        rmean *= 1 - m
-        rmean += squeeze(mean) * m
-        rvar *= 1 - m
-        rvar += squeeze(_var(x, axis=axes, keepdims=True, ddof=1)) * m
+        rmean = rmean * (1 - m) + squeeze(mean) * m
+        rvar = rvar * (1 - m) + cpvar(x, axis=axes, ddof=1) * m
     else:
-        rvar_ = rvar if dim2 else reshape(rvar, shape=(*rvar.shape, 1))
-        rmean_ = rmean if dim2 else reshape(rmean, shape=(*rmean.shape, 1))
-        inv_std = (rvar_ + eps) ** -0.5
-        x_std = (x - rmean_) * inv_std
+        # use running mean and variance
+        rvar_ = rvar if x_is_2d else rvar.to_shape((*rvar.shape, 1))
+        rmean_ = rmean if x_is_2d else rmean.to_shape((*rmean.shape, 1))
+        inv_std = 1 / sqrt(rvar_ + eps)
+        x_norm = (x - rmean_) * inv_std
 
-    weights = w if dim2 else reshape(w, shape=(*w.shape, 1))
-    biases = b if dim2 else reshape(b, shape=(*b.shape, 1))
-    y = weights * x_std + biases
+    w = w if x_is_2d else reshape(w, shape=(*w.shape, 1))
+    b = b if x_is_2d else reshape(b, shape=(*b.shape, 1))
+    y = w * x_norm + b
 
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape) / x.shape[1]
+            n = float(x.size / x.shape[1])
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
-            dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
-            dx = weights * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
+            dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+            dx = w * inv_std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
             # gamma grads
-            dw = squeeze(dy_x_std_sum)
+            dw = squeeze(dy_x_norm_sum)
 
             # beta grads
             db = squeeze(dy_sum)
@@ -153,42 +156,43 @@ def batchnorm2d(
         New running variance.
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.BatchNorm2D`
     """
     axes = (0, 2, 3)
 
     if return_grad_fn:
-        mean = _mean(x, axis=axes, keepdims=True)
-        var = _var(x, axis=axes, keepdims=True)
-        inv_std = (var + eps) ** -0.5
-        x_std = (x - mean) * inv_std
+        # compute mean and variance from x
+        mean = cpmean(x, axis=axes, keepdims=True)
+        var = cpvar(x, axis=axes, keepdims=True)
+        inv_std = 1 / sqrt(var + eps)
+        x_norm = (x - mean) * inv_std
 
-        # keep running stats
-        rmean *= 1 - m
-        rmean += squeeze(mean) * m
-        rvar *= 1 - m
-        rvar += squeeze(_var(x, axis=axes, keepdims=True, ddof=1)) * m
+        rmean = rmean * (1 - m) + squeeze(mean) * m
+        rvar = rvar * (1 - m) + cpvar(x, axis=axes, ddof=1) * m
     else:
-        rvar_ = reshape(rvar, shape=(*rvar.shape, 1, 1))
-        rmean_ = reshape(rmean, shape=(*rmean.shape, 1, 1))
-        inv_std = (rvar_ + eps) ** -0.5
-        x_std = (x - rmean_) * inv_std
+        # use running mean and variance
+        inv_std = 1 / sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
+        x_norm = (x - rmean.to_shape((*rmean.shape, 1, 1))) * inv_std
 
-    weights = reshape(w, shape=(*w.shape, 1, 1))
-    biases = reshape(b, shape=(*b.shape, 1, 1))
-    y = weights * x_std + biases
+    w = w.to_shape((*w.shape, 1, 1))
+    b = b.to_shape((*b.shape, 1, 1))
+    y = w * x_norm + b
 
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape) / x.shape[1]
+            n = float(x.size / x.shape[1])
 
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
-            dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
-            dx = weights * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
+            dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+            dx = w * inv_std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
             # gamma grads
-            dw = squeeze(dy_x_std_sum)
+            dw = squeeze(dy_x_norm_sum)
 
             # beta grads
             db = squeeze(dy_sum)
@@ -201,11 +205,7 @@ def batchnorm2d(
 
 
 def layernorm(
-    x: Tensor,
-    w: Tensor,
-    b: Tensor,
-    eps: float = 1e-5,
-    return_grad_fn: bool = False,
+    x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
 ) -> tuple[
     Tensor,
     Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
@@ -231,29 +231,85 @@ def layernorm(
         Output tensor.
     Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
         Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.LayerNorm`
     """
-    axes = tuple([i for i in range(1, x.ndim)])
-    inv_std = (_var(x, axis=axes, keepdims=True) + eps) ** -0.5
-    x_std = (x - _mean(x, axis=axes, keepdims=True)) * inv_std
-    y = w * x_std + b
+    axes = tuple(-i - 1 for i in range(w.n_axes))
+    inv_std = 1 / sqrt(cpvar(x, axis=axes, keepdims=True) + eps)
+    x_norm = (x - cpmean(x, axis=axes, keepdims=True)) * inv_std
+    y = w * x_norm + b
 
     if return_grad_fn:
+        sum_axes = tuple(range(x.n_axes - w.n_axes))
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
             # input grads
-            n = reduce(mul, x.shape[1:])
-
             dy_sum = cpsum(dy, axis=axes, keepdims=True)
-            dy_x_std_sum = cpsum(dy * x_std, axis=axes, keepdims=True)
-            dx = w * inv_std / n * (n * dy - dy_sum - x_std * dy_x_std_sum)
+            dy_x_std_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+            dx = w * inv_std / w.size * (w.size * dy - dy_sum - x_norm * dy_x_std_sum)
 
             # gamma grads
-            dw = cpsum(dy * x_std, axis=0)
+            dw = cpsum(dy * x_norm, axis=sum_axes)
 
             # beta grads
-            db = cpsum(dy, axis=0)
+            db = cpsum(dy, axis=sum_axes)
 
             return dx, dw, db
+
+        return y, grad_fn
+
+    return y, None
+
+
+def rmsnorm(
+    x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
+) -> tuple[
+    Tensor,
+    Optional[Callable[[Tensor], tuple[Tensor, Tensor]]],
+]:
+    """Performs RMS normalization on a tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    w : Tensor
+        Weight tensor for scaling the distribution.
+    eps : float, optional
+        Constant for numerical stability. Defaults to ``1e-5``.
+    return_grad_fn : bool, optional
+        Whether to also return the according gradient function. Defaults to ``False``.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+        Gradient function.
+
+    See Also
+    ----------
+    :class:`compyute.nn.RMSNorm`
+    """
+    axes = tuple(-i - 1 for i in range(w.n_axes))
+    rms = sqrt(cpmean(x**2, axis=axes, keepdims=True) + eps)
+    x_norm = x / rms
+    y = w * x_norm
+
+    if return_grad_fn:
+        sum_axes = tuple(range(x.n_axes - w.n_axes))
+
+        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
+            # input grads
+            dy_x_sum = cpsum(dy * x, axis=axes, keepdims=True)
+            dx = w * (dy / rms - x * dy_x_sum / (w.size * rms**3))
+
+            # gamma grads
+            dw = cpsum(dy * x_norm, axis=sum_axes)
+
+            return dx, dw
 
         return y, grad_fn
 

@@ -1,15 +1,16 @@
 """Neural network recurrent modules."""
 
+import math
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
-from ...tensor_functions.creating import empty, empty_like, zeros, zeros_like
+from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
 
@@ -49,8 +50,6 @@ class Recurrent(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -67,17 +66,15 @@ class Recurrent(Module):
         return_sequence: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -88,31 +85,31 @@ class Recurrent(Module):
         self.b_h = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
-        h = zeros((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        h = zeros((*x.shape[:2], self.h_channels), x.dtype, x.device)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
 
             # input projection
-            x_h, x_h_grad_fn = linear(x[:, t], self.w_i, self.b_i, self._training)
+            x_h, x_h_grad_fn = linear(x[:, t], self.w_i, self.b_i, self._is_training)
 
             # hidden projection
-            h_h, h_h_grad_fn = linear(h[:, t - 1], self.w_h, self.b_h, self._training)
+            h_h, h_h_grad_fn = linear(
+                h[:, t - 1], self.w_h, self.b_h, self._is_training
+            )
 
             # apply non-linearity
-            h[:, t], act_grad_fn = self.activation(x_h + h_h, self._training)
+            h[:, t], act_grad_fn = self.activation(x_h + h_h, self._is_training)
 
-            if self._training:
+            if self._is_training:
                 grad_functions.append((x_h_grad_fn, h_h_grad_fn, act_grad_fn))
 
-        if self._training:
+        if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 
@@ -189,8 +186,6 @@ class LSTM(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -207,17 +202,15 @@ class LSTM(Module):
         return_sequence: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -240,11 +233,10 @@ class LSTM(Module):
         self.b_ho = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
-        self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
-        i = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        i = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
         f = empty_like(i)
         g = empty_like(i)
         o = empty_like(i)
@@ -257,35 +249,35 @@ class LSTM(Module):
 
             # input projection W_i * x_t + b_i
             x_t = x[:, t]
-            x_i, x_i_grad_fn = linear(x_t, self.w_ii, self.b_ii, self._training)
-            x_f, x_f_grad_fn = linear(x_t, self.w_if, self.b_if, self._training)
-            x_g, x_g_grad_fn = linear(x_t, self.w_ig, self.b_ig, self._training)
-            x_o, x_o_grad_fn = linear(x_t, self.w_io, self.b_io, self._training)
+            x_i, x_i_grad_fn = linear(x_t, self.w_ii, self.b_ii, self._is_training)
+            x_f, x_f_grad_fn = linear(x_t, self.w_if, self.b_if, self._is_training)
+            x_g, x_g_grad_fn = linear(x_t, self.w_ig, self.b_ig, self._is_training)
+            x_o, x_o_grad_fn = linear(x_t, self.w_io, self.b_io, self._is_training)
 
             # hidden projection W_h * h_t-1 + b_h
             h_tprev = h[:, t - 1]
-            h_i, h_i_grad_fn = linear(h_tprev, self.w_hi, self.b_hi, self._training)
-            h_f, h_f_grad_fn = linear(h_tprev, self.w_hf, self.b_hf, self._training)
-            h_g, h_g_grad_fn = linear(h_tprev, self.w_hg, self.b_hg, self._training)
-            h_o, h_o_grad_fn = linear(h_tprev, self.w_ho, self.b_ho, self._training)
+            h_i, h_i_grad_fn = linear(h_tprev, self.w_hi, self.b_hi, self._is_training)
+            h_f, h_f_grad_fn = linear(h_tprev, self.w_hf, self.b_hf, self._is_training)
+            h_g, h_g_grad_fn = linear(h_tprev, self.w_hg, self.b_hg, self._is_training)
+            h_o, h_o_grad_fn = linear(h_tprev, self.w_ho, self.b_ho, self._is_training)
 
             # gates
-            i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._training)  # input gate
-            f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._training)  # forget gate
-            o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._training)  # output gate
+            i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._is_training)  # input gate
+            f[:, t], f_grad_fn = sigmoid(x_f + h_f, self._is_training)  # forget gate
+            o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._is_training)  # output gate
 
             # input node
-            g[:, t], g_grad_fn = self.activation(x_g + h_g, self._training)
+            g[:, t], g_grad_fn = self.activation(x_g + h_g, self._is_training)
 
             # carry state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
 
             # memory state h_t = o_t * act(c_t)
-            act_c[:, t], actc_grad_fn = self.activation(c[:, t], self._training)
+            act_c[:, t], actc_grad_fn = self.activation(c[:, t], self._is_training)
             h[:, t] = o[:, t] * act_c[:, t]
 
             # remember gradient functions
-            if self._training:
+            if self._is_training:
                 grad_functions_t = (
                     x_i_grad_fn,
                     x_f_grad_fn,
@@ -303,10 +295,9 @@ class LSTM(Module):
                 )
                 grad_functions.append(grad_functions_t)
 
-        if self._training:
+        if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dc = zeros_like(c)
                 dh = 0
@@ -444,8 +435,6 @@ class GRU(Module):
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -462,17 +451,15 @@ class GRU(Module):
         return_sequence: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
         self.activation = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
-        self.dtype = Dtype(dtype)
 
-        k = h_channels**-0.5
+        k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
         self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
@@ -491,11 +478,10 @@ class GRU(Module):
         self.b_hn = Parameter(zeros((h_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor):
-        self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
+        validate_input_axes(self, x, [3])
 
         grad_functions = []
-        r = empty((*x.shape[:2], self.h_channels), self.dtype, self.device)
+        r = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
         z = empty_like(r)
         n = empty_like(r)
         h_n = empty_like(r)
@@ -506,28 +492,32 @@ class GRU(Module):
 
             # input projection W_i * x_t + b_i
             x_t = x[:, t]
-            x_r, x_r_grad_fn = linear(x_t, self.w_ir, self.b_ir, self._training)
-            x_z, x_z_grad_fn = linear(x_t, self.w_iz, self.b_iz, self._training)
-            x_n, x_n_grad_fn = linear(x_t, self.w_in, self.b_in, self._training)
+            x_r, x_r_grad_fn = linear(x_t, self.w_ir, self.b_ir, self._is_training)
+            x_z, x_z_grad_fn = linear(x_t, self.w_iz, self.b_iz, self._is_training)
+            x_n, x_n_grad_fn = linear(x_t, self.w_in, self.b_in, self._is_training)
 
             # hidden projection W_h * h_t-1 + b_h
             h_tprev = h[:, t - 1]
-            h_r, h_r_grad_fn = linear(h_tprev, self.w_hr, self.b_hr, self._training)
-            h_z, h_z_grad_fn = linear(h_tprev, self.w_hz, self.b_hz, self._training)
-            h_n[:, t], h_n_grad_fn = linear(h_tprev, self.w_hn, self.b_hn, self._training)
+            h_r, h_r_grad_fn = linear(h_tprev, self.w_hr, self.b_hr, self._is_training)
+            h_z, h_z_grad_fn = linear(h_tprev, self.w_hz, self.b_hz, self._is_training)
+            h_n[:, t], h_n_grad_fn = linear(
+                h_tprev, self.w_hn, self.b_hn, self._is_training
+            )
 
             # gates
-            r[:, t], r_grad_fn = sigmoid(x_r + h_r, self._training)  # reset gate
-            z[:, t], z_grad_fn = sigmoid(x_z + h_z, self._training)  # update gate
+            r[:, t], r_grad_fn = sigmoid(x_r + h_r, self._is_training)  # reset gate
+            z[:, t], z_grad_fn = sigmoid(x_z + h_z, self._is_training)  # update gate
 
             # candidate hidden state n_t = act(x_n + r_t * h_t-1)
-            n[:, t], n_grad_fn = self.activation(x_n + r[:, t] * h_n[:, t], self._training)
+            n[:, t], n_grad_fn = self.activation(
+                x_n + r[:, t] * h_n[:, t], self._is_training
+            )
 
             # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
             h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]
 
             # remember gradient functions
-            if self._training:
+            if self._is_training:
                 grad_functions_t = (
                     x_r_grad_fn,
                     x_z_grad_fn,
@@ -541,10 +531,9 @@ class GRU(Module):
                 )
                 grad_functions.append(grad_functions_t)
 
-        if self._training:
+        if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx = empty_like(x)
                 dh = 0
 

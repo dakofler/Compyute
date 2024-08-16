@@ -1,11 +1,12 @@
 """Neural network convolution modules."""
 
+import math
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
-from ...tensor_functions.creating import zeros
+from ...tensor_ops.creating import zeros
 from ..functional.convolutions import (
     _PaddingLike,
     avgpooling2d,
@@ -14,12 +15,12 @@ from ..functional.convolutions import (
     maxpooling2d,
 )
 from ..parameter import Parameter
-from .module import Module
+from .module import Module, validate_input_axes
 
-__all__ = ["Convolution1d", "Convolution2d", "MaxPooling2d", "AvgPooling2d"]
+__all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
 
 
-class Convolution1d(Module):
+class Convolution1D(Module):
     r"""Applies a 1D convolution to the input for feature extraction.
 
     .. math::
@@ -53,12 +54,10 @@ class Convolution1d(Module):
         Dilation used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DtypeLike, optional
+    dtype : _DtypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -77,9 +76,8 @@ class Convolution1d(Module):
         bias: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -87,26 +85,32 @@ class Convolution1d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
 
         # init weights
-        k = (in_channels * kernel_size) ** -0.5
-        self.w = Parameter(uniform((out_channels, in_channels, kernel_size), -k, k, dtype))
+        k = 1 / math.sqrt(in_channels * kernel_size)
+        self.w = Parameter(
+            uniform((out_channels, in_channels, kernel_size), -k, k, dtype)
+        )
 
         # init biases
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [3])
-        x = x.to_type(self.dtype)
+        validate_input_axes(self, x, [3])
+
         y, grad_fn = convolve1d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
+            x,
+            self.w,
+            self.b,
+            self.padding,
+            self.stride,
+            self.dilation,
+            self._is_training,
         )
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -117,7 +121,7 @@ class Convolution1d(Module):
         return y
 
 
-class Convolution2d(Module):
+class Convolution2D(Module):
     r"""Applies a 2D convolution to the input for feature extraction.
 
     .. math::
@@ -153,12 +157,6 @@ class Convolution2d(Module):
         Dilations used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
 
 
     .. note::
@@ -177,9 +175,8 @@ class Convolution2d(Module):
         bias: bool = True,
         dtype: _DtypeLike = Dtype.FLOAT32,
         label: Optional[str] = None,
-        training: bool = False,
     ) -> None:
-        super().__init__(label, training)
+        super().__init__(label)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -187,10 +184,9 @@ class Convolution2d(Module):
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
-        self.dtype = Dtype(dtype)
 
         # init weights
-        k = (in_channels * kernel_size**2) ** -0.5
+        k = 1 / math.sqrt(in_channels * kernel_size**2)
         self.w = Parameter(
             uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype)
         )
@@ -199,16 +195,21 @@ class Convolution2d(Module):
         self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
-        x = x.to_type(self.dtype)
+        validate_input_axes(self, x, [4])
+
         y, grad_fn = convolve2d(
-            x, self.w, self.b, self.padding, self.stride, self.dilation, self._training
+            x,
+            self.w,
+            self.b,
+            self.padding,
+            self.stride,
+            self.dilation,
+            self._is_training,
         )
 
-        if self._training and grad_fn is not None:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> Tensor:
-                dy = dy.to_type(self.dtype)
                 dx, dw, db = grad_fn(dy)
                 self._update_parameter_grad(self.w, dw)
                 self._update_parameter_grad(self.b, db)
@@ -219,55 +220,43 @@ class Convolution2d(Module):
         return y
 
 
-class MaxPooling2d(Module):
+class MaxPooling2D(Module):
     """MaxPooling layer used for downsampling.
 
     Parameters
     ----------
     kernel_size : int, optional
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = maxpooling2d(x, kernel_size, self._training)
+        y, self._backward = maxpooling2d(x, kernel_size, self._is_training)
         return y
 
 
-class AvgPooling2d(Module):
+class AvgPooling2D(Module):
     """AvgPooling layer used for downsampling.
 
     Parameters
     ----------
     kernel_size : int, optional
         Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    label : str, optional
-        Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
-    def __init__(
-        self, kernel_size: int = 2, label: Optional[str] = None, training: bool = False
-    ) -> None:
-        super().__init__(label, training)
+    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
+        super().__init__(label)
         self.kernel_size = kernel_size
 
     def forward(self, x: Tensor) -> Tensor:
-        self._check_dims(x, [4])
+        validate_input_axes(self, x, [4])
 
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = avgpooling2d(x, kernel_size, self._training)
+        y, self._backward = avgpooling2d(x, kernel_size, self._is_training)
         return y
