@@ -19,7 +19,7 @@ class Device(Enum):
     CUDA = "cuda"
 
     def __repr__(self) -> str:
-        return f"Device('{self.value}')"
+        return f"compyute.{self.value}"
 
     def __str__(self) -> str:
         return self.__repr__()

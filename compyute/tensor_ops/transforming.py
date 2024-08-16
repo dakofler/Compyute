@@ -10,6 +10,7 @@ from ..dtypes import Dtype, _DtypeLike, _ScalarLike
 __all__ = [
     "abs",
     "all",
+    "allclose",
     "clip",
     "cos",
     "cosh",
@@ -79,6 +80,28 @@ def all(x: Tensor) -> bool:
         ``True`` if all elements in the tensor are ``True``.
     """
     return x.engine.all(x.data)
+
+
+def allclose(x: Tensor, y: Tensor, rtol=1e-05, atol=1e-08) -> bool:
+    """Returns ``True`` if all elements in the tensor are ``True``.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    y : Tensor
+        Input tensor.
+    rtol : float
+        Relative tolerance. Defaults to ``1e-05``.
+    atol : float
+        Absolute tolerance. Defaults to ``1e-08``.
+
+    Returns
+    -------
+    bool
+        ``True`` if all elements in the tensors are within the given tolerance.
+    """
+    return x.engine.allclose(x.data, y.data, rtol, atol)
 
 
 def clip(

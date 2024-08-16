@@ -1,5 +1,5 @@
 compyute
-========
+===========
 .. automodule:: compyute
 .. currentmodule:: compyute
 
@@ -57,6 +57,7 @@ Transforming and Computing Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: abs
 .. autofunction:: all
+.. autofunction:: allclose
 .. autofunction:: clip
 .. autofunction:: cos
 .. autofunction:: cosh
@@ -96,6 +97,7 @@ Transforming and Computing Operations
 
 Data Types
 ----------
+.. autoclass:: bool
 .. autoclass:: int8
 .. autoclass:: int16
 .. autoclass:: int32

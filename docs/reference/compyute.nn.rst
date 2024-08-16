@@ -32,6 +32,8 @@ Metrics
    :show-inheritance:
    :special-members: __call__
 
+.. _modules:
+
 Modules
 -------
 .. autoclass:: Module

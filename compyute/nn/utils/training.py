@@ -11,7 +11,7 @@ __all__ = ["clip_grad_norm"]
 
 
 def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
-    """Clips gradient norm of parameters.
+    """Clips gradient norm of parameters to a specified value.
 
     Parameters
     ----------

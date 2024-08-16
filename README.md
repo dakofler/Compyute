@@ -21,6 +21,8 @@ Similar to `PyTorch`, in `Compyute` a `Tensor`-object represents the central blo
 
 ### Tensors
 
+`Tensors` can be created from nested lists of values. Furthermore a `device`, where the tensor should be stored on, and a `dtype` of the tensor data can be specified. `Compyute` provides several methods to change these settings.
+
 ```python
 import compyute as cp
 
@@ -72,7 +74,7 @@ z = cp.full(shape=(10, 10), value=99)
 z = cp.random.normal(shape=(10, 10))
 ```
 
-### Data preprocessing, Encoding
+### Data preprocessing & encoding
 The framework offers some utility functions to preprocess ...
 
 ```python
@@ -162,7 +164,7 @@ class MyModel(nn.Container):
 
 ### Training models
 
-All modules can be trained and updated using common optimizer algorithms, such as SGD or Adam. Callbacks offer extended functionality such as tracking the loss-values during training. An easy and approchable way is to use a `Trainer` object.
+All modules can be trained and updated using common optimizer algorithms, such as `SGD` or `Adam`. Callbacks offer extended functionality such as tracking the loss-values during training. An easy and approchable way is to use a `Trainer` object.
 
 ```python
 from compyute.nn.trainer import Trainer
@@ -193,9 +195,11 @@ loss_func = nn.CrossEntropy()
 optim = nn.optimizers.SGD(model.parameters)
 
 for epoch in range(epochs):
+
     # training
-    with model.training():
+    with model.train():
         for x, y in train_dl():
+
             # forward pass
             y_pred = model(x)
             _ = loss_func(y_pred, y)
@@ -211,14 +215,27 @@ for epoch in range(epochs):
         y_pred = model(x)
         val_loss += loss_func(y_pred, y).item()
     val_loss /= len(val_dl)
+    
     print(f"epoch {epoch}: {val_loss=:.4f}")
 ```
 
 Model checkpoints can also be saved and loaded later on.
 
 ```python
-model.save(model, "my_model.cp")
-loaded_model = nn.Module.load("my_model.cp")
+# save the model state
+state = {
+    "model": model.state_dict(),
+    "optimizer": optim.get_state_dict(),
+}
+cp.save(state, "my_model.cp")
+
+# load the states
+model = MyModel()
+optim = nn.optimizers.SGD(model.parameters)
+
+loaded_state = cp.load("my_model.cp")
+model.load_state_dict(loaded_state["model"])
+optim.load_state_dict(loaded_state["optimizer"])
 ```
 
 ## Author
