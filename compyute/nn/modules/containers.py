@@ -6,7 +6,7 @@ from typing import Optional
 from ...base_tensor import Tensor
 from ...tensor_ops.creating import concatenate, split
 from ...tensor_ops.transforming import tensorsum
-from .module import Module
+from .module import Module, ModuleList
 
 __all__ = ["ParallelAdd", "ParallelConcat", "ResidualConnection", "Sequential"]
 
@@ -27,19 +27,19 @@ class Sequential(Module):
 
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
-        self.modules = list(modules)
-
-    def forward(self, x: Tensor) -> Tensor:
-        if not self.modules:
+        if not modules:
             raise NoChildModulesError()
 
-        for module in self.modules:
+        self._modules = ModuleList(modules)
+
+    def forward(self, x: Tensor) -> Tensor:
+        for module in self._modules:
             x = module(x)
 
         if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
-                for module in reversed(self.modules):
+                for module in reversed(self._modules):
                     dy = module.backward(dy)
                 return dy
 
@@ -69,22 +69,21 @@ class ParallelConcat(Module):
         self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None
     ) -> None:
         super().__init__(label)
-        self.modules = list(modules)
+        if not modules:
+            raise NoChildModulesError()
+        self._modules = ModuleList(modules)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        if not self.modules:
-            raise NoChildModulesError()
-
-        ys = [m(x) for m in self.modules]
+        ys = [m(x) for m in self._modules]
         y = concatenate(ys, axis=self.concat_axis)
 
         if self._is_training:
-            splits = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
+            split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
 
             def _backward(dy: Tensor) -> Tensor:
-                dy_splits = split(dy, splits=splits, axis=self.concat_axis)
-                return tensorsum(m.backward(s) for m, s in zip(self.modules, dy_splits))
+                splits = split(dy, splits=split_idx, axis=self.concat_axis)
+                return tensorsum(m.backward(s) for m, s in zip(self._modules, splits))
 
             self._backward = _backward
 
@@ -109,16 +108,16 @@ class ParallelAdd(Module):
 
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
-        self.modules = list(modules)
-
-    def forward(self, x: Tensor) -> Tensor:
-        if not self.modules:
+        if not modules:
             raise NoChildModulesError()
 
-        y = tensorsum(m(x) for m in self.modules)
+        self._modules = ModuleList(modules)
+
+    def forward(self, x: Tensor) -> Tensor:
+        y = tensorsum(m(x) for m in self._modules)
 
         if self._is_training:
-            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self.modules)
+            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self._modules)
 
         return y
 
@@ -148,24 +147,21 @@ class ResidualConnection(Module):
         residual_proj: Optional[Module] = None,
         label: Optional[str] = None
     ) -> None:
-        if len(modules) == 0:
-            raise NoChildModulesError(
-                "Residual container requires at least one module."
-            )
+        if not modules:
+            raise NoChildModulesError()
         super().__init__(label)
 
-        self.block = modules[0] if len(modules) == 1 else Sequential(*modules)
+        self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
         self.residual_proj = residual_proj
-        self.modules = [self.block, residual_proj] if residual_proj else [self.block]
 
     def forward(self, x: Tensor) -> Tensor:
-        y = self.block(x)
+        y = self.residual_block(x)
         y += self.residual_proj(x) if self.residual_proj else x
 
         if self._is_training:
 
             def _backward(dy: Tensor) -> Tensor:
-                dx = self.block.backward(dy)
+                dx = self.residual_block.backward(dy)
                 dx += self.residual_proj.backward(dy) if self.residual_proj else dy
                 return dx
 
@@ -177,5 +173,5 @@ class ResidualConnection(Module):
 class NoChildModulesError(Exception):
     """Exception for empty containers."""
 
-    def __init__(self, message: str = "Container has no modules.") -> None:
+    def __init__(self, message: str = "At least one module is required.") -> None:
         super().__init__(message)

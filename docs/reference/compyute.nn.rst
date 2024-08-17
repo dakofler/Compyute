@@ -36,6 +36,8 @@ Modules
     :toctree: ../_generated/compyute.nn
 
     Module
+    Identity
+    ModuleList
 
 
 .. _activations:
