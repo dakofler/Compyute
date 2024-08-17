@@ -272,6 +272,12 @@ class Module(ABC):
         state_dict : OrderedDict
             State dict containing parameters and buffers.
         """
+        state_dict_device = next(iter(state_dict.values())).device
+        if state_dict_device != self.device:
+            raise ValueError(
+                f"Device mismatch. Module device: {self.device}, state dict device: {state_dict_device}"
+            )
+
         for p, value in list(
             zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())
         ):

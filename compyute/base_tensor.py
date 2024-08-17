@@ -82,7 +82,6 @@ class Tensor:
     def __init__(self, data: _ArrayLike) -> None:
         self.data = data
         self.grad: Optional[Tensor] = None
-        self._engine: Optional[ModuleType] = None
         self._device: Optional[Device] = None
         self._dtype: Optional[Dtype] = None
         self._iterator: int = 0
@@ -151,13 +150,6 @@ class Tensor:
     def ptr(self) -> int:
         """Pointer to the tensor data."""
         return id(self._data)
-
-    def clean(self) -> None:
-        """Resets chached information."""
-        self._engine = None
-        self._device = None
-        self._dtype = None
-        self.grad = None
 
     # ----------------------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -333,7 +325,6 @@ class Tensor:
             return
 
         self._device = device
-        self._engine = get_engine(self.device)
         self.data = data_to_device(self._data, device)
         if self.grad:
             self.grad.ito_device(device)
