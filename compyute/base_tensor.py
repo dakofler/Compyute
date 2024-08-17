@@ -69,14 +69,13 @@ class Tensor:
 
     .. note::
         Tensors can only be initialized with NumPy or CuPy arrays.
-        For other data types use the :class:`compute.tensor` function. It automatically
+        For other data types use the :func:`compyute.tensor` function. It automatically
         infers the data type and device if not specified.
 
     Parameters
     ----------
     data : _ArrayLike
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
-        for other data use the :func:`tensor` function.
     """
 
     def __init__(self, data: _ArrayLike) -> None:
@@ -118,7 +117,8 @@ class Tensor:
 
     @property
     def engine(self) -> ModuleType:
-        """Computation engine."""
+        """Computation engine used for tensor operations.
+        The engine is not stored within the object, it is fetched on demand."""
         return get_engine(self.device)
 
     @property
@@ -143,12 +143,12 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """Transposed view of the tensor (last two axes)."""
+        """View of the tensor with its last two axes transposed."""
         return Tensor(self.engine.moveaxis(self._data, -2, -1))
 
     @property
     def ptr(self) -> int:
-        """Pointer to the tensor data."""
+        """Pointer to the tensor data in memory."""
         return id(self._data)
 
     # ----------------------------------------------------------------------------------------------

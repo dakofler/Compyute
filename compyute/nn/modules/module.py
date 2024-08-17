@@ -354,8 +354,8 @@ class Module(ABC):
         self.y = None
         self._backward = None
 
-        for p in chain(self.get_buffers(), self.get_parameters()):
-            p.clean()
+        for p in self.get_parameters():
+            p.grad = None
 
         for module in self.modules:
             module.clean(force)
