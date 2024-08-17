@@ -12,7 +12,7 @@ from ...base_tensor import ShapeError, Tensor
 from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
-__all__ = ["Module", "Identity"]
+__all__ = ["Module", "Identity", "ModuleList"]
 
 
 class Module(ABC):
@@ -30,7 +30,6 @@ class Module(ABC):
         self.y: Optional[Tensor] = None
         self._backward: Optional[Callable[[Tensor], Tensor]] = None
         self._device: _DeviceLike = Device.CPU
-        self._modules: Optional[list[Module]] = None
         self._is_retaining_values: bool = False
         self._is_trainable: bool = True
         self._is_training: bool = False
@@ -70,31 +69,21 @@ class Module(ABC):
 
     @property
     def modules(self) -> list[Module]:
-        """Returns the list of child modules.
+        """List of child modules.
 
         Returns
         -------
         list[Module]
             List of child modules.
         """
-        if self._modules is not None:
-            return self._modules
-        return [
-            getattr(self, a)
-            for a in self.__dict__
-            if isinstance(getattr(self, a), Module)
-        ]
-
-    @modules.setter
-    def modules(self, value: list[Module]) -> None:
-        """Set the list of child modules.
-
-        Parameters
-        ----------
-        value : list[Module]
-            List of child modules.
-        """
-        self._modules = value
+        all_modules = []
+        for attribute in vars(self).values():
+            if isinstance(attribute, Module):
+                all_modules.append(attribute)
+            if isinstance(attribute, ModuleList):
+                for module in attribute:
+                    all_modules.append(module)
+        return all_modules
 
     @property
     def is_retaining_values(self) -> bool:
@@ -184,12 +173,12 @@ class Module(ABC):
     def __repr__(self) -> str:
         attrs = [
             f"{a}={getattr(self, a)}"
-            for a in self.__dict__
+            for a in vars(self)
             if is_repr_attr(a, getattr(self, a))
         ]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
         for module in self.modules:
-            repr_string += "\n" + module.__repr__()
+            repr_string += "\n" + repr(module)
         return repr_string
 
     def __call__(self, x: Tensor) -> Tensor:
@@ -231,7 +220,7 @@ class Module(ABC):
         """
         self_parameters = (
             getattr(self, a)
-            for a in self.__dict__
+            for a in vars(self)
             if isinstance(getattr(self, a), Parameter)
         )
         if include_child_modules:
@@ -239,8 +228,7 @@ class Module(ABC):
                 p for module in self.modules for p in module.get_parameters()
             )
             return chain(self_parameters, child_module_parameters)
-        else:
-            return self_parameters
+        return self_parameters
 
     def get_buffers(self, include_child_modules: bool = True) -> Iterator[Buffer]:
         """Returns an Iterator of module buffers.
@@ -256,9 +244,7 @@ class Module(ABC):
             Iterator of module and child module buffers.
         """
         self_buffers = (
-            getattr(self, a)
-            for a in self.__dict__
-            if isinstance(getattr(self, a), Buffer)
+            getattr(self, a) for a in vars(self) if isinstance(getattr(self, a), Buffer)
         )
         if include_child_modules:
             child_module_buffers = (
@@ -384,13 +370,24 @@ class Identity(Module):
     ----------
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
-    training : bool, optional
-        Whether the module should be in training mode. Defaults to ``False``.
     """
 
     def forward(self, x: Tensor) -> Tensor:
         self._backward = lambda dy: dy
         return x
+
+
+class ModuleList(list):
+    """List of modules.
+
+    Parameters
+    ----------
+    modules : Iterable[Module]
+        Modules to add to the list.
+    """
+
+    def __init__(self, modules: Iterable[Module]) -> None:
+        super().__init__(modules)
 
 
 class ModelDefinitionError(Exception):

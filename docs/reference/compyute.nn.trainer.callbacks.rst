@@ -1,12 +1,8 @@
-compyute.nn.trainer.callbacks
-=============================
-.. currentmodule:: compyute.nn.trainer.callbacks
-
-
 .. _callbacks:
 
 compyute.nn.trainer.callbacks
 =============================
+.. currentmodule:: compyute.nn.trainer.callbacks
 .. autosummary::
     :toctree: ../_generated/compyute.nn.trainer.callbacks
     
