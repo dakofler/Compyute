@@ -1,99 +1,121 @@
 compyute
 ===========
-.. automodule:: compyute
 .. currentmodule:: compyute
+
 
 Tensors
 -------
-.. autoclass:: Tensor
-    :members:
-.. autofunction:: tensor
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    tensor
+    Tensor
+
+
+Tensor Operations
+-----------------
 
 Creating and Combining Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: append
-.. autofunction:: arange
-.. autofunction:: concatenate
-.. autofunction:: empty
-.. autofunction:: empty_like
-.. autofunction:: full
-.. autofunction:: full_like
-.. autofunction:: identity
-.. autofunction:: linspace
-.. autofunction:: ones
-.. autofunction:: ones_like
-.. autofunction:: split
-.. autofunction:: stack
-.. autofunction:: zeros
-.. autofunction:: zeros_like
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    append
+    arange
+    concatenate
+    empty
+    empty_like
+    full
+    full_like
+    identity
+    linspace
+    ones
+    ones_like
+    split
+    stack
+    zeros
+    zeros_like
+
 
 Reshaping Operations
 ~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: diagonal
-.. autofunction:: reshape
-.. autofunction:: flatten
-.. autofunction:: transpose
-.. autofunction:: insert_dim
-.. autofunction:: add_dims
-.. autofunction:: resize
-.. autofunction:: repeat
-.. autofunction:: tile
-.. autofunction:: pad
-.. autofunction:: pad_to_shape
-.. autofunction:: moveaxis
-.. autofunction:: squeeze
-.. autofunction:: flip
-.. autofunction:: broadcast_to
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    diagonal
+    reshape
+    flatten
+    transpose
+    insert_dim
+    add_dims
+    resize
+    repeat
+    tile
+    pad
+    pad_to_shape
+    moveaxis
+    squeeze
+    flip
+    broadcast_to
+
 
 Selecting Operations
 ~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: argmax
-.. autofunction:: get_diagonal
-.. autofunction:: tril
-.. autofunction:: triu
-.. autofunction:: unique
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    argmax
+    get_diagonal
+    tril
+    triu
+    unique
+
 
 Transforming and Computing Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: abs
-.. autofunction:: all
-.. autofunction:: allclose
-.. autofunction:: clip
-.. autofunction:: cos
-.. autofunction:: cosh
-.. autofunction:: dot
-.. autofunction:: einsum
-.. autofunction:: exp
-.. autofunction:: fft1d
-.. autofunction:: fft2d
-.. autofunction:: histogram
-.. autofunction:: inner
-.. autofunction:: ifft1d
-.. autofunction:: ifft2d
-.. autofunction:: log
-.. autofunction:: log2
-.. autofunction:: log10
-.. autofunction:: max
-.. autofunction:: maximum
-.. autofunction:: mean
-.. autofunction:: min
-.. autofunction:: minimum
-.. autofunction:: norm
-.. autofunction:: outer
-.. autofunction:: prod
-.. autofunction:: real
-.. autofunction:: round
-.. autofunction:: sech
-.. autofunction:: sin
-.. autofunction:: sinh
-.. autofunction:: sqrt
-.. autofunction:: std
-.. autofunction:: tan
-.. autofunction:: tanh
-.. autofunction:: tensorprod
-.. autofunction:: tensorsum
-.. autofunction:: sum
-.. autofunction:: var
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    abs
+    all
+    allclose
+    clip
+    cos
+    cosh
+    dot
+    einsum
+    exp
+    fft1d
+    fft2d
+    histogram
+    inner
+    ifft1d
+    ifft2d
+    log
+    log2
+    log10
+    max
+    maximum
+    mean
+    min
+    minimum
+    norm
+    outer
+    prod
+    real
+    round
+    sech
+    sin
+    sinh
+    sqrt
+    std
+    tan
+    tanh
+    tensorprod
+    tensorsum
+    sum
+    var
+
 
 Data Types
 ----------
@@ -108,6 +130,7 @@ Data Types
 .. autoclass:: complex64
 .. autoclass:: complex128
 
+
 Devices
 -------
 .. autoclass:: cpu
@@ -116,5 +139,8 @@ Devices
 
 Utility Functions
 -----------------
-.. autofunction:: save
-.. autofunction:: load
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    save
+    load

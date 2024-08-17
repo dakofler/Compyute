@@ -158,6 +158,8 @@ class LSTM(Module):
             h_t = o_t \odot act(c_t) \\
         \end{array}
 
+    where :math:`\odot` is the Hadamard product.
+
     .. note::
         This implementation follows the one by PyTorch which differs slightly from the original paper.
 
@@ -407,6 +409,8 @@ class GRU(Module):
             h_t = (1 - z_t) \odot n_t + z_t \odot h_{t-1}
         \end{array}
 
+    where :math:`\odot` is the Hadamard product.
+    
     .. note::
         This implementation follows the one by PyTorch which differs slightly from the original paper.
 

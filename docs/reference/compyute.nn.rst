@@ -1,144 +1,150 @@
 compyute.nn
 ===========
-.. automodule:: compyute.nn
 .. currentmodule:: compyute.nn
+
 
 .. _losses:
 
 Losses
 ------
-.. autoclass:: Loss
-   :special-members: __call__
-.. autoclass:: BinaryCrossEntropy
-   :show-inheritance:
-   :special-members: __call__
-.. autoclass:: CrossEntropy
-   :show-inheritance:
-   :special-members: __call__
-.. autoclass:: MeanSquaredError
-   :show-inheritance:
-   :special-members: __call__
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+
+    Loss
+    BinaryCrossEntropy
+    CrossEntropy
+    MeanSquaredError
+
 
 .. _metrics:
 
 Metrics
 -------
-.. autoclass:: Metric
-   :special-members: __call__
-.. autoclass:: Accuracy
-   :show-inheritance:
-   :special-members: __call__
-.. autoclass:: R2
-   :show-inheritance:
-   :special-members: __call__
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Metric
+    Accuracy
+    R2
+
 
 .. _modules:
 
 Modules
 -------
-.. autoclass:: Module
-   :members:
-   :special-members: __call__
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+
+    Module
+
 
 .. _activations:
 
 Activations
 ~~~~~~~~~~~
-.. autoclass:: ReLU
-   :show-inheritance:
-.. autoclass:: LeakyReLU
-   :show-inheritance:
-.. autoclass:: GELU
-   :show-inheritance:
-.. autoclass:: Sigmoid
-   :show-inheritance:
-.. autoclass:: SiLU
-   :show-inheritance:
-.. autoclass:: Softmax
-   :show-inheritance:
-.. autoclass:: Tanh
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    ReLU
+    LeakyReLU
+    GELU
+    Sigmoid
+    SiLU
+    Softmax
+    Tanh
+
 
 Blocks
 ~~~~~~
-.. autoclass:: Convolution1DBlock
-   :show-inheritance:
-.. autoclass:: Convolution2DBlock
-   :show-inheritance:
-.. autoclass:: DenseBlock
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Convolution1DBlock
+    Convolution2DBlock
+    DenseBlock
+
 
 Containers
 ~~~~~~~~~~
-.. autoclass:: Sequential
-   :show-inheritance:
-.. autoclass:: ParallelConcat
-   :show-inheritance:
-.. autoclass:: ParallelAdd
-   :show-inheritance:
-.. autoclass:: ResidualConnection
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Sequential
+    ParallelConcat
+    ParallelAdd
+    ResidualConnection
+
 
 Convolution
 ~~~~~~~~~~~
-.. autoclass:: Convolution1D
-   :show-inheritance:
-.. autoclass:: Convolution2D
-   :show-inheritance:
-.. autoclass:: MaxPooling2D
-   :show-inheritance:
-.. autoclass:: AvgPooling2D
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Convolution1D
+    Convolution2D
+    MaxPooling2D
+    AvgPooling2D
+
 
 Embedding
 ~~~~~~~~~
-.. autoclass:: Embedding
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Embedding
+
 
 Linear
 ~~~~~~
-.. autoclass:: Linear
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Linear
+
 
 Normalizations
 ~~~~~~~~~~~~~~
-.. autoclass:: BatchNorm1D
-   :show-inheritance:
-.. autoclass:: BatchNorm2D
-   :show-inheritance:
-.. autoclass:: LayerNorm
-   :show-inheritance:
-.. autoclass:: RMSNorm
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    BatchNorm1D
+    BatchNorm2D
+    LayerNorm
+    RMSNorm
+
 
 Recurrent
 ~~~~~~~~~
-.. autoclass:: GRU
-   :show-inheritance:
-.. autoclass:: LSTM
-   :show-inheritance:
-.. autoclass:: Recurrent
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    GRU
+    LSTM
+    Recurrent
+
 
 Regularization
 ~~~~~~~~~~~~~~
-.. autoclass:: Dropout
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Dropout
+
 
 Reshape
 ~~~~~~~
-.. autoclass:: Reshape
-   :show-inheritance:
-.. autoclass:: Flatten
-   :show-inheritance:
-.. autoclass:: Moveaxis
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Reshape
+    Flatten
+    Moveaxis
+
 
 Parameter and Buffer
 --------------------
-.. autoclass:: Parameter
-   :members:
-   :show-inheritance:
-.. autoclass:: Buffer
-   :members:
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+    
+    Parameter
+    Buffer

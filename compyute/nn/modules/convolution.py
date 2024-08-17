@@ -62,7 +62,7 @@ class Convolution1D(Module):
 
     .. note::
         Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{in} * k * k}}`. Biases are initialized as zeros.
+        :math:`k = \sqrt{\frac{1}{C_{in} \cdot \text{kernel_size}}}`. Biases are initialized as zeros.
     """
 
     def __init__(
@@ -161,7 +161,7 @@ class Convolution2D(Module):
 
     .. note::
         Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{in} * k * k}}`. Biases are initialized as zeros.
+        :math:`k = \sqrt{\frac{1}{C_{in} * \text{kernel_size}^2}}`. Biases are initialized as zeros.
     """
 
     def __init__(
@@ -221,7 +221,8 @@ class Convolution2D(Module):
 
 
 class MaxPooling2D(Module):
-    """MaxPooling layer used for downsampling.
+    """Pooling layer used for downsampling where the
+    maximum value within the pooling window is used.
 
     Parameters
     ----------
@@ -242,7 +243,8 @@ class MaxPooling2D(Module):
 
 
 class AvgPooling2D(Module):
-    """AvgPooling layer used for downsampling.
+    """Pooling layer used for downsampling where the
+    average value within the pooling window is used.
 
     Parameters
     ----------

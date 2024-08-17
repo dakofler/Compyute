@@ -1,7 +1,8 @@
 compyute.nn.trainer
 ===================
-.. automodule:: compyute.nn.trainer
 .. currentmodule:: compyute.nn.trainer
 
-.. autoclass:: Trainer
-   :members:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.trainer
+
+    Trainer

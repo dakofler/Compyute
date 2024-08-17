@@ -1,6 +1,8 @@
 compyute.engine
 ===============
-.. automodule:: compyute.engine
 .. currentmodule:: compyute.engine
 
-.. autofunction:: gpu_available
+.. autosummary::
+    :toctree: ../_generated/compyute.engine
+    
+    gpu_available

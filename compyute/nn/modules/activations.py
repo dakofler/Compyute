@@ -21,7 +21,7 @@ class ReLU(Module):
     r"""Applies the Rectified Linear Unit activation function to an input tensor.
 
     .. math::
-        y = \max(0, x)
+        y = \text{max}(0, x)
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ class LeakyReLU(Module):
     r"""Leaky ReLu activation function.
 
     .. math::
-        y = \max(\alpha \cdot x, x)
+        y = \text{max}(\alpha \cdot x, x)
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ class GELU(Module):
     r"""Gaussian Error Linear Unit activation function (using the :math:`tanh` approximation).
 
     .. math::
-        y = 0.5 \cdot x \cdot (1 + \tanh(\sqrt{\frac{2}{pi}} \cdot (x + 0.044715 \cdot x^3)))
+        y = 0.5 \cdot x \cdot (1 + \text{tanh}(\sqrt{\frac{2}{pi}} \cdot (x + 0.044715 \cdot x^3)))
 
     Parameters
     ----------
@@ -79,7 +79,7 @@ class Tanh(Module):
     r"""Tanh activation function.
 
     .. math::
-        y = tanh(x)
+        y = \text{tanh}(x)
 
     Parameters
     ----------
@@ -113,7 +113,7 @@ class SiLU(Module):
     r"""Sigmoid Linear Unit activation function.
 
     .. math::
-        y = \frac{x}{1 + e^{-x}}
+        y = x \cdot \text{sigmoid}(x) = \frac{x}{1 + e^{-x}}
 
     Parameters
     ----------
@@ -130,7 +130,7 @@ class Softmax(Module):
     r"""Softmax activation function.
 
     .. math::
-        softmax(x) = \frac{\exp(x)}{\sum_{i=1}^N \exp(x_i)}
+        y = \frac{e^x}{\sum_{i=1}^N e^{x_i}}
 
     Parameters
     ----------

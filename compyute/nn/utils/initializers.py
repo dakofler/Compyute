@@ -77,7 +77,7 @@ class Uniform(Initializer):
     Parameters
     ----------
     low : float, optional
-        Lower bound for random values. Defaults to ``0``.
+        Lower bound for random values. Defaults to ``-1``.
     high : float, optional
         Upper bound for random values. Defaults to ``1``.
     """

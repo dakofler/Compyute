@@ -33,7 +33,7 @@ class DenseBlock(Sequential):
     out_channels : int
         Number of output channels (neurons) of the dense block.
     activation : _ActivationLike
-        Activation function to use in the dense block.
+        Activation function to use in the block.
         See :ref:`activations` for more details.
     weight_init : _InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
@@ -100,7 +100,7 @@ class Convolution1DBlock(Sequential):
     kernel_size : int
         Size of each kernel.
     activation : _ActivationLike
-        Activation function to use in the dense block.
+        Activation function to use in the block.
         See :ref:`activations` for more details.
     padding : _PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
@@ -130,8 +130,8 @@ class Convolution1DBlock(Sequential):
 
     See Also
     --------
-    :class:`compyute.nn.Convolution1d`
-    :class:`compyute.nn.Batchnorm1d`
+    :class:`compyute.nn.Convolution1D`
+    :class:`compyute.nn.BatchNorm1D`
     """
 
     def __init__(
@@ -202,7 +202,7 @@ class Convolution2DBlock(Sequential):
     kernel_size : int
         Size of each kernel.
     activation : _ActivationLike
-        Activation function to use in the dense block.
+        Activation function to use in the block.
         See :ref:`activations` for more details.
     padding : _PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
@@ -232,8 +232,8 @@ class Convolution2DBlock(Sequential):
 
     See Also
     --------
-    :class:`compyute.nn.Convolution2d`
-    :class:`compyute.nn.Batchnorm2d`
+    :class:`compyute.nn.Convolution2D`
+    :class:`compyute.nn.BatchNorm2D`
     """
 
     def __init__(

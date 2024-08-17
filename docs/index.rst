@@ -39,7 +39,7 @@ There are example-notebooks included that show how to use the toolbox and its ``
 Tensors
 -------
 
-``Tensors`` can be created from nested lists of values. Furthermore a ``device``, where the tensor should be stored on, and a ``dtype`` of the tensor data can be specified. ``Compyute`` also provides several methods to change these later on.
+``Tensors`` can be created from nested lists of values. Additionally, a ``device`` where the tensor should be stored on, and a ``dtype`` of the tensor data can be specified. ``Compyute`` provides several methods to change these settings.
 
 .. code-block:: python
 
@@ -95,7 +95,7 @@ The ``Tensor`` object supports most operations also known from ``PyTorch`` tenso
 
 
 Data preprocessing & encoding
-----------------------------
+-----------------------------
 The framework offers some utility functions to preprocess ...
 
 .. code-block:: python
@@ -145,9 +145,11 @@ When inheriting from predefined containers, such as ``Sequential``, the forward-
     # create a block with custom arguments by inheriting from the 'Sequential' container
     class MyConvBlock(nn.Sequential):
         def __init__(self, in_channels, out_channels):
+
             conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
             relu = nn.ReLU()
             bn = Batchnorm1D(out_channels)
+
             super().__init__(conv, relu, bn)
 
 
@@ -216,8 +218,8 @@ Alternatively, you can write your own training loop.
     epochs = 100
     batch_size = 32
 
-    train_dl = nn.DataLoader(X_train, y_train, batch_size)
-    val_dl = nn.DataLoader(X_val, y_val, batch_size)
+    train_dl = nn.utils.Dataloader(X_train, y_train, batch_size)
+    val_dl = nn.utils.Dataloader(X_val, y_val, batch_size)
     loss_func = nn.CrossEntropy()
     optim = nn.optimizers.SGD(model.parameters)
 
@@ -252,7 +254,7 @@ Model checkpoints can also be saved and loaded later on.
     
     # save the model state
     state = {
-        "model": model.state_dict(),
+        "model": model.get_state_dict(),
         "optimizer": optim.get_state_dict(),
     }
     cp.save(state, "my_model.cp")
