@@ -1,18 +1,28 @@
 compyute.nn.utils
 =================
-.. automodule:: compyute.nn.utils
 .. currentmodule:: compyute.nn.utils
+
 
 Dataloader
 ----------
-.. autoclass:: Dataloader
-    :members:
-.. autofunction:: batched
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.utils
+    
+    Dataloader
+    batched
+
 
 Module Utils
 ------------
-.. autofunction:: get_module_summary
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.utils
+    
+    get_module_summary
+
 
 Training Utils
 --------------
-.. autofunction:: clip_grad_norm
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.utils
+    
+    clip_grad_norm

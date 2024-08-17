@@ -1,35 +1,43 @@
+compyute.nn.trainer.callbacks
+=============================
+.. currentmodule:: compyute.nn.trainer.callbacks
+
+
 .. _callbacks:
 
 compyute.nn.trainer.callbacks
 =============================
-.. automodule:: compyute.nn.trainer.callbacks
-.. currentmodule:: compyute.nn.trainer.callbacks
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.trainer.callbacks
+    
+    Callback
 
-.. autoclass:: Callback
-   :members:
 
 Early stopping
 --------------
-.. autoclass:: EarlyStopping
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.trainer.callbacks
+    
+    EarlyStopping
+
 
 Logging
 -------
-.. autoclass:: History
-   :show-inheritance:
-.. autoclass:: ProgressBar
-   :show-inheritance:
-.. autoclass:: Tensorboard
-   :show-inheritance:
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.trainer.callbacks
+    
+    History
+    ProgressBar
+    Tensorboard
+
 
 Learning Rate Schedulers
 ------------------------
-.. autoclass:: StepLrScheduler
-   :show-inheritance:
-.. autoclass:: MultistepLrScheduler
-   :show-inheritance:
-.. autoclass:: ExponentialLrScheduler
-   :show-inheritance:
-.. autoclass:: AdaptiveLrScheduler
-   :show-inheritance:
-.. autoclass:: CosineLrScheduler
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.trainer.callbacks
+    
+    StepLrScheduler
+    MultistepLrScheduler
+    ExponentialLrScheduler
+    AdaptiveLrScheduler
+    CosineLrScheduler

@@ -49,10 +49,10 @@ class Sequential(Module):
 
 
 class ParallelConcat(Module):
-    """Container that processes modules in parallel and concatenates their outputs.
+    r"""Container that processes modules in parallel and concatenates their outputs.
 
     .. math::
-        y = concatenate(f_1(x), f_2(x), ..., f_n(x))
+        y = \text{concatenate}(f_1(x), f_2(x), ..., f_n(x))
 
     Parameters
     ----------
@@ -95,7 +95,7 @@ class ParallelAdd(Module):
     r"""Container that processes modules in parallel and sums their outputs element-wise.
 
     .. math::
-        y = \sum_i f_i(x)
+        y = \sum_{i=1}^N f_i(x)
 
     Parameters
     ----------

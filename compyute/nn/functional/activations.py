@@ -268,7 +268,7 @@ def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
     r"""Applies the softmax function with temperature over the last axis of an input tensor.
 
     .. math::
-        softmax(x) = \frac{\exp(\frac{x}{T})}{\sum_{i=1}^N \exp(\frac{x_i}{T})}
+        y = \frac{e^{\frac{x}{T}}}{\sum_{i=1}^N e^{\frac{x_i}{T}}}
 
     Parameters
     ----------

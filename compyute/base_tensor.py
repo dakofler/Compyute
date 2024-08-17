@@ -69,7 +69,7 @@ class Tensor:
 
     .. note::
         Tensors can only be initialized with NumPy or CuPy arrays.
-        For other data types use the :func:`tensor` function. It automatically
+        For other data types use the :class:`compute.tensor` function. It automatically
         infers the data type and device if not specified.
 
     Parameters

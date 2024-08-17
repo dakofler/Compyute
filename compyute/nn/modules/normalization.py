@@ -19,7 +19,8 @@ class BatchNorm1D(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over the batch axis.
+    where :math:`E[x]` and :math:`Var[x]` are computed over the
+    :math:`B` and :math:`S` axes.
 
     Shapes:
         - Input :math:`(B, C, S)` or :math:`(B, C)`
@@ -103,7 +104,8 @@ class BatchNorm2D(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over the batch axis.
+    where :math:`E[x]` and :math:`Var[x]` are computed over the
+    :math:`B`, :math:`Y` and :math:`X` axes.
 
     Shapes:
         - Input :math:`(B, C, Y, X)`
@@ -188,7 +190,8 @@ class LayerNorm(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over feature axes.
+    where :math:`E[x]` and :math:`Var[x]` are computed over feature axes
+    specified by `normalized_shape`.
 
     Shapes:
         - Input :math:`(B, ...)`
@@ -251,7 +254,8 @@ class RMSNorm(Module):
     .. math::
         y = w \cdot \frac{x}{\text{RMS}(x)} + b
 
-    where :math:`\text{RMS}(x) = \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2}`
+    where :math:`\text{RMS}(x) = \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2}`.
+    The :math:`\text{RMS}` is computed over feature axes specified by `normalized_shape`.
 
     Shapes:
         - Input :math:`(B, ...)`

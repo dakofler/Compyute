@@ -1,11 +1,14 @@
 compyute.preprocessing
 ======================
-.. automodule:: compyute.preprocessing
 .. currentmodule:: compyute.preprocessing
+
 
 Basic
 -----
-.. autofunction:: split_train_val_test
-.. autofunction:: normalize
-.. autofunction:: standardize
-.. autofunction:: one_hot_encode
+.. autosummary::
+    :toctree: ../_generated/compyute.preprocessing
+
+    split_train_val_test
+    normalize
+    standardize
+    one_hot_encode
