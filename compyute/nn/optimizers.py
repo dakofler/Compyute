@@ -96,14 +96,13 @@ class SGD(Optimizer):
             & \rule{115mm}{1pt} \\
             & \text{ 1: } \textbf{if } \lambda > 0 \\
             & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
-            & \text{ 3: } \textbf{if } \mu = 0 \\
-            & \text{ 4: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta g_t \\
-            & \text{ 5: } \textbf{else} \\
-            & \text{ 6: } \hspace{5mm} v_t \leftarrow \mu v_{t-1} - \eta g_t \\
-            & \text{ 7: } \hspace{5mm} \textbf{if } nesterov \\
-            & \text{ 8: } \hspace{10mm} p_t \leftarrow p_t + \mu v_t - \eta g_t \\
-            & \text{ 9: } \hspace{5mm} \textbf{else} \\
-            & \text{10: } \hspace{10mm} p_t \leftarrow p_{t-1} + v_t \\
+            & \text{ 3: } \textbf{if } \mu > 0 \\
+            & \text{ 4: } \hspace{5mm} v_t \leftarrow \mu v_{t-1} + g_t \\
+            & \text{ 5: } \hspace{5mm} \textbf{if } nesterov \\
+            & \text{ 6: } \hspace{10mm} g_t \leftarrow g_t + \mu v_t \\
+            & \text{ 7: } \hspace{5mm} \textbf{else} \\
+            & \text{ 8: } \hspace{10mm} g_t \leftarrow v_t \\
+            & \text{ 9: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta g_t \\
             & \rule{115mm}{1pt} \\
         \end{aligned}
 
@@ -154,17 +153,17 @@ class SGD(Optimizer):
             if self.weight_decay > 0:
                 grad += self.weight_decay * p
 
-            if self.momentum == 0:
-                p -= self.lr * grad
-            else:
-                prev_v = self.state[i].get("v", 0)
-                v = self.momentum * prev_v - self.lr * grad  # velocity
+            if self.momentum > 0:
+                prev_v = self.state[i].get("v", 0.0)
+                v = self.momentum * prev_v + grad
                 self.state[i]["v"] = v
 
                 if self.nesterov:
-                    p += self.momentum * v - self.lr * grad
+                    grad += self.momentum * v
                 else:
-                    p += v
+                    grad = v
+
+            p -= self.lr * grad
 
         self.t += 1
 

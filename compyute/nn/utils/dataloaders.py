@@ -6,7 +6,7 @@ from typing import Callable, Iterator, Optional
 from ...base_tensor import Tensor
 from ...engine import Device, _DeviceLike
 from ...random.random import shuffle
-from ...tensor_ops.creating import concatenate
+from ...tensor_ops.creating import concat
 
 __all__ = ["Dataloader", "batched"]
 
@@ -127,6 +127,6 @@ def batched(
             drop_remaining=drop_remaining,
         )
         ys = [func(x_batch, *args, **kwargs) for x_batch, _ in dataloader()]
-        return concatenate(ys, axis=0)
+        return concat(ys, axis=0)
 
     return wrapper

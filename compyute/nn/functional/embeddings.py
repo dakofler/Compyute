@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from ...base_tensor import Tensor
 from ...dtypes import INT_DTYPES
 from ...preprocessing.basic import one_hot_encode
+from ...tensor_ops.transforming import einsum
 from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = ["lookup_embedding"]
@@ -39,4 +40,10 @@ def lookup_embedding(
 
     x = one_hot_encode(x, embedding_table.shape[0]).to_type(embedding_table.dtype)
     y = x @ embedding_table
-    return y, lambda dy: cpsum(x.T @ dy, axis=0)
+    batch_dims = "uvxyz"[: x.n_axes - 1]
+
+    def grad_fn(dy: Tensor) -> Tensor:
+        # weight grads, equivalent to x.T @ dy and summing over all batch dims
+        return einsum(f"{batch_dims}i,{batch_dims}o->io", x, dy)
+
+    return y, grad_fn

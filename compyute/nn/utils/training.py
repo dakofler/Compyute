@@ -2,7 +2,7 @@
 
 from typing import Iterator
 
-from ...tensor_ops.creating import concatenate
+from ...tensor_ops.creating import concat
 from ...tensor_ops.reshaping import flatten
 from ...tensor_ops.transforming import norm
 from ..parameter import Parameter
@@ -26,7 +26,7 @@ def clip_grad_norm(parameters: Iterator[Parameter], max_norm: float) -> float:
         Unclipped gradient norm.
     """
     params = list(parameters)
-    grads = concatenate([flatten(p.grad) for p in params if p.grad])
+    grads = concat([flatten(p.grad) for p in params if p.grad])
     grad_norm = norm(grads).item()
 
     if grad_norm <= max_norm:

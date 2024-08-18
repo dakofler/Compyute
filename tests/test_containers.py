@@ -1,16 +1,26 @@
 """Container module tests"""
 
+import pytest
 import torch
 
-from compyute.nn import Linear, ParallelAdd, ParallelConcat, ReLU, ResidualConnection, Sequential
+from compyute.nn import (
+    Linear,
+    ParallelAdd,
+    ParallelConcat,
+    ReLU,
+    ResidualConnection,
+    Sequential,
+)
 from tests.test_utils import get_random_floats, get_random_params, is_equal
 
-B, Cin, Cout = (10, 20, 30)
+testdata = [(8, 16, 32), (16, 32, 64)]
 
 
-def test_sequential_container() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_sequential_container(shape) -> None:
     """Test for the sequential container."""
-    results = []
+
+    B, Cin, Cout = shape
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
     w2_shape = (Cout, Cout)
@@ -21,7 +31,7 @@ def test_sequential_container() -> None:
 
     # init compyute module
     compyute_lin1 = Linear(Cin, Cout, bias=False)
-    compyute_lin2 = Linear(Cin, Cout, bias=False)
+    compyute_lin2 = Linear(Cout, Cout, bias=False)
     compyute_lin1.w = compyute_w1
     compyute_lin2.w = compyute_w2
     compyute_module = Sequential(compyute_lin1, compyute_lin2)
@@ -45,13 +55,14 @@ def test_sequential_container() -> None:
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    results.append(is_equal(compyute_dx, torch_x.grad))
-
-    assert all(results)
+    assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_parallel_concat_container() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_parallel_concat_container(shape) -> None:
     """Test for the parallel concat container."""
+
+    B, Cin, Cout = shape
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
     w2_shape = (Cout, Cin)
@@ -89,8 +100,11 @@ def test_parallel_concat_container() -> None:
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_parallel_add_container() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_parallel_add_container(shape) -> None:
     """Test for the parallel add container."""
+
+    B, Cin, Cout = shape
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
     w2_shape = (Cout, Cin)
@@ -127,8 +141,11 @@ def test_parallel_add_container() -> None:
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_residual() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_residual(shape) -> None:
     """Test for the residual connection."""
+
+    B, Cin, Cout = shape
     x_shape = (B, Cin)
     w1_shape = (Cout, Cin)
     w2_shape = (Cin, Cout)

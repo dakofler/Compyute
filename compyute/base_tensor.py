@@ -32,7 +32,6 @@ def tensor(
     data: _ArrayLike | _ScalarLike,
     device: Optional[_DeviceLike] = None,
     dtype: Optional[_DtypeLike] = None,
-    copy: bool = False,
 ) -> Tensor:
     """Creates a tensor object from arbitrary data.
     The data type and device are inferred from the data if not specified.
@@ -40,14 +39,12 @@ def tensor(
     Parameters
     ----------
     data : _ArrayLike | _ScalarLike
-        Data to initialize the tensor.
+        Data to initialize the tensor data.
+        Can be a list, tuple, NumPy/Cupy ndarray, scalar, and other types.
     device : _DeviceLike, optional
         Device the tensor should be stored on. If ``None``, it is inferred from the data.
     dtype : _DtypeLike, optional
         Data type of tensor data. If ``None``, it is inferred from the data.
-    copy : bool, optional
-        If ``True``, the data object is copied (may impact performance, uses more memory).
-        Defaults to ``False``.
 
     Returns
     -------
@@ -59,7 +56,7 @@ def tensor(
 
     device = get_device(type(data)) if device is None else device  # infer device
     dtype = Dtype(dtype).value if dtype is not None else None  # infer dtype
-    data_array = get_engine(device).array(data, dtype, copy=copy)
+    data_array = get_engine(device).asarray(data, dtype)
 
     return Tensor(data_array)
 

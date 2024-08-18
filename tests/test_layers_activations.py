@@ -1,18 +1,19 @@
 """Activation module tests"""
 
+import pytest
 import torch.nn.functional as F
 
 from compyute.nn import GELU, LeakyReLU, ReLU, Sigmoid, SiLU, Softmax, Tanh
-from compyute.nn.functional import softmax
 from tests.test_utils import get_random_floats, is_equal
 
-SHAPE = (10, 20, 30)
+testdata = [(8, 16), (8, 16, 32), (8, 16, 32, 64)]
 
 
-def test_relu() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_relu(shape) -> None:
     """Test for the relu layer."""
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = ReLU()
@@ -25,41 +26,44 @@ def test_relu() -> None:
 
     # backward
 
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_leaky_relu() -> None:
+@pytest.mark.parametrize("shape", testdata)
+@pytest.mark.parametrize("alpha", [0.01, 0.02, 0.1])
+def test_leaky_relu(shape, alpha) -> None:
     """Test for the leaky relu layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
-    compyute_module = LeakyReLU(alpha=0.01)
+    compyute_module = LeakyReLU(alpha=alpha)
 
     # forward
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
-    torch_y = F.leaky_relu(torch_x, negative_slope=0.01)
+    torch_y = F.leaky_relu(torch_x, negative_slope=alpha)
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_gelu() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_gelu(shape) -> None:
     """Test for the gelu layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = GELU()
@@ -71,18 +75,19 @@ def test_gelu() -> None:
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_tanh() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_tanh(shape) -> None:
     """Test for the tanh layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = Tanh()
@@ -94,18 +99,19 @@ def test_tanh() -> None:
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_sigmoid() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_sigmoid(shape) -> None:
     """Test for the sigmoid layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = Sigmoid()
@@ -117,18 +123,19 @@ def test_sigmoid() -> None:
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_silu() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_silu(shape) -> None:
     """Test for the silu layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = SiLU()
@@ -140,18 +147,19 @@ def test_silu() -> None:
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_equal(compyute_dx, torch_x.grad)
 
 
-def test_softmax() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_softmax(shape) -> None:
     """Test for the softmax layer."""
 
     # init parameters
-    compyute_x, torch_x = get_random_floats(SHAPE)
+    compyute_x, torch_x = get_random_floats(shape)
 
     # init compyute module
     compyute_module = Softmax()
@@ -163,7 +171,7 @@ def test_softmax() -> None:
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)

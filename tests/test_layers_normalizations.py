@@ -7,22 +7,36 @@ import torchtune
 from compyute.nn import BatchNorm1D, BatchNorm2D, LayerNorm, RMSNorm
 from tests.test_utils import get_random_floats, is_equal
 
-SHAPE3D = (10, 20, 30)
-SHAPE4D = (10, 20, 30, 40)
+bn1d_testdata = [(8, 16), (8, 16, 32)]
+bn2d_testdata = [(8, 16, 32, 32), (16, 32, 64, 64)]
+ln_testdata = [
+    ((8, 16, 32), (32,)),
+    ((8, 16, 32), (16, 32)),
+    ((8, 16, 32, 64), (64,)),
+    ((8, 16, 32, 64), (32, 64)),
+]
+rms_testdata = [
+    ((8, 16, 32), 32),
+    ((8, 16, 32, 64), 64),
+]
+eps_testdata = [1e-5, 1e-4]
+m_testdata = [0.1, 0.2]
 
 
-def test_batchnorm1d() -> None:
+@pytest.mark.parametrize("shape", bn1d_testdata)
+@pytest.mark.parametrize("eps", eps_testdata)
+@pytest.mark.parametrize("m", m_testdata)
+def test_batchnorm1d(shape, eps, m) -> None:
     """Test for the batchnorm 1d layer."""
-    shape_x = SHAPE3D
 
     # init compyute module
-    compyute_module = BatchNorm1D(shape_x[1])
+    compyute_module = BatchNorm1D(shape[1], eps, m)
 
     # init torch module
-    torch_module = torch.nn.BatchNorm1d(shape_x[1])
+    torch_module = torch.nn.BatchNorm1d(shape[1], eps, m)
 
     # forward
-    compyute_x, torch_x = get_random_floats(shape_x)
+    compyute_x, torch_x = get_random_floats(shape)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
@@ -40,18 +54,20 @@ def test_batchnorm1d() -> None:
     assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
 
 
-def test_batchnorm2d() -> None:
+@pytest.mark.parametrize("shape", bn2d_testdata)
+@pytest.mark.parametrize("eps", eps_testdata)
+@pytest.mark.parametrize("m", m_testdata)
+def test_batchnorm2d(shape, eps, m) -> None:
     """Test for the batchnorm 2d layer."""
-    shape_x = SHAPE4D
 
     # init compyute module
-    compyute_module = BatchNorm2D(shape_x[1])
+    compyute_module = BatchNorm2D(shape[1], eps, m)
 
     # init torch module
-    torch_module = torch.nn.BatchNorm2d(shape_x[1])
+    torch_module = torch.nn.BatchNorm2d(shape[1], eps, m)
 
     # forward
-    compyute_x, torch_x = get_random_floats(shape_x)
+    compyute_x, torch_x = get_random_floats(shape)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
@@ -69,27 +85,25 @@ def test_batchnorm2d() -> None:
     assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
 
 
-@pytest.mark.parametrize(
-    "normalized_shape",
-    [SHAPE3D[1:], SHAPE3D[2:]],
-)
-def test_layernorm(normalized_shape) -> None:
+@pytest.mark.parametrize("shape,normalized_shape", ln_testdata)
+@pytest.mark.parametrize("eps", eps_testdata)
+def test_layernorm(shape, normalized_shape, eps) -> None:
     """Test for the layernorm layer."""
     # init compyute module
-    compyute_module = LayerNorm(normalized_shape)
+    compyute_module = LayerNorm(normalized_shape, eps)
 
     # init torch module
-    torch_module = torch.nn.LayerNorm(normalized_shape)
+    torch_module = torch.nn.LayerNorm(normalized_shape, eps)
 
     # forward
-    compyute_x, torch_x = get_random_floats(SHAPE3D)
+    compyute_x, torch_x = get_random_floats(shape)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE3D, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
@@ -98,9 +112,9 @@ def test_layernorm(normalized_shape) -> None:
     assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
 
 
-def test_rmsnorm() -> None:
+@pytest.mark.parametrize("shape,normalized_shape", rms_testdata)
+def test_rmsnorm(shape, normalized_shape) -> None:
     """Test for the rmsnorm layer."""
-    normalized_shape = SHAPE3D[-1]
 
     # init compyute module
     compyute_module = RMSNorm((normalized_shape,), eps=1e-6)
@@ -109,14 +123,14 @@ def test_rmsnorm() -> None:
     torch_module = torchtune.modules.RMSNorm(normalized_shape)
 
     # forward
-    compyute_x, torch_x = get_random_floats(SHAPE3D)
+    compyute_x, torch_x = get_random_floats(shape)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_equal(compyute_y, torch_y)
 
     # backward
-    compyute_dy, torch_dy = get_random_floats(SHAPE3D, torch_grad=False)
+    compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)

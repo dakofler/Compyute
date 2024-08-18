@@ -1,27 +1,35 @@
 """Embedding module tests"""
 
+import pytest
 import torch
 
 from compyute.nn import Embedding
-from tests.test_utils import get_random_floats, get_random_integers, get_random_params, is_equal
+from tests.test_utils import (
+    get_random_floats,
+    get_random_integers,
+    get_random_params,
+    is_equal,
+)
 
-B, Cin, Cout, X = (10, 20, 30, 40)
+testdata = [(8, 16, 32), (8, 16, 32, 64), (8, 16, 32, 64, 128)]
 
 
-def test_embedding() -> None:
+@pytest.mark.parametrize("shape", testdata)
+def test_embedding(shape) -> None:
     """Test for the embedding layer."""
-    shape_x = (B, X)
-    shape_w = (Cin, Cout)
+
+    shape_x = shape[:-2]  # (B1, ..., Bn)
+    shape_w = shape[-2:]  # (Cin, Cout)
 
     # init parameters
     compyute_w, torch_w = get_random_params(shape_w)
 
     # init compyute module
-    compyute_module = Embedding(Cin, Cout)
+    compyute_module = Embedding(*shape_w)
     compyute_module.w = compyute_w
 
     # init torch module
-    torch_module = torch.nn.Embedding(Cin, Cout)
+    torch_module = torch.nn.Embedding(*shape_w)
     torch_module.weight = torch_w
 
     # forward

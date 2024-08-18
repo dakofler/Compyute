@@ -22,7 +22,7 @@ Creating and Combining Operations
     
     append
     arange
-    concatenate
+    concat
     empty
     empty_like
     full

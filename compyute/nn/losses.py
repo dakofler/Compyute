@@ -63,17 +63,8 @@ class CrossEntropy(Loss):
     r"""Computes the cross entropy loss.
 
     .. math::
-        L = -\frac{1}{N} \sum_{i=1}^N \hat{y}_i \log(y_i)
-
-    Parameters
-    ----------
-    eps : float, optional
-        Constant used for numerical stability. Defaults to 1e-8.
+        L = \frac{1}{N} \sum_{i=1}^N -\hat{y}_i \cdot \log(y_i)
     """
-
-    def __init__(self, eps: float = 1e-8):
-        super().__init__()
-        self.eps = eps
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         """Computes the cross entropy loss.

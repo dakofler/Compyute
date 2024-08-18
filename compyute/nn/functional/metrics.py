@@ -1,7 +1,6 @@
 """Neural network metric functions."""
 
-from functools import reduce
-from operator import mul
+import math
 
 from ...base_tensor import Tensor
 from ...tensor_ops.selecting import argmax
@@ -26,7 +25,7 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    return cpsum(argmax(y_pred, -1) == y_true) / reduce(mul, y_pred.shape[:-1])
+    return cpsum(argmax(y_pred, -1) == y_true) / math.prod(y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:

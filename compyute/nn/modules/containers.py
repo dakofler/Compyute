@@ -4,7 +4,7 @@ from itertools import accumulate
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...tensor_ops.creating import concatenate, split
+from ...tensor_ops.creating import concat, split
 from ...tensor_ops.transforming import tensorsum
 from .module import Module, ModuleList
 
@@ -77,7 +77,7 @@ class ParallelConcat(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self._modules]
-        y = concatenate(ys, axis=self.concat_axis)
+        y = concat(ys, axis=self.concat_axis)
 
         if self._is_training:
             split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))

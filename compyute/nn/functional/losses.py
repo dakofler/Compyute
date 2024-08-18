@@ -1,14 +1,13 @@
 """Neural network loss functions."""
 
-from functools import reduce
-from operator import mul
+import math
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import clip, log, mean
 from ...tensor_ops.transforming import sum as cpsum
-from .activations import sigmoid, softmax
+from .activations import softmax
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
 
@@ -52,7 +51,7 @@ def mean_squared_error(
 
 
 def cross_entropy(
-    y_pred: Tensor, y_true: Tensor, eps: float = 1e-8, return_grad_fn: bool = False
+    y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
     """Computes the cross entropy loss.
 
@@ -62,8 +61,6 @@ def cross_entropy(
         Model logits.
     y_true : Tensor
         Target class labels, must be of type ``int``.
-    eps : float, optional
-        Constant used for numerical stability. Defaults to ``1e-8``.
     return_grad_fn : bool, optional
         Whether to also return the according gradient function. Defaults to ``False``.
 
@@ -79,14 +76,18 @@ def cross_entropy(
     :class:`compyute.nn.CrossEntropy`
     """
 
+    # probs, _ = softmax(y_pred, False)
+    # y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
+    # loss = -mean(log(cpsum(((probs + eps) * y_true), axis=-1)))
+
     probs, _ = softmax(y_pred, False)
     y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
-    loss = -mean(log(cpsum(((probs + eps) * y_true), axis=-1)))
+    loss = mean(cpsum(-log(probs) * y_true, axis=-1))
 
     if return_grad_fn:
 
         def grad_fn() -> Tensor:
-            return (probs - y_true) / float(reduce(mul, y_pred.shape[:-1]))
+            return (probs - y_true) / float(math.prod(y_pred.shape[:-1]))
 
         return loss, grad_fn
 

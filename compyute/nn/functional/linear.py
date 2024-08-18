@@ -48,10 +48,10 @@ def linear(
             # input grads
             dx = dy @ w
 
-            # weight grads, analogous to dy.T @ x and summing over all batch dims
+            # weight grads, equivalent to dy.T @ x and summing over all batch dims
             dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
 
-            # bias grads, analogous to summing over all batch dims
+            # bias grads, equivalent to summing over all batch dims
             db = einsum(f"{batch_dims}o->o", dy) if b else None
 
             return dx, dw, db

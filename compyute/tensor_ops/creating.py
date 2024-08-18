@@ -9,7 +9,7 @@ from ..engine import Device, _DeviceLike, get_engine
 __all__ = [
     "append",
     "arange",
-    "concatenate",
+    "concat",
     "empty",
     "empty_like",
     "full",
@@ -77,7 +77,7 @@ def arange(
     return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
-def concatenate(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
+def concat(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
     """Returns a new tensor by joining a sequence of tensors along a given axis.
 
     Parameters
