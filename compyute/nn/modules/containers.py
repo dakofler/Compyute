@@ -71,6 +71,7 @@ class ParallelConcat(Module):
         super().__init__(label)
         if not modules:
             raise NoChildModulesError()
+
         self._modules = ModuleList(modules)
         self.concat_axis = concat_axis
 

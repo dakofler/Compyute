@@ -171,11 +171,7 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        attrs = [
-            f"{a}={getattr(self, a)}"
-            for a in vars(self)
-            if is_repr_attr(a, getattr(self, a))
-        ]
+        attrs = [f"{a}={v}" for a, v in vars(self).items() if is_repr_attr(a, v)]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
         for module in self.modules:
             repr_string += "\n" + repr(module)
@@ -218,17 +214,11 @@ class Module(ABC):
         Iterator[Parameter]
             Iterator of module and child module parameters.
         """
-        self_parameters = (
-            getattr(self, a)
-            for a in vars(self)
-            if isinstance(getattr(self, a), Parameter)
-        )
+        self_params = (v for v in vars(self).values() if isinstance(v, Parameter))
         if include_child_modules:
-            child_module_parameters = (
-                p for module in self.modules for p in module.get_parameters()
-            )
-            return chain(self_parameters, child_module_parameters)
-        return self_parameters
+            child_module_params = (p for m in self.modules for p in m.get_parameters())
+            return chain(self_params, child_module_params)
+        return self_params
 
     def get_buffers(self, include_child_modules: bool = True) -> Iterator[Buffer]:
         """Returns an Iterator of module buffers.
@@ -243,16 +233,11 @@ class Module(ABC):
         Iterator[Buffer]
             Iterator of module and child module buffers.
         """
-        self_buffers = (
-            getattr(self, a) for a in vars(self) if isinstance(getattr(self, a), Buffer)
-        )
+        self_buffers = (v for v in vars(self).values() if isinstance(v, Buffer))
         if include_child_modules:
-            child_module_buffers = (
-                b for module in self.modules for b in module.get_buffers()
-            )
+            child_module_buffers = (b for m in self.modules for b in m.get_buffers())
             return chain(self_buffers, child_module_buffers)
-        else:
-            return self_buffers
+        return self_buffers
 
     def get_state_dict(self) -> OrderedDict:
         """Returns a state dict containing module parameters and buffers.
@@ -332,10 +317,7 @@ class Module(ABC):
     def _set_y(self, y: Tensor) -> None:
         if not self._is_retaining_values:
             return
-        if self.y:
-            self.y.data = y.data.copy()
-        else:
-            self.y = y.copy()
+        self.y = y.copy()
 
     def _set_dy(self, dy: Tensor) -> None:
         if self._is_retaining_values and self.y:
@@ -404,7 +386,7 @@ def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
     return all(
         [
-            attr != "label",
+            attr not in {"label"},
             not attr.startswith("_"),
             not isinstance(value, Tensor),
             value is not None,

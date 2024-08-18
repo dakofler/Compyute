@@ -184,22 +184,12 @@ class Tensor:
         return tensor(self._data + to_arraylike(other))
 
     def __radd__(self, other: Optional[_ScalarLike]) -> Tensor:
-        return self + (other or 0.0)  # for gradient accumulation
+        # for gradient accumulation make None += Tensor to be 0 += Tensor
+        return tensor(self._data + (other or 0.0))
 
-    def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data * to_arraylike(other))
-
-    def __rmul__(self, other: _ScalarLike) -> Tensor:
-        return self * other
-
-    def __pow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        return tensor(self._data ** to_arraylike(other))
-
-    def __rpow__(self, other: _ScalarLike) -> Tensor:
-        return tensor(other**self._data)
-
-    def __neg__(self) -> Tensor:
-        return tensor(-self._data)
+    def __iadd__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data += to_arraylike(other)
+        return self
 
     def __sub__(self, other: Tensor | _ScalarLike) -> Tensor:
         return tensor(self._data - to_arraylike(other))
@@ -207,11 +197,29 @@ class Tensor:
     def __rsub__(self, other: _ScalarLike) -> Tensor:
         return tensor(other - self._data)
 
+    def __isub__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data -= to_arraylike(other)
+        return self
+
+    def __mul__(self, other: Tensor | _ScalarLike) -> Tensor:
+        return tensor(self._data * to_arraylike(other))
+
+    def __rmul__(self, other: _ScalarLike) -> Tensor:
+        return tensor(other * self._data)
+
+    def __imul__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data *= to_arraylike(other)
+        return self
+
     def __truediv__(self, other: Tensor | _ScalarLike) -> Tensor:
         return tensor(self._data / to_arraylike(other))
 
     def __rtruediv__(self, other: _ScalarLike) -> Tensor:
         return tensor(other / self._data)
+
+    def __idiv__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data /= to_arraylike(other)
+        return self
 
     def __floordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
         return tensor(self._data // to_arraylike(other))
@@ -219,11 +227,32 @@ class Tensor:
     def __rfloordiv__(self, other: _ScalarLike) -> Tensor:
         return tensor(other // self._data)
 
+    def __ifloordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data //= to_arraylike(other)
+        return self
+
+    def __pow__(self, other: Tensor | _ScalarLike) -> Tensor:
+        return tensor(self._data ** to_arraylike(other))
+
+    def __rpow__(self, other: _ScalarLike) -> Tensor:
+        return tensor(other**self._data)
+
+    def __ipow__(self, other: Tensor | _ScalarLike) -> Tensor:
+        self._data **= to_arraylike(other)
+        return self
+
     def __mod__(self, other: int) -> Tensor:
         return tensor(self._data % other)
 
     def __rmod__(self, other: int) -> Tensor:
         return tensor(other % self._data)
+
+    def __imod__(self, other: int) -> Tensor:
+        self._data %= other
+        return self
+
+    def __neg__(self) -> Tensor:
+        return tensor(-self._data)
 
     def __matmul__(self, other: Tensor) -> Tensor:
         return tensor(self._data @ other.data)
@@ -245,34 +274,6 @@ class Tensor:
 
     def __ne__(self, other: Tensor | _ScalarLike) -> Tensor:
         return tensor(self._data != to_arraylike(other))
-
-    def __iadd__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data += to_arraylike(other)
-        return self
-
-    def __isub__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data -= to_arraylike(other)
-        return self
-
-    def __imul__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data *= to_arraylike(other)
-        return self
-
-    def __idiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data /= to_arraylike(other)
-        return self
-
-    def __ifloordiv__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data //= to_arraylike(other)
-        return self
-
-    def __imod__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data %= to_arraylike(other)
-        return self
-
-    def __ipow__(self, other: Tensor | _ScalarLike) -> Tensor:
-        self._data **= to_arraylike(other)
-        return self
 
     def __len__(self) -> int:
         return self.shape[0]
