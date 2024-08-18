@@ -5,7 +5,7 @@ from typing import Callable, Optional
 
 from ...base_tensor import Tensor
 from ...tensor_ops.creating import identity
-from ...tensor_ops.reshaping import insert_dim, reshape, tile
+from ...tensor_ops.reshaping import reshape, tile
 from ...tensor_ops.transforming import exp
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import maximum, sech
@@ -256,9 +256,9 @@ def softmax(
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> Tensor:
-            dx = tile(insert_dim(y, -1), y.shape[-1], -1)
-            dx = dx * (identity(y.shape[-1], device=y.device) - dx.T)
-            return reshape(dx @ insert_dim(dy, -1), y.shape)
+            dx = tile(y.to_shape((*y.shape, 1)), y.shape[-1], -1)
+            dx *= identity(y.shape[-1], device=y.device) - dx.T
+            return reshape(dx @ dy.to_shape((*dy.shape, 1)), y.shape)
 
         return y, grad_fn
     return y, None

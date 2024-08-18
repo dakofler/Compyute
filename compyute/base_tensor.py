@@ -157,11 +157,9 @@ class Tensor:
         return f"Tensor({array_string})"
 
     def __getitem__(self, key: Any) -> Tensor:
-        key = (
-            tuple(to_arraylike(k) for k in key)
-            if isinstance(key, tuple)
-            else to_arraylike(key)
-        )
+        if isinstance(key, tuple):
+            return tensor(self._data[key])
+        key = to_arraylike(key)
         return tensor(self._data[key])
 
     def __setitem__(self, key: Any, value: Tensor | _ScalarLike) -> None:

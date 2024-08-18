@@ -6,7 +6,6 @@ from ...base_tensor import Tensor
 from ...dtypes import INT_DTYPES
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import einsum
-from ...tensor_ops.transforming import sum as cpsum
 
 __all__ = ["lookup_embedding"]
 

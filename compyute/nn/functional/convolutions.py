@@ -4,15 +4,7 @@ from typing import Callable, Literal, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
 from ...tensor_ops.creating import zeros
-from ...tensor_ops.reshaping import (
-    broadcast_to,
-    flip,
-    insert_dim,
-    pad,
-    pad_to_shape,
-    repeat,
-    reshape,
-)
+from ...tensor_ops.reshaping import broadcast_to, flip, pad, pad_to_shape, repeat
 from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import mean, real
@@ -76,30 +68,31 @@ def convolve1d(
     """
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
-    f_ext = reshape(f, (1,) + f.shape)  # (1, Co, Ci, F)
+    f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, F)
 
     # pad input and add a fake output dimension
     p = pad1d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
-    x_ext = insert_dim(x, 1)  # (B, 1, Ci, T)
+    x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, T)
 
     # perform convolution and sum over input dimension
     # (B, Co, Ci, T)
     conv, conv_grad_fn = convolve1d_(x_ext, f_ext, stride, return_grad_fn)
-    y = cpsum(conv, 2)  # (B, Co, T)
+    y = cpsum(conv, axis=2)  # (B, Co, T)
 
     if b:
-        y += reshape(b, (b.shape[0], 1))
+        y += b.to_shape((*b.shape, 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-            dy_ext = broadcast_to(insert_dim(dy, 2), conv.shape)
-            dx, df = conv_grad_fn(dy_ext)
+            # insert fake input channel dimension
+            dy_ext = dy.to_shape((*dy.shape[:2], 1, *dy.shape[2:]))
+            dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
 
-            dx = pad_grad_fn(cpsum(dx, 1))
-            df = dil_grad_fn(cpsum(df, 0))
-            db = cpsum(dy, (0, 2)) if b else None
+            dx = pad_grad_fn(cpsum(dx, axis=1))
+            df = dil_grad_fn(cpsum(df, axis=0))
+            db = cpsum(dy, axis=(0, 2)) if b else None
 
             return dx, df, db
 
@@ -270,33 +263,32 @@ def convolve2d(
     """
 
     # dilate filter and add a fake batch dimension
-    d = (dilation, dilation)
-    f, dil_grad_fn = dilate2d(f, d, return_grad_fn)  # (Co, Ci, Fy, Fx)
-    f_ext = reshape(f, (1,) + f.shape)  # (1, Co, Ci, Fy, Fx)
+    f, dil_grad_fn = dilate2d(f, (dilation, dilation), return_grad_fn)
+    f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, Fy, Fx)
 
     # pad input and add a fake output dimension
     p = pad2d_from_str(padding, f_ext.shape[-1])
-    x, pad_grad_fn = pad2d(x, p, return_grad_fn)  # (B, Ci, Y, X)
-    x_ext = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
+    x, pad_grad_fn = pad2d(x, p, return_grad_fn)
+    x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, Y, X)
 
     # perform convolution and sum over input dimension
-    s = (stride, stride)
     # (B, Co, Ci, Y, X)
-    conv, conv_grad_fn = convolve2d_(x_ext, f_ext, s, return_grad_fn)
-    y = cpsum(conv, 2)  # (B, Co, Y, X)
+    conv, conv_grad_fn = convolve2d_(x_ext, f_ext, (stride, stride), return_grad_fn)
+    y = cpsum(conv, axis=2)  # (B, Co, Y, X)
 
     if b:
-        y += reshape(b, (b.shape[0], 1, 1))
+        y += b.to_shape((*b.shape, 1, 1))
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-            dy_ = broadcast_to(insert_dim(dy, 2), conv.shape)
-            dx, df = conv_grad_fn(dy_)
+            # insert fake input channel dimension
+            dy_ext = dy.to_shape((*dy.shape[:2], 1, *dy.shape[2:]))
+            dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
 
-            dx = pad_grad_fn(cpsum(dx, 1))  # sum over out channels
-            df = dil_grad_fn(cpsum(df, 0))  # sum over batches
-            db = cpsum(dy, (0, 2, 3)) if b else None
+            dx = pad_grad_fn(cpsum(dx, axis=1))  # sum over out channels
+            df = dil_grad_fn(cpsum(df, axis=0))  # sum over batches
+            db = cpsum(dy, axis=(0, 2, 3)) if b else None
 
             return dx, df, db
 
@@ -522,7 +514,7 @@ def maxpooling2d(
         x_width // kernel_width,
         kernel_width,
     )
-    y = cpmax(reshape(x_crop, pool_shape), axis=(-3, -1))
+    y = cpmax(x_crop.to_shape(pool_shape), axis=(-3, -1))
 
     if return_grad_fn:
         y_ups = upsample2d(y, kernel_size, x.shape)
@@ -571,7 +563,7 @@ def avgpooling2d(
         x_width // kernel_width,
         kernel_width,
     )
-    y = mean(reshape(x_crop, pool_shape), axis=(-3, -1))
+    y = mean(x_crop.to_shape(pool_shape), axis=(-3, -1))
 
     if return_grad_fn:
 

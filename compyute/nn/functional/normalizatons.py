@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...tensor_ops.reshaping import reshape, squeeze
+from ...tensor_ops.reshaping import squeeze
 from ...tensor_ops.transforming import mean as cpmean
 from ...tensor_ops.transforming import sqrt
 from ...tensor_ops.transforming import sum as cpsum
@@ -83,8 +83,8 @@ def batchnorm1d(
         inv_std = 1 / sqrt(rvar_ + eps)
         x_norm = (x - rmean_) * inv_std
 
-    w = w if x_is_2d else reshape(w, shape=(*w.shape, 1))
-    b = b if x_is_2d else reshape(b, shape=(*b.shape, 1))
+    w = w if x_is_2d else w.to_shape((*w.shape, 1))
+    b = b if x_is_2d else b.to_shape((*b.shape, 1))
     y = w * x_norm + b
 
     if return_grad_fn:
