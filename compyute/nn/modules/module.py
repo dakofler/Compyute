@@ -58,11 +58,9 @@ class Module(ABC):
         available(device)
         self._device = device
 
-        if self.y:
-            self.y.ito_device(device)
-
-        for p in chain(self.get_buffers(), self.get_parameters()):
-            p.ito_device(device)
+        for t in vars(self).values():
+            if isinstance(t, Tensor):
+                t.ito_device(device)
 
         for module in self.modules:
             module.to_device(device)
@@ -247,6 +245,7 @@ class Module(ABC):
         OrderedDict
             State dict containing parameters and buffers.
         """
+        # TODO: use str key
         return OrderedDict(enumerate(chain(self.get_parameters(), self.get_buffers())))
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
@@ -333,10 +332,9 @@ class Module(ABC):
         """
         if self._is_retaining_values and not force:
             return
-        self.y = None
-        self._backward = None
+        self.y = self._backward = None
 
-        for p in self.get_parameters():
+        for p in self.get_parameters(include_child_modules=False):
             p.grad = None
 
         for module in self.modules:

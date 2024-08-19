@@ -22,8 +22,6 @@ __all__ = [
     "softmax",
     "temperature_softmax",
 ]
-GELU_SQRT: float = math.sqrt(2 / math.pi)
-GELU_CONST: float = 0.044715
 
 
 def relu(
@@ -117,14 +115,14 @@ def gelu(
     :class:`compyute.nn.GELU`
     """
 
-    tmp = GELU_SQRT * (x + GELU_CONST * x**3)
+    tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
     y = 0.5 * x * (1 + cptanh(tmp))
 
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> Tensor:
             dx1 = 1 + cptanh(tmp)
-            dx2 = x * sech(tmp) ** 2 * GELU_SQRT * (1 + 3 * GELU_CONST * x**2)
+            dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
             return 0.5 * (dx1 + dx2) * dy
 
         return y, grad_fn

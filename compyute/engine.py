@@ -1,6 +1,5 @@
 """Compyute engine utilities."""
 
-import os
 from enum import Enum
 from functools import cache
 from types import ModuleType
@@ -9,7 +8,7 @@ from typing import Literal, Optional, TypeAlias
 import cupy as CUDA_ENGINE
 import numpy as CPU_ENGINE
 
-__all__ = ["cpu", "cuda", "gpu_available", "set_cuda_tf32"]
+__all__ = ["cpu", "cuda", "gpu_available"]
 
 
 class Device(Enum):
@@ -102,17 +101,3 @@ def get_array_string(array: _ArrayLike) -> str:
         precision=4,
         floatmode="maxprec_equal",
     )
-
-
-def set_cuda_tf32(value: bool) -> None:
-    """Allows CUDA libraries to use Tensor Cores TF32 compute for 32-bit floating point compute.
-
-    Parameters
-    ----------
-    value : bool
-        Whether TF32 compute should be enabled.
-    """
-    if value:
-        os.environ["CUPY_TF32"] = "1"
-    elif "CUPY_TF32" in os.environ:
-        del os.environ["CUPY_TF32"]
