@@ -44,8 +44,8 @@ class Dataloader:
         self.y = y
         self.batch_size = batch_size
         self.device = Device(device)
-        self.drop_remaining = drop_remaining
         self.shuffle = shuffle_data
+        self.drop_remaining = drop_remaining
 
     def __call__(self) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
         """Yields batched data.

@@ -1,9 +1,7 @@
 """Neural network parameter initializers."""
 
 import math
-import operator
 from abc import ABC, abstractmethod
-from functools import reduce
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor, _ShapeLike
@@ -26,12 +24,12 @@ class Initializer(ABC):
     """Initializer base class."""
 
     @abstractmethod
-    def __call__(self, tensor: Tensor | Parameter) -> None:
+    def __call__(self, x: Tensor | Parameter) -> None:
         """Fills a tensor with values.
 
         Parameters
         ----------
-        tensor : Tensor | Parameter
+        x : Tensor | Parameter
             Tensor or parameter to fill with values.
         """
 
@@ -39,15 +37,15 @@ class Initializer(ABC):
 class Ones(Initializer):
     """Initializes a tensor with ones."""
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        tensor.data = ones(tensor.shape, tensor.dtype, tensor.device).data
+    def __call__(self, x: Tensor | Parameter) -> None:
+        x.data = ones(x.shape, x.dtype, x.device).data
 
 
 class Zeros(Initializer):
     """Initializes a tensor with zeros."""
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        tensor.data = zeros(tensor.shape, tensor.dtype, tensor.device).data
+    def __call__(self, x: Tensor | Parameter) -> None:
+        x.data = zeros(x.shape, x.dtype, x.device).data
 
 
 class Normal(Initializer):
@@ -65,10 +63,8 @@ class Normal(Initializer):
         self.mean = mean
         self.std = std
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        tensor.data = normal(
-            tensor.shape, self.mean, self.std, tensor.dtype, tensor.device
-        ).data
+    def __call__(self, x: Tensor | Parameter) -> None:
+        x.data = normal(x.shape, self.mean, self.std, x.dtype, x.device).data
 
 
 class Uniform(Initializer):
@@ -86,10 +82,8 @@ class Uniform(Initializer):
         self.low = low
         self.high = high
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        tensor.data = uniform(
-            tensor.shape, self.low, self.high, tensor.dtype, tensor.device
-        ).data
+    def __call__(self, x: Tensor | Parameter) -> None:
+        x.data = uniform(x.shape, self.low, self.high, x.dtype, x.device).data
 
 
 class KaimingNormal(Initializer):
@@ -105,10 +99,10 @@ class KaimingNormal(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(tensor.shape)
+    def __call__(self, x: Tensor | Parameter) -> None:
+        fan_in = get_fan_in(x.shape)
         std = self.gain / math.sqrt(fan_in)
-        tensor.data = normal(tensor.shape, 0, std, tensor.dtype, tensor.device).data
+        x.data = normal(x.shape, 0, std, x.dtype, x.device).data
 
 
 class KaimingUniform(Initializer):
@@ -124,10 +118,10 @@ class KaimingUniform(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(tensor.shape)
+    def __call__(self, x: Tensor | Parameter) -> None:
+        fan_in = get_fan_in(x.shape)
         k = self.gain * math.sqrt(3 / fan_in)
-        tensor.data = uniform(tensor.shape, -k, k, tensor.dtype, tensor.device).data
+        x.data = uniform(x.shape, -k, k, x.dtype, x.device).data
 
 
 class XavierNormal(Initializer):
@@ -143,11 +137,11 @@ class XavierNormal(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(tensor.shape)
-        fan_out = _get_fan_out(tensor.shape)
+    def __call__(self, x: Tensor | Parameter) -> None:
+        fan_in = get_fan_in(x.shape)
+        fan_out = _get_fan_out(x.shape)
         std = self.gain * math.sqrt(2 / (fan_in + fan_out))
-        tensor.data = normal(tensor.shape, 0, std, tensor.dtype, tensor.device).data
+        x.data = normal(x.shape, 0, std, x.dtype, x.device).data
 
 
 class XavierUniform(Initializer):
@@ -163,11 +157,11 @@ class XavierUniform(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, tensor: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(tensor.shape)
-        fan_out = _get_fan_out(tensor.shape)
+    def __call__(self, x: Tensor | Parameter) -> None:
+        fan_in = get_fan_in(x.shape)
+        fan_out = _get_fan_out(x.shape)
         k = self.gain * math.sqrt(6 / (fan_in + fan_out))
-        tensor.data = uniform(tensor.shape, -k, k, tensor.dtype, tensor.device).data
+        x.data = uniform(x.shape, -k, k, x.dtype, x.device).data
 
 
 _InitializerLike = (
@@ -243,9 +237,9 @@ def get_initializer(
 
 def get_fan_in(shape: _ShapeLike) -> int:
     """Returns the fan-in value for a given shape."""
-    return reduce(operator.mul, (shape[0],) + shape[2:])
+    return math.prod((shape[0],) + shape[2:])
 
 
 def _get_fan_out(shape: _ShapeLike) -> int:
     """Returns the fan-out value for a given shape."""
-    return reduce(operator.mul, (shape[1],) + shape[2:])
+    return math.prod((shape[1],) + shape[2:])

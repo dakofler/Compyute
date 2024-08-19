@@ -21,13 +21,13 @@ class Optimizer(ABC):
         Learning rate. Defaults to ``1e-3``.
     """
 
+    state: dict = {}
+    t: int = 1
+
     def __init__(
         self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
-        self.t: int = 1
-        self.state: dict = {}
-
         if parameters is not None:
             self.parameters = parameters
 

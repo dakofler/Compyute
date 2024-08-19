@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..base_tensor import Tensor, _ArrayLike
+from ..base_tensor import Tensor
 from ..dtypes import FLOAT_DTYPES
 
 __all__ = ["Buffer", "Parameter"]

@@ -35,6 +35,8 @@ class Trainer:
         See :ref:`callbacks` for more details.
     """
 
+    cache: dict = {"abort": False, "t": 1}
+
     def __init__(
         self,
         model: Module,
@@ -53,7 +55,6 @@ class Trainer:
             None if metric is None else self.metric.__class__.__name__.lower()
         )
         self.callbacks = callbacks
-        self.cache: dict = {"abort": False, "t": 1}
 
     def train(
         self,

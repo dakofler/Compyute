@@ -75,12 +75,13 @@ class Tensor:
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
     """
 
+    grad: Optional[Tensor] = None
+    _device: Optional[Device] = None
+    _dtype: Optional[Dtype] = None
+    _iterator: int = 0
+
     def __init__(self, data: _ArrayLike) -> None:
         self.data = data
-        self.grad: Optional[Tensor] = None
-        self._device: Optional[Device] = None
-        self._dtype: Optional[Dtype] = None
-        self._iterator: int = 0
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES

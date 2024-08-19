@@ -12,8 +12,7 @@ __all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 class Loss(ABC):
     """Loss base class."""
 
-    def __init__(self):
-        self.backward: Optional[Callable[[], Tensor]] = None
+    backward: Optional[Callable[[], Tensor]] = None
 
     @abstractmethod
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
