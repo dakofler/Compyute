@@ -270,32 +270,11 @@ class Module(ABC):
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
-        """Performs a forward pass through the module.
+        """Performs a forward pass through the module."""
 
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
+    def backward(self, dy: Tensor) -> Optional[Tensor]:
+        """Performs a backward pass through the module."""
 
-        Returns
-        ----------
-        Tensor
-            Computed module output.
-        """
-
-    def backward(self, dy: Tensor) -> Tensor:
-        """Performs a backward pass through the module.
-
-        Parameters
-        ----------
-        dy : :class:`compyute.Tensor`
-            Output gradient tensor.
-
-        Returns
-        ----------
-        Tensor
-            Input gradient tensor.
-        """
         if not self._is_training:
             raise AttributeError(f"{self.label} is not in training mode.")
 

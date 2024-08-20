@@ -119,22 +119,28 @@ Transforming and Computing Operations
 
 Data Types
 ----------
-.. autoclass:: bool
-.. autoclass:: int8
-.. autoclass:: int16
-.. autoclass:: int32
-.. autoclass:: int64
-.. autoclass:: float16
-.. autoclass:: float32
-.. autoclass:: float64
-.. autoclass:: complex64
-.. autoclass:: complex128
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    bool
+    int8
+    int16
+    int32
+    int64
+    float16
+    float32
+    float64
+    complex64
+    complex128
 
 
 Devices
 -------
-.. autoclass:: cpu
-.. autoclass:: cuda
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    cpu
+    cuda
 
 
 Utility Functions
