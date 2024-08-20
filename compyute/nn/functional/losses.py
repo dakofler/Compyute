@@ -14,7 +14,7 @@ __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
 
 def mean_squared_error(
     y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the mean squared error loss.
 
     Parameters
@@ -30,7 +30,7 @@ def mean_squared_error(
     -------
     Tensor
         Mean squared error loss.
-    Callable[[], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -52,7 +52,7 @@ def mean_squared_error(
 
 def cross_entropy(
     y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the cross entropy loss.
 
     Parameters
@@ -68,7 +68,7 @@ def cross_entropy(
     -------
     Tensor
         Cross entropy loss.
-    Callable[[], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -96,7 +96,7 @@ def cross_entropy(
 
 def binary_cross_entropy(
     y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the cross entropy loss.
 
     Parameters
@@ -112,7 +112,7 @@ def binary_cross_entropy(
     -------
     Tensor
         Cross entropy loss.
-    Callable[[], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also

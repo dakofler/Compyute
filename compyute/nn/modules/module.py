@@ -25,7 +25,7 @@ class Module(ABC):
     """
 
     y: Optional[Tensor] = None
-    _backward: Optional[Callable[[Tensor], Tensor]] = None
+    _backward: Optional[Callable] = None
     _device: _DeviceLike = Device.CPU
     _is_retaining_values: bool = False
     _is_trainable: bool = True

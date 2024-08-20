@@ -24,9 +24,7 @@ __all__ = [
 ]
 
 
-def relu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def relu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
     """Applies the Rectified Linear Unit activation function to an input tensor.
 
     Parameters
@@ -40,7 +38,7 @@ def relu(
     ----------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -56,7 +54,7 @@ def relu(
 
 def leaky_relu(
     x: Tensor, alpha: float = 0.01, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Applies the leaky ReLU function to an input tensor as.
 
     Parameters
@@ -72,7 +70,7 @@ def leaky_relu(
     ----------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -91,9 +89,7 @@ def leaky_relu(
     return y, None
 
 
-def gelu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def gelu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
     """Applies the Gaussian Error Linear Unit function to an input tensor.
 
     Parameters
@@ -107,7 +103,7 @@ def gelu(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -132,7 +128,7 @@ def gelu(
 
 def sigmoid(
     x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Applies the sigmoid function to an input tensor.
 
     Parameters
@@ -146,7 +142,7 @@ def sigmoid(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -162,9 +158,7 @@ def sigmoid(
     return y, None
 
 
-def silu(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def silu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
     """Applies the Sigmoid Linear Unit activation function to an input tensor.
 
     Parameters
@@ -178,7 +172,7 @@ def silu(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -194,9 +188,7 @@ def silu(
     return y, None
 
 
-def tanh(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+def tanh(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
     """Applies the hyperbolic tangent activationfunction to an input tensor.
 
     Parameters
@@ -210,7 +202,7 @@ def tanh(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -227,7 +219,7 @@ def tanh(
 
 def softmax(
     x_exp: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Applies the softmax function over the last axis of an input tensor.
 
     Parameters
@@ -241,7 +233,7 @@ def softmax(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also

@@ -21,12 +21,7 @@ def batchnorm1d(
     m: float = 0.1,
     eps: float = 1e-5,
     return_grad_fn: bool = False,
-) -> tuple[
-    Tensor,
-    Tensor,
-    Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
-]:
+) -> tuple[Tensor, Tensor, Tensor, Optional[Callable]]:
     """Performs 1D batch normalization on a tensor.
 
     Parameters
@@ -56,7 +51,7 @@ def batchnorm1d(
         New running mean.
     Tensor
         New running variance.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -119,12 +114,7 @@ def batchnorm2d(
     m: float = 0.1,
     eps: float = 1e-5,
     return_grad_fn: bool = False,
-) -> tuple[
-    Tensor,
-    Tensor,
-    Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
-]:
+) -> tuple[Tensor, Tensor, Tensor, Optional[Callable]]:
     """Performs 2D batch normalization on a tensor.
 
     Parameters
@@ -154,7 +144,7 @@ def batchnorm2d(
         New running mean.
     Tensor
         New running variance.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -206,10 +196,7 @@ def batchnorm2d(
 
 def layernorm(
     x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
-) -> tuple[
-    Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Tensor, Tensor]]],
-]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Performs layer normalization on a tensor.
 
     Parameters
@@ -229,7 +216,7 @@ def layernorm(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -265,10 +252,7 @@ def layernorm(
 
 def rmsnorm(
     x: Tensor, w: Tensor, eps: float = 1e-5, return_grad_fn: bool = False
-) -> tuple[
-    Tensor,
-    Optional[Callable[[Tensor], tuple[Tensor, Tensor]]],
-]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Performs RMS normalization on a tensor.
 
     Parameters
@@ -286,7 +270,7 @@ def rmsnorm(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also

@@ -10,9 +10,7 @@ __all__ = ["linear"]
 
 def linear(
     x: Tensor, w: Tensor, b: Optional[Tensor] = None, return_grad_fn: bool = False
-) -> tuple[
-    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
-]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Applies a linear transformation to the input.
 
     Parameters
@@ -30,7 +28,7 @@ def linear(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]], optional
+    Callable, optional
         Gradient function.
 
     See Also

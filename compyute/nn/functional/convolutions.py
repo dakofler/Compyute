@@ -33,9 +33,7 @@ def convolve1d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[
-    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
-]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the convolution of two tensors over their last axis.
 
     Parameters
@@ -59,7 +57,7 @@ def convolve1d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -103,7 +101,7 @@ def convolve1d(
 
 def dilate1d(
     x: Tensor, dilation: int, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Dilates a tensor in its last axis.
 
     Parameters
@@ -119,7 +117,7 @@ def dilate1d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     if dilation == 1:
@@ -146,7 +144,7 @@ def pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
 
 def pad1d(
     x: Tensor, padding: tuple[int, int], return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Pads a tensor in its last axis.
 
     Parameters
@@ -162,7 +160,7 @@ def pad1d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     if padding == (0, 0):
@@ -181,11 +179,8 @@ def pad1d(
 
 
 def convolve1d_(
-    x: Tensor,
-    f: Tensor,
-    stride: int = 1,
-    return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
+    x: Tensor, f: Tensor, stride: int = 1, return_grad_fn: bool = False
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the 1D convolution of two tensors."""
     f_flipped = flip(f, -1)
     conv = fft_conv1d(x, f_flipped)
@@ -228,9 +223,7 @@ def convolve2d(
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
-) -> tuple[
-    Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor, Optional[Tensor]]]]
-]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the convolution of two tensors over their last two axes.
 
     Parameters
@@ -254,7 +247,7 @@ def convolve2d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], tuple[Tensor, Optional[Tensor], Optional[Tensor]]]], optional
+    Callable, optional
         Gradient function.
 
     See Also
@@ -299,7 +292,7 @@ def convolve2d(
 
 def dilate2d(
     x: Tensor, dilation: tuple[int, int], return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Dilates a tensor in its last two axes.
 
     Parameters
@@ -315,7 +308,7 @@ def dilate2d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     if dilation == (1, 1):
@@ -353,7 +346,7 @@ def pad2d(
     x: Tensor,
     padding: tuple[tuple[int, int], tuple[int, int]],
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Pads a tensor in its last two axes.
 
     Parameters
@@ -369,7 +362,7 @@ def pad2d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     if padding == ((0, 0), (0, 0)):
@@ -393,7 +386,7 @@ def convolve2d_(
     f: Tensor,
     strides: tuple[int, int] = (1, 1),
     return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable[[Tensor], tuple[Tensor, Tensor]]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Computes the 2D convolution of two tensors."""
     f_flipped = flip(f, (-2, -1))
     conv = fft_conv2d(x, f_flipped)
@@ -475,7 +468,7 @@ def upsample2d(
 
 def maxpooling2d(
     x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Performs max pooling over the last two axes.
 
     Parameters
@@ -491,8 +484,7 @@ def maxpooling2d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
-        Gradient function.
+    Callable, optional
         Gradient function.
 
     See Also
@@ -525,7 +517,7 @@ def maxpooling2d(
 
 def avgpooling2d(
     x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Performs average pooling over the last two axes.
 
     Parameters
@@ -541,7 +533,7 @@ def avgpooling2d(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
 
     See Also

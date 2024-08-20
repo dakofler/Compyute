@@ -10,7 +10,7 @@ __all__ = ["dropout"]
 
 def dropout(
     x: Tensor, p: float = 0.5, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Randomly sets tensor values to zero.
 
     Parameters
@@ -26,7 +26,7 @@ def dropout(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     dropout_map = multinulli(p, x.shape, device=x.device) / (1 - p)

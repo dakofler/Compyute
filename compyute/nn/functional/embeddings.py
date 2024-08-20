@@ -12,7 +12,7 @@ __all__ = ["lookup_embedding"]
 
 def lookup_embedding(
     x: Tensor, embedding_table: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable[[Tensor], Tensor]]]:
+) -> tuple[Tensor, Optional[Callable]]:
     """Performs lookup embedding on a tensor of indices.
 
     Parameters
@@ -28,7 +28,7 @@ def lookup_embedding(
     -------
     Tensor
         Output tensor.
-    Callable[[Tensor], Tensor]], optional
+    Callable, optional
         Gradient function.
     """
     if x.dtype not in INT_DTYPES:
