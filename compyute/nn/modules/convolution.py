@@ -14,7 +14,7 @@ from ..functional.convolutions import (
     convolve2d,
     maxpooling2d,
 )
-from ..parameter import Parameter
+from ..parameter import Parameter, update_parameter_grad
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
@@ -112,8 +112,8 @@ class Convolution1D(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -211,8 +211,8 @@ class Convolution2D(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward

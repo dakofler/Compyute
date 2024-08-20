@@ -8,7 +8,7 @@ from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ..functional.linear import linear
-from ..parameter import Parameter
+from ..parameter import Parameter, update_parameter_grad
 from .module import Module
 
 __all__ = ["Linear"]
@@ -75,8 +75,8 @@ class Linear(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward

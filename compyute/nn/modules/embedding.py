@@ -5,9 +5,8 @@ from typing import Optional
 from ...base_tensor import Tensor
 from ...dtypes import Dtype, _DtypeLike
 from ...random.random import normal
-from ...tensor_ops.creating import zeros_like
 from ..functional.embeddings import lookup_embedding
-from ..parameter import Parameter
+from ..parameter import Parameter, update_parameter_grad
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -57,10 +56,10 @@ class Embedding(Module):
     def forward(self, x: Tensor) -> Tensor:
         y, grad_fn = lookup_embedding(x, self.w, self._is_training)
 
-        if self._is_training:
+        if self._is_training and grad_fn is not None:
 
             def _backward(dy: Tensor) -> None:
-                self._update_parameter_grad(self.w, grad_fn(dy))
+                update_parameter_grad(self.w, grad_fn(dy))
 
             self._backward = _backward
 

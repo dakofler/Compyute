@@ -9,7 +9,7 @@ from ...random.random import uniform
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
-from ..parameter import Parameter
+from ..parameter import Parameter, update_parameter_grad
 from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -71,7 +71,7 @@ class Recurrent(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
-        self.activation = relu if activation == "relu" else tanh
+        self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
         k = 1 / math.sqrt(h_channels)
@@ -94,15 +94,15 @@ class Recurrent(Module):
         for t in range(x.shape[1]):
 
             # input projection
-            x_h, x_h_grad_fn = linear(x[:, t], self.w_i, self.b_i, self._is_training)
+            x_t = x[:, t]
+            x_h, x_h_grad_fn = linear(x_t, self.w_i, self.b_i, self._is_training)
 
             # hidden projection
-            h_h, h_h_grad_fn = linear(
-                h[:, t - 1], self.w_h, self.b_h, self._is_training
-            )
+            h_prev = h[:, t - 1]
+            h_h, h_h_grad_fn = linear(h_prev, self.w_h, self.b_h, self._is_training)
 
             # apply non-linearity
-            h[:, t], act_grad_fn = self.activation(x_h + h_h, self._is_training)
+            h[:, t], act_grad_fn = self.act(x_h + h_h, self._is_training)
 
             if self._is_training:
                 grad_functions.append((x_h_grad_fn, h_h_grad_fn, act_grad_fn))
@@ -129,13 +129,13 @@ class Recurrent(Module):
                     # hidden projection backward
                     dh, dw_h, db_h = h_h_grad_fn(dact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_h, dw_h)
-                    self._update_parameter_grad(self.b_h, db_h)
+                        update_parameter_grad(self.w_h, dw_h)
+                    update_parameter_grad(self.b_h, db_h)
 
                     # input projeciton backward
                     dx[:, t], dw_i, db_i = x_h_grad_fn(dact)
-                    self._update_parameter_grad(self.w_i, dw_i)
-                    self._update_parameter_grad(self.b_i, db_i)
+                    update_parameter_grad(self.w_i, dw_i)
+                    update_parameter_grad(self.b_i, db_i)
 
                 return dx
 
@@ -209,7 +209,7 @@ class LSTM(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
-        self.activation = relu if activation == "relu" else tanh
+        self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
         k = 1 / math.sqrt(h_channels)
@@ -257,11 +257,11 @@ class LSTM(Module):
             x_o, x_o_grad_fn = linear(x_t, self.w_io, self.b_io, self._is_training)
 
             # hidden projection W_h * h_t-1 + b_h
-            h_tprev = h[:, t - 1]
-            h_i, h_i_grad_fn = linear(h_tprev, self.w_hi, self.b_hi, self._is_training)
-            h_f, h_f_grad_fn = linear(h_tprev, self.w_hf, self.b_hf, self._is_training)
-            h_g, h_g_grad_fn = linear(h_tprev, self.w_hg, self.b_hg, self._is_training)
-            h_o, h_o_grad_fn = linear(h_tprev, self.w_ho, self.b_ho, self._is_training)
+            h_prev = h[:, t - 1]
+            h_i, h_i_grad_fn = linear(h_prev, self.w_hi, self.b_hi, self._is_training)
+            h_f, h_f_grad_fn = linear(h_prev, self.w_hf, self.b_hf, self._is_training)
+            h_g, h_g_grad_fn = linear(h_prev, self.w_hg, self.b_hg, self._is_training)
+            h_o, h_o_grad_fn = linear(h_prev, self.w_ho, self.b_ho, self._is_training)
 
             # gates
             i[:, t], i_grad_fn = sigmoid(x_i + h_i, self._is_training)  # input gate
@@ -269,13 +269,13 @@ class LSTM(Module):
             o[:, t], o_grad_fn = sigmoid(x_o + h_o, self._is_training)  # output gate
 
             # input node
-            g[:, t], g_grad_fn = self.activation(x_g + h_g, self._is_training)
+            g[:, t], g_grad_fn = self.act(x_g + h_g, self._is_training)
 
             # carry state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
 
             # memory state h_t = o_t * act(c_t)
-            act_c[:, t], actc_grad_fn = self.activation(c[:, t], self._is_training)
+            act_c[:, t], actc_grad_fn = self.act(c[:, t], self._is_training)
             h[:, t] = o[:, t] * act_c[:, t]
 
             # remember gradient functions
@@ -352,42 +352,42 @@ class LSTM(Module):
                     # hidden projection gradients
                     dh_i, dw_hi, db_hi = h_i_grad_fn(di_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hi, dw_hi)
-                    self._update_parameter_grad(self.b_hi, db_hi)
+                        update_parameter_grad(self.w_hi, dw_hi)
+                    update_parameter_grad(self.b_hi, db_hi)
 
                     dh_f, dw_hf, db_hf = h_f_grad_fn(df_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hf, dw_hf)
-                    self._update_parameter_grad(self.b_hf, db_hf)
+                        update_parameter_grad(self.w_hf, dw_hf)
+                    update_parameter_grad(self.b_hf, db_hf)
 
                     dh_g, dw_hg, db_hg = h_g_grad_fn(dg_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hg, dw_hg)
-                    self._update_parameter_grad(self.b_hg, db_hg)
+                        update_parameter_grad(self.w_hg, dw_hg)
+                    update_parameter_grad(self.b_hg, db_hg)
 
                     dh_o, dw_ho, db_ho = h_o_grad_fn(do_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_ho, dw_ho)
-                    self._update_parameter_grad(self.b_ho, db_ho)
+                        update_parameter_grad(self.w_ho, dw_ho)
+                    update_parameter_grad(self.b_ho, db_ho)
 
                     dh = dh_i + dh_f + dh_g + dh_o
 
                     # input projection gradients
                     dx_i, dw_ii, db_ii = x_i_grad_fn(di_preact)
-                    self._update_parameter_grad(self.w_ii, dw_ii)
-                    self._update_parameter_grad(self.b_ii, db_ii)
+                    update_parameter_grad(self.w_ii, dw_ii)
+                    update_parameter_grad(self.b_ii, db_ii)
 
                     dx_f, dw_if, db_if = x_f_grad_fn(df_preact)
-                    self._update_parameter_grad(self.w_if, dw_if)
-                    self._update_parameter_grad(self.b_if, db_if)
+                    update_parameter_grad(self.w_if, dw_if)
+                    update_parameter_grad(self.b_if, db_if)
 
                     dx_g, dw_ig, db_ig = x_g_grad_fn(dg_preact)
-                    self._update_parameter_grad(self.w_ig, dw_ig)
-                    self._update_parameter_grad(self.b_ig, db_ig)
+                    update_parameter_grad(self.w_ig, dw_ig)
+                    update_parameter_grad(self.b_ig, db_ig)
 
                     dx_o, dw_io, db_io = x_o_grad_fn(do_preact)
-                    self._update_parameter_grad(self.w_io, dw_io)
-                    self._update_parameter_grad(self.b_io, db_io)
+                    update_parameter_grad(self.w_io, dw_io)
+                    update_parameter_grad(self.b_io, db_io)
 
                     dx[:, t] = dx_i + dx_f + dx_g + dx_o
                 return dx
@@ -460,7 +460,7 @@ class GRU(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
-        self.activation = relu if activation == "relu" else tanh
+        self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
         k = 1 / math.sqrt(h_channels)
@@ -501,11 +501,11 @@ class GRU(Module):
             x_n, x_n_grad_fn = linear(x_t, self.w_in, self.b_in, self._is_training)
 
             # hidden projection W_h * h_t-1 + b_h
-            h_tprev = h[:, t - 1]
-            h_r, h_r_grad_fn = linear(h_tprev, self.w_hr, self.b_hr, self._is_training)
-            h_z, h_z_grad_fn = linear(h_tprev, self.w_hz, self.b_hz, self._is_training)
+            h_prev = h[:, t - 1]
+            h_r, h_r_grad_fn = linear(h_prev, self.w_hr, self.b_hr, self._is_training)
+            h_z, h_z_grad_fn = linear(h_prev, self.w_hz, self.b_hz, self._is_training)
             h_n[:, t], h_n_grad_fn = linear(
-                h_tprev, self.w_hn, self.b_hn, self._is_training
+                h_prev, self.w_hn, self.b_hn, self._is_training
             )
 
             # gates
@@ -513,9 +513,7 @@ class GRU(Module):
             z[:, t], z_grad_fn = sigmoid(x_z + h_z, self._is_training)  # update gate
 
             # candidate hidden state n_t = act(x_n + r_t * h_t-1)
-            n[:, t], n_grad_fn = self.activation(
-                x_n + r[:, t] * h_n[:, t], self._is_training
-            )
+            n[:, t], n_grad_fn = self.act(x_n + r[:, t] * h_n[:, t], self._is_training)
 
             # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
             h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]
@@ -579,33 +577,33 @@ class GRU(Module):
                     # hidden projection gradients
                     dh_r, dw_hr, db_hr = h_r_grad_fn(dr_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hr, dw_hr)
-                    self._update_parameter_grad(self.b_hr, db_hr)
+                        update_parameter_grad(self.w_hr, dw_hr)
+                    update_parameter_grad(self.b_hr, db_hr)
 
                     dh_z, dw_hz, db_hz = h_z_grad_fn(dz_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hz, dw_hz)
-                    self._update_parameter_grad(self.b_hz, db_hz)
+                        update_parameter_grad(self.w_hz, dw_hz)
+                    update_parameter_grad(self.b_hz, db_hz)
 
                     dh_n, dw_hn, db_hn = h_n_grad_fn(r[:, t] * dn_preact)
                     if t > 0:
-                        self._update_parameter_grad(self.w_hn, dw_hn)
-                    self._update_parameter_grad(self.b_hn, db_hn)
+                        update_parameter_grad(self.w_hn, dw_hn)
+                    update_parameter_grad(self.b_hn, db_hn)
 
                     dh += dh_r + dh_z + dh_n
 
                     # input projection gradients
                     dx_r, dw_ir, db_ir = x_r_grad_fn(dr_preact)
-                    self._update_parameter_grad(self.w_ir, dw_ir)
-                    self._update_parameter_grad(self.b_ir, db_ir)
+                    update_parameter_grad(self.w_ir, dw_ir)
+                    update_parameter_grad(self.b_ir, db_ir)
 
                     dx_z, dw_iz, db_iz = x_z_grad_fn(dz_preact)
-                    self._update_parameter_grad(self.w_iz, dw_iz)
-                    self._update_parameter_grad(self.b_iz, db_iz)
+                    update_parameter_grad(self.w_iz, dw_iz)
+                    update_parameter_grad(self.b_iz, db_iz)
 
                     dx_n, dw_in, db_in = x_n_grad_fn(dn_preact)
-                    self._update_parameter_grad(self.w_in, dw_in)
-                    self._update_parameter_grad(self.b_in, db_in)
+                    update_parameter_grad(self.w_in, dw_in)
+                    update_parameter_grad(self.b_in, db_in)
 
                     dx[:, t] = dx_r + dx_z + dx_n
                 return dx

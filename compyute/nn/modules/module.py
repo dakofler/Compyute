@@ -340,14 +340,6 @@ class Module(ABC):
         for module in self.modules:
             module.clean(force)
 
-    @staticmethod
-    def _update_parameter_grad(
-        parameter: Optional[Parameter], grad: Optional[Tensor]
-    ) -> None:
-        """Updates the parameter gradients."""
-        if parameter and grad:
-            parameter.grad += grad
-
 
 class Identity(Module):
     """Identity module that just forwards inputs and gradients.

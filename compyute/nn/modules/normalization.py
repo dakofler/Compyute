@@ -6,7 +6,7 @@ from ...base_tensor import Tensor, _ShapeLike
 from ...dtypes import Dtype, _DtypeLike
 from ...tensor_ops.creating import ones, zeros
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
-from ..parameter import Buffer, Parameter
+from ..parameter import Buffer, Parameter, update_parameter_grad
 from .module import Module, validate_input_axes
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -88,8 +88,8 @@ class BatchNorm1D(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -174,8 +174,8 @@ class BatchNorm2D(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -238,8 +238,8 @@ class LayerNorm(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
+                update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.b, db)
                 return dx
 
             self._backward = _backward
@@ -299,7 +299,7 @@ class RMSNorm(Module):
 
             def _backward(dy: Tensor) -> Tensor:
                 dx, dw = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
+                update_parameter_grad(self.w, dw)
                 return dx
 
             self._backward = _backward
