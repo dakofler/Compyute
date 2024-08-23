@@ -2,20 +2,11 @@
 
 from __future__ import annotations
 
-from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
 import numpy
 
-from .backend import (
-    ArrayLike,
-    Device,
-    DeviceLike,
-    data_to_device,
-    get_array_string,
-    get_device,
-    get_engine,
-)
+from .backend import ArrayLike, Device, cpu, cuda, data_to_device, get_device_from_class
 from .typing import (
     DType,
     ScalarLike,
@@ -39,7 +30,7 @@ class ShapeError(Exception):
 
 def tensor(
     data: ArrayLike | ScalarLike,
-    device: Optional[DeviceLike] = None,
+    device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
     """Creates a tensor object from arbitrary data.
@@ -50,7 +41,7 @@ def tensor(
     data : ArrayLike | _ScalarLike
         Data to initialize the tensor data.
         Can be a list, tuple, NumPy/Cupy ndarray, scalar, and other types.
-    device : DeviceLike, optional
+    device : Device, optional
         Device the tensor should be stored on. If ``None``, it is inferred from the data.
     dtype : DType, optional
         Data type of tensor data. If ``None``, it is inferred from the data.
@@ -63,9 +54,9 @@ def tensor(
     if isinstance(data, ArrayLike) and device is None and dtype is None:
         return Tensor(data)
 
-    device = get_device(type(data)) if device is None else device  # infer device
-    dtype_str = dtype.value if dtype is not None else None  # infer dtype
-    data_array = get_engine(device).asarray(data, dtype_str)
+    device = get_device_from_class(type(data)) if device is None else device
+    dtype_str = dtype.value if dtype is not None else None
+    data_array = device.engine.asarray(data, dtype_str)
 
     return Tensor(data_array)
 
@@ -112,7 +103,7 @@ class Tensor:
     def device(self) -> Device:
         """Device the tensor data is stored on."""
         if self._device is None:
-            self._device = get_device(type(self._data))
+            self._device = get_device_from_class(type(self._data))
         return self._device
 
     @property
@@ -121,12 +112,6 @@ class Tensor:
         if self._dtype is None:
             self._dtype = DType(str(self._data.dtype))
         return self._dtype
-
-    @property
-    def engine(self) -> ModuleType:
-        """Computation engine used for tensor operations.
-        The engine is not stored within the object, it is fetched on demand."""
-        return get_engine(self.device)
 
     @property
     def n_axes(self) -> int:
@@ -151,7 +136,8 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """View of the tensor with its last two axes transposed."""
-        return Tensor(self.engine.moveaxis(self._data, -2, -1))
+        data = self.data.transpose(*range(self.n_axes - 2), -1, -2)
+        return Tensor(data)
 
     @property
     def ptr(self) -> int:
@@ -162,9 +148,19 @@ class Tensor:
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------------------
 
-    def __repr__(self) -> str:
-        array_string = get_array_string(self.to_numpy())
-        return f"Tensor({array_string})"
+    def __repr__(self):
+        return (
+            "Tensor("
+            + self.device.engine.array2string(
+                self.data,
+                100,
+                4,
+                separator=", ",
+                prefix="Tensor(",
+                floatmode="maxprec_equal",
+            )
+            + ")"
+        )
 
     def __getitem__(self, key: Any) -> Tensor:
         if isinstance(key, tuple):
@@ -296,12 +292,12 @@ class Tensor:
     # DEVICE CONVERSIONS
     # ----------------------------------------------------------------------------------------------
 
-    def to_device(self, device: DeviceLike) -> Tensor:
+    def to_device(self, device: Device) -> Tensor:
         """Returns a copy of the tensor on the specified device.
 
         Parameters
         ----------
-        device : DeviceLike
+        device : Device
             Device to move the tensor to.
 
         Returns
@@ -309,7 +305,6 @@ class Tensor:
         Tensor
             Tensor on the specified device.
         """
-        device = Device(device)
         if self._device == device:
             return self
 
@@ -318,15 +313,14 @@ class Tensor:
             new_tensor.grad = self.grad.to_device(device)
         return new_tensor
 
-    def ito_device(self, device: DeviceLike) -> None:
+    def ito_device(self, device: Device) -> None:
         """Inplace operation to move the tensor to the specified device.
 
         Parameters
         ----------
-        device : DeviceLike
+        device : Device
             Device to move the tensor to.
         """
-        device = Device(device)
         if self._device == device:
             return
 
@@ -343,7 +337,7 @@ class Tensor:
         Tensor
             Tensor on the CPU.
         """
-        return self.to_device(Device.CPU)
+        return self.to_device(cpu)
 
     def to_cuda(self) -> Tensor:
         """Returns a copy of the tensor on the GPU.
@@ -353,7 +347,7 @@ class Tensor:
         Tensor
             Tensor on the GPU.
         """
-        return self.to_device(Device.CUDA)
+        return self.to_device(cuda)
 
     # ----------------------------------------------------------------------------------------------
     # DTYPE CONVERSIONS

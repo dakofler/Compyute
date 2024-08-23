@@ -25,5 +25,5 @@ def test_dropout(shape, p) -> None:
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
 
-    assert compyute_x.to_type(compyute.bool) == compyute_dx.to_type(compyute.bool)
+    assert compyute_x.to_type(compyute.bool_) == compyute_dx.to_type(compyute.bool_)
     assert compyute_dx == 1 / p * compyute_dy

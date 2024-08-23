@@ -119,6 +119,14 @@ Transforming and Computing Operations
 
 Data Types
 ----------
+
+Available data types are:
+
+* boolean (``bool_``)
+* integer (``int8``, ``int16``, ``int32``, ``int64``)
+* float (``float16``, ``float32``, ``float64``)
+* complex (``complex64``, ``complex128``)
+
 .. autosummary::
     :toctree: ../_generated/compyute
 
@@ -139,6 +147,7 @@ Devices
 .. autosummary::
     :toctree: ../_generated/compyute
     
+    Device
     cpu
     cuda
 

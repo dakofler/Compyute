@@ -3,7 +3,7 @@
 from functools import wraps
 from typing import Callable, Iterator, Optional
 
-from ...backend import Device, DeviceLike
+from ...backend import Device, cpu
 from ...base_tensor import Tensor
 from ...random.random import shuffle
 from ...tensor_ops.creating import concat
@@ -22,7 +22,7 @@ class Dataloader:
         Target tensor. Defaults to ``None``.
     batch_size : int, optional
         Size of returned batches. Defaults to ``1``.
-    device : DeviceLike, optional
+    device : Device, optional
         Device the tensors should be loaded to. Defaults to :class:`compyute.cpu`.
     shuffle_data : bool, optional
         Whether to shuffle the data each time the dataloader is called. Defaults to ``True``.
@@ -36,14 +36,14 @@ class Dataloader:
         x: Tensor,
         y: Optional[Tensor] = None,
         batch_size: int = 1,
-        device: DeviceLike = Device.CPU,
+        device: Device = cpu,
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
         self.x = x
         self.y = y
         self.batch_size = batch_size
-        self.device = Device(device)
+        self.device = device
         self.shuffle = shuffle_data
         self.drop_remaining = drop_remaining
 
@@ -98,7 +98,7 @@ class Dataloader:
 def batched(
     func: Callable[[Tensor], Tensor],
     batch_size: int = 1,
-    device: DeviceLike = Device.CPU,
+    device: Device = cpu,
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:
@@ -108,8 +108,8 @@ def batched(
     ----------
     batch_size : int, optional
         Size of returned batches. Defaults to ``1``.
-    device : DeviceLike, optional
-        Device the tensors should be loaded to. Defaults to ``Device.CPU``.
+    device : Device, optional
+        Device the tensors should be loaded to. Defaults to :class:`compyute.cpu`.
     shuffle_data : bool, optional
         Whether to shuffle the data each time the dataloader is called. Defaults to ``True``.
     drop_remaining : bool, optional

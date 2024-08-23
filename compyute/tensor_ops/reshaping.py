@@ -87,7 +87,7 @@ def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    return Tensor(x.engine.expand_dims(x.data, axis=axis))
+    return Tensor(x.device.engine.expand_dims(x.data, axis=axis))
 
 
 def add_dims(x: Tensor, target_dims: int) -> Tensor:
@@ -124,7 +124,7 @@ def resize(x: Tensor, shape: ShapeLike) -> Tensor:
     Tensor
         Resized tensor.
     """
-    return Tensor(x.engine.resize(x.data, shape))
+    return Tensor(x.device.engine.resize(x.data, shape))
 
 
 def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
@@ -166,7 +166,7 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     """
     repeats = [1] * x.n_axes
     repeats[axis] = n_repeats
-    return Tensor(x.engine.tile(x.data, tuple(repeats)))
+    return Tensor(x.device.engine.tile(x.data, tuple(repeats)))
 
 
 def pad(
@@ -189,7 +189,7 @@ def pad(
     Tensor
         Padded tensor.
     """
-    return Tensor(x.engine.pad(x.data, padding))
+    return Tensor(x.device.engine.pad(x.data, padding))
 
 
 def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -228,7 +228,7 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
     Tensor
         Tensor with a moved axes.
     """
-    return Tensor(x.engine.moveaxis(x.data, from_axis, to_axis))
+    return Tensor(x.device.engine.moveaxis(x.data, from_axis, to_axis))
 
 
 def squeeze(x: Tensor) -> Tensor:
@@ -265,7 +265,7 @@ def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(x.engine.flip(x.data, axis=axis))
+    return Tensor(x.device.engine.flip(x.data, axis=axis))
 
 
 def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -283,4 +283,4 @@ def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
     Tensor
         Broadcasted tensor.
     """
-    return Tensor(x.engine.broadcast_to(x.data, shape=shape))
+    return Tensor(x.device.engine.broadcast_to(x.data, shape=shape))

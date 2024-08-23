@@ -28,7 +28,7 @@ def argmax(
     Tensor
         Tensor containing indices.
     """
-    return tensor(x.engine.argmax(x.data, axis=axis, keepdims=keepdims))
+    return tensor(x.device.engine.argmax(x.data, axis=axis, keepdims=keepdims))
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
@@ -51,7 +51,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.engine.diag(x.data, k=d))
+    return Tensor(x.device.engine.diag(x.data, k=d))
 
 
 def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
@@ -72,15 +72,15 @@ def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
     tuple[Tensor, Tensor]
         Tuple containing the top k elements and their indices.
     """
-    ind = x.engine.argpartition(-x.data, k, axis=axis)
-    ind = x.engine.take(ind, x.engine.arange(k), axis=axis)
-    data = x.engine.take_along_axis(-x.data, ind, axis=axis)
+    ind = x.device.engine.argpartition(-x.data, k, axis=axis)
+    ind = x.device.engine.take(ind, x.device.engine.arange(k), axis=axis)
+    data = x.device.engine.take_along_axis(-x.data, ind, axis=axis)
 
     # sort within k elements
-    ind_part = x.engine.argsort(data, axis=axis)
-    ind = x.engine.take_along_axis(ind, ind_part, axis=axis)
+    ind_part = x.device.engine.argsort(data, axis=axis)
+    ind = x.device.engine.take_along_axis(ind, ind_part, axis=axis)
 
-    val = x.engine.take_along_axis(-data, ind_part, axis=axis)
+    val = x.device.engine.take_along_axis(-data, ind_part, axis=axis)
     return tensor(val), tensor(ind)
 
 
@@ -105,7 +105,7 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.engine.tril(x.data, k=d))
+    return Tensor(x.device.engine.tril(x.data, k=d))
 
 
 def triu(x: Tensor, d: int = 0) -> Tensor:
@@ -129,7 +129,7 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.engine.triu(x.data, k=d))
+    return Tensor(x.device.engine.triu(x.data, k=d))
 
 
 def unique(x: Tensor) -> Tensor:
@@ -145,4 +145,4 @@ def unique(x: Tensor) -> Tensor:
     Tensor
         Tensor containing unique values.
     """
-    return tensor(x.engine.unique(x.data))
+    return tensor(x.device.engine.unique(x.data))
