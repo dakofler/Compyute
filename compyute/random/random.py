@@ -5,7 +5,7 @@ from typing import Optional
 
 from ..backend import Device, DeviceLike, get_engine, gpu_available
 from ..base_tensor import ShapeLike, Tensor, tensor
-from ..typing import DTypeLike, float32, int64
+from ..typing import DType, float32, int64
 
 __all__ = [
     "normal",
@@ -53,7 +53,7 @@ def normal(
     shape: ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
-    dtype: DTypeLike = float32,
+    dtype: DType = float32,
     device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with values drawn from a normal distribution.
@@ -66,7 +66,7 @@ def normal(
         Mean of random values. Defaults to ``0``.
     std : float, optional
         Standard deviation of random values. Defaults to ``1``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : DeviceLike, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
@@ -86,7 +86,7 @@ def uniform(
     shape: ShapeLike,
     low: float = -1.0,
     high: float = 1.0,
-    dtype: DTypeLike = float32,
+    dtype: DType = float32,
     device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with values drawn from a uniform distribution.
@@ -99,7 +99,7 @@ def uniform(
         Lower bound for random values. Defaults to ``0``.
     high : float, optional
         Upper bound for random values. Defaults to ``1``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Datatype of the tensor data. Defaults to :class:`compyute.float32`
     device : DeviceLike, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
@@ -119,7 +119,7 @@ def uniform_int(
     shape: ShapeLike,
     low: int,
     high: int,
-    dtype: DTypeLike = int64,
+    dtype: DType = int64,
     device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Creates a tensor with integer values drawn from a discrete uniform distribution.
@@ -132,7 +132,7 @@ def uniform_int(
         Lower bound for random values.
     high : int
         Upper bound for random values.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Datatype of the tensor data. Defaults to :class:`compyute.float32`
     device : DeviceLike, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
@@ -148,16 +148,14 @@ def uniform_int(
     )
 
 
-def permutation(
-    n: int, dtype: DTypeLike = int64, device: DeviceLike = Device.CPU
-) -> Tensor:
+def permutation(n: int, device: DeviceLike = Device.CPU) -> Tensor:
     """Returns a tensor containing a permuted range of a specified length.
 
     Parameters
     ----------
     n : int
         Length of the permuted range.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Datatype of the tensor data. Defaults to :class:`compyute.int64`
     device : DeviceLike, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
@@ -168,7 +166,7 @@ def permutation(
         Permuted tensor.
     """
 
-    return tensor(get_engine(device).random.permutation(n), device=device, dtype=dtype)
+    return tensor(get_engine(device).random.permutation(n), device, int64)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
@@ -190,7 +188,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return tensor(p.engine.random.choice(x, size=shape, p=p.data))
+        return tensor(p.engine.random.choice(x, size=shape, p=p.data), dtype=float32)
     return Tensor(p.engine.random.choice(x.data, size=shape, p=p.data))
 
 

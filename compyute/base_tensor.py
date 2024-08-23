@@ -17,7 +17,7 @@ from .backend import (
     get_engine,
 )
 from .typing import (
-    DTypeLike,
+    DType,
     ScalarLike,
     complex64,
     float16,
@@ -40,7 +40,7 @@ class ShapeError(Exception):
 def tensor(
     data: ArrayLike | ScalarLike,
     device: Optional[DeviceLike] = None,
-    dtype: Optional[DTypeLike] = None,
+    dtype: Optional[DType] = None,
 ) -> Tensor:
     """Creates a tensor object from arbitrary data.
     The data type and device are inferred from the data if not specified.
@@ -52,7 +52,7 @@ def tensor(
         Can be a list, tuple, NumPy/Cupy ndarray, scalar, and other types.
     device : DeviceLike, optional
         Device the tensor should be stored on. If ``None``, it is inferred from the data.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Data type of tensor data. If ``None``, it is inferred from the data.
 
     Returns
@@ -64,7 +64,8 @@ def tensor(
         return Tensor(data)
 
     device = get_device(type(data)) if device is None else device  # infer device
-    data_array = get_engine(device).asarray(data, dtype)
+    dtype_str = dtype.value if dtype is not None else None  # infer dtype
+    data_array = get_engine(device).asarray(data, dtype_str)
 
     return Tensor(data_array)
 
@@ -85,7 +86,7 @@ class Tensor:
 
     grad: Optional[Tensor] = None
     _device: Optional[Device] = None
-    _dtype: Optional[DTypeLike] = None
+    _dtype: Optional[DType] = None
     _iterator: int = 0
 
     def __init__(self, data: ArrayLike) -> None:
@@ -115,10 +116,10 @@ class Tensor:
         return self._device
 
     @property
-    def dtype(self) -> DTypeLike:
+    def dtype(self) -> DType:
         """Tensor data type."""
         if self._dtype is None:
-            self._dtype = self._data.dtype
+            self._dtype = DType(str(self._data.dtype))
         return self._dtype
 
     @property
@@ -358,12 +359,12 @@ class Tensor:
     # DTYPE CONVERSIONS
     # ----------------------------------------------------------------------------------------------
 
-    def to_type(self, dtype: DTypeLike) -> Tensor:
+    def to_type(self, dtype: DType) -> Tensor:
         """Returns a copy of the tensor with elements cast to the given dtype.
 
         Parameters
         ----------
-        dtype : DTypeLike
+        dtype : DType
             Datatype to cast tensor-elements to.
 
         Returns
@@ -374,7 +375,7 @@ class Tensor:
         if self.dtype == dtype:
             return self
 
-        return Tensor(self._data.astype(dtype))
+        return Tensor(self._data.astype(dtype.value))
 
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.

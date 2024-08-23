@@ -5,7 +5,7 @@ from functools import reduce
 from typing import Iterable, Iterator, Optional
 
 from ..base_tensor import AxisLike, ShapeError, ShapeLike, Tensor, tensor
-from ..typing import DTypeLike, ScalarLike, complex64, float32
+from ..typing import DType, ScalarLike, complex64
 
 __all__ = [
     "abs",
@@ -218,7 +218,7 @@ def fft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: DTypeLike = complex64,
+    dtype: DType = complex64,
 ) -> Tensor:
     """Computes the 1D Fast Fourier Transform over a given axis.
 
@@ -230,7 +230,7 @@ def fft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the FFT. Defaults to ``-1``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -245,7 +245,7 @@ def fft2d(
     x: Tensor,
     s: Optional[ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: DTypeLike = complex64,
+    dtype: DType = complex64,
 ) -> Tensor:
     """Computes the 2D Fast Fourier Transform over given axes.
 
@@ -257,7 +257,7 @@ def fft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the FFT. Defaults to ``(-2, -1)``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -272,7 +272,7 @@ def ifft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: DTypeLike = complex64,
+    dtype: DType = complex64,
 ) -> Tensor:
     """Computes the inverse 1D Fast Fourier Transform over a given axis.
 
@@ -284,7 +284,7 @@ def ifft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the inverse FFT. Defaults to ``-1``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -299,7 +299,7 @@ def ifft2d(
     x: Tensor,
     s: Optional[ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: DTypeLike = complex64,
+    dtype: DType = complex64,
 ) -> Tensor:
     """Computes the inverse 2D Fast Fourier Transform over given axes.
 
@@ -311,7 +311,7 @@ def ifft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the inverse FFT. Defaults to ``(-2, -1)``.
-    dtype : DTypeLike, optional
+    dtype : DType, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -322,22 +322,20 @@ def ifft2d(
     return tensor(x.engine.fft.ifft2(x.data, s=s, axes=axes), dtype=dtype)
 
 
-def imag(x: Tensor, dtype: DTypeLike = complex64) -> Tensor:
+def imag(x: Tensor) -> Tensor:
     """Returns the imaginary part of a complex tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    dtype : DtypeLike, optional
-        Datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
     -------
     Tensor
         Tensor containing imaginary values.
     """
-    return tensor(x.engine.imag(x.data), dtype=dtype)
+    return tensor(x.engine.imag(x.data))
 
 
 def inner(*tensors: Tensor) -> Tensor:
@@ -609,22 +607,20 @@ def prod(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     return tensor(x.data.prod(axis=axis, keepdims=keepdims))
 
 
-def real(x: Tensor, dtype: Optional[DTypeLike] = None) -> Tensor:
+def real(x: Tensor) -> Tensor:
     """Returns the real part of a complex tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    dtype : DtypeLike, optional
-        Datatype of the output tensor. Defaults to ``None``.
 
     Returns
     -------
     Tensor
         Tensor containing real values.
     """
-    return tensor(x.engine.real(x.data), dtype=dtype)
+    return tensor(x.engine.real(x.data))
 
 
 def round(x: Tensor, decimals: int) -> Tensor:

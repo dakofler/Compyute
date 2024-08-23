@@ -209,7 +209,7 @@ def convolve1d_(
 
 def fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
     """Computes the 1D convolution of two tensors using FFT."""
-    conv = real(ifft1d(fft1d(x) * fft1d(f, n=x.shape[-1])), dtype=x.dtype)
+    conv = real(ifft1d(fft1d(x) * fft1d(f, n=x.shape[-1])))
     out = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.n_axes - 1) + [slice(-out, None)]
     return conv[*out_slice]
@@ -425,7 +425,7 @@ def convolve2d_(
 
 def fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
     """Computes the 2D convolution of two tensors using FFT."""
-    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])), dtype=x.dtype)
+    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])))
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
     out_slice = [slice(None)] * (x.n_axes - 2) + [
