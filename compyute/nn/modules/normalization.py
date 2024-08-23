@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor, _ShapeLike
-from ...dtypes import Dtype, _DtypeLike
+from ...base_tensor import ShapeLike, Tensor
 from ...tensor_ops.creating import ones, zeros
+from ...typing import DTypeLike, float32
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
 from ..parameter import Buffer, Parameter, update_parameter_grad
 from .module import Module, validate_input_axes
@@ -38,7 +38,7 @@ class BatchNorm1D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -54,7 +54,7 @@ class BatchNorm1D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -124,7 +124,7 @@ class BatchNorm2D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -140,7 +140,7 @@ class BatchNorm2D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -205,7 +205,7 @@ class LayerNorm(Module):
         Shape of the normalized tensor.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -217,9 +217,9 @@ class LayerNorm(Module):
 
     def __init__(
         self,
-        normalized_shape: _ShapeLike,
+        normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -267,7 +267,7 @@ class RMSNorm(Module):
     ----------
     normalized_shape : _ShapeLike
         Shape of the normalized tensor.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -279,9 +279,9 @@ class RMSNorm(Module):
 
     def __init__(
         self,
-        normalized_shape: _ShapeLike,
+        normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)

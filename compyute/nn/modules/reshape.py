@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor, _ShapeLike
+from ...base_tensor import ShapeLike, Tensor
 from ...tensor_ops.reshaping import moveaxis, reshape
 from .module import Module
 
@@ -20,7 +20,7 @@ class Reshape(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    def __init__(self, output_shape: _ShapeLike, label: Optional[str] = None) -> None:
+    def __init__(self, output_shape: ShapeLike, label: Optional[str] = None) -> None:
         super().__init__(label)
         self.output_shape = output_shape
 

@@ -4,8 +4,8 @@ import operator
 from functools import reduce
 from typing import Iterable, Iterator, Optional
 
-from ..base_tensor import ShapeError, Tensor, _AxisLike, _ShapeLike, tensor
-from ..dtypes import Dtype, _DtypeLike, _ScalarLike
+from ..base_tensor import AxisLike, ShapeError, ShapeLike, Tensor, tensor
+from ..typing import DTypeLike, ScalarLike, complex64, float32
 
 __all__ = [
     "abs",
@@ -218,7 +218,7 @@ def fft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: _DtypeLike = Dtype.COMPLEX64,
+    dtype: DTypeLike = complex64,
 ) -> Tensor:
     """Computes the 1D Fast Fourier Transform over a given axis.
 
@@ -230,7 +230,7 @@ def fft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the FFT. Defaults to ``-1``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -243,9 +243,9 @@ def fft1d(
 
 def fft2d(
     x: Tensor,
-    s: Optional[_ShapeLike] = None,
+    s: Optional[ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: _DtypeLike = Dtype.COMPLEX64,
+    dtype: DTypeLike = complex64,
 ) -> Tensor:
     """Computes the 2D Fast Fourier Transform over given axes.
 
@@ -257,7 +257,7 @@ def fft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the FFT. Defaults to ``(-2, -1)``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -272,7 +272,7 @@ def ifft1d(
     x: Tensor,
     n: Optional[int] = None,
     axis: int = -1,
-    dtype: _DtypeLike = Dtype.COMPLEX64,
+    dtype: DTypeLike = complex64,
 ) -> Tensor:
     """Computes the inverse 1D Fast Fourier Transform over a given axis.
 
@@ -284,7 +284,7 @@ def ifft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the inverse FFT. Defaults to ``-1``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -297,9 +297,9 @@ def ifft1d(
 
 def ifft2d(
     x: Tensor,
-    s: Optional[_ShapeLike] = None,
+    s: Optional[ShapeLike] = None,
     axes: tuple[int, int] = (-2, -1),
-    dtype: _DtypeLike = Dtype.COMPLEX64,
+    dtype: DTypeLike = complex64,
 ) -> Tensor:
     """Computes the inverse 2D Fast Fourier Transform over given axes.
 
@@ -311,7 +311,7 @@ def ifft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the inverse FFT. Defaults to ``(-2, -1)``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
@@ -322,7 +322,7 @@ def ifft2d(
     return tensor(x.engine.fft.ifft2(x.data, s=s, axes=axes), dtype=dtype)
 
 
-def imag(x: Tensor, dtype: _DtypeLike = Dtype.COMPLEX64) -> Tensor:
+def imag(x: Tensor, dtype: DTypeLike = complex64) -> Tensor:
     """Returns the imaginary part of a complex tensor.
 
     Parameters
@@ -445,7 +445,7 @@ def log10(x: Tensor) -> Tensor:
     return tensor(x.engine.log10(x.data))
 
 
-def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the maximum of tensor elements over a given axis.
 
     Parameters
@@ -467,7 +467,7 @@ def max(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     return tensor(x.data.max(axis=axis, keepdims=keepdims))
 
 
-def maximum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
+def maximum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
     """Computes the element-wise maximum of two tensors or a tensor and a scalar.
 
     Parameters
@@ -486,7 +486,7 @@ def maximum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
     return tensor(x.engine.maximum(x.data, _y))
 
 
-def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the mean of tensor elements over a given axis.
 
     Parameters
@@ -508,7 +508,7 @@ def mean(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     return tensor(x.data.mean(axis=axis, keepdims=keepdims))
 
 
-def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the minimum of tensor elements over a given axis.
 
     Parameters
@@ -530,7 +530,7 @@ def min(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     return tensor(x.data.min(axis=axis, keepdims=keepdims))
 
 
-def minimum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
+def minimum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
     """Computes the element-wise minimum of two tensors or a tensor and a scalar.
 
     Parameters
@@ -549,7 +549,7 @@ def minimum(x: Tensor, y: Tensor | _ScalarLike) -> Tensor:
     return tensor(x.engine.minimum(x.data, _y))
 
 
-def norm(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the norm of tensor elements over a given axis.
 
     Parameters
@@ -587,7 +587,7 @@ def outer(*tensors: Tensor) -> Tensor:
     return tensor(tensors[0].engine.outer(*[t.data for t in tensors]))
 
 
-def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def prod(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the product of tensor elements over a given axis.
 
     Parameters
@@ -609,7 +609,7 @@ def prod(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) ->
     return tensor(x.data.prod(axis=axis, keepdims=keepdims))
 
 
-def real(x: Tensor, dtype: Optional[_DtypeLike] = None) -> Tensor:
+def real(x: Tensor, dtype: Optional[DTypeLike] = None) -> Tensor:
     """Returns the real part of a complex tensor.
 
     Parameters
@@ -709,7 +709,7 @@ def sqrt(x: Tensor) -> Tensor:
     return tensor(x.engine.sqrt(x.data))
 
 
-def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the sum of tensor elements over a given axis.
 
     Parameters
@@ -731,7 +731,7 @@ def sum(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> 
     return tensor(x.data.sum(axis=axis, keepdims=keepdims))
 
 
-def std(x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False) -> Tensor:
+def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the standard deviation of tensor elements over a given axis.
 
     Parameters
@@ -818,7 +818,7 @@ def tensorsum(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
 
 
 def var(
-    x: Tensor, axis: Optional[_AxisLike] = None, ddof: int = 0, keepdims: bool = False
+    x: Tensor, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
 ) -> Tensor:
     """Computes the variance of tensor elements over a given axis.
 

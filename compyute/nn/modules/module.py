@@ -8,8 +8,8 @@ from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
+from ...backend import Device, DeviceLike, available
 from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _DeviceLike, available
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
@@ -26,7 +26,7 @@ class Module(ABC):
 
     y: Optional[Tensor] = None
     _backward: Optional[Callable] = None
-    _device: _DeviceLike = Device.CPU
+    _device: DeviceLike = Device.CPU
     _is_retaining_values: bool = False
     _is_trainable: bool = True
     _is_training: bool = False
@@ -39,16 +39,16 @@ class Module(ABC):
     # ----------------------------------------------------------------------------------------------
 
     @property
-    def device(self) -> _DeviceLike:
+    def device(self) -> DeviceLike:
         """Device the module parametes and variables are stored on."""
         return self._device
 
-    def to_device(self, device: _DeviceLike) -> None:
+    def to_device(self, device: DeviceLike) -> None:
         """Moves the module parameters and variables to the specified device.
 
         Parameters
         ----------
-        device : _DeviceLike
+        device : DeviceLike
             Device to move the module parameters and variables to.
         """
         device = Device(device)

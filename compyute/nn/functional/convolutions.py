@@ -2,7 +2,7 @@
 
 from typing import Callable, Literal, Optional
 
-from ...base_tensor import Tensor, _ShapeLike
+from ...base_tensor import ShapeLike, Tensor
 from ...tensor_ops.creating import zeros
 from ...tensor_ops.reshaping import broadcast_to, flip, pad, pad_to_shape, repeat
 from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
@@ -438,7 +438,7 @@ def fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
 def upsample2d(
     x: Tensor,
     scaling_factors: tuple[int, int],
-    shape: _ShapeLike,
+    shape: ShapeLike,
     axes: tuple[int, int] = (-2, -1),
 ) -> Tensor:
     """Upsamples a tensor by repeating it's elements over given axes.

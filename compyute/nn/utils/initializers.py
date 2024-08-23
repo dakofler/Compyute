@@ -4,7 +4,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
-from ...base_tensor import Tensor, _ShapeLike
+from ...base_tensor import ShapeLike, Tensor
 from ...random.random import normal, uniform
 from ...tensor_ops.creating import ones, zeros
 from ..modules.activations import _ActivationLike
@@ -235,11 +235,11 @@ def get_initializer(
     return INITIALIZERS[initializer]()
 
 
-def get_fan_in(shape: _ShapeLike) -> int:
+def get_fan_in(shape: ShapeLike) -> int:
     """Returns the fan-in value for a given shape."""
     return math.prod((shape[0],) + shape[2:])
 
 
-def _get_fan_out(shape: _ShapeLike) -> int:
+def _get_fan_out(shape: ShapeLike) -> int:
     """Returns the fan-out value for a given shape."""
     return math.prod((shape[1],) + shape[2:])

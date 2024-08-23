@@ -5,11 +5,13 @@ only using NumPy/CuPy under the hood to perform computations.
 
 import pathlib
 
-from . import engine, nn, preprocessing, random
+from . import backend, nn, preprocessing, random
+from .backend import *
 from .base_tensor import *
-from .dtypes import *
-from .engine import *
 from .tensor_ops import *
+from .typing import *
 from .utils import *
 
-__version__ = pathlib.Path(f"{pathlib.Path(__file__).parent}/VERSION").read_text(encoding="utf-8")
+__version__ = pathlib.Path(f"{pathlib.Path(__file__).parent}/VERSION").read_text(
+    encoding="utf-8"
+)

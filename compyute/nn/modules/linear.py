@@ -4,9 +4,9 @@ import math
 from typing import Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import Dtype, _DtypeLike
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
+from ...typing import DTypeLike, float32
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
@@ -36,7 +36,7 @@ class Linear(Module):
         Number of output channels (neurons).
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -52,7 +52,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)

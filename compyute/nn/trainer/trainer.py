@@ -3,7 +3,7 @@
 from typing import Literal, Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import _ScalarLike
+from ...typing import ScalarLike
 from ..losses import _LossLike, get_loss_function
 from ..metrics import _MetricLike, get_metric_function
 from ..modules.module import Module
@@ -115,7 +115,7 @@ class Trainer:
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
+    ) -> tuple[ScalarLike, Optional[ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..base_tensor import Tensor
-from ..dtypes import FLOAT_DTYPES
+from ..typing import is_float
 
 __all__ = ["Buffer", "Parameter"]
 
@@ -25,7 +25,7 @@ class Parameter(Tensor):
     """
 
     def __init__(self, data: Tensor) -> None:
-        if data.dtype not in FLOAT_DTYPES:
+        if not is_float(data.dtype):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data.data)
 

@@ -3,8 +3,8 @@
 from functools import wraps
 from typing import Callable, Iterator, Optional
 
+from ...backend import Device, DeviceLike
 from ...base_tensor import Tensor
-from ...engine import Device, _DeviceLike
 from ...random.random import shuffle
 from ...tensor_ops.creating import concat
 
@@ -36,7 +36,7 @@ class Dataloader:
         x: Tensor,
         y: Optional[Tensor] = None,
         batch_size: int = 1,
-        device: _DeviceLike = Device.CPU,
+        device: DeviceLike = Device.CPU,
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
@@ -98,7 +98,7 @@ class Dataloader:
 def batched(
     func: Callable[[Tensor], Tensor],
     batch_size: int = 1,
-    device: _DeviceLike = Device.CPU,
+    device: DeviceLike = Device.CPU,
     shuffle_data: bool = True,
     drop_remaining: bool = False,
 ) -> Callable:

@@ -2,13 +2,13 @@
 
 from typing import Optional
 
-from ..base_tensor import ShapeError, Tensor, _AxisLike, tensor
+from ..base_tensor import AxisLike, ShapeError, Tensor, tensor
 
 __all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
 
 
 def argmax(
-    x: Tensor, axis: Optional[_AxisLike] = None, keepdims: bool = False
+    x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False
 ) -> Tensor:
     """Returns the indices of maximum values along a given axis.
 
@@ -54,7 +54,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     return Tensor(x.engine.diag(x.data, k=d))
 
 
-def topk(x: Tensor, k: int, axis: _AxisLike = -1) -> tuple[Tensor, Tensor]:
+def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
     """Returns the k largest elements along a given axis.
     Implementation by https://hippocampus-garden.com/numpy_topk/.
 

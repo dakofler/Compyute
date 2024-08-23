@@ -2,14 +2,14 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _AxisLike
-from ..dtypes import INT_DTYPES
+from ..base_tensor import AxisLike, Tensor
 from ..random.random import shuffle
 from ..tensor_ops.creating import identity
 from ..tensor_ops.transforming import max as cpmax
 from ..tensor_ops.transforming import mean
 from ..tensor_ops.transforming import min as cpmin
 from ..tensor_ops.transforming import var
+from ..typing import is_integer
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
@@ -48,7 +48,7 @@ def split_train_val_test(
 
 def normalize(
     x: Tensor,
-    axis: Optional[_AxisLike] = None,
+    axis: Optional[AxisLike] = None,
     l_bound: int = 0,
     u_bound: int = 1,
 ) -> Tensor:
@@ -79,7 +79,7 @@ def normalize(
 
 def standardize(
     x: Tensor,
-    axis: Optional[_AxisLike] = None,
+    axis: Optional[AxisLike] = None,
 ) -> Tensor:
     """Standardizes a tensor to mean 0 and variance 1.
 
@@ -121,7 +121,7 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     ValueError
         If the tensor dtype is not ``int``.
     """
-    if x.dtype not in INT_DTYPES:
+    if not is_integer(x.dtype):
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
     return identity(n=num_classes, dtype=x.dtype, device=x.device)[x]

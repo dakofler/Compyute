@@ -36,8 +36,8 @@ def _cuda_available() -> bool:
         return False
 
 
-_ArrayLike: TypeAlias = CPU_ENGINE.ndarray | CUDA_ENGINE.ndarray
-_DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
+ArrayLike: TypeAlias = CPU_ENGINE.ndarray | CUDA_ENGINE.ndarray
+DeviceLike: TypeAlias = Literal["cpu", "cuda"] | Device
 
 
 AVAILABLE_DEVICES = {Device.CPU, Device.CUDA} if _cuda_available() else {Device.CPU}
@@ -62,7 +62,7 @@ def available(device: Device) -> None:
 
 
 @cache
-def get_engine(device: Optional[_DeviceLike]) -> ModuleType:
+def get_engine(device: Optional[DeviceLike]) -> ModuleType:
     """Returns the computation engine for a given device."""
     if device is None:
         return CPU_ENGINE
@@ -83,7 +83,7 @@ def get_device(array_type: type) -> Device:
     return Device.CPU
 
 
-def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
+def data_to_device(data: ArrayLike, device: Device) -> ArrayLike:
     """Moves the data to the specified device."""
     if device == Device.CPU:
         return CUDA_ENGINE.asnumpy(data)
@@ -91,7 +91,7 @@ def data_to_device(data: _ArrayLike, device: Device) -> _ArrayLike:
     return CUDA_ENGINE.array(data)
 
 
-def get_array_string(array: _ArrayLike) -> str:
+def get_array_string(array: ArrayLike) -> str:
     """Returns the array as a formatted string."""
     return CPU_ENGINE.array2string(
         array,

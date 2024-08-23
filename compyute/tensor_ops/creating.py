@@ -2,9 +2,9 @@
 
 from typing import Sequence
 
-from ..base_tensor import Tensor, _AxisLike, _ShapeLike
-from ..dtypes import Dtype, _DtypeLike, _ScalarLike
-from ..engine import Device, _DeviceLike, get_engine
+from ..backend import Device, DeviceLike, get_engine
+from ..base_tensor import AxisLike, ShapeLike, Tensor
+from ..typing import DTypeLike, ScalarLike, float32, float64
 
 __all__ = [
     "append",
@@ -49,8 +49,8 @@ def arange(
     stop: int | float,
     start: int | float = 0,
     step: int | float = 1,
-    dtype: _DtypeLike = Dtype.FLOAT64,
-    device: _DeviceLike = Device.CPU,
+    dtype: DTypeLike = float64,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
     a given interval [start, stop).
@@ -73,11 +73,10 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = Dtype(dtype).value
     return Tensor(get_engine(device).arange(start, stop, step, dtype=dtype))
 
 
-def concat(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
+def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     """Returns a new tensor by joining a sequence of tensors along a given axis.
 
     Parameters
@@ -96,9 +95,9 @@ def concat(tensors: Sequence[Tensor], axis: _AxisLike = -1) -> Tensor:
 
 
 def empty(
-    shape: _ShapeLike,
-    dtype: _DtypeLike = Dtype.FLOAT32,
-    device: _DeviceLike = Device.CPU,
+    shape: ShapeLike,
+    dtype: DTypeLike = float32,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns an tensor with uninitialized values.
 
@@ -116,7 +115,7 @@ def empty(
     Tensor
         Tensor with uninitialized values.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).empty(shape=shape, dtype=dtype))
 
 
@@ -137,10 +136,10 @@ def empty_like(x: Tensor) -> Tensor:
 
 
 def full(
-    shape: _ShapeLike,
-    value: _ScalarLike,
-    dtype: _DtypeLike = Dtype.FLOAT32,
-    device: _DeviceLike = Device.CPU,
+    shape: ShapeLike,
+    value: ScalarLike,
+    dtype: DTypeLike = float32,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -160,11 +159,11 @@ def full(
     Tensor
         Tensor with all values being one.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).full(shape, value, dtype=dtype))
 
 
-def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
+def full_like(x: Tensor, value: ScalarLike) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
@@ -183,7 +182,7 @@ def full_like(x: Tensor, value: _ScalarLike) -> Tensor:
 
 
 def identity(
-    n: int, dtype: _DtypeLike = Dtype.FLOAT32, device: _DeviceLike = Device.CPU
+    n: int, dtype: DTypeLike = float32, device: DeviceLike = Device.CPU
 ) -> Tensor:
     """Returns a diagonal tensor of shape ``(n, n)``.
 
@@ -201,7 +200,7 @@ def identity(
     Tensor
         Diagonal tensor.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).identity(n, dtype=dtype))
 
 
@@ -209,8 +208,8 @@ def linspace(
     start: float,
     stop: float,
     num: int,
-    dtype: _DtypeLike = Dtype.FLOAT32,
-    device: _DeviceLike = Device.CPU,
+    dtype: DTypeLike = float32,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
     a given interval :math:`[start, stop]`.
@@ -233,14 +232,14 @@ def linspace(
     Tensor
         Tensor of evenly spaced samples.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).linspace(start, stop, num, dtype=dtype))
 
 
 def ones(
-    shape: _ShapeLike,
-    dtype: _DtypeLike = Dtype.FLOAT32,
-    device: _DeviceLike = Device.CPU,
+    shape: ShapeLike,
+    dtype: DTypeLike = float32,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -258,7 +257,7 @@ def ones(
     Tensor
         Tensor with all values being one.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).ones(shape, dtype=dtype))
 
 
@@ -300,7 +299,7 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     return [Tensor(s) for s in x.engine.split(x.data, splits, axis=axis)]
 
 
-def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
+def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     """Returns a new tensor by stacking a sequence of tensors along a given axis.
 
     Parameters
@@ -319,9 +318,9 @@ def stack(tensors: Sequence[Tensor], axis: _AxisLike = 0) -> Tensor:
 
 
 def zeros(
-    shape: _ShapeLike,
-    dtype: _DtypeLike = Dtype.FLOAT32,
-    device: _DeviceLike = Device.CPU,
+    shape: ShapeLike,
+    dtype: DTypeLike = float32,
+    device: DeviceLike = Device.CPU,
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
@@ -339,7 +338,7 @@ def zeros(
     Tensor
         Tensor with all values being zero.
     """
-    dtype = Dtype(dtype).value
+
     return Tensor(get_engine(device).zeros(shape, dtype=dtype))
 
 

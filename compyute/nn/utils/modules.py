@@ -1,15 +1,15 @@
 """Module utilities."""
 
-from ...base_tensor import _ShapeLike
-from ...dtypes import Dtype, _DtypeLike
+from ...base_tensor import ShapeLike
 from ...tensor_ops.creating import ones
+from ...typing import DTypeLike, float32
 from ..modules.module import Module
 
 __all__ = ["get_module_summary"]
 
 
 def get_module_summary(
-    module: Module, input_shape: _ShapeLike, input_dtype: _DtypeLike = Dtype.FLOAT32
+    module: Module, input_shape: ShapeLike, input_dtype: DTypeLike = float32
 ) -> str:
     """Returns information about the module and its child modules.
 
@@ -19,7 +19,7 @@ def get_module_summary(
         Module to generate a summary of.
     input_shape : _ShapeLike
         Shape of the expected input excluding the batch dimension.
-    input_dtype : _DtypeLike, optional
+    input_dtype : DTypeLike, optional
         Data type of the expected input. Defaults to :class:`compyute.float32`.
 
     Returns

@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _AxisLike, _ShapeLike
+from ..base_tensor import AxisLike, ShapeLike, Tensor
 from .creating import identity
 
 __all__ = [
@@ -29,7 +29,7 @@ def diagonal(x: Tensor) -> Tensor:
     return insert_dim(x, -1) * identity(x.shape[-1])
 
 
-def reshape(x: Tensor, shape: _ShapeLike) -> Tensor:
+def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a new view of the tensor of a given shape.
 
     Parameters
@@ -72,7 +72,7 @@ def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
     return moveaxis(x, from_axis=axes[0], to_axis=axes[1])
 
 
-def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
+def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
     """Returns a view of the tensor containing an added dimension at a given axis.
 
     Parameters
@@ -108,7 +108,7 @@ def add_dims(x: Tensor, target_dims: int) -> Tensor:
     return reshape(x, x.shape + (1,) * (target_dims - x.n_axes))
 
 
-def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
+def resize(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a new tensor with the specified shape.
     If the new tensor is larger than the original one, it is filled with zeros.
 
@@ -192,7 +192,7 @@ def pad(
     return Tensor(x.engine.pad(x.data, padding))
 
 
-def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
+def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a padded tensor using zero padding that matches a specified shape.
 
     Parameters
@@ -247,7 +247,7 @@ def squeeze(x: Tensor) -> Tensor:
     return Tensor(x.data.squeeze())
 
 
-def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
+def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
     """Returns a tensor with flipped elements along given axis.
 
     Parameters
@@ -268,7 +268,7 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     return Tensor(x.engine.flip(x.data, axis=axis))
 
 
-def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
+def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
     """Broadcast a tensor to a new shape.
 
     Parameters

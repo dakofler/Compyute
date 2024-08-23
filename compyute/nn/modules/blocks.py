@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...dtypes import Dtype, _DtypeLike
+from ...typing import DTypeLike, float32
 from ..functional.convolutions import _PaddingLike
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
@@ -43,7 +43,7 @@ class DenseBlock(Sequential):
     bias_init : _InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : _DtypeLike, optional
+    dtype : DTypeLike, optional
         Datatype of weights and biases. Defaults to :class:`compyute.float32`.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
@@ -62,7 +62,7 @@ class DenseBlock(Sequential):
         weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: _InitializerLike = "zeros",
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype)
@@ -149,7 +149,7 @@ class Convolution1DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution1D(
@@ -251,7 +251,7 @@ class Convolution2DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: DTypeLike = float32,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution2D(

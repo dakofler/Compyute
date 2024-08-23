@@ -3,9 +3,9 @@
 from typing import Callable, Optional
 
 from ...base_tensor import Tensor
-from ...dtypes import INT_DTYPES
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import einsum
+from ...typing import is_integer
 
 __all__ = ["lookup_embedding"]
 
@@ -31,7 +31,7 @@ def lookup_embedding(
     Callable, optional
         Gradient function.
     """
-    if x.dtype not in INT_DTYPES:
+    if not is_integer(x.dtype):
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
     if not return_grad_fn:
