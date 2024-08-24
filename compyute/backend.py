@@ -116,6 +116,11 @@ def get_device_from_class(array_type: type) -> Device:
     return cpu
 
 
+def get_default_device() -> Optional[Device]:
+    """Returns the default device."""
+    return default_device
+
+
 def select_device(device: Optional[Device]) -> Device:
     """Selects the device. Returns the default device if device is ``None``."""
     return device or default_device or fallback_default_device

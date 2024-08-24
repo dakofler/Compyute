@@ -6,7 +6,15 @@ from typing import Any, Optional, TypeAlias
 
 import numpy
 
-from .backend import ArrayLike, Device, cpu, cuda, data_to_device, get_device_from_class
+from .backend import (
+    ArrayLike,
+    Device,
+    cpu,
+    cuda,
+    data_to_device,
+    get_default_device,
+    get_device_from_class,
+)
 from .typing import (
     DType,
     ScalarLike,
@@ -14,6 +22,7 @@ from .typing import (
     float16,
     float32,
     float64,
+    get_default_dtype,
     int32,
     int64,
 )
@@ -51,7 +60,8 @@ def tensor(
     Tensor
         Tensor object.
     """
-    device = device or get_device_from_class(type(data))
+    device = device or get_default_device() or get_device_from_class(type(data))
+    dtype = dtype or get_default_dtype()
     dtype_str = dtype.value if dtype is not None else None
     data_array = device.engine.asarray(data, dtype_str)
 

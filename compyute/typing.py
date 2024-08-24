@@ -112,6 +112,11 @@ def use_dtype(dtype: DType):
         set_default_dtype(None)
 
 
+def get_default_dtype() -> Optional[DType]:
+    """Returns the default data type."""
+    return default_dtype
+
+
 def select_dtype(dtype: Optional[DType]) -> DType:
     """Selects the data type. Returns the default data type if dtype is ``None``."""
     return dtype or default_dtype or fallback_default_dtype
