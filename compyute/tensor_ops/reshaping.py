@@ -52,24 +52,23 @@ def flatten(x: Tensor) -> Tensor:
     return reshape(x, shape=((-1,)))
 
 
-def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
+def transpose(x: Tensor, axes: Optional[AxisLike] = None) -> Tensor:
     """Transposes a tensor by swapping two axes.
 
     Parameters
     ----------
     x: Tensor
         Input tensor.
-    axes : tuple[int, int], optional
-        Transpose axes. Defaults to ``(-2, -1)``.
+    axes : AxisLike, optional
+        Permutation of output axes. Defaults to ``None``.
+        If ``None`` axes are reversed.
 
     Returns
     -------
     Tensor
         Transposed tensor.
     """
-    if x.n_axes < 2:
-        return x
-    return moveaxis(x, from_axis=axes[0], to_axis=axes[1])
+    return Tensor(x.device.engine.transpose(x.data, axes))
 
 
 def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
@@ -265,7 +264,7 @@ def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(x.device.engine.flip(x.data, axis=axis))
+    return Tensor(x.device.engine.flip(x.data, axis))
 
 
 def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -283,4 +282,4 @@ def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
     Tensor
         Broadcasted tensor.
     """
-    return Tensor(x.device.engine.broadcast_to(x.data, shape=shape))
+    return Tensor(x.device.engine.broadcast_to(x.data, shape))

@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
-from ...backend import Device, cpu
+from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
 from ..parameter import Buffer, Parameter
 
@@ -26,7 +26,7 @@ class Module(ABC):
 
     y: Optional[Tensor] = None
     _backward: Optional[Callable] = None
-    _device: Device = cpu
+    _device: Device = select_device(None)
     _is_retaining_values: bool = False
     _is_trainable: bool = True
     _is_training: bool = False

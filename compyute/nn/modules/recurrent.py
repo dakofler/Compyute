@@ -6,7 +6,7 @@ from typing import Literal, Optional
 from ...random.random import uniform
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
-from ...typing import DType, float32
+from ...typing import DType
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
@@ -47,7 +47,7 @@ class Recurrent(Module):
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -64,7 +64,7 @@ class Recurrent(Module):
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
         return_sequence: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -185,7 +185,7 @@ class LSTM(Module):
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -202,7 +202,7 @@ class LSTM(Module):
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
         return_sequence: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -436,7 +436,7 @@ class GRU(Module):
     return_sequence : bool, optional
         Whether to return the entire sequence or only the last hidden state.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -453,7 +453,7 @@ class GRU(Module):
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
         return_sequence: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)

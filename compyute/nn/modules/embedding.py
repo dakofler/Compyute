@@ -4,7 +4,7 @@ from typing import Optional
 
 from ...random.random import normal
 from ...tensors import Tensor
-from ...typing import DType, float32
+from ...typing import DType
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
@@ -30,7 +30,7 @@ class Embedding(Module):
     embedding_dim : int
         Embedding vector dimensions.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -43,7 +43,7 @@ class Embedding(Module):
         self,
         n_embeddings: int,
         embedding_dim: int,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)

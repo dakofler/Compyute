@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...typing import DType, float32
+from ...typing import DType
 from ..functional.convolutions import _PaddingLike
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
@@ -44,7 +44,7 @@ class DenseBlock(Sequential):
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -62,7 +62,7 @@ class DenseBlock(Sequential):
         weight_init: _InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: _InitializerLike = "zeros",
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype)
@@ -123,7 +123,7 @@ class Convolution1DBlock(Sequential):
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -149,7 +149,7 @@ class Convolution1DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution1D(
@@ -225,7 +225,7 @@ class Convolution2DBlock(Sequential):
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -251,7 +251,7 @@ class Convolution2DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution2D(

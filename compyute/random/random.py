@@ -1,11 +1,18 @@
 """Randomness based tensor functions."""
 
+# rules for creation functions:
+# - have device optional, select default device if None
+# - have dtype optional for float dtypes
+# - if possible, pass dtype to array engine and use Tensor
+# - if not possible, use tensor() and pass device, dtype
+
+
 from contextlib import contextmanager
 from typing import Optional
 
-from ..backend import Device, cpu, cuda, gpu_available
+from ..backend import Device, cpu, cuda, gpu_available, select_device
 from ..tensors import ShapeLike, Tensor, tensor
-from ..typing import DType, float32, int64
+from ..typing import DType, int64, select_dtype
 
 __all__ = [
     "normal",
@@ -53,8 +60,8 @@ def normal(
     shape: ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
-    device: Device = cpu,
-    dtype: DType = float32,
+    device: Optional[Device] = None,
+    dtype: Optional[DType] = None,
 ) -> Tensor:
     """Creates a tensor with values drawn from a normal distribution.
 
@@ -67,16 +74,17 @@ def normal(
     std : float, optional
         Standard deviation of random values. Defaults to ``1``.
     device : Device, optional
-        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+        The device the tensor is stored on. Defaults to ``None``.
     dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
+        Datatype of the tensor data. Defaults to ``None``.
 
     Returns
     -------
     Tensor
         Tensor of normally distributed samples.
     """
-
+    device = select_device(device)
+    dtype = select_dtype(dtype)
     return tensor(device.engine.random.normal(mean, std, shape), device, dtype)
 
 
@@ -84,8 +92,8 @@ def uniform(
     shape: ShapeLike,
     low: float = -1.0,
     high: float = 1.0,
-    device: Device = cpu,
-    dtype: DType = float32,
+    device: Optional[Device] = None,
+    dtype: Optional[DType] = None,
 ) -> Tensor:
     """Creates a tensor with values drawn from a uniform distribution.
 
@@ -98,16 +106,17 @@ def uniform(
     high : float, optional
         Upper bound for random values. Defaults to ``1``.
     device : Device, optional
-        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+        The device the tensor is stored on. Defaults to ``None``.
     dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
+        Datatype of the tensor data. Defaults to ``None``.
 
     Returns
     -------
     Tensor
         Tensor of uniformly distributed samples.
     """
-
+    device = select_device(device)
+    dtype = select_dtype(dtype)
     return tensor(device.engine.random.uniform(low, high, shape), device, dtype)
 
 
@@ -115,7 +124,7 @@ def uniform_int(
     shape: ShapeLike,
     low: int,
     high: int,
-    device: Device = cpu,
+    device: Optional[Device] = None,
     dtype: DType = int64,
 ) -> Tensor:
     """Creates a tensor with integer values drawn from a discrete uniform distribution.
@@ -129,20 +138,20 @@ def uniform_int(
     high : int
         Upper bound for random values.
     device : Device, optional
-        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+        The device the tensor is stored on. Defaults to ``None``.
     dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
+        Datatype of the tensor data. Defaults to :class:`compyute.int64`.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
+    device = select_device(device)
+    return Tensor(device.engine.random.randint(low, high, shape, dtype.value))
 
-    return tensor(device.engine.random.randint(low, high, shape), device, dtype)
 
-
-def permutation(n: int, device: Device = cpu) -> Tensor:
+def permutation(n: int, device: Optional[Device] = None) -> Tensor:
     """Returns a tensor containing a permuted range of a specified length.
 
     Parameters
@@ -150,16 +159,14 @@ def permutation(n: int, device: Device = cpu) -> Tensor:
     n : int
         Length of the permuted range.
     device : Device, optional
-        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
+        The device the tensor is stored on. Defaults to ``None``.
 
     Returns
     -------
     Tensor
         Permuted tensor.
     """
-
+    device = select_device(device)
     return tensor(device.engine.random.permutation(n), device, int64)
 
 
@@ -182,11 +189,20 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return tensor(p.device.engine.random.choice(x, shape, p=p.data), dtype=float32)
-    return Tensor(p.device.engine.random.choice(x.data, shape, p=p.data))
+        return tensor(
+            p.device.engine.random.choice(x, shape, p=p.data), p.device, int64
+        )
+    return tensor(
+        p.device.engine.random.choice(x.data, shape, p=p.data), p.device, x.dtype
+    )
 
 
-def multinulli(p: float, shape: ShapeLike, device: Device = cpu) -> Tensor:
+def multinulli(
+    p: float,
+    shape: ShapeLike,
+    device: Optional[Device] = None,
+    dtype: Optional[DType] = None,
+) -> Tensor:
     """Returns a tensor of repeated bernoulli experiments using a given probability.
 
     Parameters
@@ -196,16 +212,19 @@ def multinulli(p: float, shape: ShapeLike, device: Device = cpu) -> Tensor:
     shape : ShapeLike
         Shape of the new tensor.
     device : Device, optional
-        The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+        The device the tensor is stored on. Defaults to ``None``.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to ``None``.
 
     Returns
     -------
     Tensor
         Tensor of samples.
     """
+    device = select_device(device)
+    dtype = select_dtype(dtype)
     return tensor(
-        device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1 - p]),
-        dtype=float32,
+        device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1 - p]), device, dtype
     )
 
 

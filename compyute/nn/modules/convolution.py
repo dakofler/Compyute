@@ -6,7 +6,7 @@ from typing import Literal, Optional
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ...tensors import Tensor
-from ...typing import DType, float32
+from ...typing import DType
 from ..functional.convolutions import (
     _PaddingLike,
     avgpooling2d,
@@ -55,7 +55,7 @@ class Convolution1D(Module):
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -74,7 +74,7 @@ class Convolution1D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -173,7 +173,7 @@ class Convolution2D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)

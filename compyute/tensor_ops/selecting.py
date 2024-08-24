@@ -28,7 +28,7 @@ def argmax(
     Tensor
         Tensor containing indices.
     """
-    return tensor(x.device.engine.argmax(x.data, axis=axis, keepdims=keepdims))
+    return Tensor(x.device.engine.argmax(x.data, axis, keepdims=keepdims))
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
@@ -51,7 +51,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.diag(x.data, k=d))
+    return Tensor(x.device.engine.diag(x.data, d))
 
 
 def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
@@ -81,7 +81,7 @@ def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
     ind = x.device.engine.take_along_axis(ind, ind_part, axis=axis)
 
     val = x.device.engine.take_along_axis(-data, ind_part, axis=axis)
-    return tensor(val), tensor(ind)
+    return Tensor(val), Tensor(ind)
 
 
 def tril(x: Tensor, d: int = 0) -> Tensor:
@@ -105,7 +105,7 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.tril(x.data, k=d))
+    return Tensor(x.device.engine.tril(x.data, d))
 
 
 def triu(x: Tensor, d: int = 0) -> Tensor:
@@ -129,7 +129,7 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.triu(x.data, k=d))
+    return Tensor(x.device.engine.triu(x.data, d))
 
 
 def unique(x: Tensor) -> Tensor:
@@ -145,4 +145,4 @@ def unique(x: Tensor) -> Tensor:
     Tensor
         Tensor containing unique values.
     """
-    return tensor(x.device.engine.unique(x.data))
+    return Tensor(x.device.engine.unique(x.data))

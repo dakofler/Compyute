@@ -6,7 +6,7 @@ from typing import Optional
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
 from ...tensors import Tensor
-from ...typing import DType, float32
+from ...typing import DType
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
@@ -37,7 +37,7 @@ class Linear(Module):
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DType, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -52,7 +52,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: DType = float32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
