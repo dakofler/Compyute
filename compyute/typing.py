@@ -92,10 +92,11 @@ def is_float(dtype: DType) -> bool:
     return dtype in FLOAT_DTYPES
 
 
-default_dtype = float32
+fallback_default_dtype: DType = float32
+default_dtype: Optional[DType] = None
 
 
-def set_default_dtype(dtype: DType) -> None:
+def set_default_dtype(dtype: Optional[DType]) -> None:
     """Sets the default data type."""
     global default_dtype
     default_dtype = dtype
@@ -108,9 +109,9 @@ def use_dtype(dtype: DType):
     try:
         yield
     finally:
-        set_default_dtype(dtype)
+        set_default_dtype(None)
 
 
 def select_dtype(dtype: Optional[DType]) -> DType:
     """Selects the data type. Returns the default data type if dtype is ``None``."""
-    return dtype or default_dtype
+    return dtype or default_dtype or fallback_default_dtype

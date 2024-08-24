@@ -8,7 +8,7 @@ from typing import Optional, TypeAlias
 import cupy
 import numpy
 
-__all__ = ["cpu", "cuda", "Device", "gpu_available", "get_device_count", "use_device"]
+__all__ = ["cpu", "cuda", "Device", "use_device"]
 
 
 class Device(ABC):
@@ -88,10 +88,11 @@ def get_device_count() -> int:
     return cupy.cuda.runtime.getDeviceCount()
 
 
-default_device = cpu
+fallback_default_device: Device = cpu
+default_device: Optional[Device] = None
 
 
-def set_default_device(device: Device) -> None:
+def set_default_device(device: Optional[Device]) -> None:
     """Sets the default device."""
     global default_device
     default_device = device
@@ -104,7 +105,7 @@ def use_device(device: Device):
     try:
         yield
     finally:
-        set_default_device(cpu)
+        set_default_device(None)
 
 
 @cache
@@ -117,4 +118,4 @@ def get_device_from_class(array_type: type) -> Device:
 
 def select_device(device: Optional[Device]) -> Device:
     """Selects the device. Returns the default device if device is ``None``."""
-    return device or default_device
+    return device or default_device or fallback_default_device

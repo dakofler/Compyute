@@ -51,10 +51,7 @@ def tensor(
     Tensor
         Tensor object.
     """
-    if isinstance(data, ArrayLike) and device is None and dtype is None:
-        return Tensor(data)
-
-    device = get_device_from_class(type(data)) if device is None else device
+    device = device or get_device_from_class(type(data))
     dtype_str = dtype.value if dtype is not None else None
     data_array = device.engine.asarray(data, dtype_str)
 
