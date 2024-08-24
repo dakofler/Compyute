@@ -8,7 +8,6 @@ from ...random.random import normal, uniform
 from ...tensor_ops.creating import ones, zeros
 from ...tensors import ShapeLike, Tensor
 from ..modules.activations import _ActivationLike
-from ..parameter import Parameter
 
 __all__ = [
     "KaimingNormal",
@@ -24,32 +23,34 @@ class Initializer(ABC):
     """Initializer base class."""
 
     @abstractmethod
-    def __call__(self, x: Tensor | Parameter) -> None:
-        """Fills a tensor with values.
+    def __call__(self, *tensors: Tensor) -> None:
+        """Fills tensors with values.
 
         Parameters
         ----------
-        x : Tensor | Parameter
-            Tensor or parameter to fill with values.
+        *tensors : Tensor
+            Tensors to fill with values.
         """
 
 
 class Ones(Initializer):
-    """Initializes a tensor with ones."""
+    """Initializes tensors with ones."""
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = ones(x.shape, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            t.data = ones(t.shape, t.device, t.dtype).data
 
 
 class Zeros(Initializer):
-    """Initializes a tensor with zeros."""
+    """Initializes tensors with zeros."""
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = zeros(x.shape, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            t.data = zeros(t.shape, t.device, t.dtype).data
 
 
 class Normal(Initializer):
-    """Initializes a tensor with values following a uniform distribution.
+    """Initializes tensors with values following a uniform distribution.
 
     Parameters
     ----------
@@ -63,12 +64,13 @@ class Normal(Initializer):
         self.mean = mean
         self.std = std
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = normal(x.shape, self.mean, self.std, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            t.data = normal(t.shape, self.mean, self.std, t.device, t.dtype).data
 
 
 class Uniform(Initializer):
-    """Initializes a tensor with values following a uniform distribution.
+    """Initializes tensors with values following a uniform distribution.
 
     Parameters
     ----------
@@ -82,8 +84,9 @@ class Uniform(Initializer):
         self.low = low
         self.high = high
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = uniform(x.shape, self.low, self.high, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            t.data = uniform(t.shape, self.low, self.high, t.device, t.dtype).data
 
 
 class KaimingNormal(Initializer):
@@ -99,10 +102,11 @@ class KaimingNormal(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(x.shape)
-        std = self.gain / math.sqrt(fan_in)
-        x.data = normal(x.shape, 0, std, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            fan_in = _get_fan_in(t.shape)
+            std = self.gain / math.sqrt(fan_in)
+            t.data = normal(t.shape, 0, std, t.device, t.dtype).data
 
 
 class KaimingUniform(Initializer):
@@ -118,10 +122,11 @@ class KaimingUniform(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(x.shape)
-        k = self.gain * math.sqrt(3 / fan_in)
-        x.data = uniform(x.shape, -k, k, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            fan_in = _get_fan_in(t.shape)
+            k = self.gain * math.sqrt(3 / fan_in)
+            t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
 
 
 class XavierNormal(Initializer):
@@ -137,11 +142,12 @@ class XavierNormal(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(x.shape)
-        fan_out = _get_fan_out(x.shape)
-        std = self.gain * math.sqrt(2 / (fan_in + fan_out))
-        x.data = normal(x.shape, 0, std, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            fan_in = _get_fan_in(t.shape)
+            fan_out = _get_fan_out(t.shape)
+            std = self.gain * math.sqrt(2 / (fan_in + fan_out))
+            t.data = normal(t.shape, 0, std, t.device, t.dtype).data
 
 
 class XavierUniform(Initializer):
@@ -157,11 +163,12 @@ class XavierUniform(Initializer):
     def __init__(self, activation: Optional[_ActivationLike] = None) -> None:
         self.gain = get_gain(activation)
 
-    def __call__(self, x: Tensor | Parameter) -> None:
-        fan_in = get_fan_in(x.shape)
-        fan_out = _get_fan_out(x.shape)
-        k = self.gain * math.sqrt(6 / (fan_in + fan_out))
-        x.data = uniform(x.shape, -k, k, x.device, x.dtype).data
+    def __call__(self, *tensors: Tensor) -> None:
+        for t in tensors:
+            fan_in = _get_fan_in(t.shape)
+            fan_out = _get_fan_out(t.shape)
+            k = self.gain * math.sqrt(6 / (fan_in + fan_out))
+            t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
 
 
 _InitializerLike = (
@@ -235,11 +242,11 @@ def get_initializer(
     return INITIALIZERS[initializer]()
 
 
-def get_fan_in(shape: ShapeLike) -> int:
+def _get_fan_in(shape: ShapeLike) -> int:
     """Returns the fan-in value for a given shape."""
-    return math.prod((shape[0],) + shape[2:])
+    return math.prod(shape[1:])
 
 
 def _get_fan_out(shape: ShapeLike) -> int:
     """Returns the fan-out value for a given shape."""
-    return math.prod((shape[1],) + shape[2:])
+    return math.prod((shape[0],) + shape[2:])

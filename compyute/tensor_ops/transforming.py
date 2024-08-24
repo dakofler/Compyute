@@ -417,7 +417,7 @@ def histogram(
     ----------
     x : Tensor
         Input tensor.
-    bins : int | 1D Tensor
+    bins : int | Tensor
         The number of bins to use for the histogram. Defaults to 10.
             - ``int``:defines the number of equal-width bins.
             - ``Tensor``: defines the sequence of bin edges including the rightmost edge.
@@ -439,7 +439,9 @@ def histogram(
     """
     b = to_arraylike(bins)
     w = weights.data if weights is not None else None
-    hist, bin_edges = x.device.engine.histogram(x.data, b, binrange, density, w)
+    hist, bin_edges = x.device.engine.histogram(
+        x.data, b, binrange, density=density, weights=w
+    )
     return Tensor(hist), Tensor(bin_edges)
 
 

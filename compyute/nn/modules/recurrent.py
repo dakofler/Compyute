@@ -1,15 +1,14 @@
 """Neural network recurrent modules."""
 
-import math
 from typing import Literal, Optional
 
-from ...random.random import uniform
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
+from ..utils.initializers import XavierUniform, Zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -74,15 +73,20 @@ class Recurrent(Module):
         self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = 1 / math.sqrt(h_channels)
+        # init input parameters
+        self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_i = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init input weights and biases
-        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_i = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        # init hidden parameters
+        self.w_h = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_h = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init hidden weights and biases
-        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_h = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(self.w_i, self.w_h)
+        if self.bias:
+            Zeros()(self.b_i, self.b_h)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
@@ -212,27 +216,50 @@ class LSTM(Module):
         self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = 1 / math.sqrt(h_channels)
+        # init input parameters
+        self.w_ii = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_ii = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_if = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_if = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_ig = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_ig = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_io = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_io = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init input weights and biases
-        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_ii = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_if = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_ig = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_io = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        # init hidden parameters
+        self.w_hi = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hi = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_hf = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hf = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_hg = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hg = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_ho = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_ho = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init hidden weights and biases
-        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hi = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hf = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hg = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_ho = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(
+            self.w_ii,
+            self.w_if,
+            self.w_ig,
+            self.w_io,
+            self.w_hi,
+            self.w_hf,
+            self.w_hg,
+            self.w_ho,
+        )
+        if self.bias:
+            Zeros()(
+                self.b_ii,
+                self.b_if,
+                self.b_ig,
+                self.b_io,
+                self.b_hi,
+                self.b_hf,
+                self.b_hg,
+                self.b_ho,
+            )
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
@@ -463,23 +490,30 @@ class GRU(Module):
         self.act = relu if activation == "relu" else tanh
         self.return_sequence = return_sequence
 
-        k = 1 / math.sqrt(h_channels)
+        # init input parameters
+        self.w_ir = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_ir = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_iz = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_iz = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_in = Parameter(empty((h_channels, in_channels), dtype=dtype))
+        self.b_in = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init input weights and biases
-        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_ir = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_iz = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
-        self.b_in = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        # init hidden parameters
+        self.w_hr = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hr = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_hz = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hz = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.w_hn = Parameter(empty((h_channels, h_channels), dtype=dtype))
+        self.b_hn = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
 
-        # init hidden weights and biases
-        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hr = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hz = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
-        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
-        self.b_hn = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(
+            self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn
+        )
+        if self.bias:
+            Zeros()(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])

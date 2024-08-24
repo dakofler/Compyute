@@ -2,11 +2,12 @@
 
 from typing import Optional
 
-from ...tensor_ops.creating import ones, zeros
+from ...tensor_ops.creating import empty
 from ...tensors import ShapeLike, Tensor
 from ...typing import DType
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
 from ..parameter import Buffer, Parameter, update_parameter_grad
+from ..utils.initializers import Ones, Zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -62,13 +63,16 @@ class BatchNorm1D(Module):
         self.eps = eps
         self.m = m
 
-        # parameters
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
+        # init parameters and buffers
+        self.w = Parameter(empty((channels,), dtype=dtype))
+        self.b = Parameter(empty((channels,), dtype=dtype))
+        self.rmean = Buffer(empty((channels,), dtype=dtype))
+        self.rvar = Buffer(empty((channels,), dtype=dtype))
+        self._init_parameters_and_buffers()
 
-        # buffers
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w, self.rvar)
+        Zeros()(self.b, self.rmean)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [2, 3])
@@ -148,13 +152,16 @@ class BatchNorm2D(Module):
         self.eps = eps
         self.m = m
 
-        # parameters
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
+        # init parameters and buffers
+        self.w = Parameter(empty((channels,), dtype=dtype))
+        self.b = Parameter(empty((channels,), dtype=dtype))
+        self.rmean = Buffer(empty((channels,), dtype=dtype))
+        self.rvar = Buffer(empty((channels,), dtype=dtype))
+        self._init_parameters_and_buffers()
 
-        # buffers
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w, self.rvar)
+        Zeros()(self.b, self.rmean)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
@@ -226,9 +233,14 @@ class LayerNorm(Module):
         self.normalized_shape = normalized_shape
         self.eps = eps
 
-        # parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
-        self.b = Parameter(zeros(normalized_shape, dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty(normalized_shape, dtype=dtype))
+        self.b = Parameter(empty(normalized_shape, dtype=dtype))
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w)
+        Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
 
@@ -288,8 +300,12 @@ class RMSNorm(Module):
         self.normalized_shape = normalized_shape
         self.eps = eps
 
-        # parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty(normalized_shape, dtype=dtype))
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w)
 
     def forward(self, x: Tensor) -> Tensor:
 

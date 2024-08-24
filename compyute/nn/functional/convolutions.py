@@ -30,14 +30,14 @@ __all__ = [
     "avgpooling2d",
 ]
 
-_PaddingLike = Literal["valid", "same"]
+PaddingLike = Literal["valid", "same"]
 
 
 def convolve1d(
     x: Tensor,
     f: Tensor,
     b: Optional[Tensor] = None,
-    padding: _PaddingLike = "valid",
+    padding: PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
@@ -52,7 +52,7 @@ def convolve1d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor. Defaults to ``None``. If ``None``, no bias is added.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied to the input tensor. Defaults to ``valid``.
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
@@ -142,7 +142,7 @@ def dilate1d(
     return x_dil, None
 
 
-def _pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
+def _pad1d_from_str(padding: PaddingLike, kernel_size: int) -> tuple[int, int]:
     """Returns padding widths from a string."""
     if padding == "valid":
         return (0, 0)
@@ -219,7 +219,7 @@ def convolve2d(
     x: Tensor,
     f: Tensor,
     b: Optional[Tensor] = None,
-    padding: _PaddingLike = "valid",
+    padding: PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
     return_grad_fn: bool = False,
@@ -234,7 +234,7 @@ def convolve2d(
         Filter tensor.
     b : Tensor, optional
         Bias tensor. Defaults to ``None. If ``None``, no bias is added.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied to the input tensor. Defaults to ``valid``.
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
@@ -333,7 +333,7 @@ def dilate2d(
 
 
 def _pad2d_from_str(
-    padding: _PaddingLike, kernel_size: int
+    padding: PaddingLike, kernel_size: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     """Returns padding widths from a string."""
     if padding == "valid":

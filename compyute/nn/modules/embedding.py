@@ -2,11 +2,12 @@
 
 from typing import Optional
 
-from ...random.random import normal
+from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter, update_parameter_grad
+from ..utils.initializers import Normal
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -50,8 +51,12 @@ class Embedding(Module):
         self.n_embeddings = n_embeddings
         self.embedding_dim = embedding_dim
 
-        # init weights
-        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty((n_embeddings, embedding_dim), dtype=dtype))
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        Normal()(self.w)
 
     def forward(self, x: Tensor) -> Tensor:
         y, grad_fn = lookup_embedding(x, self.w, self._is_training)

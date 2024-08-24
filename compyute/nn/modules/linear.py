@@ -3,12 +3,12 @@
 import math
 from typing import Optional
 
-from ...random.random import uniform
-from ...tensor_ops.creating import zeros
+from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
+from ..utils.initializers import XavierUniform, Zeros
 from .module import Module
 
 __all__ = ["Linear"]
@@ -60,12 +60,15 @@ class Linear(Module):
         self.out_channels = out_channels
         self.bias = bias
 
-        # init weights
-        k = 1 / math.sqrt(in_channels)
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty((out_channels, in_channels), dtype=dtype))
+        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
 
-        # init biases
-        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(self.w)
+        if self.b:
+            Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
 

@@ -1,20 +1,19 @@
 """Neural network convolution modules."""
 
-import math
 from typing import Literal, Optional
 
-from ...random.random import uniform
-from ...tensor_ops.creating import zeros
+from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.convolutions import (
-    _PaddingLike,
+    PaddingLike,
     avgpooling2d,
     convolve1d,
     convolve2d,
     maxpooling2d,
 )
 from ..parameter import Parameter, update_parameter_grad
+from ..utils.initializers import XavierUniform, Zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
@@ -46,7 +45,7 @@ class Convolution1D(Module):
         Number of output channels (filters).
     kernel_size : int
         Size of each kernel.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
@@ -86,14 +85,15 @@ class Convolution1D(Module):
         self.dilation = dilation
         self.bias = bias
 
-        # init weights
-        k = 1 / math.sqrt(in_channels * kernel_size)
-        self.w = Parameter(
-            uniform((out_channels, in_channels, kernel_size), -k, k, dtype=dtype)
-        )
+        # init parameters
+        self.w = Parameter(empty((out_channels, in_channels, kernel_size), dtype=dtype))
+        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
 
-        # init biases
-        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(self.w)
+        if self.b:
+            Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
@@ -149,7 +149,7 @@ class Convolution2D(Module):
         Number of output channels (filters or feature maps).
     kernel_size : int
         Size of each kernel.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
@@ -169,7 +169,7 @@ class Convolution2D(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        padding: _PaddingLike = "valid",
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -185,19 +185,17 @@ class Convolution2D(Module):
         self.dilation = dilation
         self.bias = bias
 
-        # init weights
-        k = 1 / math.sqrt(in_channels * kernel_size**2)
+        # init parameters
         self.w = Parameter(
-            uniform(
-                (out_channels, in_channels, kernel_size, kernel_size),
-                -k,
-                k,
-                dtype=dtype,
-            )
+            empty((out_channels, in_channels, kernel_size, kernel_size), dtype=dtype)
         )
+        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
 
-        # init biases
-        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
+    def _init_parameters_and_buffers(self) -> None:
+        XavierUniform()(self.w)
+        if self.b:
+            Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
