@@ -3,7 +3,6 @@
 import math
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import reshape, tile
 from ...tensor_ops.transforming import exp
@@ -11,6 +10,7 @@ from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import maximum, sech
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensor_ops.transforming import tanh as cptanh
+from ...tensors import Tensor
 
 __all__ = [
     "relu",

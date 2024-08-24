@@ -2,12 +2,12 @@
 
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...tensor_ops.reshaping import squeeze
 from ...tensor_ops.transforming import mean as cpmean
 from ...tensor_ops.transforming import sqrt
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensor_ops.transforming import var as cpvar
+from ...tensors import Tensor
 
 __all__ = ["batchnorm1d", "batchnorm2d", "layernorm", "rmsnorm"]
 

@@ -3,9 +3,9 @@
 import math
 from typing import Optional
 
-from ...base_tensor import Tensor
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
+from ...tensors import Tensor
 from ...typing import DType, float32
 from ..functional.linear import linear
 from ..parameter import Parameter, update_parameter_grad
@@ -62,10 +62,10 @@ class Linear(Module):
 
         # init weights
         k = 1 / math.sqrt(in_channels)
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype))
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype=dtype))
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
 

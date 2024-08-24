@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from ...base_tensor import Tensor
+from ...tensors import Tensor
 from ...typing import ScalarLike
 from ..losses import _LossLike, get_loss_function
 from ..metrics import _MetricLike, get_metric_function

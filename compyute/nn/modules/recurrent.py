@@ -3,9 +3,9 @@
 import math
 from typing import Literal, Optional
 
-from ...base_tensor import Tensor
 from ...random.random import uniform
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
+from ...tensors import Tensor
 from ...typing import DType, float32
 from ..functional.activations import relu, sigmoid, tanh
 from ..functional.linear import linear
@@ -77,18 +77,18 @@ class Recurrent(Module):
         k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
-        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_i = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_i = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_i = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_h = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_h = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_h = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
 
         grad_functions = []
-        h = zeros((*x.shape[:2], self.h_channels), x.dtype, x.device)
+        h = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
@@ -215,30 +215,30 @@ class LSTM(Module):
         k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
-        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_ii = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_if = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_ig = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_io = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_ii = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_ii = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_if = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_if = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_ig = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_ig = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_io = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_io = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hi = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hf = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hg = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_ho = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hi = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hi = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_hf = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hf = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_hg = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hg = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_ho = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_ho = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
 
         grad_functions = []
-        i = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
+        i = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
         f = empty_like(i)
         g = empty_like(i)
         o = empty_like(i)
@@ -466,26 +466,26 @@ class GRU(Module):
         k = 1 / math.sqrt(h_channels)
 
         # init input weights and biases
-        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_ir = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_iz = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype))
-        self.b_in = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_ir = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_ir = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_iz = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_iz = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_in = Parameter(uniform((h_channels, in_channels), -k, k, dtype=dtype))
+        self.b_in = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
         # init hidden weights and biases
-        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hr = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hz = Parameter(zeros((h_channels,), dtype)) if bias else None
-        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype))
-        self.b_hn = Parameter(zeros((h_channels,), dtype)) if bias else None
+        self.w_hr = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hr = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_hz = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hz = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
+        self.w_hn = Parameter(uniform((h_channels, h_channels), -k, k, dtype=dtype))
+        self.b_hn = Parameter(zeros((h_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
 
         grad_functions = []
-        r = empty((*x.shape[:2], self.h_channels), x.dtype, x.device)
+        r = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
         z = empty_like(r)
         n = empty_like(r)
         h_n = empty_like(r)

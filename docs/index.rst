@@ -50,7 +50,6 @@ Tensors
 
     # alternatively, define data types
     x = cp.tensor([1, 2, 3], dtype=cp.int32)
-    x = cp.tensor([1, 2, 3], dtype="int64")
 
     # change datatypes
     y = x.to_type(cp.float32)
@@ -59,11 +58,9 @@ Tensors
 
     # define the device the tensor is stored on
     c = cp.tensor([1, 2, 3], device=cp.cuda)
-    c = cp.tensor([1, 2, 3], device="cuda")
 
     # change devices
     c = c.to_device(cp.cpu)
-    c = c.to_device("cpu")
     c = c.to_cpu()
 
 

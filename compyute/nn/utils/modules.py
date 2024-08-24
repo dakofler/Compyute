@@ -1,7 +1,7 @@
 """Module utilities."""
 
-from ...base_tensor import ShapeLike
 from ...tensor_ops.creating import ones
+from ...tensors import ShapeLike
 from ...typing import DType, float32
 from ..modules.module import Module
 

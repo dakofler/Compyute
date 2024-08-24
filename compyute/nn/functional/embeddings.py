@@ -2,9 +2,9 @@
 
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import einsum
+from ...tensors import Tensor
 from ...typing import is_integer
 
 __all__ = ["lookup_embedding"]

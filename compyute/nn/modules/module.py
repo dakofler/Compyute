@@ -9,7 +9,7 @@ from itertools import chain
 from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...backend import Device, cpu
-from ...base_tensor import ShapeError, Tensor
+from ...tensors import ShapeError, Tensor
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]

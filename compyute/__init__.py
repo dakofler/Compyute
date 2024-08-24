@@ -7,8 +7,8 @@ import pathlib
 
 from . import backend, nn, preprocessing, random
 from .backend import *
-from .base_tensor import *
 from .tensor_ops import *
+from .tensors import *
 from .typing import *
 from .utils import *
 

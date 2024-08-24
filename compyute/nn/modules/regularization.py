@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor
+from ...tensors import Tensor
 from ..functional.regularizations import dropout
 from .module import Module
 

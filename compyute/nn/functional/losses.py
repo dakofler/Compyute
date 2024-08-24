@@ -3,10 +3,10 @@
 import math
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import clip, log, mean
 from ...tensor_ops.transforming import sum as cpsum
+from ...tensors import Tensor
 from .activations import softmax
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..base_tensor import Tensor
+from ..tensors import Tensor
 from ..typing import is_float
 
 __all__ = ["Buffer", "Parameter"]

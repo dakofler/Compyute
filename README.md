@@ -31,7 +31,6 @@ x = cp.tensor([[4, 5, 6], [7, 8, 9]])
 
 # alternatively, define data types
 x = cp.tensor([1, 2, 3], dtype=cp.int32)
-x = cp.tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
 y = x.to_type(cp.float32)
@@ -40,11 +39,9 @@ y = x.to_int()
 
 # define the device the tensor is stored on
 c = cp.tensor([1, 2, 3], device=cp.cuda)
-c = cp.tensor([1, 2, 3], device="cuda")
 
 # change devices
 c = c.to_device(cp.cpu)
-c = c.to_device("cpu")
 c = c.to_cpu()
 ```
 
@@ -140,20 +137,17 @@ class MyModel(nn.Container):
         # define your modules
         self.lin1 = nn.Linear(4, 16)
         self.relu = nn.ReLU()
-        self.bn = nn.Batchnorm1d(16)
         self.lin2 = nn.Linear(16, 3)
 
     def forward(self, x):
         # define the forward pass
         x = self.lin1(x)
         x = self.relu(x)
-        x = self.bn(x)
         x = self.lin2(x)
 
         # define the backward pass
         def backward(dy):
             dy = self.lin2.backward(dy)
-            dy = self.bn.backward(dy)
             dy = self.relu.backward(dy)
             dy = self.lin1.backward(dy)
             return dy

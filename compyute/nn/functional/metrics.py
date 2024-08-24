@@ -2,10 +2,10 @@
 
 import math
 
-from ...base_tensor import Tensor
 from ...tensor_ops.selecting import argmax
 from ...tensor_ops.transforming import mean
 from ...tensor_ops.transforming import sum as cpsum
+from ...tensors import Tensor
 
 __all__ = ["accuracy_score", "r2_score"]
 

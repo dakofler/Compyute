@@ -2,8 +2,8 @@
 
 from typing import Optional
 
-from ...base_tensor import ShapeLike, Tensor
 from ...tensor_ops.creating import ones, zeros
+from ...tensors import ShapeLike, Tensor
 from ...typing import DType, float32
 from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
 from ..parameter import Buffer, Parameter, update_parameter_grad
@@ -63,12 +63,12 @@ class BatchNorm1D(Module):
         self.m = m
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype))
-        self.b = Parameter(zeros((channels,), dtype))
+        self.w = Parameter(ones((channels,), dtype=dtype))
+        self.b = Parameter(zeros((channels,), dtype=dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype))
-        self.rvar = Buffer(ones((channels,), dtype))
+        self.rmean = Buffer(zeros((channels,), dtype=dtype))
+        self.rvar = Buffer(ones((channels,), dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [2, 3])
@@ -149,12 +149,12 @@ class BatchNorm2D(Module):
         self.m = m
 
         # parameters
-        self.w = Parameter(ones((channels,), dtype))
-        self.b = Parameter(zeros((channels,), dtype))
+        self.w = Parameter(ones((channels,), dtype=dtype))
+        self.b = Parameter(zeros((channels,), dtype=dtype))
 
         # buffers
-        self.rmean = Buffer(zeros((channels,), dtype))
-        self.rvar = Buffer(ones((channels,), dtype))
+        self.rmean = Buffer(zeros((channels,), dtype=dtype))
+        self.rvar = Buffer(ones((channels,), dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
@@ -227,8 +227,8 @@ class LayerNorm(Module):
         self.eps = eps
 
         # parameters
-        self.w = Parameter(ones(normalized_shape, dtype))
-        self.b = Parameter(zeros(normalized_shape, dtype))
+        self.w = Parameter(ones(normalized_shape, dtype=dtype))
+        self.b = Parameter(zeros(normalized_shape, dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
 
@@ -289,7 +289,7 @@ class RMSNorm(Module):
         self.eps = eps
 
         # parameters
-        self.w = Parameter(ones(normalized_shape, dtype))
+        self.w = Parameter(ones(normalized_shape, dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
 

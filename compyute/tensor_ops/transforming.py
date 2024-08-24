@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 from typing import Iterable, Iterator, Optional
 
-from ..base_tensor import AxisLike, ShapeError, ShapeLike, Tensor, tensor
+from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, tensor
 from ..typing import DType, ScalarLike, complex64
 
 __all__ = [
@@ -12,6 +12,8 @@ __all__ = [
     "all",
     "allclose",
     "clip",
+    "convolve1d_fft",
+    "convolve2d_fft",
     "cos",
     "cosh",
     "dot",
@@ -124,6 +126,52 @@ def clip(
         Tensor containing clipped values.
     """
     return tensor(x.device.engine.clip(x.data, min_value, max_value))
+
+
+def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
+    """Computes the convolution of two tensors using FFT over their last axis.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        First tensor.
+    x2 : Tensor
+        Second tensor.
+
+    Returns
+    -------
+    Tensor
+        Convolution of the two tensors.
+    """
+    conv = real(ifft1d(fft1d(x1) * fft1d(x2, n=x1.shape[-1])))
+    out = x1.shape[-1] - x2.shape[-1] + 1
+    out_slice = [slice(None)] * (x1.n_axes - 1) + [slice(-out, None)]
+    return conv[*out_slice]
+
+
+def convolve2d_fft(x: Tensor, f: Tensor) -> Tensor:
+    """Computes the convolution of two tensors using FFT over their last two axes.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        First tensor.
+    x2 : Tensor
+        Second tensor.
+
+    Returns
+    -------
+    Tensor
+        Convolution of the two tensors.
+    """
+    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])))
+    out_y = x.shape[-2] - f.shape[-2] + 1
+    out_x = x.shape[-1] - f.shape[-1] + 1
+    out_slice = [slice(None)] * (x.n_axes - 2) + [
+        slice(-out_y, None),
+        slice(-out_x, None),
+    ]
+    return conv[*out_slice]
 
 
 def cos(x: Tensor) -> Tensor:

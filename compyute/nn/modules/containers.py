@@ -3,9 +3,9 @@
 from itertools import accumulate
 from typing import Optional
 
-from ...base_tensor import Tensor
 from ...tensor_ops.creating import concat, split
 from ...tensor_ops.transforming import tensorsum
+from ...tensors import Tensor
 from .module import Module, ModuleList
 
 __all__ = ["ParallelAdd", "ParallelConcat", "ResidualConnection", "Sequential"]

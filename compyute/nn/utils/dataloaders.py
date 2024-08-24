@@ -4,9 +4,9 @@ from functools import wraps
 from typing import Callable, Iterator, Optional
 
 from ...backend import Device, cpu
-from ...base_tensor import Tensor
 from ...random.random import shuffle
 from ...tensor_ops.creating import concat
+from ...tensors import Tensor
 
 __all__ = ["Dataloader", "batched"]
 

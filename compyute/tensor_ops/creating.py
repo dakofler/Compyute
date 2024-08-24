@@ -3,7 +3,7 @@
 from typing import Sequence
 
 from ..backend import Device, cpu
-from ..base_tensor import AxisLike, ShapeLike, Tensor
+from ..tensors import AxisLike, ShapeLike, Tensor
 from ..typing import DType, ScalarLike, float32, float64
 
 __all__ = [
@@ -49,7 +49,6 @@ def arange(
     stop: int | float,
     start: int | float = 0,
     step: int | float = 1,
-    dtype: DType = float64,
     device: Device = cpu,
 ) -> Tensor:
     """Returns a tensor of evenly spaced values using a step size within
@@ -63,8 +62,6 @@ def arange(
         Start value. Defaults to ``0``.
     step : int | float, optional
         Spacing between values. Defaults to ``1``.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
 
@@ -73,7 +70,7 @@ def arange(
     Tensor
         Tensor of evenly spaced samples.
     """
-    return Tensor(device.engine.arange(start, stop, step, dtype=dtype.value))
+    return Tensor(device.engine.arange(start, stop, step))
 
 
 def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
@@ -96,21 +93,17 @@ def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     )
 
 
-def empty(
-    shape: ShapeLike,
-    dtype: DType = float32,
-    device: Device = cpu,
-) -> Tensor:
+def empty(shape: ShapeLike, device: Device = cpu, dtype: DType = float32) -> Tensor:
     """Returns an tensor with uninitialized values.
 
     Parameters
     ----------
     shape : ShapeLike
         Shape of the new tensor.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------
@@ -138,10 +131,7 @@ def empty_like(x: Tensor) -> Tensor:
 
 
 def full(
-    shape: ShapeLike,
-    value: ScalarLike,
-    dtype: DType = float32,
-    device: Device = cpu,
+    shape: ShapeLike, value: ScalarLike, device: Device = cpu, dtype: DType = float32
 ) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
@@ -151,10 +141,10 @@ def full(
         Shape of the new tensor.
     value : ScalarLike
         Value to fill the tensor.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------
@@ -183,17 +173,17 @@ def full_like(x: Tensor, value: ScalarLike) -> Tensor:
     return full(x.shape, value=value, dtype=x.dtype, device=x.device)
 
 
-def identity(n: int, dtype: DType = float32, device: Device = cpu) -> Tensor:
+def identity(n: int, device: Device = cpu, dtype: DType = float32) -> Tensor:
     """Returns a diagonal tensor of shape ``(n, n)``.
 
     Parameters
     ----------
     n : int
         Size of the new tensor. The shape will be ``(n, n)``.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------
@@ -205,11 +195,7 @@ def identity(n: int, dtype: DType = float32, device: Device = cpu) -> Tensor:
 
 
 def linspace(
-    start: float,
-    stop: float,
-    num: int,
-    dtype: DType = float32,
-    device: Device = cpu,
+    start: float, stop: float, num: int, device: Device = cpu, dtype: DType = float32
 ) -> Tensor:
     """Returns a tensor of num evenly spaced values within
     a given interval :math:`[start, stop]`.
@@ -222,10 +208,10 @@ def linspace(
         Stop value.
     num : int
         Number of samples.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------
@@ -236,21 +222,17 @@ def linspace(
     return Tensor(device.engine.linspace(start, stop, num, dtype=dtype.value))
 
 
-def ones(
-    shape: ShapeLike,
-    dtype: DType = float32,
-    device: Device = cpu,
-) -> Tensor:
+def ones(shape: ShapeLike, device: Device = cpu, dtype: DType = float32) -> Tensor:
     """Returns a tensor of a given shape with all values being one.
 
     Parameters
     ----------
     shape : ShapeLike
         Shape of the new tensor.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------
@@ -317,21 +299,17 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     return Tensor(tensors[0].device.engine.stack([t.data for t in tensors], axis=axis))
 
 
-def zeros(
-    shape: ShapeLike,
-    dtype: DType = float32,
-    device: Device = cpu,
-) -> Tensor:
+def zeros(shape: ShapeLike, device: Device = cpu, dtype: DType = float32) -> Tensor:
     """Returns a tensor of a given shape with all values being zero.
 
     Parameters
     ----------
     shape : ShapeLike
         Shape of the new tensor.
-    dtype : DtypeLike, optional
-        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
     device : Device, optional
         The device the tensor is stored on. Defaults to :class:`compyute.cpu`.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to :class:`compyute.float32`.
 
     Returns
     -------

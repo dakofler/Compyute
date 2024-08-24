@@ -2,8 +2,8 @@
 
 from typing import Optional
 
-from ...base_tensor import Tensor
 from ...random.random import normal
+from ...tensors import Tensor
 from ...typing import DType, float32
 from ..functional.embeddings import lookup_embedding
 from ..parameter import Parameter, update_parameter_grad

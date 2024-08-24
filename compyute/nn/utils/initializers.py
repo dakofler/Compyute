@@ -4,9 +4,9 @@ import math
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
-from ...base_tensor import ShapeLike, Tensor
 from ...random.random import normal, uniform
 from ...tensor_ops.creating import ones, zeros
+from ...tensors import ShapeLike, Tensor
 from ..modules.activations import _ActivationLike
 from ..parameter import Parameter
 
@@ -38,14 +38,14 @@ class Ones(Initializer):
     """Initializes a tensor with ones."""
 
     def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = ones(x.shape, x.dtype, x.device).data
+        x.data = ones(x.shape, x.device, x.dtype).data
 
 
 class Zeros(Initializer):
     """Initializes a tensor with zeros."""
 
     def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = zeros(x.shape, x.dtype, x.device).data
+        x.data = zeros(x.shape, x.device, x.dtype).data
 
 
 class Normal(Initializer):
@@ -64,7 +64,7 @@ class Normal(Initializer):
         self.std = std
 
     def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = normal(x.shape, self.mean, self.std, x.dtype, x.device).data
+        x.data = normal(x.shape, self.mean, self.std, x.device, x.dtype).data
 
 
 class Uniform(Initializer):
@@ -83,7 +83,7 @@ class Uniform(Initializer):
         self.high = high
 
     def __call__(self, x: Tensor | Parameter) -> None:
-        x.data = uniform(x.shape, self.low, self.high, x.dtype, x.device).data
+        x.data = uniform(x.shape, self.low, self.high, x.device, x.dtype).data
 
 
 class KaimingNormal(Initializer):
@@ -102,7 +102,7 @@ class KaimingNormal(Initializer):
     def __call__(self, x: Tensor | Parameter) -> None:
         fan_in = get_fan_in(x.shape)
         std = self.gain / math.sqrt(fan_in)
-        x.data = normal(x.shape, 0, std, x.dtype, x.device).data
+        x.data = normal(x.shape, 0, std, x.device, x.dtype).data
 
 
 class KaimingUniform(Initializer):
@@ -121,7 +121,7 @@ class KaimingUniform(Initializer):
     def __call__(self, x: Tensor | Parameter) -> None:
         fan_in = get_fan_in(x.shape)
         k = self.gain * math.sqrt(3 / fan_in)
-        x.data = uniform(x.shape, -k, k, x.dtype, x.device).data
+        x.data = uniform(x.shape, -k, k, x.device, x.dtype).data
 
 
 class XavierNormal(Initializer):
@@ -141,7 +141,7 @@ class XavierNormal(Initializer):
         fan_in = get_fan_in(x.shape)
         fan_out = _get_fan_out(x.shape)
         std = self.gain * math.sqrt(2 / (fan_in + fan_out))
-        x.data = normal(x.shape, 0, std, x.dtype, x.device).data
+        x.data = normal(x.shape, 0, std, x.device, x.dtype).data
 
 
 class XavierUniform(Initializer):
@@ -161,7 +161,7 @@ class XavierUniform(Initializer):
         fan_in = get_fan_in(x.shape)
         fan_out = _get_fan_out(x.shape)
         k = self.gain * math.sqrt(6 / (fan_in + fan_out))
-        x.data = uniform(x.shape, -k, k, x.dtype, x.device).data
+        x.data = uniform(x.shape, -k, k, x.device, x.dtype).data
 
 
 _InitializerLike = (

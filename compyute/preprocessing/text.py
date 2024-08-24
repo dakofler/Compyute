@@ -11,7 +11,7 @@ from typing import Optional
 import regex
 from tqdm.auto import trange
 
-from ..base_tensor import Tensor, tensor
+from ..tensors import Tensor, tensor
 
 __all__ = ["CharacterTokenizer", "WordTokenizer", "BPETokenizer"]
 

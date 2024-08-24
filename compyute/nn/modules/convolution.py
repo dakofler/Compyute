@@ -3,9 +3,9 @@
 import math
 from typing import Literal, Optional
 
-from ...base_tensor import Tensor
 from ...random.random import uniform
 from ...tensor_ops.creating import zeros
+from ...tensors import Tensor
 from ...typing import DType, float32
 from ..functional.convolutions import (
     _PaddingLike,
@@ -89,11 +89,11 @@ class Convolution1D(Module):
         # init weights
         k = 1 / math.sqrt(in_channels * kernel_size)
         self.w = Parameter(
-            uniform((out_channels, in_channels, kernel_size), -k, k, dtype)
+            uniform((out_channels, in_channels, kernel_size), -k, k, dtype=dtype)
         )
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
@@ -188,11 +188,16 @@ class Convolution2D(Module):
         # init weights
         k = 1 / math.sqrt(in_channels * kernel_size**2)
         self.w = Parameter(
-            uniform((out_channels, in_channels, kernel_size, kernel_size), -k, k, dtype)
+            uniform(
+                (out_channels, in_channels, kernel_size, kernel_size),
+                -k,
+                k,
+                dtype=dtype,
+            )
         )
 
         # init biases
-        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
+        self.b = Parameter(zeros((out_channels,), dtype=dtype)) if bias else None
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])

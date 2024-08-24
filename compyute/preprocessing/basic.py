@@ -2,13 +2,13 @@
 
 from typing import Optional
 
-from ..base_tensor import AxisLike, Tensor
 from ..random.random import shuffle
 from ..tensor_ops.creating import identity
 from ..tensor_ops.transforming import max as cpmax
 from ..tensor_ops.transforming import mean
 from ..tensor_ops.transforming import min as cpmin
 from ..tensor_ops.transforming import var
+from ..tensors import AxisLike, Tensor
 from ..typing import is_integer
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]

@@ -2,8 +2,8 @@
 
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...tensor_ops.transforming import einsum
+from ...tensors import Tensor
 
 __all__ = ["linear"]
 

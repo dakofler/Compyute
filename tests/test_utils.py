@@ -4,9 +4,9 @@ import numpy
 import torch
 
 from compyute.backend import Device, cpu
-from compyute.base_tensor import ShapeLike, Tensor
 from compyute.nn.parameter import Parameter
 from compyute.random.random import seed, uniform, uniform_int
+from compyute.tensors import ShapeLike, Tensor
 from compyute.typing import float32, int64
 
 
@@ -15,15 +15,14 @@ def get_random_floats(
     shape: ShapeLike,
     torch_grad: bool = True,
     device: Device = cpu,
-    low: float = -1,
-    high: float = 1,
+    low: float = -0.1,
+    high: float = 0.1,
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform(shape, dtype=float32, high=high, low=low) * 0.1
+    compyute_x = uniform(shape, low, high, device, float32)
     torch_x = torch.tensor(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True
-    compyute_x.to_device(device)
     return compyute_x, torch_x
 
 
@@ -32,7 +31,7 @@ def get_random_integers(
     shape: ShapeLike, device: Device = cpu, low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform_int(shape, low=low, high=high, dtype=int64)
+    compyute_x = uniform_int(shape, low, high, device, int64)
     torch_x = torch.tensor(compyute_x.to_numpy()).long()
     compyute_x.to_device(device)
     return compyute_x, torch_x

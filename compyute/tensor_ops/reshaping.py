@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_tensor import AxisLike, ShapeLike, Tensor
+from ..tensors import AxisLike, ShapeLike, Tensor
 from .creating import identity
 
 __all__ = [

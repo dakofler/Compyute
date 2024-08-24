@@ -1,14 +1,15 @@
 """Neural network convolution functions."""
 
+import math
 from typing import Callable, Literal, Optional
 
-from ...base_tensor import ShapeLike, Tensor
 from ...tensor_ops.creating import zeros
 from ...tensor_ops.reshaping import broadcast_to, flip, pad, pad_to_shape, repeat
-from ...tensor_ops.transforming import fft1d, fft2d, ifft1d, ifft2d
+from ...tensor_ops.transforming import convolve1d_fft, convolve2d_fft
 from ...tensor_ops.transforming import max as cpmax
-from ...tensor_ops.transforming import mean, real
+from ...tensor_ops.transforming import mean
 from ...tensor_ops.transforming import sum as cpsum
+from ...tensors import ShapeLike, Tensor
 
 __all__ = [
     "convolve1d",
@@ -69,13 +70,13 @@ def convolve1d(
     f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, F)
 
     # pad input and add a fake output dimension
-    p = pad1d_from_str(padding, f_ext.shape[-1])
+    p = _pad1d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
     x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, T)
 
     # perform convolution and sum over input dimension
     # (B, Co, Ci, T)
-    conv, conv_grad_fn = convolve1d_(x_ext, f_ext, stride, return_grad_fn)
+    conv, conv_grad_fn = _convolve1d(x_ext, f_ext, stride, return_grad_fn)
     y = cpsum(conv, axis=2)  # (B, Co, T)
 
     if b:
@@ -124,7 +125,7 @@ def dilate1d(
         return x, (lambda dy: dy)
 
     dil_shape = (dilation * x.shape[-1] - 1,)
-    x_dil = zeros(x.shape[:-1] + dil_shape, x.dtype, x.device)
+    x_dil = zeros(x.shape[:-1] + dil_shape, x.device, x.dtype)
     dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
     x_dil[*dil_slice] = x
 
@@ -134,7 +135,7 @@ def dilate1d(
     return x_dil, None
 
 
-def pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
+def _pad1d_from_str(padding: _PaddingLike, kernel_size: int) -> tuple[int, int]:
     """Returns padding widths from a string."""
     if padding == "valid":
         return (0, 0)
@@ -178,12 +179,12 @@ def pad1d(
     return y, None
 
 
-def convolve1d_(
+def _convolve1d(
     x: Tensor, f: Tensor, stride: int = 1, return_grad_fn: bool = False
 ) -> tuple[Tensor, Optional[Callable]]:
     """Computes the 1D convolution of two tensors."""
     f_flipped = flip(f, -1)
-    conv = fft_conv1d(x, f_flipped)
+    conv = convolve1d_fft(x, f_flipped)
     stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
     y = conv[*stride_slice]
 
@@ -195,24 +196,16 @@ def convolve1d_(
             dy = pad_to_shape(dy, conv.shape)
 
             dy, _ = pad1d(dy, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
-            dx = fft_conv1d(dy, f)
+            dx = convolve1d_fft(dy, f)
 
             dy = flip(dy, axis=-1)
-            df = fft_conv1d(dy, x)
+            df = convolve1d_fft(dy, x)
 
             return dx, df
 
         return y, grad_fn
 
     return y, None
-
-
-def fft_conv1d(x: Tensor, f: Tensor) -> Tensor:
-    """Computes the 1D convolution of two tensors using FFT."""
-    conv = real(ifft1d(fft1d(x) * fft1d(f, n=x.shape[-1])))
-    out = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.n_axes - 1) + [slice(-out, None)]
-    return conv[*out_slice]
 
 
 def convolve2d(
@@ -260,13 +253,13 @@ def convolve2d(
     f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, Fy, Fx)
 
     # pad input and add a fake output dimension
-    p = pad2d_from_str(padding, f_ext.shape[-1])
+    p = _pad2d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad2d(x, p, return_grad_fn)
     x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, Y, X)
 
     # perform convolution and sum over input dimension
     # (B, Co, Ci, Y, X)
-    conv, conv_grad_fn = convolve2d_(x_ext, f_ext, (stride, stride), return_grad_fn)
+    conv, conv_grad_fn = _convolve2d(x_ext, f_ext, (stride, stride), return_grad_fn)
     y = cpsum(conv, axis=2)  # (B, Co, Y, X)
 
     if b:
@@ -318,7 +311,7 @@ def dilate2d(
         dilation[0] * x.shape[-2] - 1,
         dilation[1] * x.shape[-1] - 1,
     )
-    x_dil = zeros(x.shape[:-2] + dil_shape, x.dtype, x.device)
+    x_dil = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
     dil_slice = (
         [slice(None)] * (x.n_axes - 2)
         + [slice(None, None, dilation[0])]
@@ -332,7 +325,7 @@ def dilate2d(
     return x_dil, None
 
 
-def pad2d_from_str(
+def _pad2d_from_str(
     padding: _PaddingLike, kernel_size: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     """Returns padding widths from a string."""
@@ -381,7 +374,7 @@ def pad2d(
     return y, None
 
 
-def convolve2d_(
+def _convolve2d(
     x: Tensor,
     f: Tensor,
     strides: tuple[int, int] = (1, 1),
@@ -389,7 +382,7 @@ def convolve2d_(
 ) -> tuple[Tensor, Optional[Callable]]:
     """Computes the 2D convolution of two tensors."""
     f_flipped = flip(f, (-2, -1))
-    conv = fft_conv2d(x, f_flipped)
+    conv = convolve2d_fft(x, f_flipped)
     stride_slice = [slice(None)] * (x.n_axes - 2) + [
         slice(None, None, strides[0]),
         slice(None, None, strides[1]),
@@ -411,28 +404,16 @@ def convolve2d_(
                     (f.shape[-1] - 1, f.shape[-1] - 1),
                 ),
             )
-            dx = fft_conv2d(dy, f)
+            dx = convolve2d_fft(dy, f)
 
             dy = flip(dy, axis=(-2, -1))
-            df = fft_conv2d(dy, x)
+            df = convolve2d_fft(dy, x)
 
             return dx, df
 
         return y, grad_fn
 
     return y, None
-
-
-def fft_conv2d(x: Tensor, f: Tensor) -> Tensor:
-    """Computes the 2D convolution of two tensors using FFT."""
-    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])))
-    out_y = x.shape[-2] - f.shape[-2] + 1
-    out_x = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.n_axes - 2) + [
-        slice(-out_y, None),
-        slice(-out_x, None),
-    ]
-    return conv[*out_slice]
 
 
 def upsample2d(
@@ -560,7 +541,7 @@ def avgpooling2d(
     if return_grad_fn:
 
         def grad_fn(dy: Tensor) -> Tensor:
-            return upsample2d(dy, kernel_size, x.shape) / (kernel_height * kernel_width)
+            return upsample2d(dy, kernel_size, x.shape) / math.prod(kernel_size)
 
         return y, grad_fn
 

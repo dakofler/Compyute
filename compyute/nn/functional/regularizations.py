@@ -2,8 +2,8 @@
 
 from typing import Callable, Optional
 
-from ...base_tensor import Tensor
 from ...random.random import multinulli
+from ...tensors import Tensor
 
 __all__ = ["dropout"]
 

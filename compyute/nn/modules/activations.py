@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional, TypeAlias
 
-from ...base_tensor import Tensor
+from ...tensors import Tensor
 from ..functional.activations import (
     gelu,
     leaky_relu,
