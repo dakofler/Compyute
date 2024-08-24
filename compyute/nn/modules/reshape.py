@@ -25,10 +25,10 @@ class Reshape(Module):
         self.output_shape = output_shape
 
     def forward(self, x: Tensor) -> Tensor:
-        y = reshape(x, shape=(x.shape[0],) + self.output_shape)
+        y = reshape(x, (x.shape[0],) + self.output_shape)
 
         if self._is_training:
-            self._backward = lambda dy: reshape(dy, shape=x.shape)
+            self._backward = lambda dy: reshape(dy, x.shape)
 
         return y
 
@@ -43,10 +43,10 @@ class Flatten(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        y = reshape(x, shape=(x.shape[0], -1))
+        y = reshape(x, (x.shape[0], -1))
 
         if self._is_training:
-            self._backward = lambda dy: reshape(dy, shape=x.shape)
+            self._backward = lambda dy: reshape(dy, x.shape)
 
         return y
 
@@ -72,11 +72,9 @@ class Moveaxis(Module):
         self.to_axis = to_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        y = moveaxis(x, from_axis=self.from_axis, to_axis=self.to_axis)
+        y = moveaxis(x, self.from_axis, self.to_axis)
 
         if self._is_training:
-            self._backward = lambda dy: moveaxis(
-                dy, from_axis=self.from_axis, to_axis=self.to_axis
-            )
+            self._backward = lambda dy: moveaxis(dy, self.from_axis, self.to_axis)
 
         return y

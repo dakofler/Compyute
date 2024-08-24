@@ -2,7 +2,7 @@
 
 from typing import Callable, Optional
 
-from ...tensor_ops.reshaping import squeeze
+from ...tensor_ops.reshaping import insert_dim, squeeze
 from ...tensor_ops.transforming import mean as cpmean
 from ...tensor_ops.transforming import sqrt
 from ...tensor_ops.transforming import sum as cpsum
@@ -73,13 +73,13 @@ def batchnorm1d(
         rvar = rvar * (1 - m) + cpvar(x, axis=axes, ddof=1) * m
     else:
         # use running mean and variance
-        rvar_ = rvar if x_is_2d else rvar.to_shape((*rvar.shape, 1))
-        rmean_ = rmean if x_is_2d else rmean.to_shape((*rmean.shape, 1))
+        rvar_ = rvar if x_is_2d else insert_dim(rvar, -1)
+        rmean_ = rmean if x_is_2d else insert_dim(rmean, -1)
         inv_std = 1 / sqrt(rvar_ + eps)
         x_norm = (x - rmean_) * inv_std
 
-    w = w if x_is_2d else w.to_shape((*w.shape, 1))
-    b = b if x_is_2d else b.to_shape((*b.shape, 1))
+    w = w if x_is_2d else insert_dim(w, -1)
+    b = b if x_is_2d else insert_dim(b, -1)
     y = w * x_norm + b
 
     if return_grad_fn:

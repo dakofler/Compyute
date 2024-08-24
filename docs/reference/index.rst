@@ -1,13 +1,13 @@
-######################
+##################
 Compyute reference
-######################
+##################
 
 .. toctree::
     :maxdepth: 1
     :caption: Python API
 
     compyute
-    compyute.engine
+    compyute.backend
     compyute.nn
     compyute.nn.functional
     compyute.nn.optimizers

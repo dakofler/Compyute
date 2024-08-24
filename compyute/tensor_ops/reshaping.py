@@ -71,14 +71,14 @@ def transpose(x: Tensor, axes: Optional[AxisLike] = None) -> Tensor:
     return Tensor(x.device.engine.transpose(x.data, axes))
 
 
-def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
+def insert_dim(x: Tensor, axis: int) -> Tensor:
     """Returns a view of the tensor containing an added dimension at a given axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis : AxisLike
+    axis : int
         Where to insert the new dimension.
 
     Returns
@@ -86,7 +86,11 @@ def insert_dim(x: Tensor, axis: AxisLike) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    return Tensor(x.device.engine.expand_dims(x.data, axis=axis))
+    if axis == -1:
+        return reshape(x, (*x.shape, 1))
+    if axis < 0:
+        axis += 1
+    return reshape(x, (*x.shape[:axis], 1, *x.shape[axis:]))
 
 
 def add_dims(x: Tensor, target_dims: int) -> Tensor:

@@ -4,7 +4,14 @@ import math
 from typing import Callable, Literal, Optional
 
 from ...tensor_ops.creating import zeros
-from ...tensor_ops.reshaping import broadcast_to, flip, pad, pad_to_shape, repeat
+from ...tensor_ops.reshaping import (
+    broadcast_to,
+    flip,
+    insert_dim,
+    pad,
+    pad_to_shape,
+    repeat,
+)
 from ...tensor_ops.transforming import convolve1d_fft, convolve2d_fft
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import mean
@@ -67,12 +74,12 @@ def convolve1d(
     """
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
-    f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, F)
+    f_ext = insert_dim(f, 0)  # (1, Co, Ci, F)
 
     # pad input and add a fake output dimension
     p = _pad1d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
-    x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, T)
+    x_ext = insert_dim(x, 1)  # (B, 1, Ci, T)
 
     # perform convolution and sum over input dimension
     # (B, Co, Ci, T)
@@ -80,13 +87,13 @@ def convolve1d(
     y = cpsum(conv, axis=2)  # (B, Co, T)
 
     if b:
-        y += b.to_shape((*b.shape, 1))
+        y += insert_dim(b, -1)
 
     if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             # insert fake input channel dimension
-            dy_ext = dy.to_shape((*dy.shape[:2], 1, *dy.shape[2:]))
+            dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
             dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
 
             dx = pad_grad_fn(cpsum(dx, axis=1))
@@ -250,12 +257,12 @@ def convolve2d(
 
     # dilate filter and add a fake batch dimension
     f, dil_grad_fn = dilate2d(f, (dilation, dilation), return_grad_fn)
-    f_ext = f.to_shape((1, *f.shape))  # (1, Co, Ci, Fy, Fx)
+    f_ext = insert_dim(f, 0)  # (1, Co, Ci, Fy, Fx)
 
     # pad input and add a fake output dimension
     p = _pad2d_from_str(padding, f_ext.shape[-1])
     x, pad_grad_fn = pad2d(x, p, return_grad_fn)
-    x_ext = x.to_shape((x.shape[0], 1, *x.shape[1:]))  # (B, 1, Ci, Y, X)
+    x_ext = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
     # perform convolution and sum over input dimension
     # (B, Co, Ci, Y, X)
@@ -269,7 +276,7 @@ def convolve2d(
 
         def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
             # insert fake input channel dimension
-            dy_ext = dy.to_shape((*dy.shape[:2], 1, *dy.shape[2:]))
+            dy_ext = insert_dim(dy, 2)  # (B, Co, 1, Y, X)
             dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
 
             dx = pad_grad_fn(cpsum(dx, axis=1))  # sum over out channels
