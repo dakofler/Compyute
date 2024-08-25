@@ -5,8 +5,7 @@ from typing import Literal, Optional
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.activations import relu, sigmoid, tanh
-from ..functional.linear import linear
+from ..functional.legacy import linear, relu, sigmoid, tanh
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import XavierUniform, Zeros
 from .module import Module, validate_input_axes

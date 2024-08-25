@@ -1,12 +1,11 @@
 """Neural network linear transformation modules."""
 
-import math
 from typing import Optional
 
 from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.linear import linear
+from ..functional.linear import FLinear
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import XavierUniform, Zeros
 from .module import Module
@@ -71,17 +70,11 @@ class Linear(Module):
             Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
+        return FLinear.forward(self._fcache, x, self.w, self.b)
 
-        y, grad_fn = linear(x, self.w, self.b, self._is_training)
-
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FLinear.backward(self._fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx

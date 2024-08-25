@@ -6,11 +6,11 @@ from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.convolutions import (
+    FAvgPooling2D,
+    FConvolution1D,
+    FConvolution2D,
+    FMaxPooling2D,
     PaddingLike,
-    avgpooling2d,
-    convolve1d,
-    convolve2d,
-    maxpooling2d,
 )
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import XavierUniform, Zeros
@@ -97,28 +97,18 @@ class Convolution1D(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
-
-        y, grad_fn = convolve1d(
-            x,
-            self.w,
-            self.b,
-            self.padding,
-            self.stride,
-            self.dilation,
-            self._is_training,
+        return FConvolution1D.forward(
+            self._fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FConvolution1D.backward(
+            self._fcache, dy, self.padding, self.stride, self.dilation
+        )
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
 
 
 class Convolution2D(Module):
@@ -199,28 +189,18 @@ class Convolution2D(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-
-        y, grad_fn = convolve2d(
-            x,
-            self.w,
-            self.b,
-            self.padding,
-            self.stride,
-            self.dilation,
-            self._is_training,
+        return FConvolution2D.forward(
+            self._fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FConvolution2D.backward(
+            self._fcache, dy, self.padding, self.stride, self.dilation
+        )
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
 
 
 class MaxPooling2D(Module):
@@ -239,10 +219,13 @@ class MaxPooling2D(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = maxpooling2d(x, kernel_size, self._is_training)
-        return y
+        return FMaxPooling2D.forward(self._fcache, x, kernel_size)
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        kernel_size = (self.kernel_size, self.kernel_size)
+        return FMaxPooling2D.backward(self._fcache, dy, kernel_size)
 
 
 class AvgPooling2D(Module):
@@ -261,7 +244,10 @@ class AvgPooling2D(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-
         kernel_size = (self.kernel_size, self.kernel_size)
-        y, self._backward = avgpooling2d(x, kernel_size, self._is_training)
-        return y
+        return FAvgPooling2D.forward(self._fcache, x, kernel_size)
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        kernel_size = (self.kernel_size, self.kernel_size)
+        return FAvgPooling2D.backward(self._fcache, dy, kernel_size)

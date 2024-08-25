@@ -1,7 +1,7 @@
 """Neural network convolution functions."""
 
 import math
-from typing import Callable, Literal, Optional
+from typing import Literal, Optional
 
 from ...tensor_ops.creating import zeros
 from ...tensor_ops.reshaping import (
@@ -17,6 +17,7 @@ from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import mean
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensors import ShapeLike, Tensor
+from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = [
     "convolve1d",
@@ -33,6 +34,63 @@ __all__ = [
 PaddingLike = Literal["valid", "same"]
 
 
+class FConvolution1D(Function):
+    """Computes the convolution of two tensors over their last axis."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache,
+        x: Tensor,
+        f: Tensor,
+        b: Optional[Tensor],
+        padding: PaddingLike,
+        stride: int,
+        dilation: int,
+    ) -> Tensor:
+        # dilate filter and add a fake batch dimension
+        f = FDilation1D.forward(f, dilation)
+        f_ext = insert_dim(f, 0)  # (1, Co, Ci, F)
+
+        # pad input and add a fake output dimension
+        p = _pad1d_from_str(padding, f_ext.shape[-1])
+        x = FPad1D.forward(x, p)
+        x_ext = insert_dim(x, 1)  # (B, 1, Ci, T)
+
+        # perform convolution and sum over input dimension (B, Co, Ci, T)
+        conv = _FConvolution1D.forward(cache, x_ext, f_ext, stride)
+        y = cpsum(conv, axis=2)  # (B, Co, T)
+
+        if b:
+            cache.b = b
+            y += insert_dim(b, -1)
+
+        cache.f_ext, cache.conv = f_ext, conv
+        return y
+
+    @staticmethod
+    def backward(
+        cache: FunctionCache,
+        dy: Tensor,
+        padding: PaddingLike,
+        stride: int,
+        dilation: int,
+    ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
+        b, f_ext, conv = cache.b, cache.f_ext, cache.conv
+
+        # insert fake input channel dimension
+        dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
+        dy_ext = broadcast_to(dy_ext, conv.shape)
+        # TODO: conv just needed for shape -> simplify
+        dx, df = _FConvolution1D.backward(cache, dy_ext, stride)
+
+        p = _pad1d_from_str(padding, f_ext.shape[-1])
+        dx = FPad1D.backward(cpsum(dx, axis=1), p)
+        df = FDilation1D.backward(cpsum(df, axis=0), dilation)
+        db = cpsum(dy, axis=(0, 2)) if b else None
+
+        return dx, df, db
+
+
 def convolve1d(
     x: Tensor,
     f: Tensor,
@@ -40,8 +98,7 @@ def convolve1d(
     padding: PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
-    return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable]]:
+) -> Tensor:
     """Computes the convolution of two tensors over their last axis.
 
     Parameters
@@ -58,58 +115,41 @@ def convolve1d(
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
         Dilation factor to use for each axis of the filter. Defaults to ``1``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     ----------
     :class:`compyute.nn.Convolution1d`
     """
-    # dilate filter and add a fake batch dimension
-    f, dil_grad_fn = dilate1d(f, dilation, return_grad_fn)  # (Co, Ci, F)
-    f_ext = insert_dim(f, 0)  # (1, Co, Ci, F)
-
-    # pad input and add a fake output dimension
-    p = _pad1d_from_str(padding, f_ext.shape[-1])
-    x, pad_grad_fn = pad1d(x, p, return_grad_fn)  # (B, Ci, T)
-    x_ext = insert_dim(x, 1)  # (B, 1, Ci, T)
-
-    # perform convolution and sum over input dimension
-    # (B, Co, Ci, T)
-    conv, conv_grad_fn = _convolve1d(x_ext, f_ext, stride, return_grad_fn)
-    y = cpsum(conv, axis=2)  # (B, Co, T)
-
-    if b:
-        y += insert_dim(b, -1)
-
-    if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
-
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-            # insert fake input channel dimension
-            dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
-            dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
-
-            dx = pad_grad_fn(cpsum(dx, axis=1))
-            df = dil_grad_fn(cpsum(df, axis=0))
-            db = cpsum(dy, axis=(0, 2)) if b else None
-
-            return dx, df, db
-
-        return y, grad_fn
-
-    return y, None
+    return FConvolution1D.forward(PseudoCache(), x, f, b, padding, stride, dilation)
 
 
-def dilate1d(
-    x: Tensor, dilation: int, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FDilation1D(Function):
+    """Dilates a tensor in its last axis."""
+
+    @staticmethod
+    def forward(x: Tensor, dilation: int) -> Tensor:
+        if dilation == 1:
+            return x
+        dil_shape = (dilation * x.shape[-1] - 1,)
+        y = zeros(x.shape[:-1] + dil_shape, x.device, x.dtype)
+        dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
+        y[*dil_slice] = x
+        return y
+
+    @staticmethod
+    def backward(dy: Tensor, dilation: int) -> Tensor:
+        if dilation == 1:
+            return dy
+        dil_slice = [slice(None)] * (dy.n_axes - 1) + [slice(None, None, dilation)]
+        return dy[*dil_slice]
+
+
+def dilate1d(x: Tensor, dilation: int) -> Tensor:
     """Dilates a tensor in its last axis.
 
     Parameters
@@ -118,41 +158,34 @@ def dilate1d(
         Input tensor.
     dilation : int
         Dilation factor to use.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
     """
-    if dilation == 1:
-        return x, (lambda dy: dy)
-
-    dil_shape = (dilation * x.shape[-1] - 1,)
-    x_dil = zeros(x.shape[:-1] + dil_shape, x.device, x.dtype)
-    dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
-    x_dil[*dil_slice] = x
-
-    if return_grad_fn:
-        return x_dil, (lambda dy: dy[*dil_slice])
-
-    return x_dil, None
+    return FDilation1D.forward(x, dilation)
 
 
-def _pad1d_from_str(padding: PaddingLike, kernel_size: int) -> tuple[int, int]:
-    """Returns padding widths from a string."""
-    if padding == "valid":
-        return (0, 0)
-    p = kernel_size // 2
-    return (p, p)
+class FPad1D(Function):
+    """Pads a tensor in its last axis."""
+
+    @staticmethod
+    def forward(x: Tensor, padding: tuple[int, int]) -> Tensor:
+        if padding == (0, 0):
+            return x
+        widths = tuple([(0, 0)] * (x.n_axes - 1) + [padding])
+        return pad(x, widths)
+
+    @staticmethod
+    def backward(dy: Tensor, padding: tuple[int, int]) -> Tensor:
+        if padding == (0, 0):
+            return dy
+        pad_slice = [slice(None)] * (dy.n_axes - 1) + [slice(padding[0], -padding[0])]
+        return dy[*pad_slice]
 
 
-def pad1d(
-    x: Tensor, padding: tuple[int, int], return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+def pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
     """Pads a tensor in its last axis.
 
     Parameters
@@ -161,58 +194,109 @@ def pad1d(
         Input tensor.
     padding : tuple[int, int]
         Padding width applied to the beginning and end of the last axis.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
     """
-    if padding == (0, 0):
-        return x, (lambda dy: dy)
-
-    widths = tuple([(0, 0)] * (x.n_axes - 1) + [padding])
-    y = pad(x, widths)
-
-    if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.n_axes - 1) + [
-            slice(padding[0], -padding[0])
-        ]
-        return y, (lambda dy: dy[*pad_grad_slice])
-
-    return y, None
+    return FPad1D.forward(x, padding)
 
 
-def _convolve1d(
-    x: Tensor, f: Tensor, stride: int = 1, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+def _pad1d_from_str(padding: PaddingLike, kernel_size: int) -> tuple[int, int]:
+    if padding == "valid":
+        return (0, 0)
+    return (kernel_size // 2, kernel_size // 2)
+
+
+class _FConvolution1D(Function):
     """Computes the 1D convolution of two tensors."""
-    f_flipped = flip(f, -1)
-    conv = convolve1d_fft(x, f_flipped)
-    stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
-    y = conv[*stride_slice]
 
-    if return_grad_fn:
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
+        f_flipped = flip(f, -1)
+        conv = convolve1d_fft(x, f_flipped)
+        stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
+        y = conv[*stride_slice]
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
-            # fill elements skipped by strides with zeros
-            dy, _ = dilate1d(dy, stride)
-            dy = pad_to_shape(dy, conv.shape)
+        cache.x, cache.f, cache.conv_ = x, f, conv
+        return y
 
-            dy, _ = pad1d(dy, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
-            dx = convolve1d_fft(dy, f)
+    @staticmethod
+    def backward(
+        cache: FunctionCache, dy: Tensor, stride: int
+    ) -> tuple[Tensor, Tensor]:
+        x, f, conv = cache.x, cache.f, cache.conv_
 
-            dy = flip(dy, axis=-1)
-            df = convolve1d_fft(dy, x)
+        # fill elements skipped by strides with zeros
+        dy = dilate1d(dy, stride)
+        dy = pad_to_shape(dy, conv.shape)
+        # TODO: conv just needed for shape -> simplify
 
-            return dx, df
+        dy = pad1d(dy, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
+        dx = convolve1d_fft(dy, f)
 
-        return y, grad_fn
+        dy = flip(dy, axis=-1)
+        df = convolve1d_fft(dy, x)
 
-    return y, None
+        return dx, df
+
+
+class FConvolution2D(Function):
+    """Computes the convolution of two tensors over their last axis."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache,
+        x: Tensor,
+        f: Tensor,
+        b: Optional[Tensor],
+        padding: PaddingLike,
+        stride: int,
+        dilation: int,
+    ) -> Tensor:
+        # dilate filter and add a fake batch dimension
+        f = FDilation2D.forward(f, (dilation, dilation))
+        f_ext = insert_dim(f, 0)  # (1, Co, Ci, Fy, Fx)
+
+        # pad input and add a fake output dimension
+        p = _pad2d_from_str(padding, f_ext.shape[-1])
+        x = FPad2D.forward(x, p)
+        x_ext = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
+
+        # perform convolution and sum over input dimension (B, Co, Ci, T)
+        conv = _FConvolution2D.forward(cache, x_ext, f_ext, (stride, stride))
+        y = cpsum(conv, axis=2)  # (B, Co, Y, X)
+
+        if b:
+            cache.b = b
+            y += b.to_shape((*b.shape, 1, 1))
+
+        cache.f_ext, cache.conv = f_ext, conv
+        return y
+
+    @staticmethod
+    def backward(
+        cache: FunctionCache,
+        dy: Tensor,
+        padding: PaddingLike,
+        stride: int,
+        dilation: int,
+    ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
+        b, f_ext, conv = cache.b, cache.f_ext, cache.conv
+
+        # insert fake input channel dimension
+        dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
+        dy_ext = broadcast_to(dy_ext, conv.shape)
+        # TODO: conv just needed for shape -> simplify
+        dx, df = _FConvolution2D.backward(cache, dy_ext, (stride, stride))
+
+        p = _pad2d_from_str(padding, f_ext.shape[-1])
+        dx = FPad2D.backward(cpsum(dx, axis=1), p)
+        df = FDilation2D.backward(cpsum(df, axis=0), (dilation, dilation))
+        db = cpsum(dy, axis=(0, 2, 3)) if b else None
+
+        return dx, df, db
 
 
 def convolve2d(
@@ -222,8 +306,7 @@ def convolve2d(
     padding: PaddingLike = "valid",
     stride: int = 1,
     dilation: int = 1,
-    return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable]]:
+) -> Tensor:
     """Computes the convolution of two tensors over their last two axes.
 
     Parameters
@@ -240,59 +323,52 @@ def convolve2d(
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
         Dilation factor to use for each axis of the filter. Defaults to ``1``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     ----------
     :class:`compyute.nn.Convolution2d`
     """
-
-    # dilate filter and add a fake batch dimension
-    f, dil_grad_fn = dilate2d(f, (dilation, dilation), return_grad_fn)
-    f_ext = insert_dim(f, 0)  # (1, Co, Ci, Fy, Fx)
-
-    # pad input and add a fake output dimension
-    p = _pad2d_from_str(padding, f_ext.shape[-1])
-    x, pad_grad_fn = pad2d(x, p, return_grad_fn)
-    x_ext = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
-
-    # perform convolution and sum over input dimension
-    # (B, Co, Ci, Y, X)
-    conv, conv_grad_fn = _convolve2d(x_ext, f_ext, (stride, stride), return_grad_fn)
-    y = cpsum(conv, axis=2)  # (B, Co, Y, X)
-
-    if b:
-        y += b.to_shape((*b.shape, 1, 1))
-
-    if conv_grad_fn is not None and pad_grad_fn is not None and dil_grad_fn is not None:
-
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-            # insert fake input channel dimension
-            dy_ext = insert_dim(dy, 2)  # (B, Co, 1, Y, X)
-            dx, df = conv_grad_fn(broadcast_to(dy_ext, conv.shape))
-
-            dx = pad_grad_fn(cpsum(dx, axis=1))  # sum over out channels
-            df = dil_grad_fn(cpsum(df, axis=0))  # sum over batches
-            db = cpsum(dy, axis=(0, 2, 3)) if b else None
-
-            return dx, df, db
-
-        return y, grad_fn
-
-    return y, None
+    return FConvolution2D.forward(PseudoCache(), x, f, b, padding, stride, dilation)
 
 
-def dilate2d(
-    x: Tensor, dilation: tuple[int, int], return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FDilation2D(Function):
+    """Dilates a tensor in its last two axes."""
+
+    @staticmethod
+    def forward(x: Tensor, dilation: tuple[int, int]) -> Tensor:
+        if dilation == (1, 1):
+            return x
+        dil_shape = (
+            dilation[0] * x.shape[-2] - 1,
+            dilation[1] * x.shape[-1] - 1,
+        )
+        y = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
+        dil_slice = (
+            [slice(None)] * (x.n_axes - 2)
+            + [slice(None, None, dilation[0])]
+            + [slice(None, None, dilation[1])]
+        )
+        y[*dil_slice] = x
+        return y
+
+    @staticmethod
+    def backward(dy: Tensor, dilation: tuple[int, int]) -> Tensor:
+        if dilation == (1, 1):
+            return dy
+        dil_slice = (
+            [slice(None)] * (dy.n_axes - 2)
+            + [slice(None, None, dilation[0])]
+            + [slice(None, None, dilation[1])]
+        )
+        return dy[*dil_slice]
+
+
+def dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
     """Dilates a tensor in its last two axes.
 
     Parameters
@@ -301,52 +377,39 @@ def dilate2d(
         Input tensor.
     dilation : tuple[int, int]
         Dilation factor to use.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
     """
-    if dilation == (1, 1):
-        return x, (lambda dy: dy)
-
-    dil_shape = (
-        dilation[0] * x.shape[-2] - 1,
-        dilation[1] * x.shape[-1] - 1,
-    )
-    x_dil = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
-    dil_slice = (
-        [slice(None)] * (x.n_axes - 2)
-        + [slice(None, None, dilation[0])]
-        + [slice(None, None, dilation[1])]
-    )
-    x_dil[*dil_slice] = x
-
-    if return_grad_fn:
-        return x_dil, (lambda dy: dy[*dil_slice])
-
-    return x_dil, None
+    return FDilation2D.forward(x, dilation)
 
 
-def _pad2d_from_str(
-    padding: PaddingLike, kernel_size: int
-) -> tuple[tuple[int, int], tuple[int, int]]:
-    """Returns padding widths from a string."""
-    if padding == "valid":
-        return ((0, 0), (0, 0))
-    p = kernel_size // 2
-    return ((p, p), (p, p))
+class FPad2D(Function):
+    """Pads a tensor in its last two axes."""
+
+    @staticmethod
+    def forward(x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]]) -> Tensor:
+        if padding == ((0, 0), (0, 0)):
+            return x
+        widths = tuple([(0, 0)] * (x.n_axes - 2) + [*padding])
+        return pad(x, widths)
+
+    @staticmethod
+    def backward(
+        dy: Tensor, padding: tuple[tuple[int, int], tuple[int, int]]
+    ) -> Tensor:
+        if padding == ((0, 0), (0, 0)):
+            return dy
+        pad_slice = [slice(None)] * (dy.n_axes - 2) + [
+            slice(padding[0][0], -padding[0][1]),
+            slice(padding[1][0], -padding[1][1]),
+        ]
+        return dy[*pad_slice]
 
 
-def pad2d(
-    x: Tensor,
-    padding: tuple[tuple[int, int], tuple[int, int]],
-    return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable]]:
+def pad2d(x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]]) -> Tensor:
     """Pads a tensor in its last two axes.
 
     Parameters
@@ -355,81 +418,83 @@ def pad2d(
         Input tensor.
     padding : tuple[tuple[int, int], tuple[int, int]]
         Padding width applied to the beginning and end of the last two axes.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
     """
-    if padding == ((0, 0), (0, 0)):
-        return x, (lambda dy: dy)
-
-    widths = tuple([(0, 0)] * (x.n_axes - 2) + [*padding])
-    y = pad(x, widths)
-
-    if return_grad_fn:
-        pad_grad_slice = [slice(None)] * (x.n_axes - 2) + [
-            slice(padding[0][0], -padding[0][1]),
-            slice(padding[1][0], -padding[1][1]),
-        ]
-        return y, (lambda dy: dy[*pad_grad_slice])
-
-    return y, None
+    return FPad2D.forward(x, padding)
 
 
-def _convolve2d(
-    x: Tensor,
-    f: Tensor,
-    strides: tuple[int, int] = (1, 1),
-    return_grad_fn: bool = False,
-) -> tuple[Tensor, Optional[Callable]]:
+def _pad2d_from_str(
+    padding: PaddingLike, kernel_size: int
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    if padding == "valid":
+        return ((0, 0), (0, 0))
+    p = kernel_size // 2
+    return ((p, p), (p, p))
+
+
+class _FConvolution2D(Function):
     """Computes the 2D convolution of two tensors."""
-    f_flipped = flip(f, (-2, -1))
-    conv = convolve2d_fft(x, f_flipped)
-    stride_slice = [slice(None)] * (x.n_axes - 2) + [
-        slice(None, None, strides[0]),
-        slice(None, None, strides[1]),
-    ]
-    y = conv[*stride_slice]
 
-    if return_grad_fn:
+    @staticmethod
+    def forward(
+        cache: FunctionCache, x: Tensor, f: Tensor, strides: tuple[int, int]
+    ) -> Tensor:
+        f_flipped = flip(f, (-2, -1))
+        conv = convolve2d_fft(x, f_flipped)
+        stride_slice = [slice(None)] * (x.n_axes - 2) + [
+            slice(None, None, strides[0]),
+            slice(None, None, strides[1]),
+        ]
+        y = conv[*stride_slice]
 
-        def grad_fn(dy: Tensor) -> tuple[Tensor, Tensor]:
-            # fill elements skipped by strides with zeros
-            dy, _ = dilate2d(dy, strides)
-            dy = pad_to_shape(dy, conv.shape)
+        cache.x, cache.f, cache.conv_ = x, f, conv
+        return y
 
-            # full pad dy
-            dy, _ = pad2d(
-                dy,
-                (
-                    (f.shape[-2] - 1, f.shape[-2] - 1),
-                    (f.shape[-1] - 1, f.shape[-1] - 1),
-                ),
-            )
-            dx = convolve2d_fft(dy, f)
+    @staticmethod
+    def backward(
+        cache: FunctionCache, dy: Tensor, strides: tuple[int, int]
+    ) -> tuple[Tensor, Tensor]:
+        x, f, conv = cache.x, cache.f, cache.conv_
 
-            dy = flip(dy, axis=(-2, -1))
-            df = convolve2d_fft(dy, x)
+        # fill elements skipped by strides with zeros
+        dy = dilate2d(dy, strides)
+        dy = pad_to_shape(dy, conv.shape)
+        # TODO: conv just needed for shape -> simplify
 
-            return dx, df
+        # full pad dy
+        dy = pad2d(
+            dy,
+            (
+                (f.shape[-2] - 1, f.shape[-2] - 1),
+                (f.shape[-1] - 1, f.shape[-1] - 1),
+            ),
+        )
+        dx = convolve2d_fft(dy, f)
 
-        return y, grad_fn
+        dy = flip(dy, (-2, -1))
+        df = convolve2d_fft(dy, x)
 
-    return y, None
+        return dx, df
 
 
-def upsample2d(
-    x: Tensor,
-    scaling_factors: tuple[int, int],
-    shape: ShapeLike,
-    axes: tuple[int, int] = (-2, -1),
-) -> Tensor:
-    """Upsamples a tensor by repeating it's elements over given axes.
+class FUpsample2D(Function):
+    """Upsamples a tensor by repeating it's elements over the last two axes."""
+
+    @staticmethod
+    def forward(
+        x: Tensor, scaling_factors: tuple[int, int], shape: ShapeLike
+    ) -> Tensor:
+        f1, f2 = scaling_factors
+        x = repeat(repeat(x, f1, -1), f2, -2)
+        return x if x.shape == shape else pad_to_shape(x, shape)
+
+
+def upsample2d(x: Tensor, scaling_factors: tuple[int, int], shape: ShapeLike) -> Tensor:
+    """Upsamples a tensor by repeating it's elements over the last two axes.
 
     Parameters
     ----------
@@ -440,23 +505,51 @@ def upsample2d(
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after upsampling,
         remaining values are filled with zeroes.
-    axes : tuple[int, int], optional
-        Axes along which to stretch the tensor. Defaults to ``(-2, -1)``.
 
     Returns
     -------
     Tensor
         Upsampled tensor.
     """
-    sf1, sf2 = scaling_factors
-    ax1, ax2 = axes
-    x_str = repeat(repeat(x, sf1, ax1), sf2, ax2)
-    return x_str if x_str.shape == shape else pad_to_shape(x_str, shape)
+    return FUpsample2D.forward(x, scaling_factors, shape)
 
 
-def maxpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FMaxPooling2D(Function):
+    """Performs max pooling over the last two axes."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache, x: Tensor, kernel_size: tuple[int, int]
+    ) -> Tensor:
+        x_height, x_width = x.shape[-2:]
+        kernel_height, kernel_width = kernel_size
+
+        trunc_slice = [slice(None)] * (x.n_axes - 2) + [
+            slice(None, x_height // kernel_height * kernel_height),
+            slice(None, x_width // kernel_width * kernel_width),
+        ]
+        x_trunc = x[*trunc_slice]
+        pool_shape = x.shape[:-2] + (
+            x_height // kernel_height,
+            kernel_height,
+            x_width // kernel_width,
+            kernel_width,
+        )
+        y = cpmax(x_trunc.to_shape(pool_shape), axis=(-3, -1))
+
+        cache.x, cache.y = x, y
+        return y
+
+    @staticmethod
+    def backward(
+        cache: FunctionCache, dy: Tensor, kernel_size: tuple[int, int]
+    ) -> Tensor:
+        x, y = cache.x, cache.y
+        y_ups = upsample2d(y, kernel_size, x.shape)
+        return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
+
+
+def maxpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
     """Performs max pooling over the last two axes.
 
     Parameters
@@ -465,47 +558,53 @@ def maxpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window. Defaults to ``(2, 2)``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     ----------
     :class:`compyute.nn.MaxPooling2D`
     """
-    x_height, x_width = x.shape[-2:]
-    kernel_height, kernel_width = kernel_size
-
-    # maxpooling
-    crop_slice = [slice(None)] * (x.n_axes - 2) + [
-        slice(None, x_height // kernel_height * kernel_height),
-        slice(None, x_width // kernel_width * kernel_width),
-    ]
-    x_crop = x[*crop_slice]
-    pool_shape = x.shape[:-2] + (
-        x_height // kernel_height,
-        kernel_height,
-        x_width // kernel_width,
-        kernel_width,
-    )
-    y = cpmax(x_crop.to_shape(pool_shape), axis=(-3, -1))
-
-    if return_grad_fn:
-        y_ups = upsample2d(y, kernel_size, x.shape)
-        return y, lambda dy: upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
-
-    return y, None
+    return FMaxPooling2D.forward(PseudoCache(), x, kernel_size)
 
 
-def avgpooling2d(
-    x: Tensor, kernel_size: tuple[int, int] = (2, 2), return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FAvgPooling2D(Function):
+    """Performs average pooling over the last two axes."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache, x: Tensor, kernel_size: tuple[int, int]
+    ) -> Tensor:
+        x_height, x_width = x.shape[-2:]
+        kernel_height, kernel_width = kernel_size
+
+        trunc_slice = [slice(None)] * (x.n_axes - 2) + [
+            slice(None, x_height // kernel_height * kernel_height),
+            slice(None, x_width // kernel_width * kernel_width),
+        ]
+        x_trunc = x[*trunc_slice]
+        pool_shape = x.shape[:-2] + (
+            x_height // kernel_height,
+            kernel_height,
+            x_width // kernel_width,
+            kernel_width,
+        )
+        y = mean(x_trunc.to_shape(pool_shape), axis=(-3, -1))
+
+        cache.x = x
+        return y
+
+    @staticmethod
+    def backward(
+        cache: FunctionCache, dy: Tensor, kernel_size: tuple[int, int]
+    ) -> Tensor:
+        return upsample2d(dy, kernel_size, cache.x.shape) / math.prod(kernel_size)
+
+
+def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
     """Performs average pooling over the last two axes.
 
     Parameters
@@ -514,42 +613,14 @@ def avgpooling2d(
         Input tensor.
     kernel_size : tuple[int, int], optional
         Size of the pooling window. Defaults to ``(2, 2)``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     ----------
     :class:`compyute.nn.AvgPooling2D`
     """
-    x_height, x_width = x.shape[-2:]
-    kernel_height, kernel_width = kernel_size
-
-    # avgpooling
-    crop_slice = [slice(None)] * (x.n_axes - 2) + [
-        slice(None, x_height // kernel_height * kernel_height),
-        slice(None, x_width // kernel_width * kernel_width),
-    ]
-    x_crop = x[*crop_slice]
-    pool_shape = x.shape[:-2] + (
-        x_height // kernel_height,
-        kernel_height,
-        x_width // kernel_width,
-        kernel_width,
-    )
-    y = mean(x_crop.to_shape(pool_shape), axis=(-3, -1))
-
-    if return_grad_fn:
-
-        def grad_fn(dy: Tensor) -> Tensor:
-            return upsample2d(dy, kernel_size, x.shape) / math.prod(kernel_size)
-
-        return y, grad_fn
-
-    return y, None
+    return FAvgPooling2D.forward(PseudoCache(), x, kernel_size)

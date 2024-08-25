@@ -144,18 +144,14 @@ class MyModel(nn.Container):
         x = self.lin1(x)
         x = self.relu(x)
         x = self.lin2(x)
-
-        # define the backward pass
-        def backward(dy):
-            dy = self.lin2.backward(dy)
-            dy = self.relu.backward(dy)
-            dy = self.lin1.backward(dy)
-            return dy
-
-        # register the models backward function
-        self._backward = backward
-        
         return x
+
+    def backward(self, dy):
+        # define the backward pass
+        dy = self.lin2.backward(dy)
+        dy = self.relu.backward(dy)
+        dy = self.lin1.backward(dy)
+        return dy
 ```
 
 ### Training models

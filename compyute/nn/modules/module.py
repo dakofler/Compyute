@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
+from ..functional.functions import FunctionCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
@@ -33,6 +34,7 @@ class Module(ABC):
 
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label if label is not None else self.__class__.__name__
+        self._fcache = FunctionCache()
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -272,23 +274,14 @@ class Module(ABC):
 
     def backward(self, dy: Tensor) -> Optional[Tensor]:
         """Performs a backward pass through the module."""
-
         if not self._is_training:
             raise AttributeError(f"{self.label} is not in training mode.")
-
-        if self._backward is None:
-            raise ModelDefinitionError(
-                """No backward function has been defined.
-                If you are using a custom model, make sure to define a backward function and assign
-                it to self._backward during the call of the forward method (see Compyute README)"""
-            )
 
         dy = dy.to_float()
         self._set_dy(dy)
 
-        if self._backward is not None and self._is_trainable:
+        if self._backward is not None:
             return self._backward(dy)
-        return dy
 
     def _set_y(self, y: Tensor) -> None:
         if not self._is_retaining_values:
@@ -310,6 +303,7 @@ class Module(ABC):
         if self._is_retaining_values and not force:
             return
         self.y = self._backward = None
+        self._fcache.clear()
 
         for p in self.get_parameters(include_child_modules=False):
             p.grad = None
@@ -328,8 +322,10 @@ class Identity(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        self._backward = lambda dy: dy
         return x
+
+    def backward(self, dy: Tensor) -> Tensor:
+        return dy
 
 
 class ModuleList(list):
