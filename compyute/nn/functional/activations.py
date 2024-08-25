@@ -21,12 +21,12 @@ class FReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         y = maximum(x, 0)
-        cache.y = y
+        cache.relu_y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        return (cache.y > 0) * dy
+        return (cache.relu_y > 0) * dy
 
 
 def relu(x: Tensor) -> Tensor:
@@ -55,12 +55,15 @@ class FLeakyReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, alpha: float) -> Tensor:
         y = maximum(alpha * x, x)
-        cache.y = y
+        cache.leaky_relu_y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor, alpha: float) -> Tensor:
-        return ((cache.y >= 0) + (cache.y < 0).to_type(dy.dtype) * alpha) * dy
+        return (
+            (cache.leaky_relu_y >= 0)
+            + (cache.leaky_relu_y < 0).to_type(dy.dtype) * alpha
+        ) * dy
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
@@ -92,12 +95,12 @@ class FGELU(Function):
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
         y = 0.5 * x * (1 + cptanh(tmp))
-        cache.x, cache.tmp = x, tmp
+        cache.gelu_x, cache.gelu_tmp = x, tmp
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, tmp = cache.x, cache.tmp
+        x, tmp = cache.gelu_x, cache.gelu_tmp
 
         dx1 = 1 + cptanh(tmp)
         dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
@@ -131,12 +134,12 @@ class FSigmoid(Function):
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         x_exp = exp(x)
         y = x_exp / (1 + x_exp)
-        cache.y = y
+        cache.sigmoid_y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        return (cache.y * (1 - cache.y)) * dy
+        return (cache.sigmoid_y * (1 - cache.sigmoid_y)) * dy
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -168,12 +171,12 @@ class FSiLU(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        cache.x = x
-        return x * FSigmoid.forward(cache, x)  # FSigmoid caches its output (cache.y)
+        cache.silu_x = x  # FSigmoid already caches y
+        return x * FSigmoid.forward(cache, x)
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        return cache.x * FSigmoid.backward(cache, dy) + cache.y * dy
+        return cache.silu_x * FSigmoid.backward(cache, dy) + cache.sigmoid_y * dy
 
 
 def silu(x: Tensor) -> Tensor:
@@ -203,12 +206,12 @@ class FSoftmax(Function):
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         x = exp(x - cpmax(x, axis=-1, keepdims=True))
         y = x / cpsum(x, axis=-1, keepdims=True)
-        cache.y = y
+        cache.softmax_y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        dx = tile(insert_dim(cache.y, -1), dy.shape[-1], -1)
+        dx = tile(insert_dim(cache.softmax_y, -1), dy.shape[-1], -1)
         dx *= identity(dy.shape[-1], device=dy.device) - dx.T
         return reshape(dx @ dy.to_shape((*dy.shape, 1)), dy.shape)
 
@@ -239,12 +242,12 @@ class FTanh(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         y = cptanh(x)
-        cache.y = y
+        cache.tanh_y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        return (1 - cache.y**2) * dy
+        return (1 - cache.tanh_y**2) * dy
 
 
 def tanh(x: Tensor) -> Tensor:

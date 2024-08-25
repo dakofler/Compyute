@@ -50,12 +50,12 @@ class FBatchNorm1D(Function):
         b = b if x_is_2d else insert_dim(b, -1)
         y = w * x_norm + b
 
-        cache.x_norm, cache.inv_std, cache.w = x_norm, inv_std, w
+        cache.bn1d_w, cache.bn1d_inv_std, cache.bn1d_x_norm = w, inv_std, x_norm
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        x_norm, inv_std, w = cache.x_norm, cache.inv_std, cache.w
+        w, inv_std, x_norm = cache.bn1d_w, cache.bn1d_inv_std, cache.bn1d_x_norm
         axes = 0 if dy.n_axes == 2 else (0, 2)
 
         # input grads
@@ -156,12 +156,12 @@ class FBatchNorm2D(Function):
         b = b.to_shape((*b.shape, 1, 1))
         y = w * x_norm + b
 
-        cache.w, cache.inv_std, cache.x_norm = w, inv_std, x_norm
+        cache.bn2d_w, cache.bn2d_inv_std, cache.bn2d_x_norm = w, inv_std, x_norm
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, inv_std, x_norm = cache.w, cache.inv_std, cache.x_norm
+        w, inv_std, x_norm = cache.bn2d_w, cache.bn2d_inv_std, cache.bn2d_x_norm
         axes = (0, 2, 3)
         n = float(dy.size / dy.shape[1])
 
@@ -239,12 +239,12 @@ class FLayerNorm(Function):
         x_norm = (x - cpmean(x, axis=axes, keepdims=True)) * inv_std
         y = w * x_norm + b
 
-        cache.w, cache.inv_std, cache.x_norm = w, inv_std, x_norm
+        cache.ln_w, cache.ln_inv_std, cache.ln_x_norm = w, inv_std, x_norm
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, inv_std, x_norm = cache.w, cache.inv_std, cache.x_norm
+        w, inv_std, x_norm = cache.ln_w, cache.ln_inv_std, cache.ln_x_norm
         axes = tuple(-i - 1 for i in range(w.n_axes))
         sum_axes = tuple(range(dy.n_axes - w.n_axes))
 
@@ -299,14 +299,14 @@ class FRMSNorm(Function):
         x_norm = x / rms
         y = w * x_norm
 
-        cache.x, cache.w, cache.rms, cache.x_norm = x, w, rms, x_norm
+        cache.rms_x, cache.rms_w, cache.rms, cache.rms_x_norm = x, w, rms, x_norm
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
-        x, w, rms, x_norm = cache.x, cache.w, cache.rms, cache.x_norm
+        x, w, rms, x_norm = cache.rms_x, cache.rms_w, cache.rms, cache.rms_x_norm
         axes = tuple(-i - 1 for i in range(w.n_axes))
-        sum_axes = tuple(range(cache.x.n_axes - w.n_axes))
+        sum_axes = tuple(range(x.n_axes - w.n_axes))
 
         # input grads
         dy_x_sum = cpsum(dy * x, axis=axes, keepdims=True)

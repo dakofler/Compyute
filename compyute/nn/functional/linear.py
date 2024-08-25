@@ -16,11 +16,11 @@ class FLinear(Function):
     def forward(
         cache: FunctionCache, x: Tensor, w: Tensor, b: Optional[Tensor] = None
     ) -> Tensor:
-        cache.x, cache.w = x, w
+        cache.lin_x, cache.lin_w = x, w
         y = x @ w.T
 
         if b:
-            cache.b = b
+            cache.lin_b = b
             y += b
 
         return y
@@ -29,7 +29,7 @@ class FLinear(Function):
     def backward(
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        x, w, b = cache.x, cache.w, cache.b
+        x, w, b = cache.lin_x, cache.lin_w, cache.lin_b
         batch_dims = "uvxyz"[: x.n_axes - 1]
 
         # input grads
