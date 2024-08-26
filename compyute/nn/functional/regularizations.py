@@ -22,9 +22,9 @@ class FDropout(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor, training: bool = False) -> Tensor:
-        dropout_map = cache.dropout_map
         if not training:
             return dy
+        dropout_map = cache.dropout_map
         return dy * dropout_map
 
 

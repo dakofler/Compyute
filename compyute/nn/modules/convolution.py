@@ -103,9 +103,7 @@ class Convolution1D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        dx, dw, db = FConvolution1D.backward(
-            self._fcache, dy, self.padding, self.stride, self.dilation
-        )
+        dx, dw, db = FConvolution1D.backward(self._fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -195,9 +193,7 @@ class Convolution2D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        dx, dw, db = FConvolution2D.backward(
-            self._fcache, dy, self.padding, self.stride, self.dilation
-        )
+        dx, dw, db = FConvolution2D.backward(self._fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -224,8 +220,7 @@ class MaxPooling2D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        kernel_size = (self.kernel_size, self.kernel_size)
-        return FMaxPooling2D.backward(self._fcache, dy, kernel_size)
+        return FMaxPooling2D.backward(self._fcache, dy)
 
 
 class AvgPooling2D(Module):

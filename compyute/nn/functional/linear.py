@@ -20,7 +20,7 @@ class FLinear(Function):
         y = x @ w.T
 
         if b:
-            cache.b = b
+            cache.b = b is not None
             y += b
 
         return y

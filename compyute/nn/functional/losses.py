@@ -18,12 +18,14 @@ class FMeanSquaredError(Function):
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         dif = y_pred - y_true
-        cache.y_pred, cache.dif = y_pred, dif
-        return mean(dif**2)
+        y = mean(dif**2)
+        cache.y_pred_size, cache.dif = y_pred.size, dif
+        return y
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        return cache.dif * 2 / float(cache.y_pred.size)
+        y_pred_size, dif = cache.y_pred_size, cache.dif
+        return dif * 2 / float(y_pred_size)
 
 
 def mean_squared_error(y_pred: Tensor, y_true: Tensor) -> Tensor:
@@ -56,7 +58,6 @@ class FCrossEntropy(Function):
         probs = softmax(y_pred)
         y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
         y = mean(cpsum(-log(probs) * y_true, axis=-1))
-
         cache.y_true, cache.probs = y_true, probs
         return y
 
@@ -93,11 +94,9 @@ class FBinaryCrossEntropy(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        clip_value = 100
-        log_y_pred = clip(log(y_pred), -clip_value, clip_value)
-        log_one_minus_y_pred = clip(log(1 - y_pred), -clip_value, clip_value)
+        log_y_pred = clip(log(y_pred), -100, 100)
+        log_one_minus_y_pred = clip(log(1 - y_pred), -100, 100)
         y = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
-
         cache.y_pred, cache.y_true = y_pred, y_true
         return y
 

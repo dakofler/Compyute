@@ -10,13 +10,13 @@ class Fflatten(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        cache.x = x
+        cache.x_shape = x.shape
         return reshape(x, (x.shape[0], -1))
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x = cache.x
-        return reshape(dy, x.shape)
+        x_shape = cache.x_shape
+        return reshape(dy, x_shape)
 
 
 class FReshape(Function):
@@ -24,10 +24,10 @@ class FReshape(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, shape: ShapeLike) -> Tensor:
-        cache.x = x
+        cache.x_shape = x.shape
         return reshape(x, (x.shape[0],) + shape)
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x = cache.x
-        return reshape(dy, x.shape)
+        x_shape = cache.x_shape
+        return reshape(dy, x_shape)

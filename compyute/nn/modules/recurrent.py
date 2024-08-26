@@ -6,7 +6,6 @@ from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.activations import FReLU, FSigmoid, FTanh
-from ..functional.functions import FunctionCache
 from ..functional.linear import FLinear
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import XavierUniform, Zeros
@@ -107,22 +106,22 @@ class Recurrent(Module):
 
         y = h if self.return_sequence else h[:, -1]
 
-        self._fcache.x = x
+        self._fcache.x_shape = x.shape
         return y
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        x = self._fcache.x
-        dact = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
+        x_shape = self._fcache.x_shape
+        dact = zeros((*x_shape[:2], self.h_channels), dy.device, dy.dtype)
         dh = 0
 
         # iterate backwards over timesteps
-        for t in range(x.shape[1] - 1, -1, -1):
+        for t in range(x_shape[1] - 1, -1, -1):
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
                 dh += dy[:, t]
-            elif t == x.shape[1] - 1:
+            elif t == x_shape[1] - 1:
                 dh += dy
 
             # non-linearity backward
@@ -256,7 +255,6 @@ class LSTM(Module):
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-
         i = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
         f, g, o, c = empty_like(i), empty_like(i), empty_like(i), zeros_like(i)
         act_c, h = empty_like(i), zeros_like(i)
@@ -293,37 +291,25 @@ class LSTM(Module):
 
         y = h if self.return_sequence else h[:, -1]
 
-        self._fcache.lstm_x = x
-        self._fcache.lstm_i = i
-        self._fcache.lstm_f = f
-        self._fcache.lstm_g = g
-        self._fcache.lstm_o = o
-        self._fcache.lstm_c = c
-        self._fcache.lstm_act_c = act_c
+        self._fcache.i, self._fcache.f, self._fcache.g, self._fcache.o = i, f, g, o
+        self._fcache.x_shape, self._fcache.c, self._fcache.act_c = x.shape, c, act_c
         return y
 
     def backward(self, dy: Tensor) -> Tensor:
-        x = self._fcache.lstm_x
-        i = self._fcache.lstm_i
-        f = self._fcache.lstm_f
-        g = self._fcache.lstm_g
-        o = self._fcache.lstm_o
-        c = self._fcache.lstm_c
-        act_c = self._fcache.lstm_act_c
-        dc = zeros_like(c)
-        di_preact = empty_like(i)
-        df_preact = empty_like(f)
-        dg_preact = empty_like(g)
-        do_preact = empty_like(o)
+        super().backward(dy)
+        i, f, g, o = self._fcache.i, self._fcache.f, self._fcache.g, self._fcache.o
+        x_shape, c, act_c = self._fcache.x_shape, self._fcache.c, self._fcache.act_c
+        di_preact, df_preact, dg_preact = empty_like(i), empty_like(f), empty_like(g)
+        do_preact, dc = empty_like(o), zeros_like(c)
         dh = 0
 
         # iterate backwards over timesteps
-        for t in range(x.shape[1] - 1, -1, -1):
+        for t in range(x_shape[1] - 1, -1, -1):
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
                 dh += dy[:, t]
-            elif t == x.shape[1] - 1:
+            elif t == x_shape[1] - 1:
                 dh += dy
 
             # memory state gradients
@@ -475,7 +461,6 @@ class GRU(Module):
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-
         r = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
         z, n, h_n, h = empty_like(r), empty_like(r), empty_like(r), zeros_like(r)
 
@@ -503,33 +488,24 @@ class GRU(Module):
 
         y = h if self.return_sequence else h[:, -1]
 
-        self._fcache.gru_x = x
-        self._fcache.gru_r = r
-        self._fcache.gru_z = z
-        self._fcache.gru_n = n
-        self._fcache.gru_h_n = h_n
-        self._fcache.gru_h = h
+        self._fcache.r, self._fcache.z, self._fcache.n = r, z, n
+        self._fcache.x_shape, self._fcache.h_n, self._fcache.h = x.shape, h_n, h
         return y
 
     def backward(self, dy: Tensor) -> Tensor:
-        x = self._fcache.gru_x
-        r = self._fcache.gru_r
-        z = self._fcache.gru_z
-        n = self._fcache.gru_n
-        h_n = self._fcache.gru_h_n
-        h = self._fcache.gru_h
-        dr_preact = empty_like(r)
-        dz_preact = empty_like(z)
-        dn_preact = empty_like(n)
+        super().backward(dy)
+        r, z, n = self._fcache.r, self._fcache.z, self._fcache.n
+        x_shape, h_n, h = self._fcache.x_shape, self._fcache.h_n, self._fcache.h
+        dr_preact, dz_preact, dn_preact = empty_like(r), empty_like(z), empty_like(n)
         dh = 0
 
         # iterate backwards over timesteps
-        for t in range(x.shape[1] - 1, -1, -1):
+        for t in range(x_shape[1] - 1, -1, -1):
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
                 dh += dy[:, t]
-            elif t == x.shape[1] - 1:
+            elif t == x_shape[1] - 1:
                 dh += dy
 
             # hidden state gradients

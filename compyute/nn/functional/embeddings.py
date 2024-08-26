@@ -16,15 +16,16 @@ class FEmbedding(Function):
     def forward(cache: FunctionCache, x: Tensor, embedding_table: Tensor) -> Tensor:
         if not is_integer(x.dtype):
             raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
-        cache.x, cache.embedding_table = x, embedding_table
-        return embedding_table[x]
+        y = embedding_table[x]
+        cache.x, cache.emb_table_shape = x, embedding_table.shape
+        return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, embedding_table = cache.x, cache.embedding_table
+        x, emb_table_shape = cache.x, cache.emb_table_shape
         batch_dims = "uvxyz"[: dy.n_axes - 1]
 
-        x = one_hot_encode(x, embedding_table.shape[0]).to_type(dy.dtype)
+        x = one_hot_encode(x, emb_table_shape[0]).to_type(dy.dtype)
         # weight grads, equivalent to x.T @ dy and summing over all batch dims
         return einsum(f"{batch_dims}i,{batch_dims}o->io", x, dy)
 
