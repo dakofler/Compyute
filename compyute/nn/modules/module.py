@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain
-from typing import Any, Callable, Iterable, Iterator, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
@@ -26,7 +26,6 @@ class Module(ABC):
     """
 
     y: Optional[Tensor] = None
-    _backward: Optional[Callable] = None
     _device: Device = select_device(None)
     _is_retaining_values: bool = False
     _is_trainable: bool = True
@@ -280,9 +279,6 @@ class Module(ABC):
         dy = dy.to_float()
         self._set_dy(dy)
 
-        if self._backward is not None:
-            return self._backward(dy)
-
     def _set_y(self, y: Tensor) -> None:
         if not self._is_retaining_values:
             return
@@ -300,13 +296,11 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        if self._is_retaining_values and not force:
-            return
-        self.y = self._backward = None
         self._fcache.clear()
-
-        for p in self.get_parameters(include_child_modules=False):
-            p.grad = None
+        if not self._is_retaining_values or force:
+            self.y = None
+            for p in self.get_parameters(include_child_modules=False):
+                p.grad = None
 
         for module in self.modules:
             module.clean(force)
