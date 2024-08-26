@@ -29,4 +29,4 @@ class Dropout(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        return FDropout.backward(self._fcache, dy, self._is_training)
+        return FDropout.backward(self._fcache, dy)

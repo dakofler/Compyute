@@ -14,6 +14,7 @@ class FDropout(Function):
     def forward(
         cache: FunctionCache, x: Tensor, p: float = 0.5, training: bool = False
     ) -> Tensor:
+        cache.training = training
         if not training:
             return x
         dropout_map = multinulli(p, x.shape, device=x.device) / (1 - p)
@@ -21,7 +22,8 @@ class FDropout(Function):
         return x * dropout_map
 
     @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor, training: bool = False) -> Tensor:
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        training = cache.training
         if not training:
             return dy
         dropout_map = cache.dropout_map

@@ -32,7 +32,7 @@ class Module(ABC):
     _is_training: bool = False
 
     def __init__(self, label: Optional[str] = None) -> None:
-        self.label = label if label is not None else self.__class__.__name__
+        self.label = label or self.__class__.__name__
         self._fcache = FunctionCache()
 
     # ----------------------------------------------------------------------------------------------
