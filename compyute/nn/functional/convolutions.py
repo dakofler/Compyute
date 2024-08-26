@@ -61,10 +61,10 @@ class FConvolution1D(Function):
         y = cpsum(conv, axis=2)  # (B, Co, T)
 
         if b:
-            cache.conv1d_b = b
+            cache.b = b
             y += insert_dim(b, -1)
 
-        cache.conv1d_f_ext, cache.conv1d_conv = f_ext, conv
+        cache.f_ext, cache.conv = f_ext, conv
         return y
 
     @staticmethod
@@ -75,7 +75,7 @@ class FConvolution1D(Function):
         stride: int,
         dilation: int,
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        b, f_ext, conv = cache.conv1d_b, cache.conv1d_f_ext, cache.conv1d_conv
+        b, f_ext, conv = cache.b, cache.f_ext, cache.conv
 
         # insert fake input channel dimension
         dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
@@ -219,14 +219,14 @@ class _FConvolution1D(Function):
         stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
         y = conv[*stride_slice]
 
-        cache.conv1d_x, cache.conv1d_f, cache.conv1d_conv_ = x, f, conv
+        cache.x, cache.f, cache.conv = x, f, conv
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor, stride: int
     ) -> tuple[Tensor, Tensor]:
-        x, f, conv = cache.conv1d_x, cache.conv1d_f, cache.conv1d_conv_
+        x, f, conv = cache.x, cache.f, cache.conv
 
         # fill elements skipped by strides with zeros
         dy = dilate1d(dy, stride)
@@ -269,10 +269,10 @@ class FConvolution2D(Function):
         y = cpsum(conv, axis=2)  # (B, Co, Y, X)
 
         if b:
-            cache.conv2d_b = b
+            cache.b = b
             y += b.to_shape((*b.shape, 1, 1))
 
-        cache.conv2d_f_ext, cache.conv2d_conv = f_ext, conv
+        cache.f_ext, cache.conv = f_ext, conv
         return y
 
     @staticmethod
@@ -283,7 +283,7 @@ class FConvolution2D(Function):
         stride: int,
         dilation: int,
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        b, f_ext, conv = cache.conv2d_b, cache.conv2d_f_ext, cache.conv2d_conv
+        b, f_ext, conv = cache.b, cache.f_ext, cache.conv
 
         # insert fake input channel dimension
         dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
@@ -451,14 +451,14 @@ class _FConvolution2D(Function):
         ]
         y = conv[*stride_slice]
 
-        cache.conv2d_x, cache.conv2d_f, cache.conv2d_conv_ = x, f, conv
+        cache.x, cache.f, cache.conv = x, f, conv
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor, strides: tuple[int, int]
     ) -> tuple[Tensor, Tensor]:
-        x, f, conv = cache.conv2d_x, cache.conv2d_f, cache.conv2d_conv_
+        x, f, conv = cache.x, cache.f, cache.conv
 
         # fill elements skipped by strides with zeros
         dy = dilate2d(dy, strides)
@@ -537,14 +537,14 @@ class FMaxPooling2D(Function):
         )
         y = cpmax(x_trunc.to_shape(pool_shape), axis=(-3, -1))
 
-        cache.maxp_x, cache.maxp_y = x, y
+        cache.x, cache.y = x, y
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor, kernel_size: tuple[int, int]
     ) -> Tensor:
-        x, y = cache.maxp_x, cache.maxp_y
+        x, y = cache.x, cache.y
         y_ups = upsample2d(y, kernel_size, x.shape)
         return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
 
@@ -594,14 +594,14 @@ class FAvgPooling2D(Function):
         )
         y = mean(x_trunc.to_shape(pool_shape), axis=(-3, -1))
 
-        cache.avgp_x = x
+        cache.x = x
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor, kernel_size: tuple[int, int]
     ) -> Tensor:
-        return upsample2d(dy, kernel_size, cache.avgp_x.shape) / math.prod(kernel_size)
+        return upsample2d(dy, kernel_size, cache.x.shape) / math.prod(kernel_size)
 
 
 def avgpooling2d(x: Tensor, kernel_size: tuple[int, int] = (2, 2)) -> Tensor:
