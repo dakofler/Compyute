@@ -73,7 +73,6 @@ class Recurrent(Module):
         self.bias = bias
         self.act = FReLU if activation == "relu" else FTanh
         self.return_sequence = return_sequence
-        self._fcaches: list[FunctionCache] = []
 
         # init input parameters
         self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
@@ -99,29 +98,26 @@ class Recurrent(Module):
         # iterate over timesteps
         h = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
         for t in range(x.shape[1]):
-            fcache = FunctionCache()
-            self._fcaches.append(fcache)
 
             # hidden projection
-            h_h = FLinear.forward(fcache, h[:, t - 1], self.w_h, self.b_h)
+            h_h = FLinear.forward(self._fcache, h[:, t - 1], self.w_h, self.b_h)
 
             # apply non-linearity
-            h[:, t] = self.act.forward(fcache, x_h[:, t] + h_h)
+            h[:, t] = self.act.forward(self._fcache, x_h[:, t] + h_h)
 
         y = h if self.return_sequence else h[:, -1]
 
-        self._fcache.rec_x = x
+        self._fcache.x = x
         return y
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        x = self._fcache.rec_x
+        x = self._fcache.x
+        dact = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
         dh = 0
 
         # iterate backwards over timesteps
-        dact = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
         for t in range(x.shape[1] - 1, -1, -1):
-            cache = self._fcaches[t]
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
@@ -130,10 +126,10 @@ class Recurrent(Module):
                 dh += dy
 
             # non-linearity backward
-            dact[:, t] = self.act.backward(cache, dh)
+            dact[:, t] = self.act.backward(self._fcache, dh)
 
             # hidden projection backward
-            dh, dw_h, db_h = FLinear.backward(cache, dact[:, t])
+            dh, dw_h, db_h = FLinear.backward(self._fcache, dact[:, t])
             update_parameter_grad(self.w_h, dw_h)
             update_parameter_grad(self.b_h, db_h)
 
@@ -212,11 +208,6 @@ class LSTM(Module):
         self.bias = bias
         self.act = FReLU if activation == "relu" else FTanh
         self.return_sequence = return_sequence
-        self._ii_fcache = FunctionCache()
-        self._if_fcache = FunctionCache()
-        self._ig_fcache = FunctionCache()
-        self._io_fcache = FunctionCache()
-        self._fcaches: list[tuple[FunctionCache, ...]] = []
 
         # init input parameters
         self.w_ii = Parameter(empty((h_channels, in_channels), dtype=dtype))
@@ -271,39 +262,33 @@ class LSTM(Module):
         act_c, h = empty_like(i), zeros_like(i)
 
         # input projection W_i * x_t + b_i
-        x_i = FLinear.forward(self._ii_fcache, x, self.w_ii, self.b_ii)
-        x_f = FLinear.forward(self._if_fcache, x, self.w_if, self.b_if)
-        x_g = FLinear.forward(self._ig_fcache, x, self.w_ig, self.b_ig)
-        x_o = FLinear.forward(self._io_fcache, x, self.w_io, self.b_io)
+        x_i = FLinear.forward(self._fcache, x, self.w_ii, self.b_ii)
+        x_f = FLinear.forward(self._fcache, x, self.w_if, self.b_if)
+        x_g = FLinear.forward(self._fcache, x, self.w_ig, self.b_ig)
+        x_o = FLinear.forward(self._fcache, x, self.w_io, self.b_io)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
-            i_fcache = FunctionCache()
-            f_fcache = FunctionCache()
-            g_fcache = FunctionCache()
-            o_fcache = FunctionCache()
-            c_fcache = FunctionCache()
-            self._fcaches.append((i_fcache, f_fcache, g_fcache, o_fcache, c_fcache))
 
             # hidden projection W_h * h_t-1 + b_h
-            h_i = FLinear.forward(i_fcache, h[:, t - 1], self.w_hi, self.b_hi)
-            h_f = FLinear.forward(f_fcache, h[:, t - 1], self.w_hf, self.b_hf)
-            h_g = FLinear.forward(g_fcache, h[:, t - 1], self.w_hg, self.b_hg)
-            h_o = FLinear.forward(o_fcache, h[:, t - 1], self.w_ho, self.b_ho)
+            h_i = FLinear.forward(self._fcache, h[:, t - 1], self.w_hi, self.b_hi)
+            h_f = FLinear.forward(self._fcache, h[:, t - 1], self.w_hf, self.b_hf)
+            h_g = FLinear.forward(self._fcache, h[:, t - 1], self.w_hg, self.b_hg)
+            h_o = FLinear.forward(self._fcache, h[:, t - 1], self.w_ho, self.b_ho)
 
             # gates
-            i[:, t] = FSigmoid.forward(i_fcache, x_i[:, t] + h_i)  # input gate
-            f[:, t] = FSigmoid.forward(f_fcache, x_f[:, t] + h_f)  # forget gate
-            o[:, t] = FSigmoid.forward(o_fcache, x_o[:, t] + h_o)  # output gate
+            i[:, t] = FSigmoid.forward(self._fcache, x_i[:, t] + h_i)  # input gate
+            f[:, t] = FSigmoid.forward(self._fcache, x_f[:, t] + h_f)  # forget gate
+            o[:, t] = FSigmoid.forward(self._fcache, x_o[:, t] + h_o)  # output gate
 
             # input node
-            g[:, t] = self.act.forward(g_fcache, x_g[:, t] + h_g)
+            g[:, t] = self.act.forward(self._fcache, x_g[:, t] + h_g)
 
             # carry state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
 
             # memory state h_t = o_t * act(c_t)
-            act_c[:, t] = self.act.forward(c_fcache, c[:, t])
+            act_c[:, t] = self.act.forward(self._fcache, c[:, t])
             h[:, t] = o[:, t] * act_c[:, t]
 
         y = h if self.return_sequence else h[:, -1]
@@ -326,15 +311,14 @@ class LSTM(Module):
         c = self._fcache.lstm_c
         act_c = self._fcache.lstm_act_c
         dc = zeros_like(c)
-        dh = 0
         di_preact = empty_like(i)
         df_preact = empty_like(f)
         dg_preact = empty_like(g)
         do_preact = empty_like(o)
+        dh = 0
 
         # iterate backwards over timesteps
         for t in range(x.shape[1] - 1, -1, -1):
-            i_fcache, f_fcache, g_fcache, o_fcache, c_fcache = self._fcaches[t]
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
@@ -344,7 +328,7 @@ class LSTM(Module):
 
             # memory state gradients
             do = act_c[:, t] * dh
-            dc[:, t] += self.act.backward(c_fcache, dh) * o[:, t]
+            dc[:, t] += self.act.backward(self._fcache, dh) * o[:, t]
 
             # carry state gradients
             df = c[:, t - 1] * dc[:, t] if t > 0 else 0
@@ -353,53 +337,47 @@ class LSTM(Module):
             di = g[:, t] * dc[:, t]
             dg = i[:, t] * dc[:, t]
 
-            # gate gradients
-            di_preact[:, t] = FSigmoid.backward(i_fcache, di)
-            df_preact[:, t] = FSigmoid.backward(f_fcache, df)
-            do_preact[:, t] = FSigmoid.backward(o_fcache, do)
-
             # input node gradients
-            dg_preact[:, t] = self.act.backward(g_fcache, dg)
+            dg_preact[:, t] = self.act.backward(self._fcache, dg)
+
+            # gate gradients
+            do_preact[:, t] = FSigmoid.backward(self._fcache, do)
+            df_preact[:, t] = FSigmoid.backward(self._fcache, df)
+            di_preact[:, t] = FSigmoid.backward(self._fcache, di)
 
             # hidden projection gradients
-            dh_i, dw_hi, db_hi = FLinear.backward(i_fcache, di_preact[:, t])
-            if t > 0:
-                update_parameter_grad(self.w_hi, dw_hi)
-            update_parameter_grad(self.b_hi, db_hi)
+            dh_o, dw_ho, db_ho = FLinear.backward(self._fcache, do_preact[:, t])
+            dh_g, dw_hg, db_hg = FLinear.backward(self._fcache, dg_preact[:, t])
+            dh_f, dw_hf, db_hf = FLinear.backward(self._fcache, df_preact[:, t])
+            dh_i, dw_hi, db_hi = FLinear.backward(self._fcache, di_preact[:, t])
 
-            dh_f, dw_hf, db_hf = FLinear.backward(f_fcache, df_preact[:, t])
-            if t > 0:
-                update_parameter_grad(self.w_hf, dw_hf)
-            update_parameter_grad(self.b_hf, db_hf)
-
-            dh_g, dw_hg, db_hg = FLinear.backward(g_fcache, dg_preact[:, t])
-            if t > 0:
-                update_parameter_grad(self.w_hg, dw_hg)
-            update_parameter_grad(self.b_hg, db_hg)
-
-            dh_o, dw_ho, db_ho = FLinear.backward(o_fcache, do_preact[:, t])
             if t > 0:
                 update_parameter_grad(self.w_ho, dw_ho)
+                update_parameter_grad(self.w_hg, dw_hg)
+                update_parameter_grad(self.w_hf, dw_hf)
+                update_parameter_grad(self.w_hi, dw_hi)
+
             update_parameter_grad(self.b_ho, db_ho)
+            update_parameter_grad(self.b_hg, db_hg)
+            update_parameter_grad(self.b_hf, db_hf)
+            update_parameter_grad(self.b_hi, db_hi)
 
             dh = dh_i + dh_f + dh_g + dh_o
 
         # input projection gradients
-        dx_i, dw_ii, db_ii = FLinear.backward(self._ii_fcache, di_preact)
-        update_parameter_grad(self.w_ii, dw_ii)
-        update_parameter_grad(self.b_ii, db_ii)
+        dx_o, dw_io, db_io = FLinear.backward(self._fcache, do_preact)
+        dx_g, dw_ig, db_ig = FLinear.backward(self._fcache, dg_preact)
+        dx_f, dw_if, db_if = FLinear.backward(self._fcache, df_preact)
+        dx_i, dw_ii, db_ii = FLinear.backward(self._fcache, di_preact)
 
-        dx_f, dw_if, db_if = FLinear.backward(self._if_fcache, df_preact)
-        update_parameter_grad(self.w_if, dw_if)
-        update_parameter_grad(self.b_if, db_if)
-
-        dx_g, dw_ig, db_ig = FLinear.backward(self._ig_fcache, dg_preact)
-        update_parameter_grad(self.w_ig, dw_ig)
-        update_parameter_grad(self.b_ig, db_ig)
-
-        dx_o, dw_io, db_io = FLinear.backward(self._io_fcache, do_preact)
         update_parameter_grad(self.w_io, dw_io)
         update_parameter_grad(self.b_io, db_io)
+        update_parameter_grad(self.w_ig, dw_ig)
+        update_parameter_grad(self.b_ig, db_ig)
+        update_parameter_grad(self.w_if, dw_if)
+        update_parameter_grad(self.b_if, db_if)
+        update_parameter_grad(self.w_ii, dw_ii)
+        update_parameter_grad(self.b_ii, db_ii)
 
         return dx_i + dx_f + dx_g + dx_o
 
@@ -469,10 +447,6 @@ class GRU(Module):
         self.bias = bias
         self.act = FReLU if activation == "relu" else FTanh
         self.return_sequence = return_sequence
-        self._ir_fcache = FunctionCache()
-        self._iz_fcache = FunctionCache()
-        self._in_fcache = FunctionCache()
-        self._fcaches: list[tuple[FunctionCache, ...]] = []
 
         # init input parameters
         self.w_ir = Parameter(empty((h_channels, in_channels), dtype=dtype))
@@ -506,28 +480,23 @@ class GRU(Module):
         z, n, h_n, h = empty_like(r), empty_like(r), empty_like(r), zeros_like(r)
 
         # input projection W_i * x_t + b_i
-        x_r = FLinear.forward(self._ir_fcache, x, self.w_ir, self.b_ir)
-        x_z = FLinear.forward(self._iz_fcache, x, self.w_iz, self.b_iz)
-        x_n = FLinear.forward(self._in_fcache, x, self.w_in, self.b_in)
+        x_r = FLinear.forward(self._fcache, x, self.w_ir, self.b_ir)
+        x_z = FLinear.forward(self._fcache, x, self.w_iz, self.b_iz)
+        x_n = FLinear.forward(self._fcache, x, self.w_in, self.b_in)
 
         # iterate over timesteps
         for t in range(x.shape[1]):
-            r_fcache = FunctionCache()
-            z_fcache = FunctionCache()
-            n_fcache = FunctionCache()
-            self._fcaches.append((r_fcache, z_fcache, n_fcache))
-
             # hidden projection W_h * h_t-1 + b_h
-            h_r = FLinear.forward(r_fcache, h[:, t - 1], self.w_hr, self.b_hr)
-            h_z = FLinear.forward(z_fcache, h[:, t - 1], self.w_hz, self.b_hz)
-            h_n[:, t] = FLinear.forward(n_fcache, h[:, t - 1], self.w_hn, self.b_hn)
+            h_r = FLinear.forward(self._fcache, h[:, t - 1], self.w_hr, self.b_hr)
+            h_z = FLinear.forward(self._fcache, h[:, t - 1], self.w_hz, self.b_hz)
+            h_n[:, t] = FLinear.forward(self._fcache, h[:, t - 1], self.w_hn, self.b_hn)
 
             # gates
-            r[:, t] = FSigmoid.forward(r_fcache, x_r[:, t] + h_r)  # reset gate
-            z[:, t] = FSigmoid.forward(z_fcache, x_z[:, t] + h_z)  # update gate
+            r[:, t] = FSigmoid.forward(self._fcache, x_r[:, t] + h_r)  # reset gate
+            z[:, t] = FSigmoid.forward(self._fcache, x_z[:, t] + h_z)  # update gate
 
             # candidate hidden state n_t = act(x_n + r_t * h_t-1)
-            n[:, t] = self.act.forward(n_fcache, x_n[:, t] + r[:, t] * h_n[:, t])
+            n[:, t] = self.act.forward(self._fcache, x_n[:, t] + r[:, t] * h_n[:, t])
 
             # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
             h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]
@@ -549,14 +518,13 @@ class GRU(Module):
         n = self._fcache.gru_n
         h_n = self._fcache.gru_h_n
         h = self._fcache.gru_h
-        dh = 0
         dr_preact = empty_like(r)
         dz_preact = empty_like(z)
         dn_preact = empty_like(n)
+        dh = 0
 
         # iterate backwards over timesteps
         for t in range(x.shape[1] - 1, -1, -1):
-            r_fcache, z_fcache, n_fcache = self._fcaches[t]
 
             # add output gradients if returning sequence or last time step
             if self.return_sequence:
@@ -570,42 +538,41 @@ class GRU(Module):
             dh = z[:, t] * dh
 
             # candidate hidden state gradients
-            dn_preact[:, t] = self.act.backward(n_fcache, dn)
+            dn_preact[:, t] = self.act.backward(self._fcache, dn)
             dr = h_n[:, t] * dn_preact[:, t]
 
             # gate gradients
-            dr_preact[:, t] = FSigmoid.backward(r_fcache, dr)
-            dz_preact[:, t] = FSigmoid.backward(z_fcache, dz)
+            dz_preact[:, t] = FSigmoid.backward(self._fcache, dz)
+            dr_preact[:, t] = FSigmoid.backward(self._fcache, dr)
 
             # hidden projection gradients
-            dh_r, dw_hr, db_hr = FLinear.backward(r_fcache, dr_preact[:, t])
-            if t > 0:
-                update_parameter_grad(self.w_hr, dw_hr)
-            update_parameter_grad(self.b_hr, db_hr)
+            dh_n, dw_hn, db_hn = FLinear.backward(
+                self._fcache, r[:, t] * dn_preact[:, t]
+            )
+            dh_z, dw_hz, db_hz = FLinear.backward(self._fcache, dz_preact[:, t])
+            dh_r, dw_hr, db_hr = FLinear.backward(self._fcache, dr_preact[:, t])
 
-            dh_z, dw_hz, db_hz = FLinear.backward(z_fcache, dz_preact[:, t])
-            if t > 0:
-                update_parameter_grad(self.w_hz, dw_hz)
-            update_parameter_grad(self.b_hz, db_hz)
-
-            dh_n, dw_hn, db_hn = FLinear.backward(n_fcache, r[:, t] * dn_preact[:, t])
             if t > 0:
                 update_parameter_grad(self.w_hn, dw_hn)
+                update_parameter_grad(self.w_hz, dw_hz)
+                update_parameter_grad(self.w_hr, dw_hr)
+
             update_parameter_grad(self.b_hn, db_hn)
+            update_parameter_grad(self.b_hz, db_hz)
+            update_parameter_grad(self.b_hr, db_hr)
 
             dh += dh_r + dh_z + dh_n
 
         # input projection gradients
-        dx_r, dw_ir, db_ir = FLinear.backward(self._ir_fcache, dr_preact)
-        update_parameter_grad(self.w_ir, dw_ir)
-        update_parameter_grad(self.b_ir, db_ir)
+        dx_n, dw_in, db_in = FLinear.backward(self._fcache, dn_preact)
+        dx_z, dw_iz, db_iz = FLinear.backward(self._fcache, dz_preact)
+        dx_r, dw_ir, db_ir = FLinear.backward(self._fcache, dr_preact)
 
-        dx_z, dw_iz, db_iz = FLinear.backward(self._iz_fcache, dz_preact)
-        update_parameter_grad(self.w_iz, dw_iz)
-        update_parameter_grad(self.b_iz, db_iz)
-
-        dx_n, dw_in, db_in = FLinear.backward(self._in_fcache, dn_preact)
         update_parameter_grad(self.w_in, dw_in)
         update_parameter_grad(self.b_in, db_in)
+        update_parameter_grad(self.w_iz, dw_iz)
+        update_parameter_grad(self.b_iz, db_iz)
+        update_parameter_grad(self.w_ir, dw_ir)
+        update_parameter_grad(self.b_ir, db_ir)
 
         return dx_r + dx_z + dx_n
