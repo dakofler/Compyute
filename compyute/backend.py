@@ -14,6 +14,8 @@ __all__ = ["cpu", "cuda", "Device", "use_device"]
 class Device(ABC):
     """Device base class."""
 
+    type: str
+
     @property
     def engine(self):
         """Computation engine."""
