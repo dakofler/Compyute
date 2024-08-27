@@ -90,9 +90,10 @@ Transforming and Computing Operations
     fft1d
     fft2d
     histogram
-    inner
     ifft1d
     ifft2d
+    inner
+    invert
     log
     log2
     log10

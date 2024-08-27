@@ -22,9 +22,10 @@ __all__ = [
     "fft1d",
     "fft2d",
     "histogram",
-    "inner",
     "ifft1d",
     "ifft2d",
+    "inner",
+    "invert",
     "log",
     "log2",
     "log10",
@@ -145,8 +146,7 @@ def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
     """
     conv = real(ifft1d(fft1d(x1) * fft1d(x2, n=x1.shape[-1])))
     out = x1.shape[-1] - x2.shape[-1] + 1
-    out_slice = [slice(None)] * (x1.n_axes - 1) + [slice(-out, None)]
-    return conv[*out_slice]
+    return conv[..., -out:]
 
 
 def convolve2d_fft(x: Tensor, f: Tensor) -> Tensor:
@@ -167,11 +167,7 @@ def convolve2d_fft(x: Tensor, f: Tensor) -> Tensor:
     conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])))
     out_y = x.shape[-2] - f.shape[-2] + 1
     out_x = x.shape[-1] - f.shape[-1] + 1
-    out_slice = [slice(None)] * (x.n_axes - 2) + [
-        slice(-out_y, None),
-        slice(-out_x, None),
-    ]
-    return conv[*out_slice]
+    return conv[..., -out_y:, -out_x:]
 
 
 def cos(x: Tensor) -> Tensor:
@@ -402,6 +398,22 @@ def inner(*tensors: Tensor) -> Tensor:
         Tensor containing the inner product.
     """
     return Tensor(tensors[0].device.engine.inner(*[t.data for t in tensors]))
+
+
+def invert(x: Tensor) -> Tensor:
+    """Returns the element-wise invertion of a boolean tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing inverted values.
+    """
+    return Tensor(x.device.engine.invert(x.data))
 
 
 def histogram(

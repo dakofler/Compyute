@@ -471,6 +471,7 @@ class GRU(Module):
 
         # iterate over timesteps
         for t in range(x.shape[1]):
+
             # hidden projection W_h * h_t-1 + b_h
             h_r = FLinear.forward(self._fcache, h[:, t - 1], self.w_hr, self.b_hr)
             h_z = FLinear.forward(self._fcache, h[:, t - 1], self.w_hz, self.b_hz)

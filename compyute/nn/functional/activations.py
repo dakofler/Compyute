@@ -4,7 +4,7 @@ import math
 
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
-from ...tensor_ops.transforming import exp
+from ...tensor_ops.transforming import exp, invert
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import maximum, sech
 from ...tensor_ops.transforming import sum as cpsum
@@ -21,13 +21,13 @@ class FReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         y = maximum(x, 0)
-        cache.y = y
+        cache.y = y > 0
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         y = cache.y
-        return (y > 0) * dy
+        return y * dy
 
 
 def relu(x: Tensor) -> Tensor:
@@ -56,13 +56,13 @@ class FLeakyReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, alpha: float) -> Tensor:
         y = maximum(alpha * x, x)
-        cache.y = y
+        cache.y = y > 0
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor, alpha: float) -> Tensor:
         y = cache.y
-        return ((y >= 0) + (y < 0).to_type(dy.dtype) * alpha) * dy
+        return (y + invert(y).to_type(dy.dtype) * alpha) * dy
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
@@ -171,7 +171,7 @@ class FSiLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         sig = FSigmoid.forward(cache, x)
-        y = x * FSigmoid.forward(cache, x)
+        y = x * sig
         cache.x, cache.sig = x, sig
         return y
 

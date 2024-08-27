@@ -133,18 +133,17 @@ class FDilation1D(Function):
 
         dil_shape = (dilation * x.shape[-1] - 1,)
         y = zeros(x.shape[:-1] + dil_shape, x.device, x.dtype)
-        dil_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, dilation)]
-        y[*dil_slice] = x
+        y[..., ::dilation] = x
 
-        cache.dil_slice = dil_slice
+        cache.dilation = dilation
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation, dil_slice = cache.no_dilation, cache.dil_slice
+        no_dilation, dilation = cache.no_dilation, cache.dilation
         if no_dilation:
             return dy
-        return dy[*dil_slice]
+        return dy[..., ::dilation]
 
 
 def dilate1d(x: Tensor, dilation: int) -> Tensor:
@@ -183,8 +182,7 @@ class FPad1D(Function):
         no_padding, padding = cache.no_padding, cache.padding
         if no_padding:
             return dy
-        pad_slice = [slice(None)] * (dy.n_axes - 1) + [slice(padding[0], -padding[0])]
-        return dy[*pad_slice]
+        return dy[..., padding[0] : -padding[0]]
 
 
 def pad1d(x: Tensor, padding: tuple[int, int]) -> Tensor:
@@ -218,8 +216,7 @@ class _FConvolution1D(Function):
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
         f_flipped = flip(f, -1)
         conv = convolve1d_fft(x, f_flipped)
-        stride_slice = [slice(None)] * (x.n_axes - 1) + [slice(None, None, stride)]
-        y = conv[*stride_slice]
+        y = conv[..., ::stride]
 
         cache.x, cache.f, cache.stride, cache.conv_shape = x, f, stride, conv.shape
         return y
@@ -343,22 +340,17 @@ class FDilation2D(Function):
             dilation[1] * x.shape[-1] - 1,
         )
         y = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
-        dil_slice = (
-            [slice(None)] * (x.n_axes - 2)
-            + [slice(None, None, dilation[0])]
-            + [slice(None, None, dilation[1])]
-        )
-        y[*dil_slice] = x
+        y[..., :: dilation[0], :: dilation[1]] = x
 
-        cache.dil_slice = dil_slice
+        cache.dilation = dilation
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation, dil_slice = cache.no_dilation, cache.dil_slice
+        no_dilation, dilation = cache.no_dilation, cache.dilation
         if no_dilation:
             return dy
-        return dy[*dil_slice]
+        return dy[..., :: dilation[0], :: dilation[1]]
 
 
 def dilate2d(x: Tensor, dilation: tuple[int, int]) -> Tensor:
@@ -401,11 +393,7 @@ class FPad2D(Function):
         no_padding, padding = cache.no_padding, cache.padding
         if no_padding:
             return dy
-        pad_slice = [slice(None)] * (dy.n_axes - 2) + [
-            slice(padding[0][0], -padding[0][1]),
-            slice(padding[1][0], -padding[1][1]),
-        ]
-        return dy[*pad_slice]
+        return dy[..., padding[0][0] : -padding[0][1], padding[1][0] : -padding[1][1]]
 
 
 def pad2d(x: Tensor, padding: tuple[tuple[int, int], tuple[int, int]]) -> Tensor:
@@ -444,11 +432,7 @@ class _FConvolution2D(Function):
     ) -> Tensor:
         f_flipped = flip(f, (-2, -1))
         conv = convolve2d_fft(x, f_flipped)
-        stride_slice = [slice(None)] * (x.n_axes - 2) + [
-            slice(None, None, strides[0]),
-            slice(None, None, strides[1]),
-        ]
-        y = conv[*stride_slice]
+        y = conv[..., :: strides[0], :: strides[1]]
 
         cache.x, cache.f, cache.strides, cache.conv_shape = x, f, strides, conv.shape
         return y
@@ -521,11 +505,9 @@ class FMaxPooling2D(Function):
         x_height, x_width = x.shape[-2:]
         kernel_height, kernel_width = kernel_size
 
-        trunc_slice = [slice(None)] * (x.n_axes - 2) + [
-            slice(None, x_height // kernel_height * kernel_height),
-            slice(None, x_width // kernel_width * kernel_width),
-        ]
-        x_trunc = x[*trunc_slice]
+        trunc_y = x_height // kernel_height * kernel_height
+        trunc_x = x_width // kernel_width * kernel_width
+        x_trunc = x[..., :trunc_y, :trunc_x]
         pool_shape = x.shape[:-2] + (
             x_height // kernel_height,
             kernel_height,
@@ -576,11 +558,10 @@ class FAvgPooling2D(Function):
         x_height, x_width = x.shape[-2:]
         kernel_height, kernel_width = kernel_size
 
-        trunc_slice = [slice(None)] * (x.n_axes - 2) + [
-            slice(None, x_height // kernel_height * kernel_height),
-            slice(None, x_width // kernel_width * kernel_width),
-        ]
-        x_trunc = x[*trunc_slice]
+        trunc_y = x_height // kernel_height * kernel_height
+        trunc_x = x_width // kernel_width * kernel_width
+        x_trunc = x[..., :trunc_y, :trunc_x]
+
         pool_shape = x.shape[:-2] + (
             x_height // kernel_height,
             kernel_height,
@@ -589,14 +570,12 @@ class FAvgPooling2D(Function):
         )
         y = mean(x_trunc.to_shape(pool_shape), axis=(-3, -1))
 
-        cache.x_shape = x.shape
+        cache.x_shape, cache.kernel_size = x.shape, kernel_size
         return y
 
     @staticmethod
-    def backward(
-        cache: FunctionCache, dy: Tensor, kernel_size: tuple[int, int]
-    ) -> Tensor:
-        x_shape = cache.x_shape
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x_shape, kernel_size = cache.x_shape, cache.kernel_size
         return upsample2d(dy, kernel_size, x_shape) / math.prod(kernel_size)
 
 

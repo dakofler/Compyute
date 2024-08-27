@@ -33,8 +33,8 @@ class FBatchNorm1D(Function):
             # compute mean and variance from x
             mean = cpmean(x, axis=axes, keepdims=True)
             var = cpvar(x, axis=axes, keepdims=True)
-            inv_std = 1 / sqrt(var + eps)
-            x_norm = (x - mean) * inv_std
+            std = sqrt(var + eps)
+            x_norm = (x - mean) / std
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
@@ -43,26 +43,26 @@ class FBatchNorm1D(Function):
             # use running mean and variance
             rvar_ = rvar if x_is_2d else insert_dim(rvar, -1)
             rmean_ = rmean if x_is_2d else insert_dim(rmean, -1)
-            inv_std = 1 / sqrt(rvar_ + eps)
-            x_norm = (x - rmean_) * inv_std
+            std = sqrt(rvar_ + eps)
+            x_norm = (x - rmean_) / std
 
         w = w if x_is_2d else insert_dim(w, -1)
         b = b if x_is_2d else insert_dim(b, -1)
         y = w * x_norm + b
 
-        cache.w, cache.inv_std, cache.x_norm = w, inv_std, x_norm
+        cache.w, cache.std, cache.x_norm = w, std, x_norm
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, inv_std, x_norm = cache.w, cache.inv_std, cache.x_norm
+        w, std, x_norm = cache.w, cache.std, cache.x_norm
         axes = 0 if dy.n_axes == 2 else (0, 2)
 
         # input grads
         n = float(dy.size / dy.shape[1])
         dy_sum = cpsum(dy, axis=axes, keepdims=True)
         dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w * inv_std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = squeeze(dy_x_norm_sum)
@@ -141,34 +141,34 @@ class FBatchNorm2D(Function):
             # compute mean and variance from x
             mean = cpmean(x, axis=axes, keepdims=True)
             var = cpvar(x, axis=axes, keepdims=True)
-            inv_std = 1 / sqrt(var + eps)
-            x_norm = (x - mean) * inv_std
+            std = sqrt(var + eps)
+            x_norm = (x - mean) / std
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
             rvar = rvar * (1 - m) + cpvar(x, axis=axes, ddof=1) * m
         else:
             # use running mean and variance
-            inv_std = 1 / sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
-            x_norm = (x - rmean.to_shape((*rmean.shape, 1, 1))) * inv_std
+            std = sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
+            x_norm = (x - rmean.to_shape((*rmean.shape, 1, 1))) / std
 
         w = w.to_shape((*w.shape, 1, 1))
         b = b.to_shape((*b.shape, 1, 1))
         y = w * x_norm + b
 
-        cache.w, cache.inv_std, cache.x_norm = w, inv_std, x_norm
+        cache.w, cache.std, cache.x_norm = w, std, x_norm
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, inv_std, x_norm = cache.w, cache.inv_std, cache.x_norm
+        w, std, x_norm = cache.w, cache.std, cache.x_norm
         axes = (0, 2, 3)
         n = float(dy.size / dy.shape[1])
 
         # input grads
         dy_sum = cpsum(dy, axis=axes, keepdims=True)
         dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w * inv_std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = squeeze(dy_x_norm_sum)
@@ -235,23 +235,23 @@ class FLayerNorm(Function):
     ) -> Tensor:
         axes = tuple(-i - 1 for i in range(w.n_axes))
 
-        inv_std = 1 / sqrt(cpvar(x, axis=axes, keepdims=True) + eps)
-        x_norm = (x - cpmean(x, axis=axes, keepdims=True)) * inv_std
+        std = sqrt(cpvar(x, axis=axes, keepdims=True) + eps)
+        x_norm = (x - cpmean(x, axis=axes, keepdims=True)) / std
         y = w * x_norm + b
 
-        cache.w, cache.inv_std, cache.x_norm = w, inv_std, x_norm
+        cache.w, cache.std, cache.x_norm = w, std, x_norm
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, inv_std, x_norm = cache.w, cache.inv_std, cache.x_norm
+        w, std, x_norm = cache.w, cache.std, cache.x_norm
         axes = tuple(-i - 1 for i in range(w.n_axes))
         sum_axes = tuple(range(dy.n_axes - w.n_axes))
 
         # input grads
         dy_sum = cpsum(dy, axis=axes, keepdims=True)
-        dy_x_std_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w * inv_std / w.size * (w.size * dy - dy_sum - x_norm * dy_x_std_sum)
+        dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+        dx = w / std / w.size * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = cpsum(dy * x_norm, axis=sum_axes)

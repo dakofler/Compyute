@@ -244,5 +244,4 @@ class AvgPooling2D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        kernel_size = (self.kernel_size, self.kernel_size)
-        return FAvgPooling2D.backward(self._fcache, dy, kernel_size)
+        return FAvgPooling2D.backward(self._fcache, dy)
