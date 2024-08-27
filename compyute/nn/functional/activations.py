@@ -1,61 +1,72 @@
 """Neural network activation functions."""
 
 import math
-from typing import Callable, Optional
 
 from ...tensor_ops.creating import identity
-from ...tensor_ops.reshaping import reshape, tile
-from ...tensor_ops.transforming import exp
+from ...tensor_ops.reshaping import insert_dim, reshape, tile
+from ...tensor_ops.transforming import exp, invert
 from ...tensor_ops.transforming import max as cpmax
 from ...tensor_ops.transforming import maximum, sech
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensor_ops.transforming import tanh as cptanh
 from ...tensors import Tensor
+from .functions import Function, FunctionCache, PseudoCache
 
-__all__ = [
-    "relu",
-    "leaky_relu",
-    "gelu",
-    "sigmoid",
-    "silu",
-    "tanh",
-    "softmax",
-    "temperature_softmax",
-]
+__all__ = ["relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh", "softmax"]
 
 
-def relu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
+class FReLU(Function):
+    """Applies the softmax function over the last axis of an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        y = maximum(x, 0)
+        cache.y = y > 0
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        y = cache.y
+        return y * dy
+
+
+def relu(x: Tensor) -> Tensor:
     """Applies the Rectified Linear Unit activation function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     ----------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.ReLU`
     """
-    y = maximum(x, 0)
-
-    if return_grad_fn:
-        return y, (lambda dy: (y > 0) * dy)
-    return y, None
+    return FReLU.forward(PseudoCache(), x)
 
 
-def leaky_relu(
-    x: Tensor, alpha: float = 0.01, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
-    """Applies the leaky ReLU function to an input tensor as.
+class FLeakyReLU(Function):
+    """Applies the leaky ReLU function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor, alpha: float) -> Tensor:
+        y = maximum(alpha * x, x)
+        cache.y = y > 0
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor, alpha: float) -> Tensor:
+        y = cache.y
+        return (y + invert(y).to_type(dy.dtype) * alpha) * dy
+
+
+def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
+    """Applies the leaky ReLU function to an input tensor.
 
     Parameters
     ----------
@@ -63,72 +74,74 @@ def leaky_relu(
         Input tensor.
     alpha : float, optional
         Slope of the negative output. Defaults to ``0.01``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     ----------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.LeakyReLU`
     """
-    y = maximum(alpha * x, x)
-
-    if return_grad_fn:
-
-        def grad_fn(dy: Tensor) -> Tensor:
-            return ((y >= 0) + (y < 0).to_type(x.dtype) * alpha) * dy
-
-        return y, grad_fn
-
-    return y, None
+    return FLeakyReLU.forward(PseudoCache(), x, alpha)
 
 
-def gelu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
+class FGELU(Function):
+    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
+        y = 0.5 * x * (1 + cptanh(tmp))
+        cache.x, cache.tmp = x, tmp
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x, tmp = cache.x, cache.tmp
+        dx1 = 1 + cptanh(tmp)
+        dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
+        return 0.5 * (dx1 + dx2) * dy
+
+
+def gelu(x: Tensor) -> Tensor:
     """Applies the Gaussian Error Linear Unit function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.GELU`
     """
-
-    tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
-    y = 0.5 * x * (1 + cptanh(tmp))
-
-    if return_grad_fn:
-
-        def grad_fn(dy: Tensor) -> Tensor:
-            dx1 = 1 + cptanh(tmp)
-            dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
-            return 0.5 * (dx1 + dx2) * dy
-
-        return y, grad_fn
-
-    return y, None
+    return FGELU.forward(PseudoCache(), x)
 
 
-def sigmoid(
-    x: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FSigmoid(Function):
+    """Applies the sigmoid function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        x_exp = exp(x)
+        y = x_exp / (1 + x_exp)
+        cache.y = y
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        y = cache.y
+        return (y * (1 - y)) * dy
+
+
+def sigmoid(x: Tensor) -> Tensor:
     """Applies the sigmoid function to an input tensor.
 
     Parameters
@@ -149,136 +162,113 @@ def sigmoid(
     --------
     :class:`compyute.nn.Sigmoid`
     """
-    x_exp = exp(x)
-    y = x_exp / (1 + x_exp)
-
-    if return_grad_fn:
-        return y, (lambda dy: (y * (1 - y)) * dy)
-
-    return y, None
+    return FSigmoid.forward(PseudoCache(), x)
 
 
-def silu(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
+class FSiLU(Function):
+    """Applies the Sigmoid Linear Unit activation function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        sig = FSigmoid.forward(cache, x)
+        y = x * sig
+        cache.x, cache.sig = x, sig
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x, sig = cache.x, cache.sig
+        return x * FSigmoid.backward(cache, dy) + sig * dy
+
+
+def silu(x: Tensor) -> Tensor:
     """Applies the Sigmoid Linear Unit activation function to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.SiLU`
     """
-    sig, sigmoid_grad_fn = sigmoid(x, return_grad_fn=return_grad_fn)
-    y = sig * x
-
-    if return_grad_fn and sigmoid_grad_fn is not None:
-        return y, (lambda dy: x * sigmoid_grad_fn(dy) + sig * dy)
-
-    return y, None
+    return FSiLU.forward(PseudoCache(), x)
 
 
-def tanh(x: Tensor, return_grad_fn: bool = False) -> tuple[Tensor, Optional[Callable]]:
-    """Applies the hyperbolic tangent activationfunction to an input tensor.
+class FSoftmax(Function):
+    """Applies the softmax function over the last axis of an input tensor."""
 
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        x = exp(x - cpmax(x, axis=-1, keepdims=True))
+        y = x / cpsum(x, axis=-1, keepdims=True)
+        cache.y = y
+        return y
 
-    Returns
-    -------
-    Tensor
-        Output tensor.
-    Callable, optional
-        Gradient function.
-
-    See Also
-    --------
-    :class:`compyute.nn.Tanh`
-    """
-    y = cptanh(x)
-
-    if return_grad_fn:
-        return y, (lambda dy: (1 - y**2) * dy)
-
-    return y, None
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        y = cache.y
+        dx = tile(insert_dim(y, -1), dy.shape[-1], -1)
+        dx *= identity(dy.shape[-1], device=dy.device) - dx.T
+        return reshape(dx @ dy.to_shape((*dy.shape, 1)), dy.shape)
 
 
-def softmax(
-    x_exp: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+def softmax(x: Tensor) -> Tensor:
     """Applies the softmax function over the last axis of an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.Softmax`
     """
-    x_exp = exp(x_exp - cpmax(x_exp, axis=-1, keepdims=True))
-    y = x_exp / cpsum(x_exp, axis=-1, keepdims=True)
-
-    if return_grad_fn:
-
-        def grad_fn(dy: Tensor) -> Tensor:
-            dx = tile(y.to_shape((*y.shape, 1)), y.shape[-1], -1)
-            dx *= identity(y.shape[-1], device=y.device) - dx.T
-            return reshape(dx @ dy.to_shape((*dy.shape, 1)), y.shape)
-
-        return y, grad_fn
-    return y, None
+    return FSoftmax.forward(PseudoCache(), x)
 
 
-def temperature_softmax(x: Tensor, temperature: float = 1) -> Tensor:
-    r"""Applies the softmax function with temperature over the last axis of an input tensor.
+class FTanh(Function):
+    """Applies the hyperbolic tangent activationfunction to an input tensor."""
 
-    .. math::
-        y = \frac{e^{\frac{x}{T}}}{\sum_{i=1}^N e^{\frac{x_i}{T}}}
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        y = cptanh(x)
+        cache.y = y
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        y = cache.y
+        return (1 - y**2) * dy
+
+
+def tanh(x: Tensor) -> Tensor:
+    """Applies the hyperbolic tangent activationfunction to an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    temperature : float, optional
-        Temperature scaling to be applied in the calculation. Defaults to ``1``.
 
     Returns
     -------
     Tensor
         Output tensor.
 
-    Raises
-    ------
-    ValueError
-        If temperature is 0.
+    See Also
+    --------
+    :class:`compyute.nn.Tanh`
     """
-    if temperature == 0:
-        raise ValueError("Temperature cannot be 0.")
-
-    x_exp = exp((x - cpmax(x, axis=-1, keepdims=True)) / temperature)
-    return x_exp / cpsum(x_exp, axis=-1, keepdims=True)
+    return FTanh.forward(PseudoCache(), x)

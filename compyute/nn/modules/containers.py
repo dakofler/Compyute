@@ -35,17 +35,13 @@ class Sequential(Module):
     def forward(self, x: Tensor) -> Tensor:
         for module in self._modules:
             x = module(x)
-
-        if self._is_training:
-
-            def _backward(dy: Tensor) -> Tensor:
-                for module in reversed(self._modules):
-                    dy = module.backward(dy)
-                return dy
-
-            self._backward = _backward
-
         return x
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        for module in reversed(self._modules):
+            dy = module.backward(dy)
+        return dy
 
 
 class ParallelConcat(Module):
@@ -79,16 +75,15 @@ class ParallelConcat(Module):
         ys = [m(x) for m in self._modules]
         y = concat(ys, axis=self.concat_axis)
 
-        if self._is_training:
-            split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
-
-            def _backward(dy: Tensor) -> Tensor:
-                splits = split(dy, splits=split_idx, axis=self.concat_axis)
-                return tensorsum(m.backward(s) for m, s in zip(self._modules, splits))
-
-            self._backward = _backward
-
+        self._fcache.ys = ys  # TODO: cannot cache list[Tensor]
         return y
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        ys = self._fcache.ys
+        split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
+        splits = split(dy, splits=split_idx, axis=self.concat_axis)
+        return tensorsum(m.backward(s) for m, s in zip(self._modules, splits))
 
 
 class ParallelAdd(Module):
@@ -115,12 +110,11 @@ class ParallelAdd(Module):
         self._modules = ModuleList(modules)
 
     def forward(self, x: Tensor) -> Tensor:
-        y = tensorsum(m(x) for m in self._modules)
+        return tensorsum(m(x) for m in self._modules)
 
-        if self._is_training:
-            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self._modules)
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        return tensorsum(m.backward(dy) for m in self._modules)
 
 
 class ResidualConnection(Module):
@@ -158,17 +152,13 @@ class ResidualConnection(Module):
     def forward(self, x: Tensor) -> Tensor:
         y = self.residual_block(x)
         y += self.residual_proj(x) if self.residual_proj else x
-
-        if self._is_training:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx = self.residual_block.backward(dy)
-                dx += self.residual_proj.backward(dy) if self.residual_proj else dy
-                return dx
-
-            self._backward = _backward
-
         return y
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx = self.residual_block.backward(dy)
+        dx += self.residual_proj.backward(dy) if self.residual_proj else dy
+        return dx
 
 
 class NoChildModulesError(Exception):

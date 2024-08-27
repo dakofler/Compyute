@@ -2,11 +2,12 @@
 
 from typing import Optional
 
-from ...tensor_ops.creating import ones, zeros
+from ...tensor_ops.creating import empty
 from ...tensors import ShapeLike, Tensor
 from ...typing import DType
-from ..functional.normalizatons import batchnorm1d, batchnorm2d, layernorm, rmsnorm
+from ..functional.normalizations import FBatchNorm1D, FBatchNorm2D, FLayerNorm, FRMSNorm
 from ..parameter import Buffer, Parameter, update_parameter_grad
+from ..utils.initializers import Ones, Zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -62,18 +63,22 @@ class BatchNorm1D(Module):
         self.eps = eps
         self.m = m
 
-        # parameters
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
+        # init parameters and buffers
+        self.w = Parameter(empty((channels,), dtype=dtype))
+        self.b = Parameter(empty((channels,), dtype=dtype))
+        self.rmean = Buffer(empty((channels,), dtype=dtype))
+        self.rvar = Buffer(empty((channels,), dtype=dtype))
+        self._init_parameters_and_buffers()
 
-        # buffers
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w, self.rvar)
+        Zeros()(self.b, self.rmean)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [2, 3])
 
-        y, self.rmean, self.rvar, grad_fn = batchnorm1d(
+        y, self.rmean, self.rvar = FBatchNorm1D.forward(
+            self._fcache,
             x,
             self.rmean,
             self.rvar,
@@ -84,17 +89,14 @@ class BatchNorm1D(Module):
             self._is_training,
         )
 
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
         return y
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FBatchNorm1D.backward(self._fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
 
 
 class BatchNorm2D(Module):
@@ -148,18 +150,22 @@ class BatchNorm2D(Module):
         self.eps = eps
         self.m = m
 
-        # parameters
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
+        # init parameters and buffers
+        self.w = Parameter(empty((channels,), dtype=dtype))
+        self.b = Parameter(empty((channels,), dtype=dtype))
+        self.rmean = Buffer(empty((channels,), dtype=dtype))
+        self.rvar = Buffer(empty((channels,), dtype=dtype))
+        self._init_parameters_and_buffers()
 
-        # buffers
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w, self.rvar)
+        Zeros()(self.b, self.rmean)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
 
-        y, self.rmean, self.rvar, grad_fn = batchnorm2d(
+        y, self.rmean, self.rvar = FBatchNorm2D.forward(
+            self._fcache,
             x,
             self.rmean,
             self.rvar,
@@ -169,18 +175,14 @@ class BatchNorm2D(Module):
             self.eps,
             self._is_training,
         )
-
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
         return y
+
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FBatchNorm2D.backward(self._fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
 
 
 class LayerNorm(Module):
@@ -226,25 +228,24 @@ class LayerNorm(Module):
         self.normalized_shape = normalized_shape
         self.eps = eps
 
-        # parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
-        self.b = Parameter(zeros(normalized_shape, dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty(normalized_shape, dtype=dtype))
+        self.b = Parameter(empty(normalized_shape, dtype=dtype))
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w)
+        Zeros()(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
+        return FLayerNorm.forward(self._fcache, x, self.w, self.b, self.eps)
 
-        y, grad_fn = layernorm(x, self.w, self.b, self.eps, self._is_training)
-
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw, db = FLayerNorm.backward(self._fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
 
 
 class RMSNorm(Module):
@@ -288,20 +289,18 @@ class RMSNorm(Module):
         self.normalized_shape = normalized_shape
         self.eps = eps
 
-        # parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
+        # init parameters
+        self.w = Parameter(empty(normalized_shape, dtype=dtype))
+        self._init_parameters_and_buffers()
+
+    def _init_parameters_and_buffers(self) -> None:
+        Ones()(self.w)
 
     def forward(self, x: Tensor) -> Tensor:
+        return FRMSNorm.forward(self._fcache, x, self.w, self.eps)
 
-        y, grad_fn = rmsnorm(x, self.w, self.eps, self._is_training)
-
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw = grad_fn(dy)
-                update_parameter_grad(self.w, dw)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        dx, dw = FRMSNorm.backward(self._fcache, dy)
+        update_parameter_grad(self.w, dw)
+        return dx

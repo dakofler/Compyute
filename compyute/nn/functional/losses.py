@@ -1,20 +1,34 @@
 """Neural network loss functions."""
 
 import math
-from typing import Callable, Optional
 
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import clip, log, mean
 from ...tensor_ops.transforming import sum as cpsum
 from ...tensors import Tensor
 from .activations import softmax
+from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
 
 
-def mean_squared_error(
-    y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FMeanSquaredError(Function):
+    """Computes the mean squared error loss."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        dif = y_pred - y_true
+        y = mean(dif**2)
+        cache.y_pred_size, cache.dif = y_pred.size, dif
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache) -> Tensor:
+        y_pred_size, dif = cache.y_pred_size, cache.dif
+        return dif * 2 / float(y_pred_size)
+
+
+def mean_squared_error(y_pred: Tensor, y_true: Tensor) -> Tensor:
     """Computes the mean squared error loss.
 
     Parameters
@@ -23,36 +37,37 @@ def mean_squared_error(
         Model predictions.
     y_true : Tensor
         Target values.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Mean squared error loss.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.MeanSquaredError`
     """
-    dif = y_pred - y_true
-    loss = mean(dif**2)
-
-    if return_grad_fn:
-
-        def grad_fn() -> Tensor:
-            return dif * 2 / float(y_pred.size)
-
-        return loss, grad_fn
-
-    return loss, None
+    return FMeanSquaredError.forward(PseudoCache(), y_pred, y_true)
 
 
-def cross_entropy(
-    y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FCrossEntropy(Function):
+    """Computes the cross entropy loss."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        probs = softmax(y_pred)
+        y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
+        y = mean(cpsum(-log(probs) * y_true, axis=-1))
+        cache.y_true, cache.probs = y_true, probs
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache) -> Tensor:
+        y_true, probs = cache.y_true, cache.probs
+        return (probs - y_true) / float(math.prod(y_true.shape[:-1]))
+
+
+def cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
     """Computes the cross entropy loss.
 
     Parameters
@@ -61,43 +76,38 @@ def cross_entropy(
         Model logits.
     y_true : Tensor
         Target class labels, must be of type ``int``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Cross entropy loss.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-
-    # probs, _ = softmax(y_pred, False)
-    # y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
-    # loss = -mean(log(cpsum(((probs + eps) * y_true), axis=-1)))
-
-    probs, _ = softmax(y_pred, False)
-    y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
-    loss = mean(cpsum(-log(probs) * y_true, axis=-1))
-
-    if return_grad_fn:
-
-        def grad_fn() -> Tensor:
-            return (probs - y_true) / float(math.prod(y_pred.shape[:-1]))
-
-        return loss, grad_fn
-
-    return loss, None
+    return FCrossEntropy.forward(PseudoCache(), y_pred, y_true)
 
 
-def binary_cross_entropy(
-    y_pred: Tensor, y_true: Tensor, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
-    """Computes the cross entropy loss.
+class FBinaryCrossEntropy(Function):
+    """Computes the binary cross entropy loss."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        log_y_pred = clip(log(y_pred), -100, 100)
+        log_one_minus_y_pred = clip(log(1 - y_pred), -100, 100)
+        y = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
+        cache.y_pred, cache.y_true = y_pred, y_true
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache) -> Tensor:
+        y_pred, y_true = cache.y_pred, cache.y_true
+        return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / float(y_pred.size)
+
+
+def binary_cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
+    """Computes the binary cross entropy loss.
 
     Parameters
     ----------
@@ -105,30 +115,14 @@ def binary_cross_entropy(
         Normalized model outputs.
     y_true : Tensor
         Binary target class labels, must be either ``0`` or ``1``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Cross entropy loss.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------
     :class:`compyute.nn.BinaryCrossEntropy`
     """
-    clip_value = 100
-    log_y_pred = clip(log(y_pred), -clip_value, clip_value)
-    log_one_minus_y_pred = clip(log(1 - y_pred), -clip_value, clip_value)
-    loss = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
-
-    if return_grad_fn:
-
-        def grad_fn() -> Tensor:
-            return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / float(y_pred.size)
-
-        return loss, grad_fn
-
-    return loss, None
+    return FBinaryCrossEntropy.forward(PseudoCache(), y_pred, y_true)

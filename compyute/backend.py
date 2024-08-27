@@ -14,6 +14,8 @@ __all__ = ["cpu", "cuda", "Device", "use_device"]
 class Device(ABC):
     """Device base class."""
 
+    type: str
+
     @property
     def engine(self):
         """Computation engine."""
@@ -114,6 +116,11 @@ def get_device_from_class(array_type: type) -> Device:
     if array_type == cupy.ndarray:
         return cuda
     return cpu
+
+
+def get_default_device() -> Optional[Device]:
+    """Returns the default device."""
+    return default_device
 
 
 def select_device(device: Optional[Device]) -> Device:

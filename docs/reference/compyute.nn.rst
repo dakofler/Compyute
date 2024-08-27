@@ -138,9 +138,8 @@ Reshape
 .. autosummary::
     :toctree: ../_generated/compyute.nn
     
-    Reshape
     Flatten
-    Moveaxis
+    Reshape
 
 
 Parameter and Buffer

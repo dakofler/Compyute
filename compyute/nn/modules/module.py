@@ -6,10 +6,11 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain
-from typing import Any, Callable, Iterable, Iterator, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
+from ..functional.functions import FunctionCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
@@ -25,14 +26,14 @@ class Module(ABC):
     """
 
     y: Optional[Tensor] = None
-    _backward: Optional[Callable] = None
     _device: Device = select_device(None)
     _is_retaining_values: bool = False
     _is_trainable: bool = True
     _is_training: bool = False
 
     def __init__(self, label: Optional[str] = None) -> None:
-        self.label = label if label is not None else self.__class__.__name__
+        self.label = label or self.__class__.__name__
+        self._fcache = FunctionCache()
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -272,23 +273,11 @@ class Module(ABC):
 
     def backward(self, dy: Tensor) -> Optional[Tensor]:
         """Performs a backward pass through the module."""
-
         if not self._is_training:
             raise AttributeError(f"{self.label} is not in training mode.")
 
-        if self._backward is None:
-            raise ModelDefinitionError(
-                """No backward function has been defined.
-                If you are using a custom model, make sure to define a backward function and assign
-                it to self._backward during the call of the forward method (see Compyute README)"""
-            )
-
         dy = dy.to_float()
         self._set_dy(dy)
-
-        if self._backward is not None and self._is_trainable:
-            return self._backward(dy)
-        return dy
 
     def _set_y(self, y: Tensor) -> None:
         if not self._is_retaining_values:
@@ -307,12 +296,11 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        if self._is_retaining_values and not force:
-            return
-        self.y = self._backward = None
-
-        for p in self.get_parameters(include_child_modules=False):
-            p.grad = None
+        self._fcache.clear()
+        if not self._is_retaining_values or force:
+            self.y = None
+            for p in self.get_parameters(include_child_modules=False):
+                p.grad = None
 
         for module in self.modules:
             module.clean(force)
@@ -328,8 +316,10 @@ class Identity(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        self._backward = lambda dy: dy
         return x
+
+    def backward(self, dy: Tensor) -> Tensor:
+        return dy
 
 
 class ModuleList(list):

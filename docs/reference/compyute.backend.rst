@@ -1,5 +1,5 @@
 compyute.backend
-===============
+================
 .. currentmodule:: compyute.backend
 
 .. autosummary::

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...tensors import Tensor
-from ..functional.regularizations import dropout
+from ..functional.regularizations import FDropout
 from .module import Module
 
 __all__ = ["Dropout"]
@@ -25,8 +25,8 @@ class Dropout(Module):
         self.p = p
 
     def forward(self, x: Tensor) -> Tensor:
-        if not self._is_training:
-            return x
+        return FDropout.forward(self._fcache, x, self.p, self._is_training)
 
-        y, self._backward = dropout(x, self.p, self._is_training)
-        return y
+    def backward(self, dy: Tensor) -> Tensor:
+        super().backward(dy)
+        return FDropout.backward(self._fcache, dy)

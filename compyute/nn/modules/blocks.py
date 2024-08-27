@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...typing import DType
-from ..functional.convolutions import _PaddingLike
+from ..functional.convolutions import PaddingLike
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
 from .containers import Sequential
@@ -140,7 +140,7 @@ class Convolution1DBlock(Sequential):
         out_channels: int,
         kernel_size: int,
         activation: _ActivationLike,
-        padding: _PaddingLike = "valid",
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
         weight_init: _InitializerLike = "xavier_uniform",
@@ -242,7 +242,7 @@ class Convolution2DBlock(Sequential):
         out_channels: int,
         kernel_size: int,
         activation: _ActivationLike,
-        padding: _PaddingLike = "valid",
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
         weight_init: _InitializerLike = "xavier_uniform",

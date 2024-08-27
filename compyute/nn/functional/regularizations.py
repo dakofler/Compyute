@@ -1,16 +1,36 @@
 """Neural network regularization functions."""
 
-from typing import Callable, Optional
-
 from ...random.random import multinulli
 from ...tensors import Tensor
+from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = ["dropout"]
 
 
-def dropout(
-    x: Tensor, p: float = 0.5, return_grad_fn: bool = False
-) -> tuple[Tensor, Optional[Callable]]:
+class FDropout(Function):
+    """Applies the softmax function over the last axis of an input tensor."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache, x: Tensor, p: float = 0.5, training: bool = False
+    ) -> Tensor:
+        cache.training = training
+        if not training:
+            return x
+        dropout_map = multinulli(p, x.shape, device=x.device) / (1 - p)
+        cache.dropout_map = dropout_map
+        return x * dropout_map
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        training = cache.training
+        if not training:
+            return dy
+        dropout_map = cache.dropout_map
+        return dy * dropout_map
+
+
+def dropout(x: Tensor, p: float = 0.5) -> Tensor:
     """Randomly sets tensor values to zero.
 
     Parameters
@@ -19,19 +39,12 @@ def dropout(
         Input tensor.
     p : float, optional
         Probability of values being set to zero. Defaults to ``0.5``.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
+    training : bool, optional
+        Whether to perform calculations in training mode. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
     """
-    dropout_map = multinulli(p, x.shape, device=x.device) / (1 - p)
-    y = x * dropout_map
-
-    if return_grad_fn:
-        return y, (lambda dy: dy * dropout_map)
-    return y, None
+    return FDropout.forward(PseudoCache(), x, p)

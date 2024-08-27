@@ -6,7 +6,15 @@ from typing import Any, Optional, TypeAlias
 
 import numpy
 
-from .backend import ArrayLike, Device, cpu, cuda, data_to_device, get_device_from_class
+from .backend import (
+    ArrayLike,
+    Device,
+    cpu,
+    cuda,
+    data_to_device,
+    get_default_device,
+    get_device_from_class,
+)
 from .typing import (
     DType,
     ScalarLike,
@@ -14,6 +22,7 @@ from .typing import (
     float16,
     float32,
     float64,
+    get_default_dtype,
     int32,
     int64,
 )
@@ -51,7 +60,8 @@ def tensor(
     Tensor
         Tensor object.
     """
-    device = device or get_device_from_class(type(data))
+    device = device or get_default_device() or get_device_from_class(type(data))
+    dtype = dtype or get_default_dtype()
     dtype_str = dtype.value if dtype is not None else None
     data_array = device.engine.asarray(data, dtype_str)
 
@@ -73,8 +83,6 @@ class Tensor:
     """
 
     grad: Optional[Tensor] = None
-    _device: Optional[Device] = None
-    _dtype: Optional[DType] = None
     _iterator: int = 0
 
     def __init__(self, data: ArrayLike) -> None:
@@ -86,16 +94,12 @@ class Tensor:
     @property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
-        if self._device is None:
-            self._device = get_device_from_class(type(self.data))
-        return self._device
+        return get_device_from_class(type(self.data))
 
     @property
     def dtype(self) -> DType:
         """Tensor data type."""
-        if self._dtype is None:
-            self._dtype = DType(str(self.data.dtype))
-        return self._dtype
+        return DType(str(self.data.dtype))
 
     @property
     def n_axes(self) -> int:
@@ -120,8 +124,7 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """View of the tensor with its last two axes transposed."""
-        data = self.data.transpose(*range(self.n_axes - 2), -1, -2)
-        return Tensor(data)
+        return Tensor(self.data.transpose(*range(self.n_axes - 2), -1, -2))
 
     @property
     def ptr(self) -> int:
@@ -289,7 +292,7 @@ class Tensor:
         Tensor
             Tensor on the specified device.
         """
-        if self._device == device:
+        if self.device == device:
             return self
 
         new_tensor = Tensor(data_to_device(self.data, device))
@@ -305,10 +308,9 @@ class Tensor:
         device : Device
             Device to move the tensor to.
         """
-        if self._device == device:
+        if self.device == device:
             return
 
-        self._device = device
         self.data = data_to_device(self.data, device)
         if self.grad:
             self.grad.ito_device(device)
