@@ -90,6 +90,20 @@ def get_device_count() -> int:
     return cupy.cuda.runtime.getDeviceCount()
 
 
+def get_cuda_memory_usage() -> int:
+    """Returns the amount of GPU memory used."""
+    if not gpu_available():
+        return 0
+    return cupy.get_default_memory_pool().total_bytes()
+
+
+def flush_cuda_memory() -> None:
+    """Flushes the GPU memory."""
+    if not gpu_available():
+        return
+    cupy.get_default_memory_pool().free_all_blocks()
+
+
 fallback_default_device: Device = cpu
 default_device: Optional[Device] = None
 

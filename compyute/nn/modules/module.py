@@ -10,7 +10,7 @@ from typing import Any, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
-from ..functional.functions import FunctionCache
+from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
@@ -33,7 +33,7 @@ class Module(ABC):
 
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
-        self._fcache = FunctionCache()
+        self._fcache: FunctionCache = PseudoCache()
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -187,6 +187,7 @@ class Module(ABC):
         Tensor
             Computed module output.
         """
+        self._fcache = FunctionCache() if self._is_training else PseudoCache()
         y = self.forward(x)
         self._set_y(y)
         return y
