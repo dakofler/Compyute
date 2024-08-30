@@ -47,4 +47,4 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
     """
     ssr = cp_sum((y_true - y_pred) ** 2)
     sst = cp_sum((y_true - mean(y_true)) ** 2)
-    return 1 - ssr / (sst + eps)
+    return 1.0 - ssr / (sst + eps)

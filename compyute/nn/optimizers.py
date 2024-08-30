@@ -50,13 +50,10 @@ class Optimizer(ABC):
         OrderedDict
             State dict containing variables and buffers.
         """
+        bad_vars = {"state", "parameters", "_parameters"}
         return OrderedDict(
             state=self.state,
-            vars={
-                k: v
-                for k, v in vars(self).items()
-                if k not in ["state", "parameters", "_parameters"]
-            },
+            vars={k: v for k, v in vars(self).items() if k not in bad_vars},
         )
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
@@ -133,9 +130,9 @@ class SGD(Optimizer):
         self,
         parameters: Optional[Iterator[Parameter]] = None,
         lr: float = 1e-3,
-        momentum: float = 0,
+        momentum: float = 0.0,
         nesterov: bool = False,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
     ) -> None:
         super().__init__(parameters, lr)
         self.momentum = momentum
@@ -150,10 +147,10 @@ class SGD(Optimizer):
 
             grad = p.grad.copy()
 
-            if self.weight_decay > 0:
+            if self.weight_decay > 0.0:
                 grad += self.weight_decay * p
 
-            if self.momentum > 0:
+            if self.momentum > 0.0:
                 prev_v = self.state[i].get("v", 0.0)
                 v = self.momentum * prev_v + grad
                 self.state[i]["v"] = v
@@ -222,7 +219,7 @@ class Adam(Optimizer):
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
     ) -> None:
         super().__init__(parameters, lr)
         self.beta1 = beta1
@@ -237,21 +234,21 @@ class Adam(Optimizer):
 
             grad = p.grad.copy()
 
-            if self.weight_decay > 0:
+            if self.weight_decay > 0.0:
                 grad += self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * grad
+            prev_m = self.state[i].get("m", 0.0)
+            m = self.beta1 * prev_m + (1.0 - self.beta1) * grad
             self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
+            prev_v = self.state[i].get("v", 0.0)
+            v = self.beta2 * prev_v + (1.0 - self.beta2) * grad**2
             self.state[i]["v"] = v
 
-            m /= 1 - self.beta1**self.t
-            v /= 1 - self.beta2**self.t
+            m /= 1.0 - self.beta1**self.t
+            v /= 1.0 - self.beta2**self.t
 
             p -= self.lr * m / (sqrt(v) + self.eps)
 
@@ -327,21 +324,21 @@ class AdamW(Optimizer):
 
             grad = p.grad.copy()
 
-            if self.weight_decay > 0:
+            if self.weight_decay > 0.0:
                 grad += self.lr * self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * p.grad
+            prev_m = self.state[i].get("m", 0.0)
+            m = self.beta1 * prev_m + (1.0 - self.beta1) * p.grad
             self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * p.grad**2
+            prev_v = self.state[i].get("v", 0.0)
+            v = self.beta2 * prev_v + (1.0 - self.beta2) * p.grad**2
             self.state[i]["v"] = v
 
-            m /= 1 - self.beta1**self.t
-            v /= 1 - self.beta2**self.t
+            m /= 1.0 - self.beta1**self.t
+            v /= 1.0 - self.beta2**self.t
 
             p -= self.lr * (m / (sqrt(v) + self.eps) + self.weight_decay * p)
 
@@ -409,7 +406,7 @@ class NAdam(Optimizer):
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
         momentum_decay: float = 4e-3,
     ) -> None:
         super().__init__(parameters, lr)
@@ -422,10 +419,12 @@ class NAdam(Optimizer):
 
     def step(self) -> None:
         # momentum coefficient
-        mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
+        mu = self.beta1 * (1.0 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
         self.state["mus"].append(mu)
         mu_prod = tensorprod(self.state["mus"])
-        next_mu = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
+        next_mu = self.beta1 * (
+            1.0 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
+        )
 
         for i, p in self.parameters.items():
             if not p.grad:
@@ -433,23 +432,23 @@ class NAdam(Optimizer):
 
             grad = p.grad.copy()
 
-            if self.weight_decay > 0:
+            if self.weight_decay > 0.0:
                 grad += self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * grad
+            prev_m = self.state[i].get("m", 0.0)
+            m = self.beta1 * prev_m + (1.0 - self.beta1) * grad
             self.state[i]["m"] = m
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
+            prev_v = self.state[i].get("v", 0.0)
+            v = self.beta2 * prev_v + (1.0 - self.beta2) * grad**2
             self.state[i]["v"] = v
 
-            m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (
-                1 - mu_prod
+            m_hat = next_mu * m / (1.0 - mu_prod * next_mu) + (1.0 - mu) * grad / (
+                1.0 - mu_prod
             )
-            v /= 1 - self.beta2**self.t
+            v /= 1.0 - self.beta2**self.t
 
             p -= self.lr * m_hat / (sqrt(v) + self.eps)
 

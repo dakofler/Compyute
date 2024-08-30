@@ -17,7 +17,7 @@ class FDropout(Function):
         cache.training = training
         if not training:
             return x
-        dropout_map = multinulli(p, x.shape, device=x.device) / (1 - p)
+        dropout_map = multinulli(p, x.shape, x.device) / (1.0 - p)
         cache.dropout_map = dropout_map
         return x * dropout_map
 

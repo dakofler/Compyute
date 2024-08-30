@@ -25,7 +25,7 @@ class FMeanSquaredError(Function):
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
         y_pred_size, dif = cache.y_pred_size, cache.dif
-        return dif * 2 / float(y_pred_size)
+        return 2.0 * dif / float(y_pred_size)
 
 
 def mean_squared_error(y_pred: Tensor, y_true: Tensor) -> Tensor:

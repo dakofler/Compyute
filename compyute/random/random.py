@@ -224,7 +224,9 @@ def multinulli(
     device = select_device(device)
     dtype = select_dtype(dtype)
     return tensor(
-        device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1 - p]), device, dtype
+        device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1.0 - p]),
+        device,
+        dtype,
     )
 
 

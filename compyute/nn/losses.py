@@ -1,7 +1,7 @@
 """Loss functions."""
 
 from abc import ABC, abstractmethod
-from typing import Literal, Optional
+from typing import Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
@@ -13,8 +13,7 @@ __all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 class Loss(ABC):
     """Loss base class."""
 
-    def __init__(self, label: Optional[str] = None) -> None:
-        self.label = label if label is not None else self.__class__.__name__
+    def __init__(self) -> None:
         self._fcache = FunctionCache()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:

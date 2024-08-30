@@ -184,9 +184,8 @@ class Trainer:
         # compute loss and metrics
         self.cache["loss"] = self.loss(y_pred, y_batch).item()
         if self.metric is not None:
-            self.cache[f"{self.metric_name}_score"] = self.metric(
-                y_pred, y_batch
-            ).item()
+            key = f"{self.metric_name}_score"
+            self.cache[key] = self.metric(y_pred, y_batch).item()
 
         # backward pass
         self.optimizer.reset_grads()

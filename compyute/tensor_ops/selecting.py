@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..tensors import AxisLike, ShapeError, Tensor, tensor
+from ..tensors import AxisLike, ShapeError, Tensor
 
 __all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
 

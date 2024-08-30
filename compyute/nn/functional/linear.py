@@ -16,13 +16,12 @@ class FLinear(Function):
     def forward(
         cache: FunctionCache, x: Tensor, w: Tensor, b: Optional[Tensor] = None
     ) -> Tensor:
-        cache.x, cache.w = x, w
         y = x @ w.T
 
         if b:
-            cache.b = b is not None
             y += b
 
+        cache.x, cache.w, cache.b = x, w, b is not None
         return y
 
     @staticmethod
@@ -39,7 +38,7 @@ class FLinear(Function):
         dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
 
         # bias grads, equivalent to summing over all batch dims
-        db = einsum(f"{batch_dims}o->o", dy) if b else None
+        db = None if not b else einsum(f"{batch_dims}o->o", dy)
 
         return dx, dw, db
 

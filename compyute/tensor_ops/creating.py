@@ -54,8 +54,8 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
 
 def arange(
     stop: int | float,
-    start: int | float = 0,
-    step: int | float = 1,
+    start: int | float = 0.0,
+    step: int | float = 1.0,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:

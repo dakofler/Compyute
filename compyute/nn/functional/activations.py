@@ -56,7 +56,7 @@ class FLeakyReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, alpha: float) -> Tensor:
         y = maximum(alpha * x, x)
-        cache.y = y > 0
+        cache.y = y > 0.0
         return y
 
     @staticmethod
@@ -92,16 +92,16 @@ class FGELU(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
-        y = 0.5 * x * (1 + cp_tanh(tmp))
+        tmp = math.sqrt(2.0 / math.pi) * (x + 0.044715 * x**3)
+        y = 0.5 * x * (1.0 + cp_tanh(tmp))
         cache.x, cache.tmp = x, tmp
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, tmp = cache.x, cache.tmp
-        dx1 = 1 + cp_tanh(tmp)
-        dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
+        dx1 = 1.0 + cp_tanh(tmp)
+        dx2 = x * sech(tmp) ** 2.0 * math.sqrt(2 / math.pi) * (1.0 + 0.13415 * x**2)
         return 0.5 * (dx1 + dx2) * dy
 
 
@@ -131,14 +131,14 @@ class FSigmoid(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         x_exp = exp(x)
-        y = x_exp / (1 + x_exp)
+        y = x_exp / (1.0 + x_exp)
         cache.y = y
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         y = cache.y
-        return (y * (1 - y)) * dy
+        return (y * (1.0 - y)) * dy
 
 
 def sigmoid(x: Tensor) -> Tensor:
@@ -216,7 +216,7 @@ class FSoftmax(Function):
         y = cache.y
         dx = tile(insert_dim(y, -1), dy.shape[-1], -1)
         dx *= identity(dy.shape[-1], device=dy.device) - dx.T
-        return reshape(dx @ dy.to_shape((*dy.shape, 1)), dy.shape)
+        return reshape(dx @ insert_dim(dy, -1), dy.shape)
 
 
 def softmax(x: Tensor) -> Tensor:
@@ -251,7 +251,7 @@ class FTanh(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         y = cache.y
-        return (1 - y**2) * dy
+        return (1.0 - y**2) * dy
 
 
 def tanh(x: Tensor) -> Tensor:

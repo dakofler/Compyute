@@ -61,10 +61,9 @@ class FConvolution1D(Function):
         y = cp_sum(conv, axis=2)  # (B, Co, T)
 
         if b:
-            cache.b = b is not None
             y += insert_dim(b, -1)
 
-        cache.conv_shape = conv.shape
+        cache.b, cache.conv_shape = b is not None, conv.shape
         return y
 
     @staticmethod
@@ -75,12 +74,12 @@ class FConvolution1D(Function):
 
         # insert fake input channel dimension
         dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
-        dy_ext = broadcast_to(dy_ext, conv_shape)
+        dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, X)
         dx, df = _FConvolution1D.backward(cache, dy_ext)
 
         dx = FPad1D.backward(cache, cp_sum(dx, axis=1))
         df = FDilation1D.backward(cache, cp_sum(df, axis=0))
-        db = cp_sum(dy, axis=(0, 2)) if b else None
+        db = None if not b else cp_sum(dy, axis=(0, 2))
 
         return dx, df, db
 
@@ -127,8 +126,9 @@ class FDilation1D(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: int) -> Tensor:
-        cache.no_dilation = dilation == 1
-        if dilation == 1:
+        no_dilation = dilation == 1
+        cache.no_dilation = no_dilation
+        if no_dilation:
             return x
 
         dil_shape = (dilation * x.shape[-1] - 1,)
@@ -169,8 +169,9 @@ class FPad1D(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, padding: tuple[int, int]) -> Tensor:
-        cache.no_padding = padding == (0, 0)
-        if padding == (0, 0):
+        no_padding = padding == (0, 0)
+        cache.no_padding = no_padding
+        if no_padding:
             return x
         widths = tuple([(0, 0)] * (x.n_axes - 1) + [padding])
         y = pad(x, widths)
@@ -214,8 +215,7 @@ class _FConvolution1D(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
-        f_flipped = flip(f, -1)
-        conv = convolve1d_fft(x, f_flipped)
+        conv = convolve1d_fft(x, flip(f, -1))
         y = conv[..., ::stride]
 
         cache.x, cache.f, cache.stride, cache.conv_shape = x, f, stride, conv.shape
@@ -226,14 +226,10 @@ class _FConvolution1D(Function):
         x, f, stride, conv_shape = cache.x, cache.f, cache.stride, cache.conv_shape
 
         # fill elements skipped by strides with zeros
-        dy = dilate1d(dy, stride)
-        dy = pad_to_shape(dy, conv_shape)
-
+        dy = pad_to_shape(dilate1d(dy, stride), conv_shape)
         dy = pad1d(dy, (f.shape[-1] - 1, f.shape[-1] - 1))  # full pad dy
         dx = convolve1d_fft(dy, f)
-
-        dy = flip(dy, axis=-1)
-        df = convolve1d_fft(dy, x)
+        df = convolve1d_fft(flip(dy, axis=-1), x)
 
         return dx, df
 
@@ -265,10 +261,9 @@ class FConvolution2D(Function):
         y = cp_sum(conv, axis=2)  # (B, Co, Y, X)
 
         if b:
-            cache.b = b is not None
             y += b.to_shape((*b.shape, 1, 1))
 
-        cache.conv_shape = conv.shape
+        cache.b, cache.conv_shape = b is not None, conv.shape
         return y
 
     @staticmethod
@@ -278,13 +273,13 @@ class FConvolution2D(Function):
         b, conv_shape = cache.b, cache.conv_shape
 
         # insert fake input channel dimension
-        dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
-        dy_ext = broadcast_to(dy_ext, conv_shape)
+        dy_ext = insert_dim(dy, 2)  # (B, Co, 1, Y, X)
+        dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, Y, X)
         dx, df = _FConvolution2D.backward(cache, dy_ext)
 
         dx = FPad2D.backward(cache, cp_sum(dx, axis=1))
         df = FDilation2D.backward(cache, cp_sum(df, axis=0))
-        db = cp_sum(dy, axis=(0, 2, 3)) if b else None
+        db = None if not b else cp_sum(dy, axis=(0, 2, 3))
 
         return dx, df, db
 
@@ -331,14 +326,12 @@ class FDilation2D(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: tuple[int, int]) -> Tensor:
-        cache.no_dilation = dilation == (1, 1)
-        if dilation == (1, 1):
+        no_dialution = dilation == (1, 1)
+        cache.no_dilation = no_dialution
+        if no_dialution:
             return x
 
-        dil_shape = (
-            dilation[0] * x.shape[-2] - 1,
-            dilation[1] * x.shape[-1] - 1,
-        )
+        dil_shape = (dilation[0] * x.shape[-2] - 1, dilation[1] * x.shape[-1] - 1)
         y = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
         y[..., :: dilation[0], :: dilation[1]] = x
 
@@ -380,8 +373,9 @@ class FPad2D(Function):
         x: Tensor,
         padding: tuple[tuple[int, int], tuple[int, int]],
     ) -> Tensor:
-        cache.no_padding = padding == ((0, 0), (0, 0))
-        if padding == ((0, 0), (0, 0)):
+        no_padding = padding == ((0, 0), (0, 0))
+        cache.no_padding = no_padding
+        if no_padding:
             return x
         widths = tuple([(0, 0)] * (x.n_axes - 2) + [*padding])
         y = pad(x, widths)
@@ -430,8 +424,7 @@ class _FConvolution2D(Function):
     def forward(
         cache: FunctionCache, x: Tensor, f: Tensor, strides: tuple[int, int]
     ) -> Tensor:
-        f_flipped = flip(f, (-2, -1))
-        conv = convolve2d_fft(x, f_flipped)
+        conv = convolve2d_fft(x, flip(f, (-2, -1)))
         y = conv[..., :: strides[0], :: strides[1]]
 
         cache.x, cache.f, cache.strides, cache.conv_shape = x, f, strides, conv.shape
@@ -442,21 +435,11 @@ class _FConvolution2D(Function):
         x, f, strides, conv_shape = cache.x, cache.f, cache.strides, cache.conv_shape
 
         # fill elements skipped by strides with zeros
-        dy = dilate2d(dy, strides)
-        dy = pad_to_shape(dy, conv_shape)
-
-        # full pad dy
-        dy = pad2d(
-            dy,
-            (
-                (f.shape[-2] - 1, f.shape[-2] - 1),
-                (f.shape[-1] - 1, f.shape[-1] - 1),
-            ),
-        )
+        dy = pad_to_shape(dilate2d(dy, strides), conv_shape)
+        p = ((f.shape[-2] - 1, f.shape[-2] - 1), (f.shape[-1] - 1, f.shape[-1] - 1))
+        dy = pad2d(dy, p)  # full pad dy
         dx = convolve2d_fft(dy, f)
-
-        dy = flip(dy, (-2, -1))
-        df = convolve2d_fft(dy, x)
+        df = convolve2d_fft(flip(dy, (-2, -1)), x)
 
         return dx, df
 

@@ -76,11 +76,11 @@ class Recurrent(Module):
 
         # init input parameters
         self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_i = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_i = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         # init hidden parameters
         self.w_h = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_h = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_h = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         self._init_parameters_and_buffers()
 
@@ -211,23 +211,23 @@ class LSTM(Module):
 
         # init input parameters
         self.w_ii = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ii = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_ii = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_if = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_if = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_if = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_ig = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ig = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_ig = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_io = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_io = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_io = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         # init hidden parameters
         self.w_hi = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hi = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hi = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_hf = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hf = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hf = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_hg = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hg = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hg = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_ho = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_ho = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_ho = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         self._init_parameters_and_buffers()
 
@@ -318,7 +318,7 @@ class LSTM(Module):
             dc[:, t] += self.act.backward(self._fcache, dh) * o[:, t]
 
             # carry state gradients
-            df = c[:, t - 1] * dc[:, t] if t > 0 else 0
+            df = 0 if t < 1 else c[:, t - 1] * dc[:, t]
             if t > 0:
                 dc[:, t - 1] += f[:, t] * dc[:, t]
             di = g[:, t] * dc[:, t]
@@ -437,19 +437,19 @@ class GRU(Module):
 
         # init input parameters
         self.w_ir = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ir = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_ir = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_iz = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_iz = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_iz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_in = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_in = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_in = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         # init hidden parameters
         self.w_hr = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hr = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hr = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_hz = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hz = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
         self.w_hn = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hn = Parameter(empty((h_channels,), dtype=dtype)) if bias else None
+        self.b_hn = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
 
         self._init_parameters_and_buffers()
 
@@ -509,7 +509,7 @@ class GRU(Module):
                 dh += dy
 
             # hidden state gradients
-            dz = ((h[:, t - 1] if t > 0 else 0) - n[:, t]) * dh
+            dz = ((0 if t < 1 else h[:, t - 1]) - n[:, t]) * dh
             dn = (1 - z[:, t]) * dh
             dh = z[:, t] * dh
 

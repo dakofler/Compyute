@@ -7,7 +7,7 @@ from ..tensor_ops.creating import identity
 from ..tensor_ops.transforming import max as cp_max
 from ..tensor_ops.transforming import mean
 from ..tensor_ops.transforming import min as cpmin
-from ..tensor_ops.transforming import var
+from ..tensor_ops.transforming import std
 from ..tensors import AxisLike, Tensor
 from ..typing import is_integer
 
@@ -38,8 +38,8 @@ def split_train_val_test(
         Test split.
     """
     x_shuffled = shuffle(x)[0]
-    n1 = int(len(x_shuffled) * (1 - ratio_val - ratio_test))
-    n2 = int(len(x_shuffled) * (1 - ratio_test))
+    n1 = int(len(x_shuffled) * (1.0 - ratio_val - ratio_test))
+    n2 = int(len(x_shuffled) * (1.0 - ratio_test))
     train = x_shuffled[:n1]
     val = x_shuffled[n1:n2]
     test = x_shuffled[n2:]
@@ -49,8 +49,8 @@ def split_train_val_test(
 def normalize(
     x: Tensor,
     axis: Optional[AxisLike] = None,
-    l_bound: int = 0,
-    u_bound: int = 1,
+    l_bound: float = 0.0,
+    u_bound: float = 1.0,
 ) -> Tensor:
     """Normalizes a tensor using min-max feature scaling.
 
@@ -61,9 +61,9 @@ def normalize(
     axis : _AxisLike, optional
         Axes over which normalization is applied. Defaults to ``None``.
         If ``None``, the flattended tensor is normalized.
-    l_bound : int, optional
+    l_bound : float, optional
         Lower bound of output values. Defaults to ``0``.
-    u_bound : int, optional
+    u_bound : float, optional
         Upper bound of output values. Defaults to ``1``.
 
     Returns
@@ -97,7 +97,7 @@ def standardize(
         Standardized tensor with mean ``0`` and variance ``1``.
     """
 
-    return (x - mean(x, axis=axis)) / var(x, axis=axis)
+    return (x - mean(x, axis=axis)) / std(x, axis=axis)
 
 
 def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
