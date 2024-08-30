@@ -13,7 +13,7 @@ from ..functional.convolutions import (
     PaddingLike,
 )
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import XavierUniform, Zeros
+from ..utils.initializers import xavier_uniform, zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
@@ -91,9 +91,9 @@ class Convolution1D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(self.w)
+        xavier_uniform(self.w)
         if self.b:
-            Zeros()(self.b)
+            zeros(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
@@ -181,9 +181,9 @@ class Convolution2D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(self.w)
+        xavier_uniform(self.w)
         if self.b:
-            Zeros()(self.b)
+            zeros(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])

@@ -5,10 +5,10 @@ import math
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
 from ...tensor_ops.transforming import exp, invert
-from ...tensor_ops.transforming import max as cpmax
+from ...tensor_ops.transforming import max as cp_max
 from ...tensor_ops.transforming import maximum, sech
-from ...tensor_ops.transforming import sum as cpsum
-from ...tensor_ops.transforming import tanh as cptanh
+from ...tensor_ops.transforming import sum as cp_sum
+from ...tensor_ops.transforming import tanh as cp_tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -93,14 +93,14 @@ class FGELU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         tmp = math.sqrt(2 / math.pi) * (x + 0.044715 * x**3)
-        y = 0.5 * x * (1 + cptanh(tmp))
+        y = 0.5 * x * (1 + cp_tanh(tmp))
         cache.x, cache.tmp = x, tmp
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, tmp = cache.x, cache.tmp
-        dx1 = 1 + cptanh(tmp)
+        dx1 = 1 + cp_tanh(tmp)
         dx2 = x * sech(tmp) ** 2 * math.sqrt(2 / math.pi) * (1 + 0.13415 * x**2)
         return 0.5 * (dx1 + dx2) * dy
 
@@ -206,8 +206,8 @@ class FSoftmax(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x = exp(x - cpmax(x, axis=-1, keepdims=True))
-        y = x / cpsum(x, axis=-1, keepdims=True)
+        x = exp(x - cp_max(x, axis=-1, keepdims=True))
+        y = x / cp_sum(x, axis=-1, keepdims=True)
         cache.y = y
         return y
 
@@ -244,7 +244,7 @@ class FTanh(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        y = cptanh(x)
+        y = cp_tanh(x)
         cache.y = y
         return y
 

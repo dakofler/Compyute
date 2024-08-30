@@ -8,7 +8,8 @@ from ...typing import DType
 from ..functional.activations import FReLU, FSigmoid, FTanh
 from ..functional.linear import FLinear
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import XavierUniform, Zeros
+from ..utils.initializers import xavier_uniform
+from ..utils.initializers import zeros as _zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -84,9 +85,9 @@ class Recurrent(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(self.w_i, self.w_h)
+        xavier_uniform(self.w_i, self.w_h)
         if self.bias:
-            Zeros()(self.b_i, self.b_h)
+            _zeros(self.b_i, self.b_h)
 
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
@@ -231,7 +232,7 @@ class LSTM(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(
+        xavier_uniform(
             self.w_ii,
             self.w_if,
             self.w_ig,
@@ -242,7 +243,7 @@ class LSTM(Module):
             self.w_ho,
         )
         if self.bias:
-            Zeros()(
+            _zeros(
                 self.b_ii,
                 self.b_if,
                 self.b_ig,
@@ -453,11 +454,9 @@ class GRU(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(
-            self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn
-        )
+        xavier_uniform(self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn)
         if self.bias:
-            Zeros()(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
+            _zeros(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
 
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
@@ -523,9 +522,8 @@ class GRU(Module):
             dr_preact[:, t] = FSigmoid.backward(self._fcache, dr)
 
             # hidden projection gradients
-            dh_n, dw_hn, db_hn = FLinear.backward(
-                self._fcache, r[:, t] * dn_preact[:, t]
-            )
+            r_dn_preact = r[:, t] * dn_preact[:, t]
+            dh_n, dw_hn, db_hn = FLinear.backward(self._fcache, r_dn_preact)
             dh_z, dw_hz, db_hz = FLinear.backward(self._fcache, dz_preact[:, t])
             dh_r, dw_hr, db_hr = FLinear.backward(self._fcache, dr_preact[:, t])
 

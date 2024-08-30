@@ -4,7 +4,7 @@ from typing import Optional
 
 from ..random.random import shuffle
 from ..tensor_ops.creating import identity
-from ..tensor_ops.transforming import max as cpmax
+from ..tensor_ops.transforming import max as cp_max
 from ..tensor_ops.transforming import mean
 from ..tensor_ops.transforming import min as cpmin
 from ..tensor_ops.transforming import var
@@ -73,7 +73,7 @@ def normalize(
     """
 
     x_min = cpmin(x, axis=axis)
-    x_max = cpmax(x, axis=axis)
+    x_max = cp_max(x, axis=axis)
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 

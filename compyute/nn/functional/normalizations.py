@@ -3,7 +3,7 @@
 from ...tensor_ops.reshaping import insert_dim, squeeze
 from ...tensor_ops.transforming import mean as cpmean
 from ...tensor_ops.transforming import sqrt
-from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import sum as cp_sum
 from ...tensor_ops.transforming import var as cpvar
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -60,8 +60,8 @@ class FBatchNorm1D(Function):
 
         # input grads
         n = float(dy.size / dy.shape[1])
-        dy_sum = cpsum(dy, axis=axes, keepdims=True)
-        dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+        dy_sum = cp_sum(dy, axis=axes, keepdims=True)
+        dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
@@ -166,8 +166,8 @@ class FBatchNorm2D(Function):
         n = float(dy.size / dy.shape[1])
 
         # input grads
-        dy_sum = cpsum(dy, axis=axes, keepdims=True)
-        dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+        dy_sum = cp_sum(dy, axis=axes, keepdims=True)
+        dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
@@ -249,15 +249,15 @@ class FLayerNorm(Function):
         sum_axes = tuple(range(dy.n_axes - w.n_axes))
 
         # input grads
-        dy_sum = cpsum(dy, axis=axes, keepdims=True)
-        dy_x_norm_sum = cpsum(dy * x_norm, axis=axes, keepdims=True)
+        dy_sum = cp_sum(dy, axis=axes, keepdims=True)
+        dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / std / w.size * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
-        dw = cpsum(dy * x_norm, axis=sum_axes)
+        dw = cp_sum(dy * x_norm, axis=sum_axes)
 
         # beta grads
-        db = cpsum(dy, axis=sum_axes)
+        db = cp_sum(dy, axis=sum_axes)
 
         return dx, dw, db
 
@@ -309,11 +309,11 @@ class FRMSNorm(Function):
         sum_axes = tuple(range(x.n_axes - w.n_axes))
 
         # input grads
-        dy_x_sum = cpsum(dy * x, axis=axes, keepdims=True)
+        dy_x_sum = cp_sum(dy * x, axis=axes, keepdims=True)
         dx = w * (dy / rms - x * dy_x_sum / (w.size * rms**3))
 
         # gamma grads
-        dw = cpsum(dy * x_norm, axis=sum_axes)
+        dw = cp_sum(dy * x_norm, axis=sum_axes)
 
         return dx, dw
 

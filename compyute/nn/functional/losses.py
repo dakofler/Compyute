@@ -4,7 +4,7 @@ import math
 
 from ...preprocessing.basic import one_hot_encode
 from ...tensor_ops.transforming import clip, log, mean
-from ...tensor_ops.transforming import sum as cpsum
+from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 from .activations import softmax
 from .functions import Function, FunctionCache, PseudoCache
@@ -57,7 +57,7 @@ class FCrossEntropy(Function):
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         probs = softmax(y_pred)
         y_true = one_hot_encode(y_true, y_pred.shape[-1]).to_float()
-        y = mean(cpsum(-log(probs) * y_true, axis=-1))
+        y = mean(cp_sum(-log(probs) * y_true, axis=-1))
         cache.y_true, cache.probs = y_true, probs
         return y
 

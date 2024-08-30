@@ -7,7 +7,7 @@ from ...tensors import Tensor
 from ...typing import DType
 from ..functional.linear import FLinear
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import XavierUniform, Zeros
+from ..utils.initializers import xavier_uniform, zeros
 from .module import Module
 
 __all__ = ["Linear"]
@@ -65,9 +65,9 @@ class Linear(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        XavierUniform()(self.w)
+        xavier_uniform(self.w)
         if self.b:
-            Zeros()(self.b)
+            zeros(self.b)
 
     def forward(self, x: Tensor) -> Tensor:
         return FLinear.forward(self._fcache, x, self.w, self.b)

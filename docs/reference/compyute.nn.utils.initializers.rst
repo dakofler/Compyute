@@ -7,12 +7,11 @@ compyute.nn.utils.initializers
 .. autosummary::
     :toctree: ../_generated/compyute.nn.utils.initializers
 
-    Initializer
-    Ones
-    Zeros
-    Normal
-    Uniform
-    KaimingNormal
-    KaimingUniform
-    XavierNormal
-    XavierUniform
+    ones
+    zeros
+    normal
+    uniform
+    kaiming_normal
+    kaiming_uniform
+    xavier_normal
+    xavier_uniform

@@ -7,7 +7,7 @@ from ...tensors import Tensor
 from ...typing import DType
 from ..functional.embeddings import FEmbedding
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import Normal
+from ..utils.initializers import normal
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -56,7 +56,7 @@ class Embedding(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        Normal()(self.w)
+        normal(self.w)
 
     def forward(self, x: Tensor) -> Tensor:
         return FEmbedding.forward(self._fcache, x, self.w)
