@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from ...tensor_ops.transforming import einsum
 from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -32,8 +31,8 @@ class FLinear(Function):
         x, w, b = cache.x, cache.w, cache.b
 
         dx = dy @ w
-        dw = cp_sum(dy.T @ x, tuple(range(dy.n_axes - 2)))
-        db = None if not b else cp_sum(dy, tuple(range(dy.n_axes - 1)))
+        dw = cp_sum(dy.T @ x, axis=tuple(range(dy.n_axes - 2)))
+        db = None if not b else dy.sum(axis=tuple(range(dy.n_axes - 1)))
 
         return dx, dw, db
 

@@ -5,7 +5,7 @@ from functools import reduce
 from typing import Iterable, Iterator, Optional
 
 from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, tensor, to_arraylike
-from ..typing import DType, ScalarLike, complex64
+from ..typing import DType, complex64
 
 __all__ = [
     "abs",
@@ -29,11 +29,7 @@ __all__ = [
     "log",
     "log2",
     "log10",
-    "max",
-    "maximum",
     "mean",
-    "min",
-    "minimum",
     "norm",
     "outer",
     "prod",
@@ -66,7 +62,7 @@ def abs(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise absolute value.
     """
-    return Tensor(x.device.engine.abs(x.data))
+    return x.abs()
 
 
 def all(x: Tensor) -> bool:
@@ -104,7 +100,7 @@ def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
     bool
         ``True`` if all elements in the tensors are within the given tolerance.
     """
-    return x1.device.engine.allclose(x1.data, y.data, rtol, atol)
+    return x1.device.engine.allclose(x1.data, x2.data, rtol, atol)
 
 
 def clip(
@@ -381,7 +377,7 @@ def imag(x: Tensor) -> Tensor:
     Tensor
         Tensor containing imaginary values.
     """
-    return Tensor(x.device.engine.imag(x.data))
+    return x.imag()
 
 
 def inner(*tensors: Tensor) -> Tensor:
@@ -505,46 +501,6 @@ def log10(x: Tensor) -> Tensor:
     return Tensor(x.device.engine.log10(x.data))
 
 
-def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Computes the maximum of tensor elements over a given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    axis : AxisLike, optional
-        Axis over which the maximum is computed. Defaults to ``None``.
-        If none it is computed over the flattened tensor.
-    keepdims : bool, optional
-        Whether to keep the tensors dimensions. Defaults to ``False``.
-        if ``False`` the tensor is collapsed along the given axis.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the maximum of elements.
-    """
-    return Tensor(x.data.max(axis, keepdims=keepdims))
-
-
-def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
-    """Computes the element-wise maximum of two tensors or a tensor and a scalar.
-
-    Parameters
-    ----------
-    x1 : Tensor
-        First tensor.
-    x2 : Tensor | ScalarLike
-        Second tensor or scalar.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the element-wise maximum.
-    """
-    return Tensor(x1.device.engine.maximum(x1.data, to_arraylike(x2)))
-
-
 def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the mean of tensor elements over a given axis.
 
@@ -564,47 +520,7 @@ def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the mean of elements.
     """
-    return Tensor(x.data.mean(axis, keepdims=keepdims))
-
-
-def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Computes the minimum of tensor elements over a given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    axis : AxisLike, optional
-        Axis over which the minimum is computed. Defaults to ``None``.
-        If ``None`` it is computed over the flattened tensor.
-    keepdims : bool, optional
-        Whether to keep the tensors dimensions. Defaults to ``False``.
-        if ``False`` the tensor is collapsed along the given axis.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the minimum of elements.
-    """
-    return Tensor(x.data.min(axis, keepdims=keepdims))
-
-
-def minimum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
-    """Computes the element-wise minimum of two tensors or a tensor and a scalar.
-
-    Parameters
-    ----------
-    x1 : Tensor
-        First tensor.
-    x2 : Tensor | ScalarLike
-        Second tensor or scalar.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the element-wise minimum.
-    """
-    return Tensor(x1.device.engine.minimum(x1.data, to_arraylike(x2)))
+    return x.mean(axis=axis, keepdims=keepdims)
 
 
 def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -680,7 +596,7 @@ def real(x: Tensor) -> Tensor:
     Tensor
         Tensor containing real values.
     """
-    return Tensor(x.device.engine.real(x.data))
+    return x.real()
 
 
 def round(x: Tensor, decimals: int) -> Tensor:
@@ -765,28 +681,6 @@ def sqrt(x: Tensor) -> Tensor:
     return Tensor(x.device.engine.sqrt(x.data))
 
 
-def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
-    """Computes the sum of tensor elements over a given axis.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    axis : AxisLike, optional
-        Axis over which the sum is computed. Defaults to ``None``.
-        If ``None`` it is computed over the flattened tensor.
-    keepdims : bool, optional
-        Whether to keep the tensors dimensions. Defaults to ``False``.
-        if ``False`` the tensor is collapsed along the given axis.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing the sum of elements.
-    """
-    return Tensor(x.data.sum(axis, keepdims=keepdims))
-
-
 def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Computes the standard deviation of tensor elements over a given axis.
 
@@ -806,7 +700,29 @@ def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     Tensor
         Tensor containing the standard deviation of elements.
     """
-    return Tensor(x.data.std(axis, keepdims=keepdims))
+    return x.std(axis=axis, keepdims=keepdims)
+
+
+def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    """Computes the sum of tensor elements over a given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    axis : AxisLike, optional
+        Axis over which the sum is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the sum of elements.
+    """
+    return x.sum(axis=axis, keepdims=keepdims)
 
 
 def tan(x: Tensor) -> Tensor:
@@ -897,4 +813,4 @@ def var(
     Tensor
         Tensor containing the variance of elements.
     """
-    return Tensor(x.data.var(axis, ddof=ddof, keepdims=keepdims))
+    return x.var(axis=axis, ddof=ddof, keepdims=keepdims)

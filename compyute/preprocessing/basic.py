@@ -4,10 +4,6 @@ from typing import Optional
 
 from ..random.random import shuffle
 from ..tensor_ops.creating import identity
-from ..tensor_ops.transforming import max as cp_max
-from ..tensor_ops.transforming import mean
-from ..tensor_ops.transforming import min as cpmin
-from ..tensor_ops.transforming import std
 from ..tensors import AxisLike, Tensor
 from ..typing import is_integer
 
@@ -72,8 +68,8 @@ def normalize(
         Normalized tensor.
     """
 
-    x_min = cpmin(x, axis=axis)
-    x_max = cp_max(x, axis=axis)
+    x_min = x.min(axis=axis)
+    x_max = x.max(axis=axis)
     return (x - x_min) * (u_bound - l_bound) / (x_max - x_min) + l_bound
 
 
@@ -97,7 +93,7 @@ def standardize(
         Standardized tensor with mean ``0`` and variance ``1``.
     """
 
-    return (x - mean(x, axis=axis)) / std(x, axis=axis)
+    return (x - x.mean(axis=axis)) / x.std(axis=axis)
 
 
 def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:

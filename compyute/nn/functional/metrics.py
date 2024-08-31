@@ -3,7 +3,6 @@
 import math
 
 from ...tensor_ops.selecting import argmax
-from ...tensor_ops.transforming import mean
 from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 
@@ -25,7 +24,7 @@ def accuracy_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     Tensor
         Accuracy score.
     """
-    return cp_sum(argmax(y_pred, -1) == y_true) / math.prod(y_pred.shape[:-1])
+    return cp_sum(y_pred.argmax(axis=-1) == y_true) / math.prod(y_pred.shape[:-1])
 
 
 def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
@@ -46,5 +45,5 @@ def r2_score(y_pred: Tensor, y_true: Tensor, eps: float = 1e-8) -> Tensor:
         R2 score.
     """
     ssr = cp_sum((y_true - y_pred) ** 2)
-    sst = cp_sum((y_true - mean(y_true)) ** 2)
+    sst = cp_sum((y_true - y_true.mean()) ** 2)
     return 1.0 - ssr / (sst + eps)

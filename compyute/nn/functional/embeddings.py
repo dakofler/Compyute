@@ -24,7 +24,7 @@ class FEmbedding(Function):
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, emb_table_shape = cache.x, cache.emb_table_shape
         x = one_hot_encode(x, emb_table_shape[0]).to_type(dy.dtype)
-        return cp_sum(x.T @ dy, tuple(range(x.n_axes - 2)))
+        return cp_sum(x.T @ dy, axis=tuple(range(x.n_axes - 2)))
 
 
 def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:

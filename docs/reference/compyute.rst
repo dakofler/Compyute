@@ -66,6 +66,12 @@ Selecting Operations
 
     argmax
     get_diagonal
+    max
+    maximum
+    mean
+    min
+    minimum
+    get_diagonal
     tril
     triu
     unique
@@ -97,11 +103,7 @@ Transforming and Computing Operations
     log
     log2
     log10
-    max
-    maximum
     mean
-    min
-    minimum
     norm
     outer
     prod

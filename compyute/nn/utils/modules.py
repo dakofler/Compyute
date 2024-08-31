@@ -33,7 +33,8 @@ def get_module_summary(
         module_summaries.append(
             {
                 "name": prefix + module.label,
-                "out_shape": (-1,) + module.y.shape[1:] if module.y else (),
+                "in_shape": module.x.shape[1:] if module.x else (),
+                "out_shape": module.y.shape[1:] if module.y else (),
                 "n_params": {p.ptr: p.size for p in module.get_parameters(False)},
                 "trainable": module.is_trainable,
             }
@@ -60,11 +61,11 @@ def get_module_summary(
     module.clean()
 
     # format summary
-    divider = "=" * 80
+    divider = "=" * 90
     summary = [
         module.label,
         divider,
-        f"{'Layer':30s} {'Output Shape':20s} {'# Parameters':>15s} {'trainable':>12s}",
+        f"{'Layer':30s} {'Input Shape':16s} {'Output Shape':16s} {'# Parameters':>12s} {'trainable':>12s}",
         divider,
     ]
 
@@ -73,11 +74,12 @@ def get_module_summary(
 
     for m in module_summaries:
         m_name = m["name"]
+        m_in_shape = str(m["in_shape"])
         m_out_shape = str(m["out_shape"])
         m_n_params = sum(m["n_params"].values())
         m_trainable = str(m["trainable"])
         summary.append(
-            f"{m_name:30s} {m_out_shape:20s} {m_n_params:15d} {m_trainable:>12s}"
+            f"{m_name:30s} {m_in_shape:16s} {m_out_shape:16s} {m_n_params:12d} {m_trainable:>12s}"
         )
 
         # count parameters without duplicates (can occur with weight sharing of modules)

@@ -478,6 +478,178 @@ class Tensor:
         """
         return self.data.tolist()
 
+    # ----------------------------------------------------------------------------------------------
+    # UNARY TENSOR OPS
+    # ----------------------------------------------------------------------------------------------
+
+    def abs(self) -> Tensor:
+        """Computes the element-wise absolute value of a tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the element-wise absolute value.
+        """
+        return Tensor(abs(self.data))
+
+    def argmax(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Returns the indices of maximum values along a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axes, along which the maximum value is located. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            If false the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing indices.
+        """
+        return Tensor(self.data.argmax(axis, keepdims=keepdims))
+
+    def imag(self) -> Tensor:
+        """Returns the imaginary part of a complex tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing imaginary values.
+        """
+        return Tensor(self.data.imag)
+
+    def max(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Computes the maximum of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the maximum is computed. Defaults to ``None``.
+            If none it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            if ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the maximum of elements.
+        """
+        return Tensor(self.data.max(axis, keepdims=keepdims))
+
+    def mean(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Computes the mean of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the mean is computed. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            if ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the mean of elements.
+        """
+        return Tensor(self.data.mean(axis, keepdims=keepdims))
+
+    def min(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Computes the minimum of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the minimum is computed. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            if ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the minimum of elements.
+        """
+        return Tensor(self.data.min(axis, keepdims=keepdims))
+
+    def real(self) -> Tensor:
+        """Returns the real part of a complex tensor.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing real values.
+        """
+        return Tensor(self.data.real)
+
+    def std(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Computes the standard deviation of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the standard deviation is computed. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            if ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the standard deviation of elements.
+        """
+        return Tensor(self.data.std(axis, keepdims=keepdims))
+
+    def sum(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+        """Computes the sum of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the sum is computed. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            if ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the sum of elements.
+        """
+        return Tensor(self.data.sum(axis, keepdims=keepdims))
+
+    def var(
+        self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
+    ) -> Tensor:
+        """Computes the variance of tensor elements over a given axis.
+
+        Parameters
+        ----------
+        axis : AxisLike, optional
+            Axis over which the variance is computed. Defaults to ``None``.
+            If ``None`` it is computed over the flattened tensor.
+        ddof : int, optional
+            "Delta Degrees of Freedom": the divisor used in the calculation is :math:`N - ddof`,
+            where :math:`N` represents the number of elements. Defaults to ``0``.
+        keepdims : bool, optional
+            Whether to keep the tensors dimensions. Defaults to ``False``.
+            If ``False`` the tensor is collapsed along the given axis.
+
+        Returns
+        -------
+        Tensor
+            Tensor containing the variance of elements.
+        """
+        return Tensor(self.data.var(axis, ddof=ddof, keepdims=keepdims))
+
 
 def to_arraylike(value: Any) -> ArrayLike | ScalarLike:
     """Converts a value to an array like."""

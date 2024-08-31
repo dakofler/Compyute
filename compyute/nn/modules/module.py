@@ -26,6 +26,7 @@ class Module(ABC):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    x: Optional[Tensor] = None
     y: Optional[Tensor] = None
     _device: Device = select_device(None)
     _is_retaining_values: bool = False
@@ -62,7 +63,7 @@ class Module(ABC):
             if isinstance(t, Tensor):
                 t.ito_device(device)
 
-        for module in self.get_modules():
+        for module in self.get_modules(recursive=False):
             module.to_device(device)
 
     @property
@@ -301,6 +302,7 @@ class Module(ABC):
             module.fcache = FunctionCache() if module.is_training else PseudoCache()
             y = forward_method(module, x)
             if module.is_retaining_values:
+                module.x = x
                 module.y = y
             return y
 
@@ -315,9 +317,10 @@ class Module(ABC):
             if not module.is_training:
                 raise AttributeError(f"{module.label} is not in training mode.")
             dy = dy.to_float()
-            if module.is_retaining_values and module.y:
-                module.y.grad = dy
             dx = backward_method(module, dy)
+            if module.is_retaining_values and module.x and module.y:
+                module.x.grad = dx
+                module.y.grad = dy
             return dx
 
         return wrapper
@@ -332,7 +335,7 @@ class Module(ABC):
         """
         self.fcache.clear()
         if not self._is_retaining_values or force:
-            self.y = None
+            self.x = self.y = None
             for p in self.get_parameters(recursive=False):
                 p.grad = None
 

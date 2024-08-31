@@ -1,6 +1,5 @@
 """Neural network reshaping functions."""
 
-from ...tensor_ops.reshaping import reshape
 from ...tensors import ShapeLike, Tensor
 from .functions import Function, FunctionCache
 
@@ -11,12 +10,12 @@ class Fflatten(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         cache.x_shape = x.shape
-        return reshape(x, (x.shape[0], -1))
+        return x.to_shape((x.shape[0], -1))
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x_shape = cache.x_shape
-        return reshape(dy, x_shape)
+        return dy.to_shape(x_shape)
 
 
 class FReshape(Function):
@@ -25,9 +24,9 @@ class FReshape(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, shape: ShapeLike) -> Tensor:
         cache.x_shape = x.shape
-        return reshape(x, (x.shape[0],) + shape)
+        return x.to_shape((x.shape[0],) + shape)
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x_shape = cache.x_shape
-        return reshape(dy, x_shape)
+        return dy.to_shape(x_shape)

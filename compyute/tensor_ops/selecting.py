@@ -2,9 +2,21 @@
 
 from typing import Optional
 
-from ..tensors import AxisLike, ShapeError, Tensor
+from ..tensors import AxisLike, ShapeError, Tensor, to_arraylike
+from ..typing import ScalarLike
 
-__all__ = ["argmax", "get_diagonal", "topk", "tril", "triu", "unique"]
+__all__ = [
+    "argmax",
+    "get_diagonal",
+    "max",
+    "maximum",
+    "min",
+    "minimum",
+    "topk",
+    "tril",
+    "triu",
+    "unique",
+]
 
 
 def argmax(
@@ -16,7 +28,7 @@ def argmax(
     ----------
     x : Tensor
         Input tensor.
-    axis : _AxisLike, optional
+    axis : AxisLike, optional
         Axes, along which the maximum value is located. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
@@ -28,7 +40,7 @@ def argmax(
     Tensor
         Tensor containing indices.
     """
-    return Tensor(x.device.engine.argmax(x.data, axis, keepdims=keepdims))
+    return x.argmax(axis, keepdims)
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
@@ -52,6 +64,86 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
     return Tensor(x.device.engine.diag(x.data, d))
+
+
+def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    """Computes the maximum of tensor elements over a given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    axis : AxisLike, optional
+        Axis over which the maximum is computed. Defaults to ``None``.
+        If none it is computed over the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the maximum of elements.
+    """
+    return x.max(axis, keepdims)
+
+
+def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
+    """Computes the element-wise maximum of two tensors or a tensor and a scalar.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        First tensor.
+    x2 : Tensor | ScalarLike
+        Second tensor or scalar.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise maximum.
+    """
+    return Tensor(x1.device.engine.maximum(x1.data, to_arraylike(x2)))
+
+
+def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    """Computes the minimum of tensor elements over a given axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    axis : AxisLike, optional
+        Axis over which the minimum is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the minimum of elements.
+    """
+    return x.min(axis, keepdims)
+
+
+def minimum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
+    """Computes the element-wise minimum of two tensors or a tensor and a scalar.
+
+    Parameters
+    ----------
+    x1 : Tensor
+        First tensor.
+    x2 : Tensor | ScalarLike
+        Second tensor or scalar.
+
+    Returns
+    -------
+    Tensor
+        Tensor containing the element-wise minimum.
+    """
+    return Tensor(x1.device.engine.minimum(x1.data, to_arraylike(x2)))
 
 
 def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:

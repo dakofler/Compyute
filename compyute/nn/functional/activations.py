@@ -4,10 +4,8 @@ import math
 
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
-from ...tensor_ops.transforming import exp, invert
-from ...tensor_ops.transforming import max as cp_max
-from ...tensor_ops.transforming import maximum, sech
-from ...tensor_ops.transforming import sum as cp_sum
+from ...tensor_ops.selecting import maximum
+from ...tensor_ops.transforming import exp, invert, sech
 from ...tensor_ops.transforming import tanh as cp_tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -206,8 +204,8 @@ class FSoftmax(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x = exp(x - cp_max(x, axis=-1, keepdims=True))
-        y = x / cp_sum(x, axis=-1, keepdims=True)
+        x = exp(x - x.max(axis=-1, keepdims=True))
+        y = x / x.sum(axis=-1, keepdims=True)
         cache.y = y
         return y
 

@@ -13,9 +13,6 @@ from ...tensor_ops.reshaping import (
     repeat,
 )
 from ...tensor_ops.transforming import convolve1d_fft, convolve2d_fft
-from ...tensor_ops.transforming import max as cp_max
-from ...tensor_ops.transforming import mean
-from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import ShapeLike, Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -58,7 +55,7 @@ class FConvolution1D(Function):
 
         # perform convolution and sum over input dimension (B, Co, Ci, T)
         conv = _FConvolution1D.forward(cache, x_ext, f_ext, stride)
-        y = cp_sum(conv, axis=2)  # (B, Co, T)
+        y = conv.sum(axis=2)  # (B, Co, T)
 
         if b:
             y += insert_dim(b, -1)
@@ -77,9 +74,9 @@ class FConvolution1D(Function):
         dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, X)
         dx, df = _FConvolution1D.backward(cache, dy_ext)
 
-        dx = FPad1D.backward(cache, cp_sum(dx, axis=1))
-        df = FDilation1D.backward(cache, cp_sum(df, axis=0))
-        db = None if not b else cp_sum(dy, axis=(0, 2))
+        dx = FPad1D.backward(cache, dx.sum(axis=1))
+        df = FDilation1D.backward(cache, df.sum(axis=0))
+        db = None if not b else dy.sum(axis=(0, 2))
 
         return dx, df, db
 
@@ -258,7 +255,7 @@ class FConvolution2D(Function):
 
         # perform convolution and sum over input dimension (B, Co, Ci, T)
         conv = _FConvolution2D.forward(cache, x_ext, f_ext, (stride, stride))
-        y = cp_sum(conv, axis=2)  # (B, Co, Y, X)
+        y = conv.sum(axis=2)  # (B, Co, Y, X)
 
         if b:
             y += b.to_shape((*b.shape, 1, 1))
@@ -277,9 +274,9 @@ class FConvolution2D(Function):
         dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, Y, X)
         dx, df = _FConvolution2D.backward(cache, dy_ext)
 
-        dx = FPad2D.backward(cache, cp_sum(dx, axis=1))
-        df = FDilation2D.backward(cache, cp_sum(df, axis=0))
-        db = None if not b else cp_sum(dy, axis=(0, 2, 3))
+        dx = FPad2D.backward(cache, dx.sum(axis=1))
+        df = FDilation2D.backward(cache, df.sum(axis=0))
+        db = None if not b else dy.sum(axis=(0, 2, 3))
 
         return dx, df, db
 
@@ -497,7 +494,7 @@ class FMaxPooling2D(Function):
             x_width // kernel_width,
             kernel_width,
         )
-        y = cp_max(x_trunc.to_shape(pool_shape), axis=(-3, -1))
+        y = x_trunc.to_shape(pool_shape).max(axis=(-3, -1))
 
         cache.x, cache.kernel_size, cache.y = x, kernel_size, y
         return y
@@ -551,7 +548,7 @@ class FAvgPooling2D(Function):
             x_width // kernel_width,
             kernel_width,
         )
-        y = mean(x_trunc.to_shape(pool_shape), axis=(-3, -1))
+        y = x_trunc.to_shape(pool_shape).mean(axis=(-3, -1))
 
         cache.x_shape, cache.kernel_size = x.shape, kernel_size
         return y
