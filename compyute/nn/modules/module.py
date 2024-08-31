@@ -7,7 +7,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
-from typing import Any, Callable, Iterable, Iterator, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
@@ -301,7 +301,7 @@ class Module(ABC):
             module.fcache = FunctionCache() if module.is_training else PseudoCache()
             y = forward_method(module, x)
             if module.is_retaining_values:
-                module.y = y.copy()
+                module.y = y
             return y
 
         return wrapper
@@ -316,8 +316,9 @@ class Module(ABC):
                 raise AttributeError(f"{module.label} is not in training mode.")
             dy = dy.to_float()
             if module.is_retaining_values and module.y:
-                module.y.grad = dy.copy()
-            return backward_method(module, dy)
+                module.y.grad = dy
+            dx = backward_method(module, dy)
+            return dx
 
         return wrapper
 

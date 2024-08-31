@@ -1,7 +1,7 @@
 """Neural network embedding functions."""
 
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_ops.transforming import einsum
+from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 from ...typing import is_integer
 from .functions import Function, FunctionCache, PseudoCache
@@ -23,11 +23,8 @@ class FEmbedding(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, emb_table_shape = cache.x, cache.emb_table_shape
-        batch_dims = "uvxyz"[: dy.n_axes - 1]
-
         x = one_hot_encode(x, emb_table_shape[0]).to_type(dy.dtype)
-        # weight grads, equivalent to x.T @ dy and summing over all batch dims
-        return einsum(f"{batch_dims}i,{batch_dims}o->io", x, dy)
+        return cp_sum(x.T @ dy, tuple(range(x.n_axes - 2)))
 
 
 def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:

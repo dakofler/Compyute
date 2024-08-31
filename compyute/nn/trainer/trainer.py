@@ -35,7 +35,7 @@ class Trainer:
         See :ref:`callbacks` for more details.
     """
 
-    cache: dict = {"abort": False, "t": 1}
+    cache: dict = {"abort": False}
 
     def __init__(
         self,

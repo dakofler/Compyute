@@ -3,6 +3,7 @@
 from typing import Optional
 
 from ...tensor_ops.transforming import einsum
+from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -29,16 +30,10 @@ class FLinear(Function):
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
         x, w, b = cache.x, cache.w, cache.b
-        batch_dims = "uvxyz"[: x.n_axes - 1]
 
-        # input grads
         dx = dy @ w
-
-        # weight grads, equivalent to dy.T @ x and summing over all batch dims
-        dw = einsum(f"{batch_dims}o,{batch_dims}i->oi", dy, x)
-
-        # bias grads, equivalent to summing over all batch dims
-        db = None if not b else einsum(f"{batch_dims}o->o", dy)
+        dw = cp_sum(dy.T @ x, tuple(range(dy.n_axes - 2)))
+        db = None if not b else cp_sum(dy, tuple(range(dy.n_axes - 1)))
 
         return dx, dw, db
 

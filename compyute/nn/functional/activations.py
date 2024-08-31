@@ -56,12 +56,12 @@ class FLeakyReLU(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, alpha: float) -> Tensor:
         y = maximum(alpha * x, x)
-        cache.y = y > 0.0
+        cache.alpha, cache.y = alpha, y > 0.0
         return y
 
     @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor, alpha: float) -> Tensor:
-        y = cache.y
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        alpha, y = cache.alpha, cache.y
         return (y + invert(y).to_type(dy.dtype) * alpha) * dy
 
 

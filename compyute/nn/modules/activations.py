@@ -62,7 +62,7 @@ class LeakyReLU(Module):
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FLeakyReLU.backward(self.fcache, dy, self.alpha)
+        return FLeakyReLU.backward(self.fcache, dy)
 
 
 class ReLU(Module):
