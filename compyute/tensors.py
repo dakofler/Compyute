@@ -63,9 +63,7 @@ def tensor(
     device = device or get_default_device() or get_device_from_class(type(data))
     dtype = dtype or get_default_dtype()
     dtype_str = dtype.value if dtype is not None else None
-    data_array = device.engine.asarray(data, dtype_str)
-
-    return Tensor(data_array)
+    return Tensor(device.engine.asarray(data, dtype_str))
 
 
 class Tensor:
@@ -355,7 +353,7 @@ class Tensor:
         if self.dtype == dtype:
             return self
 
-        return Tensor(self.data.astype(dtype.value))
+        return Tensor(self.data.astype(dtype.value, copy=False))
 
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.

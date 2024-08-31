@@ -90,11 +90,14 @@ def get_device_count() -> int:
     return cupy.cuda.runtime.getDeviceCount()
 
 
-def get_cuda_memory_usage() -> int:
+def get_cuda_memory_usage() -> tuple[int, int]:
     """Returns the amount of GPU memory used."""
     if not gpu_available():
-        return 0
-    return cupy.get_default_memory_pool().total_bytes()
+        return 0, 0
+    mempool = cupy.get_default_memory_pool()
+    used_bytes = mempool.used_bytes()
+    total_bytes = mempool.total_bytes()
+    return used_bytes, total_bytes
 
 
 def flush_cuda_memory() -> None:

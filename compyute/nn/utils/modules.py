@@ -40,13 +40,13 @@ def get_module_summary(
         )
 
         # get summary of child modules
-        for i, child_module in enumerate(module.modules):
+        for i, child_module in enumerate(module.get_modules(recursive=False)):
             child_prefix = prefix[:-2]
             if prefix[-2:] == "├─":
                 child_prefix += "│ "
             elif prefix[-2:] == "└─":
                 child_prefix += "  "
-            child_prefix += "└─" if i == len(module.modules) - 1 else "├─"
+            child_prefix += "└─" if i == module.n_modules - 1 else "├─"
             build_summary(child_module, child_prefix)
 
     # perform forward pass to get output shapes

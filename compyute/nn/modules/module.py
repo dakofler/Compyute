@@ -61,26 +61,8 @@ class Module(ABC):
             if isinstance(t, Tensor):
                 t.ito_device(device)
 
-        for module in self.modules:
+        for module in self.get_modules():
             module.to_device(device)
-
-    @property
-    def modules(self) -> list[Module]:
-        """List of child modules.
-
-        Returns
-        -------
-        list[Module]
-            List of child modules.
-        """
-        all_modules = []
-        for attribute in vars(self).values():
-            if isinstance(attribute, Module):
-                all_modules.append(attribute)
-            if isinstance(attribute, ModuleList):
-                for module in attribute:
-                    all_modules.append(module)
-        return all_modules
 
     @property
     def is_retaining_values(self) -> bool:
@@ -97,7 +79,7 @@ class Module(ABC):
             Whether the module should retain intermediate values.
         """
         self._is_retaining_values = value
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.is_retaining_values = value
 
     @property
@@ -115,7 +97,7 @@ class Module(ABC):
             Whether the module parameters should be trainable.
         """
         self._is_trainable = value
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.is_trainable = value
 
     @property
@@ -133,8 +115,13 @@ class Module(ABC):
             Whether the module parameters should be trainable.
         """
         self._is_training = value
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.is_training = value
+
+    @property
+    def n_modules(self) -> int:
+        """Number of child modules."""
+        return len(list(self.get_modules(recursive=False)))
 
     # ----------------------------------------------------------------------------------------------
     # CONTEXT MANAGERS
@@ -170,23 +157,11 @@ class Module(ABC):
     def __repr__(self) -> str:
         attrs = [f"{a}={v}" for a, v in vars(self).items() if is_repr_attr(a, v)]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             repr_string += "\n" + repr(module)
         return repr_string
 
     def __call__(self, x: Tensor) -> Tensor:
-        """Performs a forward pass through the module.
-
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
-
-        Returns
-        ----------
-        Tensor
-            Computed module output.
-        """
         self._fcache = FunctionCache() if self._is_training else PseudoCache()
         y = self.forward(x)
         self._set_y(y)
@@ -199,43 +174,64 @@ class Module(ABC):
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
 
-    def get_parameters(self, include_child_modules: bool = True) -> Iterator[Parameter]:
+    def get_modules(self, recursive: bool = True) -> Iterator[Module]:
+        """List of child modules.
+
+        Returns
+        -------
+        Iterator[Module]
+            Child modules.
+        """
+        for v in vars(self).values():
+            if isinstance(v, Module):
+                yield v
+                if recursive:
+                    yield from v.get_modules()
+            elif isinstance(v, ModuleList):
+                for m in v:
+                    yield m
+                    if recursive:
+                        yield from m.get_modules()
+
+    def get_parameters(self, recursive: bool = True) -> Iterator[Parameter]:
         """Returns an Iterator of module parameters.
 
         Parameters
         ----------
-        include_child_modules : bool, optional
+        recursive : bool, optional
             Whether to include child modules. Defaults to ``True``.
 
         Returns
         -------
         Iterator[Parameter]
-            Iterator of module and child module parameters.
+            Iterator of parameters.
         """
-        self_params = (v for v in vars(self).values() if isinstance(v, Parameter))
-        if include_child_modules:
-            child_module_params = (p for m in self.modules for p in m.get_parameters())
-            return chain(self_params, child_module_params)
-        return self_params
+        for v in vars(self).values():
+            if isinstance(v, Parameter):
+                yield v
+        if recursive:
+            for m in self.get_modules():
+                yield from m.get_parameters(recursive=False)
 
-    def get_buffers(self, include_child_modules: bool = True) -> Iterator[Buffer]:
+    def get_buffers(self, recursive: bool = True) -> Iterator[Buffer]:
         """Returns an Iterator of module buffers.
 
         Parameters
         ----------
-        include_child_modules : bool, optional
+        recursive : bool, optional
             Whether to include child modules. Defaults to ``True``.
 
         Returns
         -------
         Iterator[Buffer]
-            Iterator of module and child module buffers.
+            Iterator of buffers.
         """
-        self_buffers = (v for v in vars(self).values() if isinstance(v, Buffer))
-        if include_child_modules:
-            child_module_buffers = (b for m in self.modules for b in m.get_buffers())
-            return chain(self_buffers, child_module_buffers)
-        return self_buffers
+        for v in vars(self).values():
+            if isinstance(v, Buffer):
+                yield v
+        if recursive:
+            for m in self.get_modules():
+                yield from m.get_buffers(recursive=False)
 
     def get_state_dict(self) -> OrderedDict:
         """Returns a state dict containing module parameters and buffers.
@@ -300,10 +296,10 @@ class Module(ABC):
         self._fcache.clear()
         if not self._is_retaining_values or force:
             self.y = None
-            for p in self.get_parameters(include_child_modules=False):
+            for p in self.get_parameters(recursive=False):
                 p.grad = None
 
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.clean(force)
 
 
@@ -346,7 +342,7 @@ def is_repr_attr(attr: str, value: Any) -> bool:
         [
             attr not in {"label"},
             not attr.startswith("_"),
-            not isinstance(value, Tensor),
+            not isinstance(value, (Tensor, Module, ModuleList)),
             value is not None,
         ]
     )

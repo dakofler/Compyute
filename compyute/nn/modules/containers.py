@@ -30,16 +30,16 @@ class Sequential(Module):
         if not modules:
             raise NoChildModulesError()
 
-        self._modules = ModuleList(modules)
+        self.modules = ModuleList(modules)
 
     def forward(self, x: Tensor) -> Tensor:
-        for module in self._modules:
+        for module in self.modules:
             x = module(x)
         return x
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        for module in reversed(self._modules):
+        for module in reversed(self.modules):
             dy = module.backward(dy)
         return dy
 
@@ -68,11 +68,11 @@ class ParallelConcat(Module):
         if not modules:
             raise NoChildModulesError()
 
-        self._modules = ModuleList(modules)
+        self.modules = ModuleList(modules)
         self.concat_axis = concat_axis
 
     def forward(self, x: Tensor) -> Tensor:
-        ys = [m(x) for m in self._modules]
+        ys = [m(x) for m in self.modules]
         y = concat(ys, axis=self.concat_axis)
 
         self._fcache.ys = ys  # TODO: cannot cache list[Tensor]
@@ -83,7 +83,7 @@ class ParallelConcat(Module):
         ys = self._fcache.ys
         split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
         splits = split(dy, splits=split_idx, axis=self.concat_axis)
-        return tensorsum(m.backward(s) for m, s in zip(self._modules, splits))
+        return tensorsum(m.backward(s) for m, s in zip(self.modules, splits))
 
 
 class ParallelAdd(Module):
@@ -107,14 +107,14 @@ class ParallelAdd(Module):
         if not modules:
             raise NoChildModulesError()
 
-        self._modules = ModuleList(modules)
+        self.modules = ModuleList(modules)
 
     def forward(self, x: Tensor) -> Tensor:
-        return tensorsum(m(x) for m in self._modules)
+        return tensorsum(m(x) for m in self.modules)
 
     def backward(self, dy: Tensor) -> Tensor:
         super().backward(dy)
-        return tensorsum(m.backward(dy) for m in self._modules)
+        return tensorsum(m.backward(dy) for m in self.modules)
 
 
 class ResidualConnection(Module):
