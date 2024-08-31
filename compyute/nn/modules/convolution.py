@@ -95,15 +95,16 @@ class Convolution1D(Module):
         if self.b:
             zeros(self.b)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
         return FConvolution1D.forward(
-            self._fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
+            self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        dx, dw, db = FConvolution1D.backward(self._fcache, dy)
+        dx, dw, db = FConvolution1D.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -185,15 +186,16 @@ class Convolution2D(Module):
         if self.b:
             zeros(self.b)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
         return FConvolution2D.forward(
-            self._fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
+            self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        dx, dw, db = FConvolution2D.backward(self._fcache, dy)
+        dx, dw, db = FConvolution2D.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -213,14 +215,15 @@ class MaxPooling2D(Module):
         super().__init__(label)
         self.kernel_size = kernel_size
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
         kernel_size = (self.kernel_size, self.kernel_size)
-        return FMaxPooling2D.forward(self._fcache, x, kernel_size)
+        return FMaxPooling2D.forward(self.fcache, x, kernel_size)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FMaxPooling2D.backward(self._fcache, dy)
+        return FMaxPooling2D.backward(self.fcache, dy)
 
 
 class AvgPooling2D(Module):
@@ -237,11 +240,12 @@ class AvgPooling2D(Module):
         super().__init__(label)
         self.kernel_size = kernel_size
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
         kernel_size = (self.kernel_size, self.kernel_size)
-        return FAvgPooling2D.forward(self._fcache, x, kernel_size)
+        return FAvgPooling2D.forward(self.fcache, x, kernel_size)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FAvgPooling2D.backward(self._fcache, dy)
+        return FAvgPooling2D.backward(self.fcache, dy)

@@ -85,14 +85,14 @@ def all(x: Tensor) -> bool:
     return x.device.engine.all(x.data)
 
 
-def allclose(x: Tensor, y: Tensor, rtol=1e-05, atol=1e-08) -> bool:
+def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
     """Returns ``True`` if all elements in the tensor are ``True``.
 
     Parameters
     ----------
-    x : Tensor
+    x1 : Tensor
         Input tensor.
-    y : Tensor
+    x2 : Tensor
         Input tensor.
     rtol : float
         Relative tolerance. Defaults to ``1e-05``.
@@ -104,7 +104,7 @@ def allclose(x: Tensor, y: Tensor, rtol=1e-05, atol=1e-08) -> bool:
     bool
         ``True`` if all elements in the tensors are within the given tolerance.
     """
-    return x.device.engine.allclose(x.data, y.data, rtol, atol)
+    return x1.device.engine.allclose(x1.data, y.data, rtol, atol)
 
 
 def clip(
@@ -149,7 +149,7 @@ def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
     return conv[..., -out:]
 
 
-def convolve2d_fft(x: Tensor, f: Tensor) -> Tensor:
+def convolve2d_fft(x1: Tensor, x2: Tensor) -> Tensor:
     """Computes the convolution of two tensors using FFT over their last two axes.
 
     Parameters
@@ -164,9 +164,9 @@ def convolve2d_fft(x: Tensor, f: Tensor) -> Tensor:
     Tensor
         Convolution of the two tensors.
     """
-    conv = real(ifft2d(fft2d(x) * fft2d(f, s=x.shape[-2:])))
-    out_y = x.shape[-2] - f.shape[-2] + 1
-    out_x = x.shape[-1] - f.shape[-1] + 1
+    conv = real(ifft2d(fft2d(x1) * fft2d(x2, s=x1.shape[-2:])))
+    out_y = x1.shape[-2] - x2.shape[-2] + 1
+    out_x = x1.shape[-1] - x2.shape[-1] + 1
     return conv[..., -out_y:, -out_x:]
 
 
@@ -202,14 +202,14 @@ def cosh(x: Tensor) -> Tensor:
     return Tensor(x.device.engine.cosh(x.data))
 
 
-def dot(x: Tensor, y: Tensor) -> Tensor:
+def dot(x1: Tensor, x2: Tensor) -> Tensor:
     """Computes the dot product of two tensors.
 
     Parameters
     ----------
-    x : Tensor
+    x1 : Tensor
         First tensor.
-    y : Tensor
+    x2 : Tensor
         Second tensor.
 
     Returns
@@ -217,9 +217,9 @@ def dot(x: Tensor, y: Tensor) -> Tensor:
     Tensor
         Dot product of the tensors.
     """
-    if x.n_axes != 1 or y.n_axes != 1:
+    if x1.n_axes != 1 or x2.n_axes != 1:
         raise ShapeError("Inputs must be 1D-tensors.")
-    return inner(x, y)
+    return inner(x1, x2)
 
 
 def einsum(subscripts: str, *tensors: Tensor) -> Tensor:
@@ -527,14 +527,14 @@ def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     return Tensor(x.data.max(axis, keepdims=keepdims))
 
 
-def maximum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
+def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
     """Computes the element-wise maximum of two tensors or a tensor and a scalar.
 
     Parameters
     ----------
-    x : Tensor
+    x1 : Tensor
         First tensor.
-    y : Tensor | ScalarLike
+    x2 : Tensor | ScalarLike
         Second tensor or scalar.
 
     Returns
@@ -542,7 +542,7 @@ def maximum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise maximum.
     """
-    return Tensor(x.device.engine.maximum(x.data, to_arraylike(y)))
+    return Tensor(x1.device.engine.maximum(x1.data, to_arraylike(x2)))
 
 
 def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -589,14 +589,14 @@ def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     return Tensor(x.data.min(axis, keepdims=keepdims))
 
 
-def minimum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
+def minimum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
     """Computes the element-wise minimum of two tensors or a tensor and a scalar.
 
     Parameters
     ----------
-    x : Tensor
+    x1 : Tensor
         First tensor.
-    y : Tensor | ScalarLike
+    x2 : Tensor | ScalarLike
         Second tensor or scalar.
 
     Returns
@@ -604,7 +604,7 @@ def minimum(x: Tensor, y: Tensor | ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise minimum.
     """
-    return Tensor(x.device.engine.minimum(x.data, to_arraylike(y)))
+    return Tensor(x1.device.engine.minimum(x1.data, to_arraylike(x2)))
 
 
 def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:

@@ -166,19 +166,21 @@ When you want to define a custom forward-behaviour, the ``Module`` base class ca
             self.relu = nn.ReLU()
             self.lin2 = nn.Linear(16, 3)
 
-        def forward(self, x):
             # define the forward pass
-            x = self.lin1(x)
-            x = self.relu(x)
-            x = self.lin2(x)
-            return x
+            @nn.Module.register_forward
+            def forward(self, x):
+                x = self.lin1(x)
+                x = self.relu(x)
+                x = self.lin2(x)
+                return x
 
-        def backward(self, dy):
             # define the backward pass
-            dy = self.lin2.backward(dy)
-            dy = self.relu.backward(dy)
-            dy = self.lin1.backward(dy)
-            return dy           
+            @nn.Module.register_backward
+            def backward(self, dy):
+                dy = self.lin2.backward(dy)
+                dy = self.relu.backward(dy)
+                dy = self.lin1.backward(dy)
+                return dy        
 
 
 Training models

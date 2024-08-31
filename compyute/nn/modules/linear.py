@@ -69,12 +69,13 @@ class Linear(Module):
         if self.b:
             zeros(self.b)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FLinear.forward(self._fcache, x, self.w, self.b)
+        return FLinear.forward(self.fcache, x, self.w, self.b)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        dx, dw, db = FLinear.backward(self._fcache, dy)
+        dx, dw, db = FLinear.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx

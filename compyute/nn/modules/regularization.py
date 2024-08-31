@@ -24,9 +24,10 @@ class Dropout(Module):
         super().__init__(label)
         self.p = p
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FDropout.forward(self._fcache, x, self.p, self._is_training)
+        return FDropout.forward(self.fcache, x, self.p, self._is_training)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FDropout.backward(self._fcache, dy)
+        return FDropout.backward(self.fcache, dy)

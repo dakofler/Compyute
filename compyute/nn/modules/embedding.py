@@ -58,10 +58,11 @@ class Embedding(Module):
     def _init_parameters_and_buffers(self) -> None:
         normal(self.w)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FEmbedding.forward(self._fcache, x, self.w)
+        return FEmbedding.forward(self.fcache, x, self.w)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> None:
-        super().backward(dy)
-        dw = FEmbedding.backward(self._fcache, dy)
+        dw = FEmbedding.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)

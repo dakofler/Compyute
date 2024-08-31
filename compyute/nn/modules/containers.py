@@ -32,13 +32,14 @@ class Sequential(Module):
 
         self.modules = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         for module in self.modules:
             x = module(x)
         return x
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
         for module in reversed(self.modules):
             dy = module.backward(dy)
         return dy
@@ -71,16 +72,17 @@ class ParallelConcat(Module):
         self.modules = ModuleList(modules)
         self.concat_axis = concat_axis
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self.modules]
         y = concat(ys, axis=self.concat_axis)
 
-        self._fcache.ys = ys  # TODO: cannot cache list[Tensor]
+        self.fcache.ys = ys  # TODO: cannot cache list[Tensor]
         return y
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        ys = self._fcache.ys
+        ys = self.fcache.ys
         split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
         splits = split(dy, splits=split_idx, axis=self.concat_axis)
         return tensorsum(m.backward(s) for m, s in zip(self.modules, splits))
@@ -109,11 +111,12 @@ class ParallelAdd(Module):
 
         self.modules = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return tensorsum(m(x) for m in self.modules)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
         return tensorsum(m.backward(dy) for m in self.modules)
 
 
@@ -149,13 +152,14 @@ class ResidualConnection(Module):
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
         self.residual_proj = residual_proj
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y = self.residual_block(x)
         y += self.residual_proj(x) if self.residual_proj else x
         return y
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
         dx = self.residual_block.backward(dy)
         dx += self.residual_proj.backward(dy) if self.residual_proj else dy
         return dx

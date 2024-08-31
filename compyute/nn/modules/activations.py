@@ -29,12 +29,13 @@ class GELU(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FGELU.forward(self._fcache, x)
+        return FGELU.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FGELU.backward(self._fcache, dy)
+        return FGELU.backward(self.fcache, dy)
 
 
 class LeakyReLU(Module):
@@ -55,12 +56,13 @@ class LeakyReLU(Module):
         super().__init__(label)
         self.alpha = alpha
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FLeakyReLU.forward(self._fcache, x, self.alpha)
+        return FLeakyReLU.forward(self.fcache, x, self.alpha)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FLeakyReLU.backward(self._fcache, dy, self.alpha)
+        return FLeakyReLU.backward(self.fcache, dy, self.alpha)
 
 
 class ReLU(Module):
@@ -76,12 +78,13 @@ class ReLU(Module):
 
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FReLU.forward(self._fcache, x)
+        return FReLU.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FReLU.backward(self._fcache, dy)
+        return FReLU.backward(self.fcache, dy)
 
 
 class Sigmoid(Module):
@@ -96,12 +99,13 @@ class Sigmoid(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSigmoid.forward(self._fcache, x)
+        return FSigmoid.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FSigmoid.backward(self._fcache, dy)
+        return FSigmoid.backward(self.fcache, dy)
 
 
 class SiLU(Module):
@@ -116,12 +120,13 @@ class SiLU(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSiLU.forward(self._fcache, x)
+        return FSiLU.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FSiLU.backward(self._fcache, dy)
+        return FSiLU.backward(self.fcache, dy)
 
 
 class Softmax(Module):
@@ -136,12 +141,13 @@ class Softmax(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSoftmax.forward(self._fcache, x)
+        return FSoftmax.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FSoftmax.backward(self._fcache, dy)
+        return FSoftmax.backward(self.fcache, dy)
 
 
 class Tanh(Module):
@@ -156,12 +162,13 @@ class Tanh(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FTanh.forward(self._fcache, x)
+        return FTanh.forward(self.fcache, x)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        super().backward(dy)
-        return FTanh.backward(self._fcache, dy)
+        return FTanh.backward(self.fcache, dy)
 
 
 _ActivationLike: TypeAlias = Literal[

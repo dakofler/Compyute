@@ -129,8 +129,8 @@ When you want to define a custom forward-behaviour, the `Container` base class c
 ```python
 import compyute.nn as nn
 
-# create a model from scratch by inheriting from the 'Container' base class
-class MyModel(nn.Container):
+# create a model from scratch by inheriting from the 'Module' base class
+class MyModel(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -139,15 +139,17 @@ class MyModel(nn.Container):
         self.relu = nn.ReLU()
         self.lin2 = nn.Linear(16, 3)
 
+    # define the forward pass
+    @nn.Module.register_forward
     def forward(self, x):
-        # define the forward pass
         x = self.lin1(x)
         x = self.relu(x)
         x = self.lin2(x)
         return x
 
+    # define the backward pass
+    @nn.Module.register_backward
     def backward(self, dy):
-        # define the backward pass
         dy = self.lin2.backward(dy)
         dy = self.relu.backward(dy)
         dy = self.lin1.backward(dy)

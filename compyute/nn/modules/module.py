@@ -5,8 +5,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import contextmanager
+from functools import wraps
 from itertools import chain
-from typing import Any, Iterable, Iterator, Optional
+from typing import Any, Callable, Iterable, Iterator, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor
@@ -33,7 +34,7 @@ class Module(ABC):
 
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
-        self._fcache: FunctionCache = PseudoCache()
+        self.fcache: FunctionCache = PseudoCache()
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -162,10 +163,7 @@ class Module(ABC):
         return repr_string
 
     def __call__(self, x: Tensor) -> Tensor:
-        self._fcache = FunctionCache() if self._is_training else PseudoCache()
-        y = self.forward(x)
-        self._set_y(y)
-        return y
+        return self.forward(x)
 
     def __bool__(self) -> bool:
         return True
@@ -266,24 +264,62 @@ class Module(ABC):
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
-        """Performs a forward pass through the module."""
+        """Forward pass of the module.
 
-    def backward(self, dy: Tensor) -> Optional[Tensor]:
-        """Performs a backward pass through the module."""
-        if not self._is_training:
-            raise AttributeError(f"{self.label} is not in training mode.")
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor.
 
-        dy = dy.to_float()
-        self._set_dy(dy)
+        Returns
+        -------
+        Tensor
+            Output tensor.
+        """
 
-    def _set_y(self, y: Tensor) -> None:
-        if not self._is_retaining_values:
-            return
-        self.y = y.copy()
+    @abstractmethod
+    def backward(self, dy: Tensor) -> Tensor:
+        """Backward pass of the module.
 
-    def _set_dy(self, dy: Tensor) -> None:
-        if self._is_retaining_values and self.y:
-            self.y.grad = dy.copy()
+        Parameters
+        ----------
+        dy : Tensor
+            Output gradient tensor.
+
+        Returns
+        -------
+        Tensor
+            Input gradient tensor.
+        """
+
+    @staticmethod
+    def register_forward(forward_method):
+        """Decorator for registering a forward method to the module."""
+
+        @wraps(forward_method)
+        def wrapper(module: Module, x: Tensor) -> Tensor:
+            module.fcache = FunctionCache() if module.is_training else PseudoCache()
+            y = forward_method(module, x)
+            if module.is_retaining_values:
+                module.y = y.copy()
+            return y
+
+        return wrapper
+
+    @staticmethod
+    def register_backward(backward_method):
+        """Decorator for registering a backward method to the module."""
+
+        @wraps(backward_method)
+        def wrapper(module: Module, dy: Tensor) -> Tensor:
+            if not module.is_training:
+                raise AttributeError(f"{module.label} is not in training mode.")
+            dy = dy.to_float()
+            if module.is_retaining_values and module.y:
+                module.y.grad = dy.copy()
+            return backward_method(module, dy)
+
+        return wrapper
 
     def clean(self, force: bool = False) -> None:
         """Removes temporary values like outputs and gradients.
@@ -293,7 +329,7 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        self._fcache.clear()
+        self.fcache.clear()
         if not self._is_retaining_values or force:
             self.y = None
             for p in self.get_parameters(recursive=False):
