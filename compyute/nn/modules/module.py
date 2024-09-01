@@ -334,6 +334,7 @@ class Module(ABC):
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
         self.fcache.clear()
+
         if not self._is_retaining_values or force:
             self.x = self.y = None
             for p in self.get_parameters(recursive=False):

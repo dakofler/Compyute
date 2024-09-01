@@ -65,20 +65,26 @@ def abs(x: Tensor) -> Tensor:
     return x.abs()
 
 
-def all(x: Tensor) -> bool:
+def all(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
     """Returns ``True`` if all elements in the tensor are ``True``.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    axis : AxisLike, optional
+        Axis over which the operation is computed. Defaults to ``None``.
+        If ``None`` it is computed over the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given axis.
 
     Returns
     -------
-    bool
-        ``True`` if all elements in the tensor are ``True``.
+    Tensor
+        ``True`` if all elements are ``True``.
     """
-    return x.device.engine.all(x.data)
+    return x.all(axis, keepdims=keepdims)
 
 
 def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
@@ -509,7 +515,7 @@ def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the mean is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
@@ -531,7 +537,7 @@ def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the norm is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
@@ -569,7 +575,7 @@ def prod(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the product is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
@@ -689,7 +695,7 @@ def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the standard deviation is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
@@ -711,7 +717,7 @@ def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the sum is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.
@@ -799,7 +805,7 @@ def var(
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        Axis over which the variance is computed. Defaults to ``None``.
+        Axis over which the operation is computed. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     ddof : int, optional
         "Delta Degrees of Freedom": the divisor used in the calculation is :math:`N - ddof`,

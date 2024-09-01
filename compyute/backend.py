@@ -100,8 +100,8 @@ def get_cuda_memory_usage() -> tuple[int, int]:
     return used_bytes, total_bytes
 
 
-def flush_cuda_memory() -> None:
-    """Flushes the GPU memory."""
+def free_cuda_memory() -> None:
+    """Frees unused blocks from the GPU memory."""
     if not gpu_available():
         return
     cupy.get_default_memory_pool().free_all_blocks()

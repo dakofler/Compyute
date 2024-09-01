@@ -2,6 +2,7 @@
 
 from typing import Literal, Optional
 
+from ...backend import free_cuda_memory
 from ...tensors import Tensor
 from ...typing import ScalarLike
 from ..losses import _LossLike, get_loss_function
@@ -80,38 +81,41 @@ class Trainer:
             Number of inputs processed in parallel. Defaults to ``32``.
             If ``-1``, all samples are used.
         """
-        batch_size = len(x_train) if batch_size == -1 else batch_size
+        batch_size = batch_size if batch_size > 0 else len(x_train)
         train_dataloader = Dataloader(x_train, y_train, batch_size, self.model.device)
         self.cache["epochs"] = epochs
         self.cache["train_steps"] = len(train_dataloader)
         self._callback("start")
 
-        for t in range(1, epochs + 1):
-            self.cache["t"] = t
-            self._callback("epoch_start")
+        try:
+            for t in range(1, epochs + 1):
+                self.cache["t"] = t
+                self._callback("epoch_start")
 
-            # training
-            with self.model.train():
-                for s, batch in enumerate(train_dataloader(), 1):
-                    self.cache["step"] = s
-                    self._callback("step_start")
-                    self.cache["lr"] = self.optimizer.lr
-                    self._train_step(batch)
-                    self._callback("step_end")
+                # training
+                with self.model.train():
+                    for s, batch in enumerate(train_dataloader(), 1):
+                        self.cache["step"] = s
+                        self._callback("step_start")
+                        self.cache["lr"] = self.optimizer.lr
+                        self._train_step(batch)
+                        self._callback("step_end")
 
-            # validation
-            if val_data:
-                loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
-                self.cache["val_loss"] = loss
-                if self.metric is not None:
-                    self.cache[f"val_{self.metric_name}_score"] = score
+                # validation
+                if val_data:
+                    loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
+                    self.cache["val_loss"] = loss
+                    if self.metric is not None:
+                        self.cache[f"val_{self.metric_name}_score"] = score
 
-            self._callback("epoch_end")
-            if self.cache["abort"]:
-                break
+                self._callback("epoch_end")
+                if self.cache["abort"]:
+                    break
 
-        self._callback("end")
-        self.model.clean()
+            self._callback("end")
+        finally:
+            self.model.clean()
+            free_cuda_memory()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
