@@ -5,7 +5,7 @@ from collections.abc import Iterable, Iterator
 from functools import reduce
 from typing import Optional
 
-from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, tensor, to_arraylike
+from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, to_arraylike
 from ..typing import DType, complex64
 
 __all__ = [
@@ -242,9 +242,8 @@ def einsum(subscripts: str, *tensors: Tensor) -> Tensor:
     Tensor
         Result of the Einstein summation.
     """
-    return Tensor(
-        tensors[0].device.engine.einsum(subscripts, *[t.data for t in tensors])
-    )
+    data = tensors[0].device.engine.einsum(subscripts, *[t.data for t in tensors])
+    return Tensor(data)
 
 
 def exp(x: Tensor) -> Tensor:
@@ -287,7 +286,8 @@ def fft1d(
     Tensor
         Complex tensor containing the 1D FFT.
     """
-    return tensor(x.device.engine.fft.fft(x.data, n, axis), x.device, dtype)
+    data = x.device.engine.fft.fft(x.data, n, axis)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def fft2d(
@@ -314,7 +314,8 @@ def fft2d(
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    return tensor(x.device.engine.fft.fft2(x.data, s, axes), x.device, dtype)
+    data = x.device.engine.fft.fft2(x.data, s, axes)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def ifft1d(
@@ -341,7 +342,8 @@ def ifft1d(
     Tensor
         Float tensor containing the inverse 1D FFT.
     """
-    return tensor(x.device.engine.fft.ifft(x.data, n, axis), x.device, dtype)
+    data = x.device.engine.fft.ifft(x.data, n, axis)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def ifft2d(
@@ -368,7 +370,8 @@ def ifft2d(
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    return tensor(x.device.engine.fft.ifft2(x.data, s, axes), x.device, dtype)
+    data = x.device.engine.fft.ifft2(x.data, s, axes)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def imag(x: Tensor) -> Tensor:

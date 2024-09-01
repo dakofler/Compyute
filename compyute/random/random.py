@@ -1,17 +1,10 @@
 """Randomness based tensor functions."""
 
-# rules for creation functions:
-# - have device optional, select default device if None
-# - have dtype optional for float dtypes
-# - if possible, pass dtype to array engine and use Tensor
-# - if not possible, use tensor() and pass device, dtype
-
-
 from contextlib import contextmanager
 from typing import Optional
 
 from ..backend import Device, cpu, cuda, gpu_available, select_device
-from ..tensors import ShapeLike, Tensor, tensor
+from ..tensors import ShapeLike, Tensor
 from ..typing import DType, int64, select_dtype
 
 __all__ = [
@@ -85,7 +78,8 @@ def normal(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return tensor(device.engine.random.normal(mean, std, shape), device, dtype)
+    data = device.engine.random.normal(mean, std, shape)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def uniform(
@@ -117,7 +111,8 @@ def uniform(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return tensor(device.engine.random.uniform(low, high, shape), device, dtype)
+    data = device.engine.random.uniform(low, high, shape)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def uniform_int(
@@ -167,7 +162,7 @@ def permutation(n: int, device: Optional[Device] = None) -> Tensor:
         Permuted tensor.
     """
     device = select_device(device)
-    return tensor(device.engine.random.permutation(n), device, int64)
+    return Tensor(device.engine.random.permutation(n).astype(int64.value, copy=False))
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
@@ -189,12 +184,10 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        return tensor(
-            p.device.engine.random.choice(x, shape, p=p.data), p.device, int64
-        )
-    return tensor(
-        p.device.engine.random.choice(x.data, shape, p=p.data), p.device, x.dtype
-    )
+        data = p.device.engine.random.choice(x, shape, p=p.data)
+        return Tensor(data.astype(int64.value, copy=False))
+    data = p.device.engine.random.choice(x.data, shape, p=p.data)
+    return Tensor(data.astype(x.dtype.value, copy=False))
 
 
 def multinulli(
@@ -223,11 +216,8 @@ def multinulli(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return tensor(
-        device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1.0 - p]),
-        device,
-        dtype,
-    )
+    data = device.engine.random.choice([0.0, 1.0], size=shape, p=[p, 1.0 - p])
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:

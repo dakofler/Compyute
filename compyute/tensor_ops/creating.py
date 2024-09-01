@@ -1,12 +1,5 @@
 """Tensor creation and combination operations."""
 
-# rules for creation functions:
-# - have device optional, select default device if None
-# - have dtype optional for float dtypes
-# - if possible, pass dtype to array engine and use Tensor
-# - if not possible, use tensor() and pass device, dtype
-
-
 from collections.abc import Sequence
 from typing import Optional
 
@@ -101,9 +94,8 @@ def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     Tensor
         Concatenated tensor.
     """
-    return Tensor(
-        tensors[0].device.engine.concatenate([t.data for t in tensors], axis=axis)
-    )
+    data = tensors[0].device.engine.concatenate([t.data for t in tensors], axis=axis)
+    return Tensor(data)
 
 
 def empty(
