@@ -160,7 +160,7 @@ class Tensor:
         self._iterator = 0
         return self
 
-    def __next__(self) -> Tensor | ScalarLike:
+    def __next__(self) -> Tensor:
         if self._iterator < self.shape[0]:
             self._iterator += 1
             return self[self._iterator - 1]
