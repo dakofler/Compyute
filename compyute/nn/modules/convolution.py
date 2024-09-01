@@ -10,13 +10,15 @@ from ..functional.convolutions import (
     FConvolution1D,
     FConvolution2D,
     FMaxPooling2D,
-    PaddingLike,
 )
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import xavier_uniform, zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
+
+
+PaddingLike = int | Literal["valid", "same"]
 
 
 class Convolution1D(Module):
@@ -69,7 +71,7 @@ class Convolution1D(Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        padding: Literal["valid", "same"] = "valid",
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
@@ -80,7 +82,11 @@ class Convolution1D(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.padding = padding
+        self.padding = (
+            padding
+            if isinstance(padding, int)
+            else _str_to_pad(padding, kernel_size, dilation)
+        )
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
@@ -108,6 +114,12 @@ class Convolution1D(Module):
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
+
+
+def _str_to_pad(padding: PaddingLike, kernel_size: int, dilation: int) -> int:
+    if padding == "valid":
+        return 0
+    return (kernel_size * dilation - 1) // 2
 
 
 class Convolution2D(Module):
@@ -169,7 +181,11 @@ class Convolution2D(Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.padding = padding
+        self.padding = (
+            padding
+            if isinstance(padding, int)
+            else _str_to_pad(padding, kernel_size, dilation)
+        )
         self.stride = stride
         self.dilation = dilation
         self.bias = bias
@@ -218,8 +234,7 @@ class MaxPooling2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-        kernel_size = (self.kernel_size, self.kernel_size)
-        return FMaxPooling2D.forward(self.fcache, x, kernel_size)
+        return FMaxPooling2D.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
@@ -243,8 +258,7 @@ class AvgPooling2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-        kernel_size = (self.kernel_size, self.kernel_size)
-        return FAvgPooling2D.forward(self.fcache, x, kernel_size)
+        return FAvgPooling2D.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:

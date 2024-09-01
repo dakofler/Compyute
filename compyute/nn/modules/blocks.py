@@ -3,11 +3,10 @@
 from typing import Optional
 
 from ...typing import DType
-from ..functional.convolutions import PaddingLike
 from ..utils.initializers import _InitializerLike, get_initializer
 from .activations import _ActivationLike, get_activation
 from .containers import Sequential
-from .convolution import Convolution1D, Convolution2D
+from .convolution import Convolution1D, Convolution2D, PaddingLike
 from .linear import Linear
 from .normalization import BatchNorm1D, BatchNorm2D
 
@@ -32,15 +31,15 @@ class DenseBlock(Sequential):
         Number of input features.
     out_channels : int
         Number of output channels (neurons) of the dense block.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    bias_init : _InitializerLike, optional
+    bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
     dtype : DType, optional
@@ -99,16 +98,16 @@ class Convolution1DBlock(Sequential):
         Number of output channels (filters).
     kernel_size : int
         Size of each kernel.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
         Dilation used for each axis of the filter. Defaults to ``1``.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
@@ -201,21 +200,21 @@ class Convolution2DBlock(Sequential):
         Number of output channels (filters or feature maps).
     kernel_size : int
         Size of each kernel.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
         Dilations used for each axis of the filter. Defaults to ``1``.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    bias_init : _InitializerLike, optional
+    bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
     batchnorm : bool, optional
