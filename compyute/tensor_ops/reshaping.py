@@ -247,7 +247,7 @@ def squeeze(x: Tensor) -> Tensor:
     Tensor
         Tensor with removed axes.
     """
-    return Tensor(x.data.squeeze())
+    return x.squeeze()
 
 
 def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
@@ -258,7 +258,7 @@ def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        | Axis alown which to flip the tensor. Defaults to ``None``.
+        | Axis along which to flip the tensor. Defaults to ``None``.
         | ``None``: all axes are flipped
         | ``int``: only the specified axis is flipped.
         | ``tuple[int, ...]``: all specified axes are flipped.

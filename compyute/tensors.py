@@ -555,6 +555,15 @@ class Tensor:
         """
         return Tensor(self.data.real)
 
+    def squeeze(self) -> Tensor:
+        """Returns a tensor with single-dimensional axes removed.
+
+        See Also
+        --------
+        :func:`compyute.squeeze`
+        """
+        return Tensor(self.data.squeeze())
+
     def std(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
         """Computes the standard deviation of tensor elements over a given axis.
 
