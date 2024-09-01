@@ -7,7 +7,8 @@
 # - if not possible, use tensor() and pass device, dtype
 
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from ..backend import Device, select_device
 from ..tensors import AxisLike, ShapeLike, Tensor

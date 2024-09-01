@@ -1,7 +1,8 @@
 """Dataloaders."""
 
+from collections.abc import Callable, Iterator
 from functools import wraps
-from typing import Callable, Iterator, Optional
+from typing import Optional
 
 from ...backend import Device, cpu
 from ...random.random import shuffle

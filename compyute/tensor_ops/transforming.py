@@ -1,8 +1,9 @@
 """Tensor computation and transformation operations."""
 
 import operator
+from collections.abc import Iterable, Iterator
 from functools import reduce
-from typing import Iterable, Iterator, Optional
+from typing import Optional
 
 from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, tensor, to_arraylike
 from ..typing import DType, complex64

@@ -1,8 +1,9 @@
 """Neural network parameter initializers."""
 
 import math
+from collections.abc import Callable
 from functools import partial
-from typing import Callable, Literal, Optional
+from typing import Literal, Optional
 
 from ...random.random import normal as _normal
 from ...random.random import uniform as _uniform

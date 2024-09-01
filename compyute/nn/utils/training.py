@@ -1,6 +1,6 @@
 """Training utilities."""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from ...tensor_ops.creating import concat
 from ...tensor_ops.reshaping import flatten

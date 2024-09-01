@@ -53,8 +53,6 @@ def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     ----------

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
-from typing import Any, Iterable, Iterator, Optional
+from typing import Any, Optional
 
 from ...backend import Device, select_device
 from ...tensors import ShapeError, Tensor

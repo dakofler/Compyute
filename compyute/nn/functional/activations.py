@@ -146,15 +146,11 @@ def sigmoid(x: Tensor) -> Tensor:
     ----------
     x : Tensor
         Input tensor.
-    return_grad_fn : bool, optional
-        Whether to also return the according gradient function. Defaults to ``False``.
 
     Returns
     -------
     Tensor
         Output tensor.
-    Callable, optional
-        Gradient function.
 
     See Also
     --------

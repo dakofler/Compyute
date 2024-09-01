@@ -1,6 +1,7 @@
 """Logging callbacks."""
 
-from typing import Any, Iterable, Literal
+from collections.abc import Iterable
+from typing import Any, Literal
 
 from tqdm.auto import tqdm
 
