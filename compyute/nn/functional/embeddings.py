@@ -23,7 +23,7 @@ class FEmbedding(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, emb_table_shape = cache.x, cache.emb_table_shape
-        x = one_hot_encode(x, emb_table_shape[0]).to_type(dy.dtype)
+        x = one_hot_encode(x, emb_table_shape[0], dy.dtype)
         return cp_sum(x.T @ dy, axis=tuple(range(x.n_axes - 2)))
 
 

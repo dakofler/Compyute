@@ -27,16 +27,16 @@ class Module(ABC):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    x: Optional[Tensor] = None
-    y: Optional[Tensor] = None
-    _device: Device = select_device(None)
-    _is_retaining_values: bool = False
-    _is_trainable: bool = True
-    _is_training: bool = False
-
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
         self.fcache: FunctionCache = PseudoCache()
+
+        self.x: Optional[Tensor] = None
+        self.y: Optional[Tensor] = None
+        self._device: Device = select_device(None)
+        self._is_retaining_values: bool = False
+        self._is_trainable: bool = True
+        self._is_training: bool = False
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES

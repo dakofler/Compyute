@@ -1,6 +1,6 @@
 """Model trainer."""
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from ...backend import free_cuda_memory
 from ...tensors import Tensor
@@ -36,8 +36,6 @@ class Trainer:
         See :ref:`callbacks` for more details.
     """
 
-    cache: dict = {"abort": False}
-
     def __init__(
         self,
         model: Module,
@@ -52,10 +50,12 @@ class Trainer:
         self.optimizer.parameters = model.get_parameters()
         self.loss = get_loss_function(loss)
         self.metric = None if metric is None else get_metric_function(metric)
+        self.callbacks = callbacks
+
         self.metric_name = (
             None if metric is None else self.metric.__class__.__name__.lower()
         )
-        self.callbacks = callbacks
+        self.cache: dict[str, Any] = {"abort": False}
 
     def train(
         self,

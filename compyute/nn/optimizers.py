@@ -2,7 +2,8 @@
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Iterator, Literal, Optional
+from collections.abc import Iterator
+from typing import Literal, Optional
 
 from ..tensor_ops.transforming import sqrt, tensorprod
 from .parameter import Parameter
@@ -21,13 +22,13 @@ class Optimizer(ABC):
         Learning rate. Defaults to ``1e-3``.
     """
 
-    state: dict = {}
-    t: int = 1
-
     def __init__(
         self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
+
+        self.state = OrderedDict()
+        self.t = 1
         if parameters is not None:
             self.parameters = parameters
 
@@ -40,7 +41,7 @@ class Optimizer(ABC):
     def parameters(self, parameters: Iterator[Parameter]) -> None:
         self._parameters = OrderedDict(enumerate(parameters))
         for i in range(len(self._parameters)):
-            self.state[i] = {}
+            self.state[i] = OrderedDict()
 
     def get_state_dict(self) -> OrderedDict:
         """Returns a state dict containing variables and buffers.

@@ -14,7 +14,7 @@ class Loss(ABC):
     """Loss base class."""
 
     def __init__(self) -> None:
-        self._fcache = FunctionCache()
+        self.fcache = FunctionCache()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return self.forward(y_pred, y_true)
@@ -55,10 +55,10 @@ class MeanSquaredError(Loss):
     """
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FMeanSquaredError.forward(self._fcache, y_pred, y_true)
+        return FMeanSquaredError.forward(self.fcache, y_pred, y_true)
 
     def backward(self) -> Tensor:
-        return FMeanSquaredError.backward(self._fcache)
+        return FMeanSquaredError.backward(self.fcache)
 
 
 class CrossEntropy(Loss):
@@ -69,10 +69,10 @@ class CrossEntropy(Loss):
     """
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FCrossEntropy.forward(self._fcache, y_pred, y_true)
+        return FCrossEntropy.forward(self.fcache, y_pred, y_true)
 
     def backward(self) -> Tensor:
-        return FCrossEntropy.backward(self._fcache)
+        return FCrossEntropy.backward(self.fcache)
 
 
 class BinaryCrossEntropy(Loss):
@@ -83,10 +83,10 @@ class BinaryCrossEntropy(Loss):
     """
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FBinaryCrossEntropy.forward(self._fcache, y_pred, y_true)
+        return FBinaryCrossEntropy.forward(self.fcache, y_pred, y_true)
 
     def backward(self) -> Tensor:
-        return FBinaryCrossEntropy.backward(self._fcache)
+        return FBinaryCrossEntropy.backward(self.fcache)
 
 
 _LossLike = (

@@ -145,8 +145,10 @@ class BPETokenizer(Tokenizer):
     Mostly follows Andrjey Karpathy's `minbpe <https://github.com/karpathy/minbpe>`_.
     """
 
-    merges = {}
-    pattern = regex.compile(BPE_PATTERN)
+    def __init__(self, oov_token: str = "<|unk|>") -> None:
+        super().__init__(oov_token)
+        self.merges = {}
+        self.pattern = regex.compile(BPE_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
         self.vocab = {idx: bytes([idx]) for idx in range(256)}

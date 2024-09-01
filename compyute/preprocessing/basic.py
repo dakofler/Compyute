@@ -5,7 +5,7 @@ from typing import Optional
 from ..random.random import shuffle
 from ..tensor_ops.creating import identity
 from ..tensors import AxisLike, Tensor
-from ..typing import is_integer
+from ..typing import DType, int64, is_integer
 
 __all__ = ["split_train_val_test", "normalize", "standardize", "one_hot_encode"]
 
@@ -96,7 +96,9 @@ def standardize(
     return (x - x.mean(axis=axis)) / x.std(axis=axis)
 
 
-def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
+def one_hot_encode(
+    x: Tensor, num_classes: int, dtype: Optional[DType] = int64
+) -> Tensor:
     """One-hot-encodes a tensor, by adding an additional encoding dimension.
 
     Parameters
@@ -106,6 +108,8 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     num_classes : int
         Number of classes to be considered when encoding.
         Defines axis ``-1`` of the output tensor.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to ``None``.
 
     Returns
     -------
@@ -120,4 +124,4 @@ def one_hot_encode(x: Tensor, num_classes: int) -> Tensor:
     if not is_integer(x.dtype):
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
-    return identity(n=num_classes, dtype=x.dtype, device=x.device)[x]
+    return identity(num_classes, x.device, dtype)[x]

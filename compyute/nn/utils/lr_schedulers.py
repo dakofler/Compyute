@@ -33,10 +33,9 @@ class LrScheduler(ABC):
         Optimizer, whose learning rate will be adapted.
     """
 
-    cache: LrSchedulerCache = {"lr_history": []}
-
     def __init__(self, optimizer: Optimizer) -> None:
         self.optimizer = optimizer
+        self.cache = LrSchedulerCache(lr_history=[])
 
     def _log_lr(self) -> None:
         self.cache["lr_history"].append(self.optimizer.lr)
