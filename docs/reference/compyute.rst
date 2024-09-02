@@ -140,17 +140,34 @@ Available data types are:
     float64
     complex64
     complex128
-    use_dtype
 
+
+Utilities:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    use_dtype
+    
 
 Devices
 -------
+
+Available devices are:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    cpu
+    cuda
+
+
+Utilities:
+
 .. autosummary::
     :toctree: ../_generated/compyute
     
     Device
-    cpu
-    cuda
     use_device
 
 

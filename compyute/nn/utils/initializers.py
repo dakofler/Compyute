@@ -5,36 +5,36 @@ from collections.abc import Callable
 from functools import partial
 from typing import Literal, Optional
 
-from ...random.random import normal as _normal
-from ...random.random import uniform as _uniform
-from ...tensor_ops.creating import ones as _ones
-from ...tensor_ops.creating import zeros as _zeros
+from ...random.random import normal, uniform
+from ...tensor_ops.creating import ones, zeros
 from ...tensors import ShapeLike, Tensor
-from ..modules.activations import _ActivationLike
+from ..modules.activations import ActivationLike
 
 __all__ = [
-    "kaiming_normal",
-    "kaiming_uniform",
-    "normal",
-    "uniform",
-    "xavier_normal",
-    "xavier_uniform",
+    "init_kaiming_normal",
+    "init_kaiming_uniform",
+    "init_normal",
+    "init_ones",
+    "init_uniform",
+    "init_xavier_normal",
+    "init_xavier_uniform",
+    "init_zeros",
 ]
 
 
-def ones(*tensors: Tensor) -> None:
+def init_ones(*tensors: Tensor) -> None:
     """Initializes tensors with ones."""
     for t in tensors:
-        t.data = _ones(t.shape, t.device, t.dtype).data
+        t.data = ones(t.shape, t.device, t.dtype).data
 
 
-def zeros(*tensors: Tensor) -> None:
+def init_zeros(*tensors: Tensor) -> None:
     """Initializes tensors with zeros."""
     for t in tensors:
-        t.data = _zeros(t.shape, t.device, t.dtype).data
+        t.data = zeros(t.shape, t.device, t.dtype).data
 
 
-def normal(*tensors: Tensor, mean: float = 0.0, std: float = 1.0) -> None:
+def init_normal(*tensors: Tensor, mean: float = 0.0, std: float = 1.0) -> None:
     """Initializes tensors with values following a uniform distribution.
 
     Parameters
@@ -45,10 +45,10 @@ def normal(*tensors: Tensor, mean: float = 0.0, std: float = 1.0) -> None:
         Standard deviation of the normal distribution. Defaults to ``1``.
     """
     for t in tensors:
-        t.data = _normal(t.shape, mean, std, t.device, t.dtype).data
+        t.data = normal(t.shape, mean, std, t.device, t.dtype).data
 
 
-def uniform(*tensors: Tensor, low: float = -1.0, high: float = 1.0) -> None:
+def init_uniform(*tensors: Tensor, low: float = -1.0, high: float = 1.0) -> None:
     """Initializes tensors with values following a uniform distribution.
 
     Parameters
@@ -59,11 +59,11 @@ def uniform(*tensors: Tensor, low: float = -1.0, high: float = 1.0) -> None:
         Upper bound for random values. Defaults to ``1``.
     """
     for t in tensors:
-        t.data = _uniform(t.shape, low, high, t.device, t.dtype).data
+        t.data = uniform(t.shape, low, high, t.device, t.dtype).data
 
 
-def kaiming_normal(
-    *tensors: Tensor, activation: Optional[_ActivationLike] = None
+def init_kaiming_normal(
+    *tensors: Tensor, activation: Optional[ActivationLike] = None
 ) -> None:
     """Normal initializer as described by
     `He et al., 2015 <https://arxiv.org/pdf/1502.01852>`_.
@@ -73,15 +73,15 @@ def kaiming_normal(
     activation : _ActivationLike
         Activation function to infer the gain value for.
     """
-    gain = get_gain(activation)
+    gain = _get_gain(activation)
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         std = gain / math.sqrt(fan_in)
-        t.data = _normal(t.shape, 0, std, t.device, t.dtype).data
+        t.data = normal(t.shape, 0, std, t.device, t.dtype).data
 
 
-def kaiming_uniform(
-    *tensors: Tensor, activation: Optional[_ActivationLike] = None
+def init_kaiming_uniform(
+    *tensors: Tensor, activation: Optional[ActivationLike] = None
 ) -> None:
     """Uniform initializer as described by
     `He et al., 2015 <https://arxiv.org/pdf/1502.01852>`_.
@@ -91,15 +91,15 @@ def kaiming_uniform(
     activation : _ActivationLike
         Activation function to infer the gain value for.
     """
-    gain = get_gain(activation)
+    gain = _get_gain(activation)
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         k = gain * math.sqrt(3 / fan_in)
-        t.data = _uniform(t.shape, -k, k, t.device, t.dtype).data
+        t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
 
 
-def xavier_normal(
-    *tensors: Tensor, activation: Optional[_ActivationLike] = None
+def init_xavier_normal(
+    *tensors: Tensor, activation: Optional[ActivationLike] = None
 ) -> None:
     """Normal initializer as described by
     `Glorot et al., 2010 <https://proceedings.mlr.press/v9/glorot10a.html>`_.
@@ -109,16 +109,16 @@ def xavier_normal(
     activation : _ActivationLike
         Activation function to infer the gain value for.
     """
-    gain = get_gain(activation)
+    gain = _get_gain(activation)
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         fan_out = _get_fan_out(t.shape)
         std = gain * math.sqrt(2 / (fan_in + fan_out))
-        t.data = _normal(t.shape, 0, std, t.device, t.dtype).data
+        t.data = normal(t.shape, 0, std, t.device, t.dtype).data
 
 
-def xavier_uniform(
-    *tensors: Tensor, activation: Optional[_ActivationLike] = None
+def init_xavier_uniform(
+    *tensors: Tensor, activation: Optional[ActivationLike] = None
 ) -> None:
     """Uniform initializer as described by
     `Glorot et al., 2010 <https://proceedings.mlr.press/v9/glorot10a.html>`_.
@@ -128,15 +128,15 @@ def xavier_uniform(
     activation : _ActivationLike
         Activation function to infer the gain value for.
     """
-    gain = get_gain(activation)
+    gain = _get_gain(activation)
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         fan_out = _get_fan_out(t.shape)
         k = gain * math.sqrt(6 / (fan_in + fan_out))
-        t.data = _uniform(t.shape, -k, k, t.device, t.dtype).data
+        t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
 
 
-_InitializerLike = Literal[
+InitializerLike = Literal[
     "kaiming_normal",
     "kaiming_uniform",
     "normal",
@@ -148,14 +148,14 @@ _InitializerLike = Literal[
 ]
 
 INITIALIZERS = {
-    "kaiming_normal": kaiming_normal,
-    "kaiming_uniform": kaiming_uniform,
-    "normal": normal,
-    "uniform": uniform,
-    "xavier_normal": xavier_normal,
-    "xavier_uniform": xavier_uniform,
-    "zeros": zeros,
-    "ones": ones,
+    "kaiming_normal": init_kaiming_normal,
+    "kaiming_uniform": init_kaiming_uniform,
+    "normal": init_normal,
+    "uniform": init_uniform,
+    "xavier_normal": init_xavier_normal,
+    "xavier_uniform": init_xavier_uniform,
+    "zeros": init_zeros,
+    "ones": init_ones,
 }
 
 GAINS = {
@@ -167,27 +167,15 @@ GAINS = {
 }
 
 
-def get_gain(activation: Optional[_ActivationLike] = None) -> float:
-    """Returns the gain value to use for initializing values.
-
-    Parameters
-    ----------
-    activation : _ActivationLike, optional
-        Activation function to infer the gain value for. Defaults to ``None``.
-        If ``None``, a value of ``1`` is returned.
-
-    Returns
-    -------
-    float
-        Gain value.
-    """
+def _get_gain(activation: Optional[ActivationLike] = None) -> float:
+    """Returns the gain value to use for initializing values."""
     if activation is None:
         return 1
     return GAINS.get(activation, 1)
 
 
 def get_initializer(
-    initializer: _InitializerLike, activation: _ActivationLike
+    initializer: InitializerLike, activation: ActivationLike
 ) -> Callable:
     """Returns an instance of an initializer."""
     if initializer not in INITIALIZERS:

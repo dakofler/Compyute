@@ -7,7 +7,7 @@ from ...tensors import ShapeLike, Tensor
 from ...typing import DType
 from ..functional.normalizations import FBatchNorm1D, FBatchNorm2D, FLayerNorm, FRMSNorm
 from ..parameter import Buffer, Parameter, update_parameter_grad
-from ..utils.initializers import ones, zeros
+from ..utils.initializers import init_ones, init_zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -71,8 +71,8 @@ class BatchNorm1D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        ones(self.w, self.rvar)
-        zeros(self.b, self.rmean)
+        init_ones(self.w, self.rvar)
+        init_zeros(self.b, self.rmean)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -159,8 +159,8 @@ class BatchNorm2D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        ones(self.w, self.rvar)
-        zeros(self.b, self.rmean)
+        init_ones(self.w, self.rvar)
+        init_zeros(self.b, self.rmean)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -236,8 +236,8 @@ class LayerNorm(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        ones(self.w)
-        zeros(self.b)
+        init_ones(self.w)
+        init_zeros(self.b)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -297,7 +297,7 @@ class RMSNorm(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        ones(self.w)
+        init_ones(self.w)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

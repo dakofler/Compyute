@@ -12,13 +12,21 @@ from ..functional.convolutions import (
     FMaxPooling2D,
 )
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import xavier_uniform, zeros
+from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
 
 
 PaddingLike = int | Literal["valid", "same"]
+
+
+def _str_to_pad(
+    padding: Literal["valid", "same"], kernel_size: int, dilation: int
+) -> int:
+    if padding == "valid":
+        return 0
+    return (kernel_size * dilation - 1) // 2
 
 
 class Convolution1D(Module):
@@ -97,9 +105,9 @@ class Convolution1D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        xavier_uniform(self.w)
+        init_xavier_uniform(self.w)
         if self.b:
-            zeros(self.b)
+            init_zeros(self.b)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -114,12 +122,6 @@ class Convolution1D(Module):
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
-
-
-def _str_to_pad(padding: PaddingLike, kernel_size: int, dilation: int) -> int:
-    if padding == "valid":
-        return 0
-    return (kernel_size * dilation - 1) // 2
 
 
 class Convolution2D(Module):
@@ -198,9 +200,9 @@ class Convolution2D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        xavier_uniform(self.w)
+        init_xavier_uniform(self.w)
         if self.b:
-            zeros(self.b)
+            init_zeros(self.b)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

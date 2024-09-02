@@ -8,8 +8,7 @@ from ...typing import DType
 from ..functional.activations import FReLU, FSigmoid, FTanh
 from ..functional.linear import FLinear
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import xavier_uniform
-from ..utils.initializers import zeros as _zeros
+from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -85,9 +84,9 @@ class Recurrent(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        xavier_uniform(self.w_i, self.w_h)
+        init_xavier_uniform(self.w_i, self.w_h)
         if self.bias:
-            _zeros(self.b_i, self.b_h)
+            init_zeros(self.b_i, self.b_h)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -114,7 +113,7 @@ class Recurrent(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         x_shape = self.fcache.x_shape
-        dact = zeros((*x_shape[:2], self.h_channels), dy.device, dy.dtype)
+        dpreact = zeros((*x_shape[:2], self.h_channels), dy.device, dy.dtype)
         dh = 0
 
         # iterate backwards over timesteps
@@ -127,15 +126,15 @@ class Recurrent(Module):
                 dh += dy
 
             # non-linearity backward
-            dact[:, t] = self.act.backward(self.fcache, dh)
+            dpreact[:, t] = self.act.backward(self.fcache, dh)
 
             # hidden projection backward
-            dh, dw_h, db_h = FLinear.backward(self.fcache, dact[:, t])
+            dh, dw_h, db_h = FLinear.backward(self.fcache, dpreact[:, t])
             update_parameter_grad(self.w_h, dw_h)
             update_parameter_grad(self.b_h, db_h)
 
         # input projeciton backward
-        dx, dw_i, db_i = FLinear.backward(self.fcache, dact)
+        dx, dw_i, db_i = FLinear.backward(self.fcache, dpreact)
         update_parameter_grad(self.w_i, dw_i)
         update_parameter_grad(self.b_i, db_i)
 
@@ -233,7 +232,7 @@ class LSTM(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        xavier_uniform(
+        init_xavier_uniform(
             self.w_ii,
             self.w_if,
             self.w_ig,
@@ -244,7 +243,7 @@ class LSTM(Module):
             self.w_ho,
         )
         if self.bias:
-            _zeros(
+            init_zeros(
                 self.b_ii,
                 self.b_if,
                 self.b_ig,
@@ -456,9 +455,11 @@ class GRU(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        xavier_uniform(self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn)
+        init_xavier_uniform(
+            self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn
+        )
         if self.bias:
-            _zeros(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
+            init_zeros(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
 
     @Module.register_forward
     def forward(self, x: Tensor):

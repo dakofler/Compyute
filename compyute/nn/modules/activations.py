@@ -171,7 +171,7 @@ class Tanh(Module):
         return FTanh.backward(self.fcache, dy)
 
 
-_ActivationLike: TypeAlias = Literal[
+ActivationLike: TypeAlias = Literal[
     "relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh"
 ]
 ACTIVATIONS = {
@@ -184,7 +184,7 @@ ACTIVATIONS = {
 }
 
 
-def get_activation(activation: _ActivationLike) -> Module:
+def get_activation(activation: ActivationLike) -> Module:
     """Returns an actiation function."""
 
     if activation not in ACTIVATIONS:
