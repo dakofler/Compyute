@@ -80,7 +80,7 @@ class Tensor:
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
     """
 
-    __slots__ = ("data", "grad", "_iterator")
+    __slots__ = "data", "grad", "_iterator"
 
     def __init__(self, data: ArrayLike) -> None:
         self.data = data

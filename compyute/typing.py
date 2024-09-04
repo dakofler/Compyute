@@ -34,7 +34,7 @@ class DType(Enum):
     COMPLEX128 = "complex128"
 
     def __repr__(self) -> str:
-        return f"compyute.{self.value}"
+        return "compyute." + self.value
 
     def __str__(self) -> str:
         return self.__repr__()

@@ -16,7 +16,7 @@ __all__ = [
     "set_seed",
     "shuffle",
     "multinomial",
-    "multinulli",
+    "bernoulli",
 ]
 
 
@@ -190,7 +190,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
     return Tensor(data.astype(x.dtype.value, copy=False))
 
 
-def multinulli(
+def bernoulli(
     p: float,
     shape: ShapeLike,
     device: Optional[Device] = None,

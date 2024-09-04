@@ -1,6 +1,6 @@
 """Neural network regularization functions."""
 
-from ...random.random import multinulli
+from ...random.random import bernoulli
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -17,7 +17,7 @@ class FDropout(Function):
         cache.training = training
         if not training:
             return x
-        dropout_map = multinulli(p, x.shape, x.device) / (1.0 - p)
+        dropout_map = bernoulli(p, x.shape, x.device) / (1.0 - p)
         cache.dropout_map = dropout_map
         return x * dropout_map
 
