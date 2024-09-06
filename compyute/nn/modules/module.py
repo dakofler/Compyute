@@ -31,14 +31,20 @@ class Module(ABC):
     fcache: FunctionCache
     x: Optional[Tensor] = None
     y: Optional[Tensor] = None
+    _buffers: OrderedDict[str, Buffer]
     _device = select_device(None)
     _is_retaining_values = False
     _is_trainable = True
     _is_training = False
+    _modules: OrderedDict[str, Module]
+    _parameters: OrderedDict[str, Parameter]
 
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
         self.fcache = PseudoCache()
+        self._parameters = OrderedDict()
+        self._buffers = OrderedDict()
+        self._modules = OrderedDict()
 
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
@@ -172,6 +178,18 @@ class Module(ABC):
     def __bool__(self) -> bool:
         return True
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if isinstance(value, Parameter):
+            self._parameters[name] = value
+        if isinstance(value, Buffer):
+            self._buffers[name] = value
+        if isinstance(value, Module):
+            self._modules[name] = value
+        if isinstance(value, ModuleList):
+            for i, m in enumerate(value):
+                self._modules[name + "." + str(i)] = m
+        return super().__setattr__(name, value)
+
     # ----------------------------------------------------------------------------------------------
     # OTHER OPERATIONS
     # ----------------------------------------------------------------------------------------------
@@ -184,16 +202,10 @@ class Module(ABC):
         Iterator[Module]
             Child modules.
         """
-        for v in vars(self).values():
-            if isinstance(v, Module):
-                yield v
-                if recursive:
-                    yield from v.get_modules()
-            elif isinstance(v, ModuleList):
-                for m in v:
-                    yield m
-                    if recursive:
-                        yield from m.get_modules()
+        for m in self._modules.values():
+            yield m
+            if recursive:
+                yield from m.get_modules()
 
     def get_parameters(self, recursive: bool = True) -> Iterator[Parameter]:
         """Returns an Iterator of module parameters.
@@ -208,9 +220,8 @@ class Module(ABC):
         Iterator[Parameter]
             Iterator of parameters.
         """
-        for v in vars(self).values():
-            if isinstance(v, Parameter):
-                yield v
+        for p in self._parameters.values():
+            yield p
         if recursive:
             for m in self.get_modules():
                 yield from m.get_parameters(recursive=False)
@@ -228,9 +239,8 @@ class Module(ABC):
         Iterator[Buffer]
             Iterator of buffers.
         """
-        for v in vars(self).values():
-            if isinstance(v, Buffer):
-                yield v
+        for b in self._buffers.values():
+            yield b
         if recursive:
             for m in self.get_modules():
                 yield from m.get_buffers(recursive=False)
@@ -243,8 +253,24 @@ class Module(ABC):
         OrderedDict
             State dict containing parameters and buffers.
         """
-        # TODO: use str key
-        return OrderedDict(enumerate(chain(self.get_parameters(), self.get_buffers())))
+        state_dict = OrderedDict()
+        state_dict.update(self._parameters)
+        state_dict.update(self._buffers)
+
+        for k, m in self._modules.items():
+            # get child module state dict
+            m_state_dict = m.get_state_dict()
+
+            # update child module state dict keys
+            new_m_state_dict = OrderedDict()
+            for key, value in m_state_dict.items():
+                new_key = k + "." + key
+                new_m_state_dict[new_key] = value
+
+            # update state dict with child module state dict
+            state_dict.update(new_m_state_dict)
+
+        return state_dict
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
         """Loads the module state from a state dict.

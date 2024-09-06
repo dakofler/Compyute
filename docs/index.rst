@@ -213,8 +213,8 @@ Alternatively, you can write your own training loop.
     epochs = 100
     batch_size = 32
 
-    train_dl = nn.utils.Dataloader(X_train, y_train, batch_size)
-    val_dl = nn.utils.Dataloader(X_val, y_val, batch_size)
+    train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
+    val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
     loss_func = nn.CrossEntropy()
     optim = nn.optimizers.SGD(model.parameters)
 

@@ -25,22 +25,24 @@ class Sequential(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    layers: ModuleList
+
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
             raise NoChildModulesError()
 
-        self.modules = ModuleList(modules)
+        self.layers = ModuleList(modules)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        for module in self.modules:
+        for module in self.layers:
             x = module(x)
         return x
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        for module in reversed(self.modules):
+        for module in reversed(self.layers):
             dy = module.backward(dy)
         return dy
 
@@ -61,6 +63,9 @@ class ParallelConcat(Module):
     label : str, optional
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
+
+    modules: ModuleList
+    concat_axis: int
 
     def __init__(
         self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None
@@ -103,6 +108,8 @@ class ParallelAdd(Module):
         Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
+    modules: ModuleList
+
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
@@ -138,6 +145,9 @@ class ResidualConnection(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    residual_block: Module
+    residual_proj: Optional[Module] = None
+
     def __init__(
         self,
         *modules: Module,
@@ -149,7 +159,8 @@ class ResidualConnection(Module):
         super().__init__(label)
 
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
-        self.residual_proj = residual_proj
+        if residual_proj is not None:
+            self.residual_proj = residual_proj
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
