@@ -2,12 +2,12 @@
 
 from collections.abc import Callable, Iterator
 from functools import wraps
-from typing import Optional
 
 from ...backend import Device, cpu
-from ...random.random import shuffle
-from ...tensor_ops.creating import concat
+from ...random.random import permutation
+from ...tensor_ops.creating import arange, concat
 from ...tensors import Tensor
+from ...typing import int64
 
 __all__ = ["Dataloader", "batched"]
 
@@ -17,10 +17,8 @@ class Dataloader:
 
     Parameters
     ----------
-    x : Tensor
-        Input tensor.
-    y : Tensor, optional
-        Target tensor. Defaults to ``None``.
+    data : tuple[Tensor, ...]
+        Data to load.
     batch_size : int, optional
         Size of returned batches. Defaults to ``1``.
     device : Device, optional
@@ -32,23 +30,27 @@ class Dataloader:
         ``batch_size``. Defaults to ``False``.
     """
 
+    data: tuple[Tensor, ...]
+    batch_size: int
+    device: Device
+    shuffle: bool
+    drop_remaining: bool
+
     def __init__(
         self,
-        x: Tensor,
-        y: Optional[Tensor] = None,
+        data: tuple[Tensor, ...],
         batch_size: int = 1,
         device: Device = cpu,
         shuffle_data: bool = True,
         drop_remaining: bool = False,
     ) -> None:
-        self.x = x
-        self.y = y
+        self.data = data
         self.batch_size = batch_size
         self.device = device
         self.shuffle = shuffle_data
         self.drop_remaining = drop_remaining
 
-    def __call__(self) -> Iterator[tuple[Tensor, Optional[Tensor]]]:
+    def __call__(self) -> Iterator[tuple[Tensor, ...]]:
         """Yields batched data.
 
         Yields
@@ -59,41 +61,23 @@ class Dataloader:
             Batched labels.
 
         """
-        n = self.x.shape[0]
+        t1 = self.data[0]
+        n = t1.shape[0]
         n_steps = len(self)
         b = min(self.batch_size, n)
-        n_trunc = n_steps * b
 
-        # shuffle data
-        if self.shuffle:
-            x, idx = shuffle(self.x)
-            y = self.y[idx] if self.y else None
-        else:
-            x = self.x
-            y = self.y
+        idx = permutation(n) if self.shuffle else arange(n, dtype=int64)
 
-        # yield batches
         for i in range(n_steps):
-            x_batch = x[i * b : (i + 1) * b].to_device(self.device)
+            batch_idx = idx[i * b : (i + 1) * b]
+            yield tuple(t[batch_idx].to_device(self.device) for t in self.data)
 
-            if y:
-                y_batch = y[i * b : (i + 1) * b].to_device(self.device)
-                yield x_batch, y_batch
-            else:
-                yield x_batch, None
-
-        # yield remaining
-        if not self.drop_remaining and n_trunc < n:
-            x_batch = x[n_trunc:].to_device(self.device)
-
-            if y:
-                y_batch = y[n_trunc:].to_device(self.device)
-                yield x_batch, y_batch
-            else:
-                yield x_batch, None
+        if not self.drop_remaining and n_steps * b < n:
+            n_trunc = n_steps * b
+            yield tuple(t[idx[n_trunc:]].to_device(self.device) for t in self.data)
 
     def __len__(self) -> int:
-        return max(1, self.x.shape[0] // self.batch_size)
+        return max(1, self.data[0].shape[0] // self.batch_size)
 
 
 def batched(
@@ -120,14 +104,8 @@ def batched(
 
     @wraps(func)
     def wrapper(x: Tensor, *args, **kwargs) -> Tensor:
-        dataloader = Dataloader(
-            x,
-            batch_size=batch_size,
-            device=device,
-            shuffle_data=shuffle_data,
-            drop_remaining=drop_remaining,
-        )
-        ys = [func(x_batch, *args, **kwargs) for x_batch, _ in dataloader()]
+        dataloader = Dataloader((x,), batch_size, device, shuffle_data, drop_remaining)
+        ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader()]
         return concat(ys, axis=0)
 
     return wrapper

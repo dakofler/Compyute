@@ -22,13 +22,17 @@ class Optimizer(ABC):
         Learning rate. Defaults to ``1e-3``.
     """
 
+    lr: float
+    state: OrderedDict
+    t = 1
+    _parameters: OrderedDict
+
     def __init__(
         self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
 
         self.state = OrderedDict()
-        self.t = 1
         if parameters is not None:
             self.parameters = parameters
 
@@ -127,6 +131,10 @@ class SGD(Optimizer):
         Weight decay factor. Defaults to ``0``.
     """
 
+    momentum: float
+    nesterov: bool
+    weight_decay: float
+
     def __init__(
         self,
         parameters: Optional[Iterator[Parameter]] = None,
@@ -212,6 +220,11 @@ class Adam(Optimizer):
     weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
     """
+
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
 
     def __init__(
         self,
@@ -302,6 +315,11 @@ class AdamW(Optimizer):
     weight_decay : float, optional
         Weight decay factor. Defaults to ``1e-2``.
     """
+
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
 
     def __init__(
         self,
@@ -399,6 +417,12 @@ class NAdam(Optimizer):
     momentum_decay : float, optional
         Momentum decay factor. Defaults to ``4e-3``.
     """
+
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
+    momentum_decay: float
 
     def __init__(
         self,

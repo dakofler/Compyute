@@ -42,6 +42,8 @@ class CUDA(Device):
     """GPU device."""
 
     type: str = "cuda"
+    index: int
+    _cupy_device: cupy.cuda.Device
 
     def __init__(self, index: int = 0):
         self.index = index

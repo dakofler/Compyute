@@ -2,7 +2,6 @@
 
 import math
 
-from ...tensor_ops.selecting import argmax
 from ...tensor_ops.transforming import sum as cp_sum
 from ...tensors import Tensor
 

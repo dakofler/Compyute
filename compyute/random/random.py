@@ -162,7 +162,7 @@ def permutation(n: int, device: Optional[Device] = None) -> Tensor:
         Permuted tensor.
     """
     device = select_device(device)
-    return Tensor(device.engine.random.permutation(n).astype(int64.value, copy=False))
+    return Tensor(device.engine.random.permutation(n))
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:

@@ -13,6 +13,8 @@ __all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 class Loss(ABC):
     """Loss base class."""
 
+    fcache: FunctionCache
+
     def __init__(self) -> None:
         self.fcache = FunctionCache()
 

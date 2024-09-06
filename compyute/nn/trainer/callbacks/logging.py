@@ -1,7 +1,7 @@
 """Logging callbacks."""
 
 from collections.abc import Iterable
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from tqdm.auto import tqdm
 
@@ -14,19 +14,22 @@ __all__ = ["History", "ProgressBar", "Tensorboard"]
 class History(Callback):
     """Training history saved as a dictionary."""
 
-    cache: dict[str, list[float]] = {}
+    _cache: dict[str, list[float]]
+
+    def __init__(self) -> None:
+        self._cache = {}
 
     def __getitem__(self, key) -> list[float]:
-        return self.cache[key]
+        return self._cache[key]
 
     def _log_stats(self, stats: Iterable[str], trainer_cache: dict[str, Any]) -> None:
         for stat in stats:
             if stat not in trainer_cache:
                 return
-            if stat in self.cache:
-                self.cache[stat].append(trainer_cache[stat])
+            if stat in self._cache:
+                self._cache[stat].append(trainer_cache[stat])
             else:
-                self.cache[stat] = [trainer_cache[stat]]
+                self._cache[stat] = [trainer_cache[stat]]
 
     def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         # get stats that contain scores but are not val scores
@@ -50,7 +53,8 @@ class ProgressBar(Callback):
         | ``step``: a new progress bar is shown per epoch and updated for each step.
     """
 
-    pbar = None
+    pbar: Optional[tqdm] = None
+    mode: Literal["step", "epoch"]
 
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
         self.mode = mode
@@ -102,8 +106,10 @@ class Tensorboard(Callback):
     :class:`compyute.nn.utils.tensorboard`
     """
 
+    writer: SummaryWriter
+
     def __init__(self, logdir: str) -> None:
-        self.writer: SummaryWriter = SummaryWriter(logdir=logdir)
+        self.writer = SummaryWriter(logdir=logdir)
 
     def _log_stats(self, stats: Iterable[str], trainer_cache: dict[str, Any]) -> None:
         for stat in stats:

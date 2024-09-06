@@ -22,6 +22,10 @@ BPE_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[
 class Tokenizer(ABC):
     """Tokenizer base class."""
 
+    oov_token: str
+    vocab: dict
+    ivocab: dict
+
     def __init__(
         self,
         oov_token: str = "",
@@ -145,10 +149,13 @@ class BPETokenizer(Tokenizer):
     Mostly follows Andrjey Karpathy's `minbpe <https://github.com/karpathy/minbpe>`_.
     """
 
+    _merges: dict
+    _pattern: regex.Pattern
+
     def __init__(self, oov_token: str = "<|unk|>") -> None:
         super().__init__(oov_token)
-        self.merges = {}
-        self.pattern = regex.compile(BPE_PATTERN)
+        self._merges = {}
+        self._pattern = regex.compile(BPE_PATTERN)
 
     def fit(self, text: str, vocab_size: int = 256) -> None:
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
@@ -159,7 +166,7 @@ class BPETokenizer(Tokenizer):
         n_merges = vocab_size - 256
 
         # split text into chunks according to a regex pattern
-        text_chunks = regex.findall(self.pattern, text)
+        text_chunks = regex.findall(self._pattern, text)
 
         # encode all chunks
         token_ids = [list(chunk.encode("utf-8")) for chunk in text_chunks]
@@ -181,7 +188,7 @@ class BPETokenizer(Tokenizer):
             idx = 256 + i
             token_ids = [self._merge(chunk_ids, bigram, idx) for chunk_ids in token_ids]
 
-            self.merges[bigram] = idx
+            self._merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
     def _update_counts(self, token_ids, counts=None):
@@ -216,16 +223,16 @@ class BPETokenizer(Tokenizer):
             counts = self._update_counts(token_ids)
 
             # get bigram that first occured in merges
-            bigram = min(counts, key=lambda p: self.merges.get(p, float("inf")))
-            if bigram not in self.merges:
+            bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))
+            if bigram not in self._merges:
                 break
 
-            idx = self.merges[bigram]
+            idx = self._merges[bigram]
             token_ids = self._merge(token_ids, bigram, idx)
         return token_ids
 
     def encode(self, text: str) -> Tensor:
-        text_chunks = regex.findall(self.pattern, text)
+        text_chunks = regex.findall(self._pattern, text)
         token_ids = []
 
         for chunk in text_chunks:
@@ -253,6 +260,6 @@ class BPETokenizer(Tokenizer):
             oov_token=self.oov_token,
             vocab=self.vocab,
             ivocab=self.ivocab,
-            merges=self.merges,
-            pattern=self.pattern,
+            merges=self._merges,
+            pattern=self._pattern,
         )
