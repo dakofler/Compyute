@@ -6,7 +6,6 @@ from functools import reduce
 from typing import Optional
 
 from ..tensors import AxisLike, ShapeError, ShapeLike, Tensor, to_arraylike
-from ..typing import DType, complex64
 
 __all__ = [
     "abs",
@@ -149,7 +148,7 @@ def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
     """
     conv = real(ifft1d(fft1d(x1) * fft1d(x2, n=x1.shape[-1])))
     out = x1.shape[-1] - x2.shape[-1] + 1
-    return conv[..., -out:]
+    return conv[..., -out:].to_type(x1.dtype)
 
 
 def convolve2d_fft(x1: Tensor, x2: Tensor) -> Tensor:
@@ -167,10 +166,10 @@ def convolve2d_fft(x1: Tensor, x2: Tensor) -> Tensor:
     Tensor
         Convolution of the two tensors.
     """
-    conv = real(ifft2d(fft2d(x1) * fft2d(x2, s=x1.shape[-2:])))
+    conv = real(ifft2d(fft2d(x1) * fft2d(x2, n=x1.shape[-2:])))
     out_y = x1.shape[-2] - x2.shape[-2] + 1
     out_x = x1.shape[-1] - x2.shape[-1] + 1
-    return conv[..., -out_y:, -out_x:]
+    return conv[..., -out_y:, -out_x:].to_type(x1.dtype)
 
 
 def cos(x: Tensor) -> Tensor:
@@ -262,12 +261,7 @@ def exp(x: Tensor) -> Tensor:
     return Tensor(x.device.engine.exp(x.data))
 
 
-def fft1d(
-    x: Tensor,
-    n: Optional[int] = None,
-    axis: int = -1,
-    dtype: DType = complex64,
-) -> Tensor:
+def fft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
     """Computes the 1D Fast Fourier Transform over a given axis.
 
     Parameters
@@ -278,23 +272,17 @@ def fft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the FFT. Defaults to ``-1``.
-    dtype : DType, optional
-        Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
     -------
     Tensor
         Complex tensor containing the 1D FFT.
     """
-    data = x.device.engine.fft.fft(x.data, n, axis)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(x.device.engine.fft.fft(x.data, n, axis))
 
 
 def fft2d(
-    x: Tensor,
-    s: Optional[ShapeLike] = None,
-    axes: tuple[int, int] = (-2, -1),
-    dtype: DType = complex64,
+    x: Tensor, n: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
 ) -> Tensor:
     """Computes the 2D Fast Fourier Transform over given axes.
 
@@ -306,24 +294,16 @@ def fft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the FFT. Defaults to ``(-2, -1)``.
-    dtype : DType, optional
-        Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
     -------
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    data = x.device.engine.fft.fft2(x.data, s, axes)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(x.device.engine.fft.fft2(x.data, n, axes))
 
 
-def ifft1d(
-    x: Tensor,
-    n: Optional[int] = None,
-    axis: int = -1,
-    dtype: DType = complex64,
-) -> Tensor:
+def ifft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
     """Computes the inverse 1D Fast Fourier Transform over a given axis.
 
     Parameters
@@ -334,23 +314,17 @@ def ifft1d(
         Length of the transformed axis of the output. Defaults to ``None``.
     axis : int, optional
         Axis over which to compute the inverse FFT. Defaults to ``-1``.
-    dtype : DType, optional
-        Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
     -------
     Tensor
         Float tensor containing the inverse 1D FFT.
     """
-    data = x.device.engine.fft.ifft(x.data, n, axis)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(x.device.engine.fft.ifft(x.data, n, axis))
 
 
 def ifft2d(
-    x: Tensor,
-    s: Optional[ShapeLike] = None,
-    axes: tuple[int, int] = (-2, -1),
-    dtype: DType = complex64,
+    x: Tensor, s: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
 ) -> Tensor:
     """Computes the inverse 2D Fast Fourier Transform over given axes.
 
@@ -362,16 +336,13 @@ def ifft2d(
         Shape (length of each transformed axis) of the output. Defaults to ``None``.
     axes : tuple[int, int], optional
         Axes over which to compute the inverse FFT. Defaults to ``(-2, -1)``.
-    dtype : DType, optional
-        Complex datatype of the output tensor. Defaults to :class:`compyute.complex32`.
 
     Returns
     -------
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    data = x.device.engine.fft.ifft2(x.data, s, axes)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(x.device.engine.fft.ifft2(x.data, s, axes))
 
 
 def imag(x: Tensor) -> Tensor:

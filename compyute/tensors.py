@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import cached_property
 from typing import Any, Optional, TypeAlias
 
 import numpy
@@ -80,8 +81,6 @@ class Tensor:
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
     """
 
-    __slots__ = "data", "grad", "_iterator"
-
     def __init__(self, data: ArrayLike) -> None:
         self.data = data
         self.grad: Optional[Tensor] = None
@@ -90,32 +89,32 @@ class Tensor:
     # ----------------------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------------------
-    @property
+    @cached_property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
         return get_device_from_class(type(self.data))
 
-    @property
+    @cached_property
     def dtype(self) -> DType:
         """Tensor data type."""
         return DType(str(self.data.dtype))
 
-    @property
+    @cached_property
     def n_axes(self) -> int:
         """Number of tensor axes."""
         return self.data.ndim
 
-    @property
+    @cached_property
     def size(self) -> int:
         """Tensor size (number of elements)."""
         return self.data.size
 
-    @property
+    @cached_property
     def shape(self) -> ShapeLike:
         """Tensor shape."""
         return self.data.shape
 
-    @property
+    @cached_property
     def strides(self) -> tuple[int, ...]:
         """Tensor strides."""
         return self.data.strides
@@ -125,7 +124,7 @@ class Tensor:
         """View of the tensor with its last two axes transposed."""
         return Tensor(self.data.transpose(*range(self.n_axes - 2), -1, -2))
 
-    @property
+    @cached_property
     def ptr(self) -> int:
         """Pointer to the tensor data in memory."""
         return id(self.data)
