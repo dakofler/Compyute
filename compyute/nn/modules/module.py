@@ -181,11 +181,11 @@ class Module(ABC):
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, Parameter):
             self._parameters[name] = value
-        if isinstance(value, Buffer):
+        elif isinstance(value, Buffer):
             self._buffers[name] = value
-        if isinstance(value, Module):
+        elif isinstance(value, Module):
             self._modules[name] = value
-        if isinstance(value, ModuleList):
+        elif isinstance(value, ModuleList):
             for i, m in enumerate(value):
                 self._modules[name + "." + str(i)] = m
         return super().__setattr__(name, value)

@@ -11,8 +11,6 @@ from typing import Optional
 import regex
 from tqdm.auto import trange
 
-from ..tensors import Tensor, tensor
-
 __all__ = ["CharacterTokenizer", "WordTokenizer", "BPETokenizer"]
 
 WORD_PATTERN = r'([,.:;?_!"()\']|--|\s)'
@@ -53,7 +51,7 @@ class Tokenizer(ABC):
         """
 
     @abstractmethod
-    def encode(self, text: str) -> Tensor:
+    def encode(self, text: str) -> list[int]:
         """Encodes text to token ids.
 
         Parameters
@@ -63,18 +61,18 @@ class Tokenizer(ABC):
 
         Returns
         -------
-        Tensor
-            Tensor of token ids.
+        list[int]
+            List of token ids.
         """
 
     @abstractmethod
-    def decode(self, token_ids: Tensor) -> str:
+    def decode(self, token_ids: list[int]) -> str:
         """Decodes token ids to text..
 
         Parameters
         ----------
-        token_ids : Tensor
-            Tensor of integer token ids to be decoded.
+        token_ids : list[int]
+            List of integer token ids to be decoded.
 
         Returns
         -------
@@ -109,12 +107,12 @@ class CharacterTokenizer(Tokenizer):
         ivocab = {token: idx for idx, token in vocab.items()}
         super().__init__(oov_token, vocab, ivocab)
 
-    def encode(self, text: str) -> Tensor:
+    def encode(self, text: str) -> list[int]:
         preprocessed = list(text)
-        return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in preprocessed])
+        return [self.ivocab[s] if s in self.ivocab else 0 for s in preprocessed]
 
-    def decode(self, token_ids: Tensor) -> str:
-        return "".join([self.vocab[i.item()] for i in token_ids])
+    def decode(self, token_ids: list[int]) -> str:
+        return "".join([self.vocab[i] for i in token_ids])
 
 
 class WordTokenizer(Tokenizer):
@@ -132,13 +130,13 @@ class WordTokenizer(Tokenizer):
         self.vocab = dict(enumerate(tokens))
         self.ivocab = {t: i for i, t in self.vocab.items()}
 
-    def encode(self, text: str) -> Tensor:
+    def encode(self, text: str) -> list[int]:
         split = re.split(r'([,.:;?_!"()\']|--|\s)', text)
         split = [s for s in split if s not in [" ", ""]]
-        return tensor([self.ivocab[s] if s in self.ivocab else 0 for s in split])
+        return [self.ivocab[s] if s in self.ivocab else 0 for s in split]
 
-    def decode(self, token_ids: Tensor) -> str:
-        text = " ".join([self.vocab[i.item()] for i in token_ids])
+    def decode(self, token_ids: list[int]) -> str:
+        text = " ".join([self.vocab[i] for i in token_ids])
         text = re.sub(r'\s+([,.:?!"()\'])', r"\1", text)
         return re.sub(r"\n\s", "\n", text)
 
@@ -231,7 +229,7 @@ class BPETokenizer(Tokenizer):
             token_ids = self._merge(token_ids, bigram, idx)
         return token_ids
 
-    def encode(self, text: str) -> Tensor:
+    def encode(self, text: str) -> list[int]:
         text_chunks = regex.findall(self._pattern, text)
         token_ids = []
 
@@ -240,13 +238,12 @@ class BPETokenizer(Tokenizer):
             chunk_ids = self._encode_chunk(chunk_bytes)
             token_ids.extend(chunk_ids)
 
-        return tensor(token_ids)
+        return token_ids
 
-    def decode(self, token_ids: Tensor) -> str:
+    def decode(self, token_ids: list[int]) -> str:
         part_bytes = []
 
         for idx in token_ids:
-            idx = idx.item()
             if idx not in self.vocab:
                 raise ValueError(f"invalid token id: {idx}")
             part_bytes.append(self.vocab[idx])
