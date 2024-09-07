@@ -1,7 +1,7 @@
 """Tensor data types."""
 
 from contextlib import contextmanager
-from enum import Enum
+from enum import Enum, StrEnum, auto
 from typing import Optional, TypeAlias
 
 __all__ = [
@@ -19,19 +19,19 @@ __all__ = [
 ]
 
 
-class DType(Enum):
+class DType(StrEnum):
     """Data type enum."""
 
-    BOOL = "bool"
-    INT8 = "int8"
-    INT16 = "int16"
-    INT32 = "int32"
-    INT64 = "int64"
-    FLOAT16 = "float16"
-    FLOAT32 = "float32"
-    FLOAT64 = "float64"
-    COMPLEX64 = "complex64"
-    COMPLEX128 = "complex128"
+    BOOL = auto()
+    INT8 = auto()
+    INT16 = auto()
+    INT32 = auto()
+    INT64 = auto()
+    FLOAT16 = auto()
+    FLOAT32 = auto()
+    FLOAT64 = auto()
+    COMPLEX64 = auto()
+    COMPLEX128 = auto()
 
     def __repr__(self) -> str:
         return "compyute." + self.value

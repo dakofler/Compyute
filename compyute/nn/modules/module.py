@@ -10,7 +10,7 @@ from functools import wraps
 from itertools import chain
 from typing import Any, Optional
 
-from ...backend import Device, select_device
+from ...backend import Device, DeviceError, select_device
 from ...tensors import ShapeError, Tensor
 from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
@@ -46,9 +46,9 @@ class Module(ABC):
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
 
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # PROPERTIES
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     @property
     def device(self) -> Device:
@@ -134,9 +134,9 @@ class Module(ABC):
         """Number of child modules."""
         return len(list(self.get_modules(recursive=False)))
 
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # CONTEXT MANAGERS
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     @contextmanager
     def retain_values(self):
@@ -161,9 +161,9 @@ class Module(ABC):
         finally:
             self.is_training = training
 
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # MAGIC METHODS
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
         attrs = [f"{a}={v}" for a, v in vars(self).items() if is_repr_attr(a, v)]
@@ -190,9 +190,9 @@ class Module(ABC):
                 self._modules[name + "." + str(i)] = m
         return super().__setattr__(name, value)
 
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # OTHER OPERATIONS
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     def get_modules(self, recursive: bool = True) -> Iterator[Module]:
         """List of child modules.
@@ -282,8 +282,9 @@ class Module(ABC):
         """
         state_dict_device = next(iter(state_dict.values())).device
         if state_dict_device != self.device:
-            raise ValueError(
-                f"Device mismatch. Module device: {self.device}, state dict device: {state_dict_device}"
+            raise DeviceError(
+                "Device mismatch."
+                f"Module device: {self.device}, state dict device: {state_dict_device}"
             )
 
         for p, value in list(

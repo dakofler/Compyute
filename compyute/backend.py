@@ -145,3 +145,7 @@ def get_default_device() -> Optional[Device]:
 def select_device(device: Optional[Device]) -> Device:
     """Selects the device. Returns the default device if device is ``None``."""
     return device or default_device or fallback_default_device
+
+
+class DeviceError(Exception):
+    """Tensors with mismatching devices."""
