@@ -43,7 +43,7 @@ def append(x: Tensor, values: Tensor, axis: int = -1) -> Tensor:
     Tensor
         Tensor containing appended values.
     """
-    return Tensor(x.device.engine.append(x.data, values.data, axis=axis))
+    return Tensor(x.device.module.append(x.data, values.data, axis=axis))
 
 
 def arange(
@@ -76,7 +76,7 @@ def arange(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.engine.arange(start, stop, step, dtype.value))
+    return Tensor(device.module.arange(start, stop, step, dtype.value))
 
 
 def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
@@ -94,7 +94,7 @@ def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
     Tensor
         Concatenated tensor.
     """
-    data = tensors[0].device.engine.concatenate([t.data for t in tensors], axis=axis)
+    data = tensors[0].device.module.concatenate([t.data for t in tensors], axis=axis)
     return Tensor(data)
 
 
@@ -121,7 +121,7 @@ def empty(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.engine.empty(shape, dtype.value))
+    return Tensor(device.module.empty(shape, dtype.value))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -166,7 +166,7 @@ def full(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.engine.full(shape, value, dtype.value))
+    return Tensor(device.module.full(shape, value, dtype.value))
 
 
 def full_like(x: Tensor, value: ScalarLike) -> Tensor:
@@ -210,7 +210,7 @@ def identity(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.engine.identity(n, dtype.value))
+    return Tensor(device.module.identity(n, dtype.value))
 
 
 def linspace(
@@ -243,7 +243,7 @@ def linspace(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.engine.linspace(start, stop, num, dtype=dtype.value))
+    return Tensor(device.module.linspace(start, stop, num, dtype=dtype.value))
 
 
 def ones(
@@ -269,7 +269,7 @@ def ones(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.engine.ones(shape, dtype.value))
+    return Tensor(device.module.ones(shape, dtype.value))
 
 
 def ones_like(x: Tensor) -> Tensor:
@@ -307,7 +307,7 @@ def split(x: Tensor, splits: int | Sequence[int], axis: int = -1) -> list[Tensor
     list[Tensor]
         List of tensors containing the split data.
     """
-    return [Tensor(s) for s in x.device.engine.split(x.data, splits, axis)]
+    return [Tensor(s) for s in x.device.module.split(x.data, splits, axis)]
 
 
 def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
@@ -325,7 +325,7 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
     Tensor
         Stacked tensor.
     """
-    return Tensor(tensors[0].device.engine.stack([t.data for t in tensors], axis))
+    return Tensor(tensors[0].device.module.stack([t.data for t in tensors], axis))
 
 
 def zeros(
@@ -351,7 +351,7 @@ def zeros(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.engine.zeros(shape, dtype.value))
+    return Tensor(device.module.zeros(shape, dtype.value))
 
 
 def zeros_like(x: Tensor) -> Tensor:

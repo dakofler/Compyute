@@ -261,8 +261,8 @@ class Adam(Optimizer):
             v = self.beta2 * prev_v + (1.0 - self.beta2) * grad**2
             self.state[i]["v"] = v
 
-            m /= 1.0 - self.beta1**self.t
-            v /= 1.0 - self.beta2**self.t
+            m = m / (1.0 - self.beta1**self.t)
+            v = v / (1.0 - self.beta2**self.t)
 
             p -= self.lr * m / (sqrt(v) + self.eps)
 
@@ -356,8 +356,8 @@ class AdamW(Optimizer):
             v = self.beta2 * prev_v + (1.0 - self.beta2) * p.grad**2
             self.state[i]["v"] = v
 
-            m /= 1.0 - self.beta1**self.t
-            v /= 1.0 - self.beta2**self.t
+            m = m / (1.0 - self.beta1**self.t)
+            v = v / (1.0 - self.beta2**self.t)
 
             p -= self.lr * (m / (sqrt(v) + self.eps) + self.weight_decay * p)
 
@@ -473,7 +473,7 @@ class NAdam(Optimizer):
             m_hat = next_mu * m / (1.0 - mu_prod * next_mu) + (1.0 - mu) * grad / (
                 1.0 - mu_prod
             )
-            v /= 1.0 - self.beta2**self.t
+            v = v / (1.0 - self.beta2**self.t)
 
             p -= self.lr * m_hat / (sqrt(v) + self.eps)
 

@@ -64,7 +64,7 @@ def tensor(
     device = device or get_default_device() or get_device_from_class(type(data))
     dtype = dtype or get_default_dtype()
     dtype_str = dtype.value if dtype is not None else None
-    return Tensor(device.engine.asarray(data, dtype_str))
+    return Tensor(device.module.asarray(data, dtype_str))
 
 
 class Tensor:
@@ -124,7 +124,7 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """View of the tensor with its last two axes transposed."""
-        return Tensor(self.data.transpose(*range(self.n_axes - 2), -1, -2))
+        return self.transpose((*range(self.n_axes - 2), -1, -2))
 
     @cached_property
     def ptr(self) -> int:
@@ -138,7 +138,7 @@ class Tensor:
     def __repr__(self):
         return (
             "Tensor("
-            + self.device.engine.array2string(
+            + self.device.module.array2string(
                 self.data,
                 100,
                 4,
@@ -205,7 +205,7 @@ class Tensor:
     def __rtruediv__(self, other: ScalarLike) -> Tensor:
         return Tensor(other / self.data)
 
-    def __idiv__(self, other: Tensor | ScalarLike) -> Tensor:
+    def __itruediv__(self, other: Tensor | ScalarLike) -> Tensor:
         self.data /= to_arraylike(other)
         return self
 
@@ -582,6 +582,15 @@ class Tensor:
         :func:`compyute.sum`
         """
         return Tensor(self.data.sum(axis, keepdims=keepdims))
+
+    def transpose(self, axis: Optional[AxisLike] = None) -> Tensor:
+        """Returns a view of the tensor with its axes permuted.
+
+        See Also
+        --------
+        :func:`compyute.transpose`
+        """
+        return Tensor(self.data.transpose(axis))
 
     def var(
         self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False

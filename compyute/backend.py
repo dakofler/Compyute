@@ -17,7 +17,7 @@ class Device(ABC):
     type: str
 
     @property
-    def engine(self):
+    def module(self):
         """Computation engine."""
         raise NotImplementedError
 
@@ -34,7 +34,7 @@ class CPU(Device):
         return 'compyute.Device(type="cpu")'
 
     @property
-    def engine(self):
+    def module(self):
         return numpy
 
 
@@ -59,8 +59,19 @@ class CUDA(Device):
         return self._cupy_device.__exit__(*args)
 
     @property
-    def engine(self):
+    def module(self):
         return cupy
+
+    @property
+    def properties(self):
+        """Returns information about the GPU device."""
+        return cupy.cuda.runtime.getDeviceProperties(self.index)
+
+    @property
+    def memory_info(self) -> dict[str, int]:
+        """Returns information about the GPU memory in bytes."""
+        free, total = self._cupy_device.mem_info
+        return {"used": total - free, "free": free, "total": total}
 
 
 cpu = CPU()
@@ -89,17 +100,9 @@ def gpu_available() -> bool:
 @cache
 def get_device_count() -> int:
     """Returns the number of available devices."""
-    return cupy.cuda.runtime.getDeviceCount()
-
-
-def get_cuda_memory_usage() -> tuple[int, int]:
-    """Returns the amount of GPU memory used."""
     if not gpu_available():
-        return 0, 0
-    mempool = cupy.get_default_memory_pool()
-    used_bytes = mempool.used_bytes()
-    total_bytes = mempool.total_bytes()
-    return used_bytes, total_bytes
+        return 0
+    return cupy.cuda.runtime.getDeviceCount()
 
 
 def free_cuda_memory() -> None:
@@ -107,6 +110,20 @@ def free_cuda_memory() -> None:
     if not gpu_available():
         return
     cupy.get_default_memory_pool().free_all_blocks()
+
+
+def synchronize() -> None:
+    """Synchronizes devices tot he current thread."""
+    if not gpu_available():
+        return
+    cupy.cuda.runtime.deviceSynchronize()
+
+
+def show_cuda_config() -> None:
+    """Prints the CUDA configuration."""
+    if not gpu_available():
+        return
+    cupy.show_config()
 
 
 fallback_default_device: Device = cpu

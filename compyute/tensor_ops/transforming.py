@@ -106,7 +106,7 @@ def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
     bool
         ``True`` if all elements in the tensors are within the given tolerance.
     """
-    return x1.device.engine.allclose(x1.data, x2.data, rtol, atol)
+    return x1.device.module.allclose(x1.data, x2.data, rtol, atol)
 
 
 def clip(
@@ -128,7 +128,7 @@ def clip(
     Tensor
         Tensor containing clipped values.
     """
-    return Tensor(x.device.engine.clip(x.data, min_value, max_value))
+    return Tensor(x.device.module.clip(x.data, min_value, max_value))
 
 
 def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
@@ -185,7 +185,7 @@ def cos(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise cosine.
     """
-    return Tensor(x.device.engine.cos(x.data))
+    return Tensor(x.device.module.cos(x.data))
 
 
 def cosh(x: Tensor) -> Tensor:
@@ -201,7 +201,7 @@ def cosh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic cosine.
     """
-    return Tensor(x.device.engine.cosh(x.data))
+    return Tensor(x.device.module.cosh(x.data))
 
 
 def dot(x1: Tensor, x2: Tensor) -> Tensor:
@@ -241,7 +241,7 @@ def einsum(subscripts: str, *tensors: Tensor) -> Tensor:
     Tensor
         Result of the Einstein summation.
     """
-    data = tensors[0].device.engine.einsum(subscripts, *[t.data for t in tensors])
+    data = tensors[0].device.module.einsum(subscripts, *[t.data for t in tensors])
     return Tensor(data)
 
 
@@ -258,7 +258,7 @@ def exp(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise exponential.
     """
-    return Tensor(x.device.engine.exp(x.data))
+    return Tensor(x.device.module.exp(x.data))
 
 
 def fft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
@@ -278,7 +278,7 @@ def fft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
     Tensor
         Complex tensor containing the 1D FFT.
     """
-    return Tensor(x.device.engine.fft.fft(x.data, n, axis))
+    return Tensor(x.device.module.fft.fft(x.data, n, axis))
 
 
 def fft2d(
@@ -300,7 +300,7 @@ def fft2d(
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    return Tensor(x.device.engine.fft.fft2(x.data, n, axes))
+    return Tensor(x.device.module.fft.fft2(x.data, n, axes))
 
 
 def ifft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
@@ -320,7 +320,7 @@ def ifft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
     Tensor
         Float tensor containing the inverse 1D FFT.
     """
-    return Tensor(x.device.engine.fft.ifft(x.data, n, axis))
+    return Tensor(x.device.module.fft.ifft(x.data, n, axis))
 
 
 def ifft2d(
@@ -342,7 +342,7 @@ def ifft2d(
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    return Tensor(x.device.engine.fft.ifft2(x.data, s, axes))
+    return Tensor(x.device.module.fft.ifft2(x.data, s, axes))
 
 
 def imag(x: Tensor) -> Tensor:
@@ -374,7 +374,7 @@ def inner(*tensors: Tensor) -> Tensor:
     Tensor
         Tensor containing the inner product.
     """
-    return Tensor(tensors[0].device.engine.inner(*[t.data for t in tensors]))
+    return Tensor(tensors[0].device.module.inner(*[t.data for t in tensors]))
 
 
 def invert(x: Tensor) -> Tensor:
@@ -390,7 +390,7 @@ def invert(x: Tensor) -> Tensor:
     Tensor
         Tensor containing inverted values.
     """
-    return Tensor(x.device.engine.invert(x.data))
+    return Tensor(x.device.module.invert(x.data))
 
 
 def histogram(
@@ -428,7 +428,7 @@ def histogram(
     """
     b = to_arraylike(bins)
     w = weights.data if weights is not None else None
-    hist, bin_edges = x.device.engine.histogram(
+    hist, bin_edges = x.device.module.histogram(
         x.data, b, binrange, density=density, weights=w
     )
     return Tensor(hist), Tensor(bin_edges)
@@ -447,7 +447,7 @@ def log(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise natural log.
     """
-    return Tensor(x.device.engine.log(x.data))
+    return Tensor(x.device.module.log(x.data))
 
 
 def log2(x: Tensor) -> Tensor:
@@ -463,7 +463,7 @@ def log2(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise log base 2.
     """
-    return Tensor(x.device.engine.log2(x.data))
+    return Tensor(x.device.module.log2(x.data))
 
 
 def log10(x: Tensor) -> Tensor:
@@ -479,7 +479,7 @@ def log10(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise log base 10.
     """
-    return Tensor(x.device.engine.log10(x.data))
+    return Tensor(x.device.module.log10(x.data))
 
 
 def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -523,7 +523,7 @@ def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the norm of elements.
     """
-    return Tensor(x.device.engine.linalg.norm(x.data, axis=axis, keepdims=keepdims))
+    return Tensor(x.device.module.linalg.norm(x.data, axis=axis, keepdims=keepdims))
 
 
 def outer(*tensors: Tensor) -> Tensor:
@@ -539,7 +539,7 @@ def outer(*tensors: Tensor) -> Tensor:
     Tensor
         Tensor containing the outer product.
     """
-    return Tensor(tensors[0].device.engine.outer(*[t.data for t in tensors]))
+    return Tensor(tensors[0].device.module.outer(*[t.data for t in tensors]))
 
 
 def prod(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -627,7 +627,7 @@ def sin(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise sine.
     """
-    return Tensor(x.device.engine.sin(x.data))
+    return Tensor(x.device.module.sin(x.data))
 
 
 def sinh(x: Tensor) -> Tensor:
@@ -643,7 +643,7 @@ def sinh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic sine.
     """
-    return Tensor(x.device.engine.sinh(x.data))
+    return Tensor(x.device.module.sinh(x.data))
 
 
 def sqrt(x: Tensor) -> Tensor:
@@ -659,7 +659,7 @@ def sqrt(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise square root.
     """
-    return Tensor(x.device.engine.sqrt(x.data))
+    return Tensor(x.device.module.sqrt(x.data))
 
 
 def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -719,7 +719,7 @@ def tan(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise tangent.
     """
-    return Tensor(x.device.engine.tan(x.data))
+    return Tensor(x.device.module.tan(x.data))
 
 
 def tanh(x: Tensor) -> Tensor:
@@ -735,7 +735,7 @@ def tanh(x: Tensor) -> Tensor:
     Tensor
         Tensor containing the element-wise hyperbolic tangent.
     """
-    return Tensor(x.device.engine.tanh(x.data))
+    return Tensor(x.device.module.tanh(x.data))
 
 
 def tensorprod(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:

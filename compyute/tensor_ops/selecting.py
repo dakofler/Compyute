@@ -63,7 +63,7 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.diag(x.data, d))
+    return Tensor(x.device.module.diag(x.data, d))
 
 
 def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -103,7 +103,7 @@ def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise maximum.
     """
-    return Tensor(x1.device.engine.maximum(x1.data, to_arraylike(x2)))
+    return Tensor(x1.device.module.maximum(x1.data, to_arraylike(x2)))
 
 
 def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
@@ -143,7 +143,7 @@ def minimum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
     Tensor
         Tensor containing the element-wise minimum.
     """
-    return Tensor(x1.device.engine.minimum(x1.data, to_arraylike(x2)))
+    return Tensor(x1.device.module.minimum(x1.data, to_arraylike(x2)))
 
 
 def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
@@ -164,15 +164,15 @@ def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
     tuple[Tensor, Tensor]
         Tuple containing the top k elements and their indices.
     """
-    ind = x.device.engine.argpartition(-x.data, k, axis=axis)
-    ind = x.device.engine.take(ind, x.device.engine.arange(k), axis=axis)
-    data = x.device.engine.take_along_axis(-x.data, ind, axis=axis)
+    ind = x.device.module.argpartition(-x.data, k, axis=axis)
+    ind = x.device.module.take(ind, x.device.module.arange(k), axis=axis)
+    data = x.device.module.take_along_axis(-x.data, ind, axis=axis)
 
     # sort within k elements
-    ind_part = x.device.engine.argsort(data, axis=axis)
-    ind = x.device.engine.take_along_axis(ind, ind_part, axis=axis)
+    ind_part = x.device.module.argsort(data, axis=axis)
+    ind = x.device.module.take_along_axis(ind, ind_part, axis=axis)
 
-    val = x.device.engine.take_along_axis(-data, ind_part, axis=axis)
+    val = x.device.module.take_along_axis(-data, ind_part, axis=axis)
     return Tensor(val), Tensor(ind)
 
 
@@ -197,7 +197,7 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.tril(x.data, d))
+    return Tensor(x.device.module.tril(x.data, d))
 
 
 def triu(x: Tensor, d: int = 0) -> Tensor:
@@ -221,7 +221,7 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.engine.triu(x.data, d))
+    return Tensor(x.device.module.triu(x.data, d))
 
 
 def unique(x: Tensor) -> Tensor:
@@ -237,4 +237,4 @@ def unique(x: Tensor) -> Tensor:
     Tensor
         Tensor containing unique values.
     """
-    return Tensor(x.device.engine.unique(x.data))
+    return Tensor(x.device.module.unique(x.data))
