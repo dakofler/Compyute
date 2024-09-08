@@ -244,7 +244,7 @@ def bernoulli(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.choice((0, 1), shape, p=(p, 1.0 - p))
+    data = device.module.random.random(shape) > p
     return Tensor(data.astype(dtype.value, copy=False))
 
 
