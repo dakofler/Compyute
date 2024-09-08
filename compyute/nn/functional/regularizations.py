@@ -1,6 +1,6 @@
 """Neural network regularization functions."""
 
-from ...random.random import bernoulli
+from ...random.random import random
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -14,10 +14,11 @@ class FDropout(Function):
     def forward(
         cache: FunctionCache, x: Tensor, p: float = 0.5, training: bool = False
     ) -> Tensor:
+        training = training and p > 0.0
         cache.training = training
         if not training:
             return x
-        dropout_map = bernoulli(p, x.shape, x.device) / (1.0 - p)
+        dropout_map = (random(x.shape, x.device) > p).to_float() / (1.0 - p)
         cache.dropout_map = dropout_map
         return x * dropout_map
 
@@ -30,7 +31,7 @@ class FDropout(Function):
         return dy * dropout_map
 
 
-def dropout(x: Tensor, p: float = 0.5) -> Tensor:
+def dropout(x: Tensor, p: float = 0.5, training: bool = False) -> Tensor:
     """Randomly sets tensor values to zero.
 
     Parameters
@@ -47,4 +48,4 @@ def dropout(x: Tensor, p: float = 0.5) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FDropout.forward(PseudoCache(), x, p)
+    return FDropout.forward(PseudoCache(), x, p, training)

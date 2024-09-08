@@ -8,6 +8,7 @@ from ..tensors import ShapeLike, Tensor
 from ..typing import DType, int64, select_dtype
 
 __all__ = [
+    "random",
     "normal",
     "uniform",
     "uniform_int",
@@ -47,6 +48,33 @@ def seed(value: int):
         yield
     finally:
         set_seed()
+
+
+def random(
+    shape: ShapeLike,
+    device: Optional[Device] = None,
+    dtype: Optional[DType] = None,
+) -> Tensor:
+    """Creates a tensor with random values in the half-open interval ``[0.0, 1.0)``.
+
+    Parameters
+    ----------
+    shape : ShapeLike
+        Shape of the new tensor.
+    device : Device, optional
+        The device the tensor is stored on. Defaults to ``None``.
+    dtype : DtypeLike, optional
+        Datatype of the tensor data. Defaults to ``None``.
+
+    Returns
+    -------
+    Tensor
+        Tensor with random values.
+    """
+    device = select_device(device)
+    dtype = select_dtype(dtype)
+    data = device.module.random.random(shape)
+    return Tensor(data.astype(dtype.value, copy=False))
 
 
 def normal(
@@ -216,7 +244,7 @@ def bernoulli(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.choice([0.0, 1.0], size=shape, p=[p, 1.0 - p])
+    data = device.module.random.choice((0, 1), shape, p=(p, 1.0 - p))
     return Tensor(data.astype(dtype.value, copy=False))
 
 
