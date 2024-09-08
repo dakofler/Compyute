@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Iterable, Iterator
@@ -16,6 +18,7 @@ from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
+DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
 
 
 class Module(ABC):
@@ -330,7 +333,17 @@ class Module(ABC):
         @wraps(forward_method)
         def wrapper(module: Module, x: Tensor) -> Tensor:
             module.fcache = FunctionCache() if module.is_training else PseudoCache()
-            y = forward_method(module, x)
+
+            if DEBUG:
+                dt = time.time()
+                y = forward_method(module, x)
+                dt = (time.time() - dt) * 1e3
+                print(
+                    f"{module.label:20s} | forward  | {x.dtype:10s} | {y.dtype:10s} | {dt=:>10.4f} ms"
+                )
+            else:
+                y = forward_method(module, x)
+
             if module.is_retaining_values:
                 module.x = x
                 module.y = y
@@ -346,8 +359,22 @@ class Module(ABC):
         def wrapper(module: Module, dy: Tensor) -> Tensor:
             if not module.is_training:
                 raise AttributeError(f"{module.label} is not in training mode.")
-            dy = dy.to_float()
-            dx = backward_method(module, dy)
+
+            if DEBUG:
+                dt = time.time()
+                dx = backward_method(module, dy)
+                dt = (time.time() - dt) * 1e3
+                if dx:
+                    print(
+                        f"{module.label:20s} | backward | {dx.dtype:10s} | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                    )
+                else:
+                    print(
+                        f"{module.label:20s} | backward | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                    )
+            else:
+                dx = backward_method(module, dy)
+
             if module.is_retaining_values and module.x and module.y:
                 module.x.grad = dx
                 module.y.grad = dy
