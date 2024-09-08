@@ -9,7 +9,6 @@ from collections import OrderedDict
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from functools import wraps
-from itertools import chain
 from typing import Any, Optional
 
 from ...backend import Device, DeviceError, select_device
@@ -283,18 +282,21 @@ class Module(ABC):
         state_dict : OrderedDict
             State dict containing parameters and buffers.
         """
-        state_dict_device = next(iter(state_dict.values())).device
-        if state_dict_device != self.device:
-            raise DeviceError(
-                "Device mismatch."
-                f"Module device: {self.device}, state dict device: {state_dict_device}"
-            )
+        for kv1, kv2 in zip(self.get_state_dict().items(), state_dict.items()):
+            self_key, self_value = kv1
+            other_key, other_value = kv2
 
-        for p, value in list(
-            zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())
-        ):
-            p.data = value.data
-            p.grad = value.grad
+            if self_key != other_key:
+                raise ValueError(f"State dict key mismatch: {self_key} != {other_key}")
+
+            if self_value.device != other_value.device:
+                raise DeviceError(
+                    "Device mismatch."
+                    f"Module device: {self.device}, state dict device: {other_value.device}"
+                )
+
+            self_value.data = other_value.data
+            self_value.grad = other_value.grad
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:

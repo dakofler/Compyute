@@ -91,32 +91,32 @@ class Tensor:
     # ----------------------------------------------------------------------------------
     # PROPERTIES
     # ----------------------------------------------------------------------------------
-    @cached_property
+    @property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
         return get_device_from_class(type(self.data))
 
-    @cached_property
+    @property
     def dtype(self) -> DType:
         """Tensor data type."""
         return DType(str(self.data.dtype))
 
-    @cached_property
+    @property
     def n_axes(self) -> int:
         """Number of tensor axes."""
         return self.data.ndim
 
-    @cached_property
+    @property
     def size(self) -> int:
         """Tensor size (number of elements)."""
         return self.data.size
 
-    @cached_property
+    @property
     def shape(self) -> ShapeLike:
         """Tensor shape."""
         return self.data.shape
 
-    @cached_property
+    @property
     def strides(self) -> tuple[int, ...]:
         """Tensor strides."""
         return self.data.strides
@@ -126,7 +126,7 @@ class Tensor:
         """View of the tensor with its last two axes transposed."""
         return self.transpose((*range(self.n_axes - 2), -1, -2))
 
-    @cached_property
+    @property
     def ptr(self) -> int:
         """Pointer to the tensor data in memory."""
         return id(self.data)
