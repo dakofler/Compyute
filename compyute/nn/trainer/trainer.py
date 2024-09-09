@@ -55,7 +55,7 @@ class Trainer:
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)
-        self.optimizer.parameters = model.get_parameters()
+        self.optimizer.set_parameters(model.get_parameters())
         self.loss = get_loss_function(loss)
         if metric is not None:
             self.metric = get_metric_function(metric)

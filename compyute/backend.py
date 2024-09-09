@@ -146,10 +146,12 @@ def use_device(device: Device):
         set_default_device(None)
 
 
-@cache
-def get_device_from_class(array_type: type) -> Device:
+from typing import Any
+
+
+def get_device_from_array(array: ArrayLike) -> Device:
     """Infers the device by type."""
-    if array_type == cupy.ndarray:
+    if isinstance(array, cupy.ndarray):
         return cuda
     return cpu
 

@@ -18,7 +18,7 @@ class FDropout(Function):
         cache.training = training
         if not training:
             return x
-        dropout_map = bernoulli(p, x.shape, x.device) / (1.0 - p)
+        dropout_map = bernoulli(1.0 - p, x.shape, x.device) / (1.0 - p)
         cache.dropout_map = dropout_map
         return x * dropout_map
 

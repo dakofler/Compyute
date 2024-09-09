@@ -14,7 +14,7 @@ from .backend import (
     cuda,
     data_to_device,
     get_default_device,
-    get_device_from_class,
+    get_device_from_array,
 )
 from .typing import (
     DType,
@@ -61,7 +61,7 @@ def tensor(
     Tensor
         Tensor object.
     """
-    device = device or get_default_device() or get_device_from_class(type(data))
+    device = device or get_default_device() or get_device_from_array(type(data))
     dtype = dtype or get_default_dtype()
     dtype_str = dtype.value if dtype is not None else None
     return Tensor(device.module.asarray(data, dtype_str))
@@ -94,7 +94,7 @@ class Tensor:
     @property
     def device(self) -> Device:
         """Device the tensor data is stored on."""
-        return get_device_from_class(type(self.data))
+        return get_device_from_array(self.data)
 
     @property
     def dtype(self) -> DType:

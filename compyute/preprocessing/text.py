@@ -39,7 +39,7 @@ class Tokenizer(ABC):
         """Number of unique tokens."""
         return len(self.vocab)
 
-    def fit(self, text: str, vocab_size: int | None = None) -> None:
+    def fit(self, text: str, vocab_size: Optional[int] = None) -> None:
         """Fits the tokenizer to text.
 
         Parameters
@@ -155,7 +155,8 @@ class BPETokenizer(Tokenizer):
         self._merges = {}
         self._pattern = regex.compile(BPE_PATTERN)
 
-    def fit(self, text: str, vocab_size: int = 256) -> None:
+    def fit(self, text: str, vocab_size: Optional[int] = None) -> None:
+        vocab_size = vocab_size or 256
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
 
         if vocab_size <= 256:
@@ -172,7 +173,7 @@ class BPETokenizer(Tokenizer):
         for i in trange(n_merges, desc="Merges", unit="merges"):
 
             # get counts for bigrams
-            counts = {}
+            counts: dict[tuple[int], int] = {}
             for chunk_ids in token_ids:
                 self._update_counts(chunk_ids, counts)
 

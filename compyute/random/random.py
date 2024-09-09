@@ -224,7 +224,7 @@ def bernoulli(
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
-    """Returns a tensor of repeated bernoulli experiments using a given probability.
+    """Returns a tensor of bernoulli experiments using a given probability.
 
     Parameters
     ----------
@@ -244,7 +244,7 @@ def bernoulli(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.random(shape) > p
+    data = device.module.random.random(shape) < p
     return Tensor(data.astype(dtype.value, copy=False))
 
 
