@@ -34,7 +34,7 @@ class Optimizer(ABC):
         if parameters is not None:
             self.set_parameters(parameters)
 
-    def set_parameters(self, value: Iterator[Parameter]) -> None:
+    def set_parameters(self, parameters: Iterator[Parameter]) -> None:
         """Sets the parameters to optimize.
 
         Parameters
@@ -42,7 +42,10 @@ class Optimizer(ABC):
         value : Iterator[Parameter]
             Paramters to optimize.
         """
-        self._parameters = list(value)
+        ptrs = set()
+        self._parameters = [
+            p for p in parameters if p.ptr not in ptrs and not ptrs.add(p.ptr)
+        ]
         self._state = {i: {} for i in range(len(self._parameters))}
 
     def get_state_dict(self) -> dict[str, dict[Any, Any]]:
