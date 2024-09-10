@@ -1,7 +1,5 @@
 """Neural network activation functions."""
 
-import math
-
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
 from ...tensor_ops.selecting import maximum
@@ -10,7 +8,16 @@ from ...tensor_ops.transforming import tanh as cp_tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
-__all__ = ["relu", "leaky_relu", "gelu", "sigmoid", "silu", "tanh", "softmax"]
+__all__ = [
+    "relu",
+    "leaky_relu",
+    "gelu",
+    "fast_gelu",
+    "sigmoid",
+    "silu",
+    "tanh",
+    "softmax",
+]
 
 
 class FReLU(Function):
@@ -85,44 +92,6 @@ def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
     return FLeakyReLU.forward(PseudoCache(), x, alpha)
 
 
-class FGELU(Function):
-    """Applies the Gaussian Error Linear Unit function to an input tensor."""
-
-    @staticmethod
-    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        tmp = math.sqrt(2.0 / math.pi) * (x + 0.044715 * x**3)
-        y = 0.5 * x * (1.0 + cp_tanh(tmp))
-        cache.x, cache.tmp = x, tmp
-        return y
-
-    @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, tmp = cache.x, cache.tmp
-        dx1 = 1.0 + cp_tanh(tmp)
-        dx2 = x * sech(tmp) ** 2.0 * math.sqrt(2 / math.pi) * (1.0 + 0.13415 * x**2)
-        return 0.5 * (dx1 + dx2) * dy
-
-
-def gelu(x: Tensor) -> Tensor:
-    """Applies the Gaussian Error Linear Unit function to an input tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Output tensor.
-
-    See Also
-    --------
-    :class:`compyute.nn.GELU`
-    """
-    return FGELU.forward(PseudoCache(), x)
-
-
 class FSigmoid(Function):
     """Applies the sigmoid function to an input tensor."""
 
@@ -157,6 +126,80 @@ def sigmoid(x: Tensor) -> Tensor:
     :class:`compyute.nn.Sigmoid`
     """
     return FSigmoid.forward(PseudoCache(), x)
+
+
+class FGELU(Function):
+    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        tmp = x * 0.7978845608 * (1.0 + 0.044715 * x**2)
+        y = 0.5 * x * (1.0 + cp_tanh(tmp))
+        cache.x, cache.tmp = x, tmp
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x, tmp = cache.x, cache.tmp
+        dx1 = 1.0 + cp_tanh(tmp)
+        dx2 = x * sech(tmp) ** 2.0 * (0.7978845608 + 0.1070322244 * x**2)
+        return 0.5 * (dx1 + dx2) * dy
+
+
+def gelu(x: Tensor) -> Tensor:
+    """Applies the Gaussian Error Linear Unit function to an input tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+
+    See Also
+    --------
+    :class:`compyute.nn.GELU`
+    """
+    return FGELU.forward(PseudoCache(), x)
+
+
+class FFastGELU(Function):
+    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        sig = FSigmoid.forward(cache, 1.702 * x)
+        y = x * sig
+        cache.x, cache.sig = x, sig
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x, sig = cache.x, cache.sig
+        return dy * sig + x * FSigmoid.backward(cache, dy) * 1.702
+
+
+def fast_gelu(x: Tensor) -> Tensor:
+    """Applies the Gaussian Error Linear Unit function to an input tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+
+    See Also
+    --------
+    :class:`compyute.nn.FastGELU`
+    """
+    return FFastGELU.forward(PseudoCache(), x)
 
 
 class FSiLU(Function):

@@ -9,6 +9,7 @@ Activations
     :toctree: ../_generated/compyute.nn.functional
 
     gelu
+    fast_gelu
     leaky_relu
     relu
     sigmoid

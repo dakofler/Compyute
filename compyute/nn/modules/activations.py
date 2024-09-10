@@ -5,6 +5,7 @@ from typing import Literal, Optional, TypeAlias
 from ...tensors import Tensor
 from ..functional.activations import (
     FGELU,
+    FFastGELU,
     FLeakyReLU,
     FReLU,
     FSigmoid,
@@ -14,14 +15,23 @@ from ..functional.activations import (
 )
 from .module import Module
 
-__all__ = ["ReLU", "LeakyReLU", "GELU", "Sigmoid", "SiLU", "Softmax", "Tanh"]
+__all__ = [
+    "ReLU",
+    "LeakyReLU",
+    "GELU",
+    "FastGELU",
+    "Sigmoid",
+    "SiLU",
+    "Softmax",
+    "Tanh",
+]
 
 
 class GELU(Module):
     r"""Gaussian Error Linear Unit activation function (using the :math:`tanh` approximation).
 
     .. math::
-        y = 0.5 \cdot x \cdot (1 + \text{tanh}(\sqrt{\frac{2}{pi}} \cdot (x + 0.044715 \cdot x^3)))
+        y = 0.5 \cdot x \cdot \left( 1 + \text{tanh} \left( x \sqrt{\frac{2}{\pi}} \cdot (1 + 0.044715 \cdot x^2) \right) \right)
 
     Parameters
     ----------
@@ -36,6 +46,27 @@ class GELU(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return FGELU.backward(self.fcache, dy)
+
+
+class FastGELU(Module):
+    r"""Gaussian Error Linear Unit activation function (using the :math:`sigmoid` approximation).
+
+    .. math::
+        y = x \cdot \sigma{1.702x}
+
+    Parameters
+    ----------
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
+    """
+
+    @Module.register_forward
+    def forward(self, x: Tensor) -> Tensor:
+        return FFastGELU.forward(self.fcache, x)
+
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        return FFastGELU.backward(self.fcache, dy)
 
 
 class LeakyReLU(Module):

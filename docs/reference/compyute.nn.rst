@@ -50,6 +50,7 @@ Activations
     ReLU
     LeakyReLU
     GELU
+    FastGELU
     Sigmoid
     SiLU
     Softmax
