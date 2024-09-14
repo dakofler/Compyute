@@ -19,16 +19,13 @@ def test_relu(shape) -> None:
     compyute_module = ReLU()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.relu(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
-
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -45,15 +42,13 @@ def test_leaky_relu(shape, alpha) -> None:
     compyute_module = LeakyReLU(alpha=alpha)
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.leaky_relu(torch_x, negative_slope=alpha)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -69,15 +64,13 @@ def test_gelu(shape) -> None:
     compyute_module = GELU()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.gelu(torch_x, approximate="tanh")
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -93,15 +86,13 @@ def test_fast_gelu(shape) -> None:
     compyute_module = FastGELU()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = torch_x * F.sigmoid(1.702 * torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -117,15 +108,13 @@ def test_tanh(shape) -> None:
     compyute_module = Tanh()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.tanh(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -141,15 +130,13 @@ def test_sigmoid(shape) -> None:
     compyute_module = Sigmoid()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.sigmoid(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -165,15 +152,13 @@ def test_silu(shape) -> None:
     compyute_module = SiLU()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.silu(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
 
@@ -189,14 +174,12 @@ def test_softmax(shape) -> None:
     compyute_module = Softmax()
 
     # forward
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = F.softmax(torch_x, dim=-1)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)

@@ -1,5 +1,7 @@
 """Testing utilities."""
 
+from typing import Optional
+
 import numpy
 import torch
 
@@ -49,6 +51,10 @@ def get_random_params(
     return compyute_x, torch_x
 
 
-def is_close(x1: Tensor | Parameter, x2: torch.Tensor, tol: float = 1e-5) -> bool:
+def is_close(
+    x1: Optional[Tensor | Parameter], x2: Optional[torch.Tensor], tol: float = 1e-5
+) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
+    if x1 is None or x2 is None:
+        return False
     return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)

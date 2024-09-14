@@ -17,13 +17,11 @@ def test_flatten(shape) -> None:
 
     # forward
     compyute_x, _ = get_random_floats(shape)
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     assert compyute_y.shape == (compyute_x.shape[0], math.prod(shape[1:]))
 
     # backward
     compyute_dy, _ = get_random_floats(compyute_y.shape)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
 
     assert compyute_dx.shape == shape

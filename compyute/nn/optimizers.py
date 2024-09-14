@@ -1,7 +1,7 @@
 """Parameter optimizers."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable
 from typing import Any, Literal, Optional
 
 from ..tensor_ops.transforming import sqrt
@@ -16,7 +16,7 @@ class Optimizer(ABC):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -28,19 +28,19 @@ class Optimizer(ABC):
     _state: dict[int, dict[str, Tensor]]
 
     def __init__(
-        self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
+        self, parameters: Optional[Iterable[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
 
         if parameters is not None:
             self.set_parameters(parameters)
 
-    def set_parameters(self, parameters: Iterator[Parameter]) -> None:
+    def set_parameters(self, parameters: Iterable[Parameter]) -> None:
         """Sets the parameters to optimize.
 
         Parameters
         ----------
-        value : Iterator[Parameter]
+        value : Iterable[Parameter]
             Paramters to optimize.
         """
         ptrs: set[int] = set()
@@ -121,7 +121,7 @@ class SGD(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -139,7 +139,7 @@ class SGD(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
         momentum: float = 0.0,
         nesterov: bool = False,
@@ -209,7 +209,7 @@ class Adam(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -230,7 +230,7 @@ class Adam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -307,7 +307,7 @@ class AdamW(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -328,7 +328,7 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -408,7 +408,7 @@ class NAdam(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``2e-3``.
@@ -432,7 +432,7 @@ class NAdam(Optimizer):
 
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 2e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,

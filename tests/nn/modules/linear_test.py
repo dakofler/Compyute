@@ -31,15 +31,13 @@ def test_linear_2d(shape) -> None:
 
     # forward
     compyute_x, torch_x = get_random_floats(shape_x)
-    with compyute_module.train():
-        compyute_y = compyute_module(compyute_x)
+    compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
-    with compyute_module.train():
-        compyute_dx = compyute_module.backward(compyute_dy)
+    compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
     assert is_close(compyute_module.w.grad, torch_module.weight.grad)

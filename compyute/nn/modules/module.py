@@ -37,13 +37,13 @@ class Module(ABC):
     _device = select_device(None)
     _is_retaining_values = False
     _is_trainable = True
-    _is_training = False
+    _is_training = True
     _modules: OrderedDict[str, Module]
     _parameters: OrderedDict[str, Parameter]
 
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
-        self.fcache = PseudoCache()
+        self.fcache = FunctionCache()
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
