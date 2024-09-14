@@ -1,4 +1,4 @@
-"""Tensors tests"""
+"""Tensor typing tests"""
 
 import compyute as cp
 

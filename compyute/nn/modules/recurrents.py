@@ -96,7 +96,8 @@ class Recurrent(Module):
         x_h = FLinear.forward(self.fcache, x, self.w_i, self.b_i)
 
         # iterate over timesteps
-        h = zeros((*x.shape[:2], self.h_channels), x.device, x.dtype)
+        h_shape = (*x.shape[:2], self.h_channels)
+        h = zeros(h_shape, device=x.device, dtype=x.dtype)
         for t in range(x.shape[1]):
 
             # hidden projection
@@ -107,14 +108,14 @@ class Recurrent(Module):
 
         y = h if self.return_sequence else h[:, -1]
 
-        self.fcache.x_shape = x.shape
+        self.fcache.x_shape, self.fcache.h_shape = x.shape, h_shape
         return y
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        x_shape = self.fcache.x_shape
-        dpreact = zeros((*x_shape[:2], self.h_channels), dy.device, dy.dtype)
-        dh = 0
+        x_shape, h_shape = self.fcache.x_shape, self.fcache.h_shape
+        dpreact = zeros(h_shape, device=dy.device, dtype=dy.dtype)
+        dh = 0  # TODO: should be a tensor
 
         # iterate backwards over timesteps
         for t in range(x_shape[1] - 1, -1, -1):
@@ -257,7 +258,7 @@ class LSTM(Module):
     @Module.register_forward
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-        i = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
+        i = empty((*x.shape[:2], self.h_channels), device=x.device, dtype=x.dtype)
         f, g, o, c = empty_like(i), empty_like(i), empty_like(i), zeros_like(i)
         act_c, h = empty_like(i), zeros_like(i)
 
@@ -464,7 +465,7 @@ class GRU(Module):
     @Module.register_forward
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-        r = empty((*x.shape[:2], self.h_channels), x.device, x.dtype)
+        r = empty((*x.shape[:2], self.h_channels), device=x.device, dtype=x.dtype)
         z, n, h_n, h = empty_like(r), empty_like(r), empty_like(r), zeros_like(r)
 
         # input projection W_i * x_t + b_i

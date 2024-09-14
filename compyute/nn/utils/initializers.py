@@ -25,13 +25,13 @@ __all__ = [
 def init_ones(*tensors: Tensor) -> None:
     """Initializes tensors with ones."""
     for t in tensors:
-        t.data = ones(t.shape, t.device, t.dtype).data
+        t.data = ones(t.shape, device=t.device, dtype=t.dtype).data
 
 
 def init_zeros(*tensors: Tensor) -> None:
     """Initializes tensors with zeros."""
     for t in tensors:
-        t.data = zeros(t.shape, t.device, t.dtype).data
+        t.data = zeros(t.shape, device=t.device, dtype=t.dtype).data
 
 
 def init_normal(*tensors: Tensor, mean: float = 0.0, std: float = 1.0) -> None:
@@ -45,7 +45,7 @@ def init_normal(*tensors: Tensor, mean: float = 0.0, std: float = 1.0) -> None:
         Standard deviation of the normal distribution. Defaults to ``1``.
     """
     for t in tensors:
-        t.data = normal(t.shape, mean, std, t.device, t.dtype).data
+        t.data = normal(t.shape, mean, std, device=t.device, dtype=t.dtype).data
 
 
 def init_uniform(*tensors: Tensor, low: float = -1.0, high: float = 1.0) -> None:
@@ -59,7 +59,7 @@ def init_uniform(*tensors: Tensor, low: float = -1.0, high: float = 1.0) -> None
         Upper bound for random values. Defaults to ``1``.
     """
     for t in tensors:
-        t.data = uniform(t.shape, low, high, t.device, t.dtype).data
+        t.data = uniform(t.shape, low, high, device=t.device, dtype=t.dtype).data
 
 
 def init_kaiming_normal(
@@ -77,7 +77,7 @@ def init_kaiming_normal(
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         std = gain / math.sqrt(fan_in)
-        t.data = normal(t.shape, 0, std, t.device, t.dtype).data
+        t.data = normal(t.shape, 0, std, device=t.device, dtype=t.dtype).data
 
 
 def init_kaiming_uniform(
@@ -95,7 +95,7 @@ def init_kaiming_uniform(
     for t in tensors:
         fan_in = _get_fan_in(t.shape)
         k = gain * math.sqrt(3 / fan_in)
-        t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
+        t.data = uniform(t.shape, -k, k, device=t.device, dtype=t.dtype).data
 
 
 def init_xavier_normal(
@@ -114,7 +114,7 @@ def init_xavier_normal(
         fan_in = _get_fan_in(t.shape)
         fan_out = _get_fan_out(t.shape)
         std = gain * math.sqrt(2 / (fan_in + fan_out))
-        t.data = normal(t.shape, 0, std, t.device, t.dtype).data
+        t.data = normal(t.shape, 0, std, device=t.device, dtype=t.dtype).data
 
 
 def init_xavier_uniform(
@@ -133,7 +133,7 @@ def init_xavier_uniform(
         fan_in = _get_fan_in(t.shape)
         fan_out = _get_fan_out(t.shape)
         k = gain * math.sqrt(6 / (fan_in + fan_out))
-        t.data = uniform(t.shape, -k, k, t.device, t.dtype).data
+        t.data = uniform(t.shape, -k, k, device=t.device, dtype=t.dtype).data
 
 
 InitializerLike = Literal[
@@ -147,7 +147,7 @@ InitializerLike = Literal[
     "ones",
 ]
 
-INITIALIZERS = {
+INITIALIZERS: dict[str, Callable[..., None]] = {
     "kaiming_normal": init_kaiming_normal,
     "kaiming_uniform": init_kaiming_uniform,
     "normal": init_normal,
@@ -176,7 +176,7 @@ def _get_gain(activation: Optional[ActivationLike] = None) -> float:
 
 def get_initializer(
     initializer: InitializerLike, activation: ActivationLike
-) -> Callable:
+) -> Callable[..., None]:
     """Returns an instance of an initializer."""
     if initializer not in INITIALIZERS:
         raise ValueError(f"Unknown initializer: {initializer}.")

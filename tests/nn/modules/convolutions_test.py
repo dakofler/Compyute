@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from compyute.nn import AvgPooling2D, Convolution1D, Convolution2D, MaxPooling2D
-from tests.test_utils import get_random_floats, get_random_params, is_equal
+from tests.utils import get_random_floats, get_random_params, is_close
 
 conv1d_testdata = [
     ((16, 64, 32, 16, 5), "valid", 1, 1),
@@ -72,16 +72,16 @@ def test_conv1d(shape, padding, strides, dilation) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
-    assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
-    assert is_equal(compyute_module.b.grad, torch_module.bias.grad)
+    assert is_close(compyute_dx, torch_x.grad)
+    assert is_close(compyute_module.w.grad, torch_module.weight.grad)
+    assert is_close(compyute_module.b.grad, torch_module.bias.grad)
 
 
 @pytest.mark.parametrize("shape,padding,strides,dilation", conv2d_testdata)
@@ -110,16 +110,16 @@ def test_conv2d(shape, padding, strides, dilation) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
-    assert is_equal(compyute_module.w.grad, torch_module.weight.grad)
-    assert is_equal(compyute_module.b.grad, torch_module.bias.grad, tol=1e-4)
+    assert is_close(compyute_dx, torch_x.grad)
+    assert is_close(compyute_module.w.grad, torch_module.weight.grad)
+    assert is_close(compyute_module.b.grad, torch_module.bias.grad, tol=1e-4)
 
 
 @pytest.mark.parametrize("shape,kernel_size", pool_testdata)
@@ -134,14 +134,14 @@ def test_maxpool2d(shape, kernel_size) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.max_pool2d(torch_x, kernel_size)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape,kernel_size", pool_testdata)
@@ -156,11 +156,11 @@ def test_avgpool2d(shape, kernel_size) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch.nn.functional.avg_pool2d(torch_x, kernel_size)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)

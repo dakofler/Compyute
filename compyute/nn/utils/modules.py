@@ -1,5 +1,7 @@
 """Module utilities."""
 
+from typing import Any
+
 from ...tensor_ops.creating import ones
 from ...tensors import ShapeLike
 from ...typing import DType, float32
@@ -56,7 +58,7 @@ def get_module_summary(
         _ = module(x)
 
     # get model summary
-    module_summaries = []
+    module_summaries: list[dict[str, Any]] = []
     build_summary(module, "")
     module.clean()
 
@@ -70,7 +72,7 @@ def get_module_summary(
     ]
 
     n_params = n_train_params = 0
-    param_ptrs = []
+    param_ptrs: list[int] = []
 
     for m in module_summaries:
         m_name = m["name"]

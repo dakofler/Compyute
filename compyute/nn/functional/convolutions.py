@@ -125,7 +125,7 @@ class FDilation1D(Function):
             return x
 
         dil_shape = (dilation * x.shape[-1] - 1,)
-        y = zeros(x.shape[:-1] + dil_shape, x.device, x.dtype)
+        y = zeros(x.shape[:-1] + dil_shape, device=x.device, dtype=x.dtype)
         y[..., ::dilation] = x
 
         cache.dilation = dilation
@@ -319,7 +319,7 @@ class FDilation2D(Function):
             return x
 
         dil_shape = (dilation * x.shape[-2] - 1, dilation * x.shape[-1] - 1)
-        y = zeros(x.shape[:-2] + dil_shape, x.device, x.dtype)
+        y = zeros(x.shape[:-2] + dil_shape, device=x.device, dtype=x.dtype)
         y[..., ::dilation, ::dilation] = x
 
         cache.dilation = dilation

@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from typing import Any, Literal, Optional
 
 from ..tensor_ops.transforming import sqrt
+from ..tensors import Tensor
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -24,7 +25,7 @@ class Optimizer(ABC):
     lr: float
     t = 1
     _parameters: list[Parameter]
-    _state: dict[Any, Any]
+    _state: dict[int, dict[str, Tensor]]
 
     def __init__(
         self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
@@ -42,10 +43,10 @@ class Optimizer(ABC):
         value : Iterator[Parameter]
             Paramters to optimize.
         """
-        ptrs = set()
+        ptrs: set[int] = set()
         self._parameters = [
             p for p in parameters if p.ptr not in ptrs and not ptrs.add(p.ptr)
-        ]
+        ]  # TODO: Clean this up
         self._state = {i: {} for i in range(len(self._parameters))}
 
     def get_state_dict(self) -> dict[str, dict[Any, Any]]:
@@ -445,6 +446,7 @@ class NAdam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.momentum_decay = momentum_decay
+        self._mu_prod = 1.0
 
     def step(self) -> None:
         # momentum coefficient
@@ -452,12 +454,11 @@ class NAdam(Optimizer):
         mu_next = self.beta1 * (
             1.0 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
         )
-        mu_prod = self._state.get("mu_prod", 1.0) * mu
-        self._state["mu_prod"] = mu_prod
-        mu_next_prod = mu_prod * mu_next
+        self._mu_prod *= mu
+        mu_next_prod = self._mu_prod * mu_next
 
         m_div = 1.0 - mu_next_prod
-        g_div = 1.0 - mu_prod
+        g_div = 1.0 - self._mu_prod
         v_div = 1.0 - self.beta2**self.t
 
         for i, p in enumerate(self._parameters):

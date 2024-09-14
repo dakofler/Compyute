@@ -26,12 +26,12 @@ class FBatchNorm1D(Function):
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
         x_is_2d = x.n_axes == 2
-        axes = 0 if x_is_2d else (0, 2)
+        axes: int | tuple[int, ...] = 0 if x_is_2d else (0, 2)
 
         if training:
             # compute mean and variance from x
-            mean = x.mean(axis=axes, keepdims=True)
-            var = x.var(axis=axes, keepdims=True)
+            mean = x.mean(axes, keepdims=True)
+            var = x.var(axes, keepdims=True)
             std = sqrt(var + eps)
             x_norm = (x - mean) / std
 
@@ -55,7 +55,7 @@ class FBatchNorm1D(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         w, std, x_norm = cache.w, cache.std, cache.x_norm
-        axes = 0 if dy.n_axes == 2 else (0, 2)
+        axes: int | tuple[int, ...] = 0 if dy.n_axes == 2 else (0, 2)
 
         # input grads
         n = float(dy.size / dy.shape[1])

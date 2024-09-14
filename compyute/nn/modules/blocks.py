@@ -6,9 +6,9 @@ from ...typing import DType
 from ..utils.initializers import InitializerLike, get_initializer
 from .activations import ActivationLike, get_activation
 from .containers import Sequential
-from .convolution import Convolution1D, Convolution2D, PaddingLike
+from .convolutions import Convolution1D, Convolution2D, PaddingLike
 from .linear import Linear
-from .normalization import BatchNorm1D, BatchNorm2D
+from .normalizations import BatchNorm1D, BatchNorm2D
 
 __all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
 

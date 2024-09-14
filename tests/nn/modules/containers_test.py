@@ -11,7 +11,7 @@ from compyute.nn import (
     ResidualConnection,
     Sequential,
 )
-from tests.test_utils import get_random_floats, get_random_params, is_equal
+from tests.utils import get_random_floats, get_random_params, is_close
 
 testdata = [(8, 16, 32), (16, 32, 64)]
 
@@ -48,14 +48,14 @@ def test_sequential_container(shape) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_module(torch_x)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", testdata)
@@ -90,14 +90,14 @@ def test_parallel_concat_container(shape) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch.cat([m(torch_x) for m in torch_parallel_modules], -1)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", testdata)
@@ -131,14 +131,14 @@ def test_parallel_add_container(shape) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = lin1(torch_x) + lin2(torch_x)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", testdata)
@@ -172,11 +172,11 @@ def test_residual(shape) -> None:
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
     torch_y = torch_x + lin2(torch.nn.functional.relu(lin1(torch_x)))
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dy, torch_dy = get_random_floats(compyute_y.shape, torch_grad=False)
     with compyute_module.train():
         compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)

@@ -105,7 +105,7 @@ class FSigmoid(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         y = cache.y
-        return (y * (1.0 - y)) * dy
+        return y * (1.0 - y) * dy
 
 
 def sigmoid(x: Tensor) -> Tensor:

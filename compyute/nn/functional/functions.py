@@ -1,6 +1,6 @@
 """Neural network function"""
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import OrderedDict, deque
 from typing import Any
 
@@ -40,3 +40,13 @@ class Function(ABC):
 
     def __call__(self, *args, **kwargs) -> None:
         raise NotImplementedError("Use ``forward()`` instead.")
+
+    @staticmethod
+    @abstractmethod
+    def forward(*args, **kwargs) -> Any:
+        """Forward pass of the function."""
+
+    @staticmethod
+    @abstractmethod
+    def backward(*args, **kwargs) -> Any:
+        """Backward pass of the function."""

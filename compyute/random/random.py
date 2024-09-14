@@ -52,6 +52,7 @@ def seed(value: int):
 
 def random(
     shape: ShapeLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -81,6 +82,7 @@ def normal(
     shape: ShapeLike,
     mean: float = 0.0,
     std: float = 1.0,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -114,6 +116,7 @@ def uniform(
     shape: ShapeLike,
     low: float = -1.0,
     high: float = 1.0,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -147,6 +150,7 @@ def uniform_int(
     shape: ShapeLike,
     low: int,
     high: int,
+    *,
     device: Optional[Device] = None,
     dtype: DType = int64,
 ) -> Tensor:
@@ -174,7 +178,7 @@ def uniform_int(
     return Tensor(device.module.random.randint(low, high, shape, dtype.value))
 
 
-def permutation(n: int, device: Optional[Device] = None) -> Tensor:
+def permutation(n: int, *, device: Optional[Device] = None) -> Tensor:
     """Returns a tensor containing a permuted range of a specified length.
 
     Parameters
@@ -221,6 +225,7 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
 def bernoulli(
     p: float,
     shape: ShapeLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -263,5 +268,5 @@ def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
     Tensor
         Indices tensor.
     """
-    shuffle_idx = permutation(x.shape[0], x.device)
+    shuffle_idx = permutation(x.shape[0], device=x.device)
     return x[shuffle_idx], shuffle_idx

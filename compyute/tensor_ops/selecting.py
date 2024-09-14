@@ -20,7 +20,7 @@ __all__ = [
 
 
 def argmax(
-    x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
 ) -> Tensor:
     """Returns the indices of maximum values along a given axis.
 
@@ -40,7 +40,7 @@ def argmax(
     Tensor
         Tensor containing indices.
     """
-    return x.argmax(axis, keepdims)
+    return x.argmax(axis, keepdims=keepdims)
 
 
 def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
@@ -66,7 +66,9 @@ def get_diagonal(x: Tensor, d: int = 0) -> Tensor:
     return Tensor(x.device.module.diag(x.data, d))
 
 
-def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def max(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the maximum of tensor elements over a given axis.
 
     Parameters
@@ -85,7 +87,7 @@ def max(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     Tensor
         Tensor containing the maximum of elements.
     """
-    return x.max(axis, keepdims)
+    return x.max(axis, keepdims=keepdims)
 
 
 def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
@@ -106,7 +108,9 @@ def maximum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
     return Tensor(x1.device.module.maximum(x1.data, to_arraylike(x2)))
 
 
-def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def min(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the minimum of tensor elements over a given axis.
 
     Parameters
@@ -125,7 +129,7 @@ def min(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     Tensor
         Tensor containing the minimum of elements.
     """
-    return x.min(axis, keepdims)
+    return x.min(axis, keepdims=keepdims)
 
 
 def minimum(x1: Tensor, x2: Tensor | ScalarLike) -> Tensor:
@@ -176,15 +180,15 @@ def topk(x: Tensor, k: int, axis: AxisLike = -1) -> tuple[Tensor, Tensor]:
     return Tensor(val), Tensor(ind)
 
 
-def tril(x: Tensor, d: int = 0) -> Tensor:
+def tril(x: Tensor, diag_index: int = 0) -> Tensor:
     """Returns the lower triangle of a tensor below the
-    d-th diagonal of the last two dimensions.
+    diagonal of the last two dimensions.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    d : int, optional
+    diag_index : int, optional
         | Index of the diagonal. Defaults to ``0``.
         | ``0``: main diagonal
         | ``> 0``: above main diagonal
@@ -197,18 +201,18 @@ def tril(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.module.tril(x.data, d))
+    return Tensor(x.device.module.tril(x.data, diag_index))
 
 
-def triu(x: Tensor, d: int = 0) -> Tensor:
+def triu(x: Tensor, diag_index: int = 0) -> Tensor:
     """Returns the upper triangle of a tensor above the
-    d-th diagonal of the last two dimensions.
+    diagonal of the last two dimensions.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    d : int, optional
+    diag_index : int, optional
         | Index of the diagonal. Defaults to ``0``.
         | ``0``: main diagonal
         | ``> 0``: above main diagonal
@@ -221,7 +225,7 @@ def triu(x: Tensor, d: int = 0) -> Tensor:
     """
     if x.n_axes < 2:
         raise ShapeError("Input tensor must have at least 2 dimensions.")
-    return Tensor(x.device.module.triu(x.data, d))
+    return Tensor(x.device.module.triu(x.data, diag_index))
 
 
 def unique(x: Tensor) -> Tensor:

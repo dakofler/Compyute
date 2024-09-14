@@ -181,7 +181,7 @@ class BPETokenizer(Tokenizer):
             if len(counts) == 0:
                 print(f"Step {i+1}/{n_merges}. No more possible merges found.")
                 break
-            bigram = max(counts, key=counts.get)
+            bigram: tuple[int, int] = max(counts, key=counts.get)
 
             # replace occurences of bigram with merge id
             idx = 256 + i

@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from compyute.nn.optimizers import SGD, Adam, AdamW, NAdam
-from tests.test_utils import get_random_floats, get_random_params, is_equal
+from tests.utils import get_random_floats, get_random_params, is_close
 
 iters = 5
 shape_testdata = [(8, 16), (8, 16, 32)]
@@ -39,8 +39,8 @@ def test_sgd(shape, lr, m, weight_decay) -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    assert is_equal(compyute_x, torch_x, tol=1e-4)
-    assert is_equal(compyute_x.grad, torch_x.grad)
+    assert is_close(compyute_x, torch_x, tol=1e-4)
+    assert is_close(compyute_x.grad, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", shape_testdata)
@@ -69,8 +69,8 @@ def test_sgd_nesterov(shape, lr, m, weight_decay) -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    assert is_equal(compyute_x, torch_x, tol=1e-4)
-    assert is_equal(compyute_x.grad, torch_x.grad)
+    assert is_close(compyute_x, torch_x, tol=1e-4)
+    assert is_close(compyute_x.grad, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", shape_testdata)
@@ -99,8 +99,8 @@ def test_adam(shape, lr, beta1, beta2, eps, weight_decay) -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    assert is_equal(compyute_x, torch_x)
-    assert is_equal(compyute_x.grad, torch_x.grad)
+    assert is_close(compyute_x, torch_x)
+    assert is_close(compyute_x.grad, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", shape_testdata)
@@ -129,8 +129,8 @@ def test_adamw(shape, lr, beta1, beta2, eps, weight_decay) -> None:
         compyute_optim.step()
         torch_optim.step()
 
-    assert is_equal(compyute_x, torch_x)
-    assert is_equal(compyute_x.grad, torch_x.grad)
+    assert is_close(compyute_x, torch_x)
+    assert is_close(compyute_x.grad, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", shape_testdata)
@@ -164,5 +164,5 @@ def test_nadam(shape, lr, beta1, beta2, eps, weight_decay, momentum_decay) -> No
         compyute_optim.step()
         torch_optim.step()
 
-    assert is_equal(compyute_x, torch_x)
-    assert is_equal(compyute_x.grad, torch_x.grad)
+    assert is_close(compyute_x, torch_x)
+    assert is_close(compyute_x.grad, torch_x.grad)

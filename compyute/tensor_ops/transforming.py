@@ -65,7 +65,9 @@ def abs(x: Tensor) -> Tensor:
     return x.abs()
 
 
-def all(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def all(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Returns ``True`` if all elements in the tensor are ``True``.
 
     Parameters
@@ -87,7 +89,7 @@ def all(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     return x.all(axis, keepdims=keepdims)
 
 
-def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
+def allclose(x1: Tensor, x2: Tensor, *, rtol=1e-05, atol=1e-08) -> bool:
     """Returns ``True`` if all elements in the tensor are ``True``.
 
     Parameters
@@ -110,7 +112,7 @@ def allclose(x1: Tensor, x2: Tensor, rtol=1e-05, atol=1e-08) -> bool:
 
 
 def clip(
-    x: Tensor, min_value: Optional[float] = None, max_value: Optional[float] = None
+    x: Tensor, min_val: Optional[float] = None, max_val: Optional[float] = None
 ) -> Tensor:
     """Returns a tensor with values clipped to min_value and max_value.
 
@@ -118,9 +120,9 @@ def clip(
     ----------
     x : Tensor
         Input tensor.
-    min_value : float, optional
+    min_val : float, optional
         Lower bound. Defaults to ``None``. If ``None``, no clipping is performed on this edge.
-    max_value : float
+    max_val : float
         Upper bound. Defaults to ``None``. If ``None``, no clipping is performed on this edge.
 
     Returns
@@ -128,7 +130,7 @@ def clip(
     Tensor
         Tensor containing clipped values.
     """
-    return Tensor(x.device.module.clip(x.data, min_value, max_value))
+    return Tensor(x.device.module.clip(x.data, min_val, max_val))
 
 
 def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
@@ -482,7 +484,9 @@ def log10(x: Tensor) -> Tensor:
     return Tensor(x.device.module.log10(x.data))
 
 
-def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def mean(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the mean of tensor elements over a given axis.
 
     Parameters
@@ -501,10 +505,12 @@ def mean(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> 
     Tensor
         Tensor containing the mean of elements.
     """
-    return x.mean(axis=axis, keepdims=keepdims)
+    return x.mean(axis, keepdims=keepdims)
 
 
-def norm(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def norm(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the norm of tensor elements over a given axis.
 
     Parameters
@@ -542,7 +548,9 @@ def outer(*tensors: Tensor) -> Tensor:
     return Tensor(tensors[0].device.module.outer(*[t.data for t in tensors]))
 
 
-def prod(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def prod(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the product of tensor elements over a given axis.
 
     Parameters
@@ -662,7 +670,9 @@ def sqrt(x: Tensor) -> Tensor:
     return Tensor(x.device.module.sqrt(x.data))
 
 
-def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def std(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the standard deviation of tensor elements over a given axis.
 
     Parameters
@@ -681,10 +691,12 @@ def std(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     Tensor
         Tensor containing the standard deviation of elements.
     """
-    return x.std(axis=axis, keepdims=keepdims)
+    return x.std(axis, keepdims=keepdims)
 
 
-def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+def sum(
+    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+) -> Tensor:
     """Computes the sum of tensor elements over a given axis.
 
     Parameters
@@ -703,7 +715,7 @@ def sum(x: Tensor, axis: Optional[AxisLike] = None, keepdims: bool = False) -> T
     Tensor
         Tensor containing the sum of elements.
     """
-    return x.sum(axis=axis, keepdims=keepdims)
+    return x.sum(axis, keepdims=keepdims)
 
 
 def tan(x: Tensor) -> Tensor:
@@ -771,7 +783,7 @@ def tensorsum(tensors: Iterable[Tensor] | Iterator[Tensor]) -> Tensor:
 
 
 def var(
-    x: Tensor, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
+    x: Tensor, axis: Optional[AxisLike] = None, *, ddof: int = 0, keepdims: bool = False
 ) -> Tensor:
     """Computes the variance of tensor elements over a given axis.
 
@@ -794,4 +806,4 @@ def var(
     Tensor
         Tensor containing the variance of elements.
     """
-    return x.var(axis=axis, ddof=ddof, keepdims=keepdims)
+    return x.var(axis, ddof=ddof, keepdims=keepdims)

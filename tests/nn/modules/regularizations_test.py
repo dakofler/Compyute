@@ -4,7 +4,7 @@ import pytest
 
 import compyute
 from compyute.nn import Dropout
-from tests.test_utils import get_random_floats
+from tests.utils import get_random_floats
 
 
 @pytest.mark.parametrize("shape", [(8, 16), (8, 16, 32), (8, 16, 32, 64)])

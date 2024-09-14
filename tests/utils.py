@@ -19,7 +19,7 @@ def get_random_floats(
     high: float = 0.1,
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform(shape, low, high, device, float32)
+    compyute_x = uniform(shape, low, high, device=device, dtype=float32)
     torch_x = torch.tensor(compyute_x.to_numpy())
     if torch_grad:
         torch_x.requires_grad = True
@@ -31,7 +31,7 @@ def get_random_integers(
     shape: ShapeLike, device: Device = cpu, low: int = 0, high: int = 10
 ) -> tuple[Tensor, torch.Tensor]:
     """Returns a compyute tensor and a torch tensor initialized equally."""
-    compyute_x = uniform_int(shape, low, high, device, int64)
+    compyute_x = uniform_int(shape, low, high, device=device, dtype=int64)
     torch_x = torch.tensor(compyute_x.to_numpy()).long()
     compyute_x.to_device(device)
     return compyute_x, torch_x
@@ -49,8 +49,6 @@ def get_random_params(
     return compyute_x, torch_x
 
 
-def is_equal(
-    x1: Tensor | Parameter, x2: torch.Tensor | None, tol: float = 1e-5
-) -> bool:
+def is_close(x1: Tensor | Parameter, x2: torch.Tensor, tol: float = 1e-5) -> bool:
     """Checks whether a compyute and torch tensor contain equal values."""
     return numpy.allclose(x1.to_numpy(), x2.detach().numpy(), tol, tol)

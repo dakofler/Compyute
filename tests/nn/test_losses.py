@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from compyute.nn import BinaryCrossEntropy, CrossEntropy, MeanSquaredError
-from tests.test_utils import get_random_floats, get_random_integers, is_equal
+from tests.utils import get_random_floats, get_random_integers, is_close
 
 testdata = [(8, 16), (8, 16, 32), (8, 16, 32, 64)]
 
@@ -24,12 +24,12 @@ def test_mse(shape) -> None:
     compyute_t, torch_t = get_random_floats(shape)
     compyute_y = compyute_loss(compyute_x, compyute_t)
     torch_y = torch_loss(torch_x, torch_t)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dx = compyute_loss.backward()
     torch_y.backward()
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", testdata)
@@ -48,12 +48,12 @@ def test_cross_entropy(shape) -> None:
     compyute_t, torch_t = get_random_integers(shape[:-1], high=shape[-1])
     compyute_y = compyute_loss(compyute_x, compyute_t)
     torch_y = torch_loss(torch_x_ma, torch_t)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dx = compyute_loss.backward()
     torch_y.backward()
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)
 
 
 @pytest.mark.parametrize("shape", testdata)
@@ -71,9 +71,9 @@ def test_binary_cross_entropy(shape) -> None:
     compyute_t, torch_t = get_random_floats(shape, low=0)
     compyute_y = compyute_loss(compyute_x, compyute_t)
     torch_y = torch_loss(torch_x, torch_t)
-    assert is_equal(compyute_y, torch_y)
+    assert is_close(compyute_y, torch_y)
 
     # backward
     compyute_dx = compyute_loss.backward()
     torch_y.backward()
-    assert is_equal(compyute_dx, torch_x.grad)
+    assert is_close(compyute_dx, torch_x.grad)

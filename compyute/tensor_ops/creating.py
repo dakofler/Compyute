@@ -50,6 +50,7 @@ def arange(
     stop: int | float,
     start: int | float = 0.0,
     step: int | float = 1.0,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -100,6 +101,7 @@ def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
 
 def empty(
     shape: ShapeLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -143,6 +145,7 @@ def empty_like(x: Tensor) -> Tensor:
 def full(
     shape: ShapeLike,
     value: ScalarLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -189,6 +192,7 @@ def full_like(x: Tensor, value: ScalarLike) -> Tensor:
 
 def identity(
     n: int,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -217,6 +221,7 @@ def linspace(
     start: float,
     stop: float,
     num: int,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -248,6 +253,7 @@ def linspace(
 
 def ones(
     shape: ShapeLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -330,6 +336,7 @@ def stack(tensors: Sequence[Tensor], axis: AxisLike = 0) -> Tensor:
 
 def zeros(
     shape: ShapeLike,
+    *,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:

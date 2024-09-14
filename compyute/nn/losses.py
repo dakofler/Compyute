@@ -94,7 +94,7 @@ class BinaryCrossEntropy(Loss):
 _LossLike = (
     Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
 )
-LOSSES = {
+LOSSES: dict[str, type[Loss]] = {
     "binary_cross_entropy": BinaryCrossEntropy,
     "cross_entropy": CrossEntropy,
     "mean_squared_error": MeanSquaredError,

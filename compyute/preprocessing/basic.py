@@ -124,4 +124,4 @@ def one_hot_encode(
     if not is_integer(x.dtype):
         raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
 
-    return identity(num_classes, x.device, dtype)[x]
+    return identity(num_classes, device=x.device, dtype=dtype)[x]

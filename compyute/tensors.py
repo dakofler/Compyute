@@ -240,7 +240,7 @@ class Tensor:
         return self
 
     def __neg__(self) -> Tensor:
-        return Tensor(-self.data)
+        return Tensor(self.data.__neg__())
 
     def __matmul__(self, other: Tensor) -> Tensor:
         return Tensor(self.data @ other.data)
@@ -257,11 +257,11 @@ class Tensor:
     def __ge__(self, other: Tensor | ScalarLike) -> Tensor:
         return Tensor(self.data >= to_arraylike(other))
 
-    def __eq__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data == to_arraylike(other))
+    def __eq__(self, other: Any) -> Any:
+        return Tensor(self.data == to_arraylike(other))  # type: ignore
 
-    def __ne__(self, other: Tensor | ScalarLike) -> Tensor:
-        return Tensor(self.data != to_arraylike(other))
+    def __ne__(self, other: Any) -> Any:
+        return Tensor(self.data != to_arraylike(other))  # type: ignore
 
     def __len__(self) -> int:
         return self.shape[0]
@@ -493,7 +493,7 @@ class Tensor:
         """
         return Tensor(abs(self.data))
 
-    def all(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def all(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
         """Returns ``True`` if all elements in the tensor are ``True``
 
         See Also
@@ -502,14 +502,16 @@ class Tensor:
         """
         return Tensor(self.data.all(axis, keepdims=keepdims))
 
-    def argmax(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def argmax(
+        self, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+    ) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         See Also
         --------
         :func:`compyute.argmax`
         """
-        return Tensor(self.data.argmax(axis, keepdims=keepdims))
+        return Tensor(self.data.argmax(axis, out=None, keepdims=keepdims))
 
     def imag(self) -> Tensor:
         """Returns the imaginary part of a complex tensor.
@@ -520,7 +522,7 @@ class Tensor:
         """
         return Tensor(self.data.imag)
 
-    def max(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def max(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
         """Computes the maximum of tensor elements over a given axis.
 
         See Also
@@ -529,7 +531,9 @@ class Tensor:
         """
         return Tensor(self.data.max(axis, keepdims=keepdims))
 
-    def mean(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def mean(
+        self, axis: Optional[AxisLike] = None, *, keepdims: bool = False
+    ) -> Tensor:
         """Computes the mean of tensor elements over a given axis.
 
         See Also
@@ -538,7 +542,7 @@ class Tensor:
         """
         return Tensor(self.data.mean(axis, keepdims=keepdims))
 
-    def min(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def min(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
         """Computes the minimum of tensor elements over a given axis.
 
         See Also
@@ -565,7 +569,7 @@ class Tensor:
         """
         return Tensor(self.data.squeeze())
 
-    def std(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def std(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
         """Computes the standard deviation of tensor elements over a given axis.
 
         See Also
@@ -574,7 +578,7 @@ class Tensor:
         """
         return Tensor(self.data.std(axis, keepdims=keepdims))
 
-    def sum(self, axis: Optional[AxisLike] = None, keepdims: bool = False) -> Tensor:
+    def sum(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
         """Computes the sum of tensor elements over a given axis.
 
         See Also
@@ -593,7 +597,7 @@ class Tensor:
         return Tensor(self.data.transpose(axis))
 
     def var(
-        self, axis: Optional[AxisLike] = None, ddof: int = 0, keepdims: bool = False
+        self, axis: Optional[AxisLike] = None, *, ddof: int = 0, keepdims: bool = False
     ) -> Tensor:
         """Computes the variance of tensor elements over a given axis.
 

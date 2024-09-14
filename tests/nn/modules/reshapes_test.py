@@ -5,7 +5,7 @@ import math
 import pytest
 
 from compyute.nn import Flatten
-from tests.test_utils import get_random_floats
+from tests.utils import get_random_floats
 
 
 @pytest.mark.parametrize("shape", [(8, 16), (8, 16, 32), (8, 16, 32, 64)])
