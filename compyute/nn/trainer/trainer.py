@@ -1,5 +1,7 @@
 """Model trainer."""
 
+import gc
+import sys
 from typing import Any, Literal, Optional
 
 from ...backend import free_cuda_memory
@@ -101,16 +103,17 @@ class Trainer:
                 self._callback("epoch_start")
 
                 # training
-                with self.model.train():
-                    for s, batch in enumerate(train_dataloader(), 1):
-                        self._cache["step"] = s
-                        self._callback("step_start")
-                        self._cache["lr"] = self.optimizer.lr
-                        self._train_step(batch)
-                        self._callback("step_end")
+                self.model.training()
+                for s, batch in enumerate(train_dataloader(), 1):
+                    self._cache["step"] = s
+                    self._callback("step_start")
+                    self._cache["lr"] = self.optimizer.lr
+                    self._train_step(batch)
+                    self._callback("step_end")
 
                 # validation
                 if val_data:
+                    self.model.inference()
                     loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
                     self._cache["val_loss"] = loss
                     if self.metric is not None:
@@ -193,8 +196,8 @@ class Trainer:
             self._cache[key] = self.metric(y_pred, y).item()
 
         # backward pass
-        self.optimizer.reset_grads()
         self.model.backward(self.loss.backward())
 
         # update parameters
         self.optimizer.step()
+        self.optimizer.reset_grads()

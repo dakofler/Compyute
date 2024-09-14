@@ -38,7 +38,7 @@ def get_module_summary(
                 "in_shape": module.x.shape[1:] if module.x else (),
                 "out_shape": module.y.shape[1:] if module.y else (),
                 "n_params": {p.ptr: p.size for p in module.get_parameters(False)},
-                "trainable": module.is_trainable,
+                "trainable": module.trainable,
             }
         )
 
@@ -54,8 +54,10 @@ def get_module_summary(
 
     # perform forward pass to get output shapes
     x = ones((1,) + input_shape, dtype=input_dtype, device=module.device)
-    with module.retain_values():
-        _ = module(x)
+    ret_vals = module.retain_values
+    module.retain_values = True
+    _ = module(x)
+    module.retain_values = ret_vals
 
     # get model summary
     module_summaries: list[dict[str, Any]] = []

@@ -35,8 +35,8 @@ class Module(ABC):
     y: Optional[Tensor] = None
     _buffers: OrderedDict[str, Buffer]
     _device = select_device(None)
-    _is_retaining_values = False
-    _is_trainable = True
+    _retain_values = False
+    _trainable = True
     _is_training = True
     _modules: OrderedDict[str, Module]
     _parameters: OrderedDict[str, Parameter]
@@ -78,92 +78,52 @@ class Module(ABC):
             module.to_device(device)
 
     @property
-    def is_retaining_values(self) -> bool:
+    def retain_values(self) -> bool:
         """Whether the module should retain intermediate values such as outputs and gradients."""
-        return self._is_retaining_values
+        return self._retain_values
 
-    @is_retaining_values.setter
-    def is_retaining_values(self, value: bool) -> None:
-        """Set the module to retain intermediate values such as outputs and gradients.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module should retain intermediate values.
-        """
-        self._is_retaining_values = value
+    @retain_values.setter
+    def retain_values(self, value: bool) -> None:
+        self._retain_values = value
         for module in self.get_modules(recursive=False):
-            module.is_retaining_values = value
+            module.retain_values = value
 
     @property
-    def is_trainable(self) -> bool:
+    def trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self._is_trainable
+        return self._trainable
 
-    @is_trainable.setter
-    def is_trainable(self, value: bool) -> None:
-        """Set module parameters to be trainable.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module parameters should be trainable.
-        """
-        self._is_trainable = value
+    @trainable.setter
+    def trainable(self, value: bool) -> None:
+        self._trainable = value
         for module in self.get_modules(recursive=False):
-            module.is_trainable = value
+            module.trainable = value
 
     @property
     def is_training(self) -> bool:
         """Whether the module is in training mode."""
         return self._is_training
 
-    @is_training.setter
-    def is_training(self, value: bool) -> None:
-        """Sets module training mode.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module parameters should be trainable.
-        """
-        self._is_training = value
-        self.fcache = FunctionCache() if value else PseudoCache()
+    def training(self) -> None:
+        """Puts the module in training mode."""
+        self._is_training = True
+        self.fcache = FunctionCache()
 
         for module in self.get_modules(recursive=False):
-            module.is_training = value
+            module.training()
+
+    def inference(self) -> None:
+        """Puts the module in inference mode."""
+        self._is_training = False
+        self.fcache = PseudoCache()
+
+        for module in self.get_modules(recursive=False):
+            module.inference()
 
     @property
     def n_modules(self) -> int:
         """Number of child modules."""
         return len(list(self.get_modules(recursive=False)))
-
-    # ----------------------------------------------------------------------------------
-    # CONTEXT MANAGERS
-    # ----------------------------------------------------------------------------------
-
-    @contextmanager
-    def retain_values(self):
-        """
-        Context manager for setting the module to retain intermediate values
-        such as outputs and gradients.
-        """
-        retain_values = self._is_retaining_values
-        self.is_retaining_values = True
-        try:
-            yield
-        finally:
-            self.is_retaining_values = retain_values
-
-    @contextmanager
-    def train(self):
-        """Context manager for putting the module into training mode."""
-        training = self._is_training
-        self.is_training = True
-        try:
-            yield
-        finally:
-            self.is_training = training
 
     # ----------------------------------------------------------------------------------
     # MAGIC METHODS
@@ -249,15 +209,15 @@ class Module(ABC):
             for m in self.get_modules():
                 yield from m.get_buffers(recursive=False)
 
-    def get_state_dict(self) -> OrderedDict:
+    def get_state_dict(self) -> OrderedDict[str, Tensor]:
         """Returns a state dict containing module parameters and buffers.
 
         Returns
         -------
-        OrderedDict
+        OrderedDict[str, Tensor]
             State dict containing parameters and buffers.
         """
-        state_dict = OrderedDict()
+        state_dict: OrderedDict[str, Tensor] = OrderedDict()
         state_dict.update(self._parameters)
         state_dict.update(self._buffers)
 
@@ -336,7 +296,7 @@ class Module(ABC):
 
         @wraps(forward_method)
         def wrapper(module: Module, x: Tensor) -> Tensor:
-            if module.is_retaining_values:
+            if module.retain_values:
                 module.x = x
 
             if DEBUG:
@@ -349,7 +309,7 @@ class Module(ABC):
             else:
                 y = forward_method(module, x)
 
-            if module.is_retaining_values:
+            if module.retain_values:
                 module.y = y
             return y
 
@@ -364,7 +324,7 @@ class Module(ABC):
             if not module.is_training:
                 raise AttributeError(f"{module.label} is not in training mode.")
 
-            if module.is_retaining_values and module.y:
+            if module.retain_values and module.y:
                 module.y.grad = dy
 
             if DEBUG:
@@ -382,7 +342,7 @@ class Module(ABC):
             else:
                 dx = backward_method(module, dy)
 
-            if module.is_retaining_values and module.x:
+            if module.retain_values and module.x:
                 module.x.grad = dx
             return dx
 
@@ -398,7 +358,7 @@ class Module(ABC):
         """
         self.fcache.clear()
 
-        if not self._is_retaining_values or force:
+        if not self._retain_values or force:
             self.x = self.y = None
             for p in self.get_parameters(recursive=False):
                 p.grad = None
@@ -444,7 +404,7 @@ def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
     return all(
         [
-            attr not in {"label"},
+            attr not in {"label", "fcache"},
             not attr.startswith("_"),
             not isinstance(value, (Tensor, Module, ModuleList)),
             value is not None,

@@ -7,26 +7,24 @@ from typing import Any
 __all__ = ["Function", "FunctionCache"]
 
 
-class FunctionCache(dict):
+class FunctionCache(dict[str, deque]):
     """LiFo Cache for intermediate data that need
     to be cached for the backward pass."""
 
     def __getattr__(self, key) -> Any:
-        val = self.get(key)
-        if not val:  # value is None or empty list
-            return None
-        return_val = val.pop()
-        if not val:  # value is now an empty list
+        item = self.get(key)
+        if not item:
+            raise KeyError(f"No such item in cache: {key}.")
+        value = item.pop()
+        if not item:
             del self[key]
-        return return_val
+        return value
 
     def __setattr__(self, key, value) -> None:
-        if key not in self:
-            self[key] = deque()
-        self[key].append(value)
-
-    def __delattr__(self, key) -> None:
-        super().__delitem__(key)
+        if key in self:
+            self[key].append(value)
+        else:
+            self[key] = deque([value])
 
 
 class PseudoCache(FunctionCache):
@@ -39,7 +37,7 @@ class Function(ABC):
     """Neural network function base class."""
 
     def __init__(self) -> None:
-        raise NotImplementedError("Function base class cannot be instantiated.")
+        raise NotImplementedError("Function cannot be instantiated.")
 
     def __call__(self, *args, **kwargs) -> None:
         raise NotImplementedError("Use ``forward()`` instead.")

@@ -133,9 +133,10 @@ class FDilation1D(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation, dilation = cache.no_dilation, cache.dilation
+        no_dilation = cache.no_dilation
         if no_dilation:
             return dy
+        dilation = cache.dilation
         return dy[..., ::dilation]
 
 
@@ -174,9 +175,10 @@ class FPad1D(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_padding, padding = cache.no_padding, cache.padding
+        no_padding = cache.no_padding
         if no_padding:
             return dy
+        padding = cache.padding
         return dy[..., padding:-padding]
 
 
@@ -327,9 +329,10 @@ class FDilation2D(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation, dilation = cache.no_dilation, cache.dilation
+        no_dilation = cache.no_dilation
         if no_dilation:
             return dy
+        dilation = cache.dilation
         return dy[..., ::dilation, ::dilation]
 
 
@@ -367,9 +370,10 @@ class FPad2D(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_padding, padding = cache.no_padding, cache.padding
+        no_padding = cache.no_padding
         if no_padding:
             return dy
+        padding = cache.padding
         return dy[..., padding:-padding, padding:-padding]
 
 
