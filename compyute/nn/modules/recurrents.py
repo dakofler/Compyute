@@ -7,6 +7,7 @@ from ...tensors import Tensor
 from ...typing import DType
 from ..functional.activations import FReLU, FSigmoid, FTanh
 from ..functional.linear import FLinear
+from ..functional.recurrents import FRecurrent
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module, validate_input_axes
@@ -43,8 +44,6 @@ class Recurrent(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    return_sequence : bool, optional
-        Whether to return the entire sequence or only the last hidden state.
     dtype : DType, optional
         Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
@@ -62,7 +61,6 @@ class Recurrent(Module):
         h_channels: int,
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
-        return_sequence: bool = True,
         dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
@@ -70,8 +68,7 @@ class Recurrent(Module):
         self.in_channels = in_channels
         self.h_channels = h_channels
         self.bias = bias
-        self.act = FReLU if activation == "relu" else FTanh
-        self.return_sequence = return_sequence
+        self.activation = activation
 
         # init input parameters
         self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
@@ -91,54 +88,17 @@ class Recurrent(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
-
-        # input projection
-        x_h = FLinear.forward(self.fcache, x, self.w_i, self.b_i)
-
-        # iterate over timesteps
-        h_shape = (*x.shape[:2], self.h_channels)
-        h = zeros(h_shape, device=x.device, dtype=x.dtype)
-        for t in range(x.shape[1]):
-
-            # hidden projection
-            h_h = FLinear.forward(self.fcache, h[:, t - 1], self.w_h, self.b_h)
-
-            # apply non-linearity
-            h[:, t] = self.act.forward(self.fcache, x_h[:, t] + h_h)
-
-        y = h if self.return_sequence else h[:, -1]
-
-        self.fcache.x_shape, self.fcache.h_shape = x.shape, h_shape
-        return y
+        return FRecurrent.forward(
+            self.fcache, x, self.w_i, self.b_i, self.w_h, self.b_h, self.activation
+        )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        x_shape, h_shape = self.fcache.x_shape, self.fcache.h_shape
-        dpreact = zeros(h_shape, device=dy.device, dtype=dy.dtype)
-        dh = 0  # TODO: should be a tensor
-
-        # iterate backwards over timesteps
-        for t in range(x_shape[1] - 1, -1, -1):
-
-            # add output gradients if returning sequence or last time step
-            if self.return_sequence:
-                dh += dy[:, t]
-            elif t == x_shape[1] - 1:
-                dh += dy
-
-            # non-linearity backward
-            dpreact[:, t] = self.act.backward(self.fcache, dh)
-
-            # hidden projection backward
-            dh, dw_h, db_h = FLinear.backward(self.fcache, dpreact[:, t])
-            update_parameter_grad(self.w_h, dw_h)
-            update_parameter_grad(self.b_h, db_h)
-
-        # input projeciton backward
-        dx, dw_i, db_i = FLinear.backward(self.fcache, dpreact)
+        dx, dw_i, db_i, dw_h, db_h = FRecurrent.backward(self.fcache, dy)
         update_parameter_grad(self.w_i, dw_i)
         update_parameter_grad(self.b_i, db_i)
-
+        update_parameter_grad(self.w_h, dw_h)
+        update_parameter_grad(self.b_h, db_h)
         return dx
 
 

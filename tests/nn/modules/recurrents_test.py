@@ -39,7 +39,7 @@ def test_recurrent(shape, act) -> None:
 
     # init compyute module
     compyute_recurrent1 = Recurrent(Cin, Ch, activation=act)
-    compyute_recurrent2 = Recurrent(Ch, Ch, activation=act, return_sequence=False)
+    compyute_recurrent2 = Recurrent(Ch, Ch, activation=act)
     compyute_recurrent1.w_i = compyute_w_in_1
     compyute_recurrent1.b_i = compyute_b_in_1
     compyute_recurrent1.w_h = compyute_w_h_1
@@ -65,7 +65,7 @@ def test_recurrent(shape, act) -> None:
     compyute_x, torch_x = get_random_floats(shape_x)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0]  # outputs tuple of y and hidden_states
     assert is_close(compyute_y, torch_y)
 
     # backward

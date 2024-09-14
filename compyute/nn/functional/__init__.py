@@ -8,5 +8,6 @@ from .linear import *
 from .losses import *
 from .metrics import *
 from .normalizations import *
+from .recurrents import *
 from .regularizations import *
 from .reshapes import *

@@ -80,6 +80,14 @@ Normalization
     rmsnorm
 
 
+Recurrent
+--------------
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.functional
+    
+    recurrent
+
+
 Regularization
 --------------
 .. autosummary::
