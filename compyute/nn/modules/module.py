@@ -128,6 +128,8 @@ class Module(ABC):
             Whether the module parameters should be trainable.
         """
         self._is_training = value
+        self.fcache = FunctionCache() if value else PseudoCache()
+
         for module in self.get_modules(recursive=False):
             module.is_training = value
 
@@ -334,7 +336,8 @@ class Module(ABC):
 
         @wraps(forward_method)
         def wrapper(module: Module, x: Tensor) -> Tensor:
-            module.fcache = FunctionCache() if module.is_training else PseudoCache()
+            if module.is_retaining_values:
+                module.x = x
 
             if DEBUG:
                 dt = time.time()
@@ -347,7 +350,6 @@ class Module(ABC):
                 y = forward_method(module, x)
 
             if module.is_retaining_values:
-                module.x = x
                 module.y = y
             return y
 
@@ -361,6 +363,9 @@ class Module(ABC):
         def wrapper(module: Module, dy: Tensor) -> Tensor:
             if not module.is_training:
                 raise AttributeError(f"{module.label} is not in training mode.")
+
+            if module.is_retaining_values and module.y:
+                module.y.grad = dy
 
             if DEBUG:
                 dt = time.time()
@@ -377,9 +382,8 @@ class Module(ABC):
             else:
                 dx = backward_method(module, dy)
 
-            if module.is_retaining_values and module.x and module.y:
+            if module.is_retaining_values and module.x:
                 module.x.grad = dx
-                module.y.grad = dy
             return dx
 
         return wrapper

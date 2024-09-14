@@ -86,6 +86,8 @@ Recurrent
     :toctree: ../_generated/compyute.nn.functional
     
     recurrent
+    lstm
+    gru
 
 
 Regularization

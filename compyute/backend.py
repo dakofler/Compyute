@@ -3,7 +3,8 @@
 from abc import ABC
 from contextlib import contextmanager
 from functools import cache
-from typing import Optional, TypeAlias
+from types import ModuleType
+from typing import Any, Optional, TypeAlias
 
 import cupy
 import numpy
@@ -17,12 +18,22 @@ class Device(ABC):
     type: str
 
     @property
-    def module(self):
+    def module(self) -> ModuleType:
         """Computation engine."""
         raise NotImplementedError
 
     def __eq__(self, other) -> bool:
         return isinstance(other, Device) and repr(self) == repr(other)
+
+    @property
+    def properties(self) -> Optional[dict[str, Any]]:
+        """Returns information about the device."""
+        ...
+
+    @property
+    def memory_info(self) -> Optional[dict[str, int]]:
+        """Returns information about the device memory in bytes."""
+        ...
 
 
 class CPU(Device):
@@ -30,11 +41,11 @@ class CPU(Device):
 
     type: str = "cpu"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'compyute.Device(type="cpu")'
 
     @property
-    def module(self):
+    def module(self) -> ModuleType:
         return numpy
 
 
@@ -59,17 +70,15 @@ class CUDA(Device):
         return self._cupy_device.__exit__(*args)
 
     @property
-    def module(self):
+    def module(self) -> ModuleType:
         return cupy
 
     @property
-    def properties(self):
-        """Returns information about the GPU device."""
+    def properties(self) -> Optional[dict[str, Any]]:
         return cupy.cuda.runtime.getDeviceProperties(self.index)
 
     @property
     def memory_info(self) -> dict[str, int]:
-        """Returns information about the GPU memory in bytes."""
         free, total = self._cupy_device.mem_info
         return {"used": total - free, "free": free, "total": total}
 

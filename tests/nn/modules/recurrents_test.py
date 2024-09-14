@@ -161,7 +161,7 @@ def test_lstm(shape) -> None:
     lstm1.w_ho = Parameter(compyute_w_ho_1)
     lstm1.b_ho = Parameter(compyute_b_ho_1)
 
-    lstm2 = LSTM(Ch, Ch, return_sequence=False)
+    lstm2 = LSTM(Ch, Ch)
     lstm2.w_ii = Parameter(compyute_w_ii_2)
     lstm2.b_ii = Parameter(compyute_b_ii_2)
     lstm2.w_if = Parameter(compyute_w_if_2)
@@ -197,7 +197,7 @@ def test_lstm(shape) -> None:
     compyute_x, torch_x = get_random_floats(shape_x)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0]  # outputs tuple of y and hidden_states
     assert is_close(compyute_y, torch_y)
 
     # backward
@@ -303,7 +303,7 @@ def test_gru(shape) -> None:
     gru1.w_hn = Parameter(compyute_w_hn_1)
     gru1.b_hn = Parameter(compyute_b_hn_1)
 
-    gru2 = GRU(Ch, Ch, return_sequence=False)
+    gru2 = GRU(Ch, Ch)
     gru2.w_ir = Parameter(compyute_w_ir_2)
     gru2.b_ir = Parameter(compyute_b_ir_2)
     gru2.w_iz = Parameter(compyute_w_iz_2)
@@ -334,7 +334,7 @@ def test_gru(shape) -> None:
     compyute_x, torch_x = get_random_floats(shape_x)
     with compyute_module.train():
         compyute_y = compyute_module(compyute_x)
-    torch_y = torch_module(torch_x)[0][:, -1]  # outputs tuple of y and hidden_states
+    torch_y = torch_module(torch_x)[0]  # outputs tuple of y and hidden_states
     assert is_close(compyute_y, torch_y)
 
     # backward

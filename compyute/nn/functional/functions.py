@@ -1,21 +1,24 @@
 """Neural network function"""
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict, deque
+from collections import deque
 from typing import Any
 
 __all__ = ["Function", "FunctionCache"]
 
 
-class FunctionCache(OrderedDict):
+class FunctionCache(dict):
     """LiFo Cache for intermediate data that need
     to be cached for the backward pass."""
 
     def __getattr__(self, key) -> Any:
-        value = self.get(key)
-        if not value:  # value is None or empty list
+        val = self.get(key)
+        if not val:  # value is None or empty list
             return None
-        return value.pop()
+        return_val = val.pop()
+        if not val:  # value is now an empty list
+            del self[key]
+        return return_val
 
     def __setattr__(self, key, value) -> None:
         if key not in self:
