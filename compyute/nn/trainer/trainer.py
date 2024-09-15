@@ -102,6 +102,7 @@ class Trainer:
 
                 # training
                 self.model.training()
+                self.loss.training()
                 for s, batch in enumerate(train_dataloader, 1):
                     self._cache["step"] = s
                     self._callback("step_start")
@@ -112,6 +113,7 @@ class Trainer:
                 # validation
                 if val_data:
                     self.model.inference()
+                    self.loss.inference()
                     loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
                     self._cache["val_loss"] = loss
                     if self.metric is not None:
@@ -124,7 +126,6 @@ class Trainer:
             self._callback("end")
         finally:
             self.model.clean()
-            free_cuda_memory()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
@@ -194,8 +195,8 @@ class Trainer:
             self._cache[key] = self.metric(y_pred, y).item()
 
         # backward pass
+        self.optimizer.reset_grads()
         self.model.backward(self.loss.backward())
 
         # update parameters
         self.optimizer.step()
-        self.optimizer.reset_grads()

@@ -215,29 +215,32 @@ Alternatively, you can write your own training loop.
 
     train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
     val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
-    loss_func = nn.CrossEntropy()
+    loss_fn = nn.CrossEntropy()
     optim = nn.optimizers.SGD(model.parameters)
 
     for epoch in range(epochs):
 
         # training
-        with model.train():
-            for x, y in train_dl:
+        model.training()
+        loss_fn.inference()
+        for x, y in train_dl:
 
-                # forward pass
-                y_pred = model(x)
-                _ = loss_func(y_pred, y)
+            # forward pass
+            y_pred = model(x)
+            _ = loss_fn(y_pred, y)
 
-                # backward pass
-                optim.reset_grads()  # reset all gradients
-                model.backward(loss_func.backward())  # compute new gradients
-                optim.step()  # update parameters
+            # backward pass
+            optim.reset_grads()  # reset all gradients
+            model.backward(loss_fn.backward())  # compute new gradients
+            optim.step()  # update parameters
         
         # validiation
+        model.inference()  # prevent model from caching values for backward
+        loss_fn.inference()  # prevent loss fn from caching values for backward
         val_loss = 0
         for x, y in val_dl:
             y_pred = model(x)
-            val_loss += loss_func(y_pred, y).item()
+            val_loss += loss_fn(y_pred, y).item()
         val_loss /= len(val_dl)
 
         print(f"epoch {epoch}: {val_loss=:.4f}")
