@@ -123,6 +123,8 @@ class Tensor:
     @property
     def T(self) -> Tensor:
         """View of the tensor with its last two axes transposed."""
+        if self.n_axes < 2:
+            return Tensor(self.data)
         return self.transpose((*range(self.n_axes - 2), -1, -2))
 
     @property
@@ -510,7 +512,7 @@ class Tensor:
         --------
         :func:`compyute.argmax`
         """
-        return Tensor(self.data.argmax(axis, out=None, keepdims=keepdims))
+        return Tensor(self.data.argmax(axis, keepdims=keepdims))
 
     def imag(self) -> Tensor:
         """Returns the imaginary part of a complex tensor.

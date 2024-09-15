@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+import gc
 import os
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Iterable, Iterator
-from contextlib import contextmanager
 from functools import wraps
 from typing import Any, Optional
 
-from ...backend import Device, DeviceError, select_device
+from ...backend import Device, DeviceError, free_cuda_memory, select_device
 from ...tensors import ShapeError, Tensor
 from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
@@ -367,6 +367,9 @@ class Module(ABC):
 
         for module in self.get_modules(recursive=False):
             module.clean(force)
+
+        free_cuda_memory()
+        gc.collect()
 
 
 class Identity(Module):
