@@ -192,7 +192,7 @@ for epoch in range(epochs):
 
     # training
     with model.train():
-        for x, y in train_dl():
+        for x, y in train_dl:
 
             # forward pass
             y_pred = model(x)
@@ -205,7 +205,7 @@ for epoch in range(epochs):
     
     # validiation
     val_loss = 0
-    for x, y in val_dl():
+    for x, y in val_dl:
         y_pred = model(x)
         val_loss += loss_func(y_pred, y).item()
     val_loss /= len(val_dl)
