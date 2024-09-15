@@ -61,7 +61,7 @@ class FBatchNorm1D(Function):
         n = float(dy.size / dy.shape[1])
         dy_sum = dy.sum(axis=axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = squeeze(dy_x_norm_sum)
@@ -167,7 +167,7 @@ class FBatchNorm2D(Function):
         # input grads
         dy_sum = dy.sum(axis=axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w / std / n * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = squeeze(dy_x_norm_sum)
@@ -250,7 +250,7 @@ class FLayerNorm(Function):
         # input grads
         dy_sum = dy.sum(axis=axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
-        dx = w / std / w.size * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / (std * w.size) * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = cp_sum(dy * x_norm, axis=sum_axes)
@@ -309,7 +309,7 @@ class FRMSNorm(Function):
 
         # input grads
         dy_x_sum = cp_sum(dy * x, axis=axes, keepdims=True)
-        dx = w * (dy / rms - x * dy_x_sum / (w.size * rms * rms * rms))
+        dx = w / rms * (dy - x * dy_x_sum / (w.size * rms * rms))
 
         # gamma grads
         dw = cp_sum(dy * x_norm, axis=sum_axes)
