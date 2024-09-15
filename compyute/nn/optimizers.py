@@ -44,9 +44,14 @@ class Optimizer(ABC):
             Paramters to optimize.
         """
         ptrs: set[int] = set()
-        self._parameters = [
-            p for p in parameters if p.ptr not in ptrs and not ptrs.add(p.ptr)
-        ]  # TODO: Clean this up
+        self._parameters = []
+
+        for p in parameters:
+            if p.ptr in ptrs:
+                continue
+            self._parameters.append(p)
+            ptrs.add(p.ptr)
+
         self._state = {i: {} for i in range(len(self._parameters))}
 
     def get_state_dict(self) -> dict[str, dict[Any, Any]]:
@@ -153,7 +158,7 @@ class SGD(Optimizer):
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
         for i, p in enumerate(self._parameters):
-            if not p.grad:
+            if p.grad is None:
                 continue
 
             g = p.grad.copy()
@@ -171,7 +176,8 @@ class SGD(Optimizer):
                 else:
                     g = v
 
-            p -= self.lr * g
+            delta = self.lr * g
+            p.data -= delta.data
 
         self.t += 1
 
@@ -249,7 +255,7 @@ class Adam(Optimizer):
         v_div = 1.0 - self.beta2**self.t
 
         for i, p in enumerate(self._parameters):
-            if not p.grad:
+            if p.grad is None:
                 continue
 
             if self.weight_decay == 0.0:
@@ -270,7 +276,8 @@ class Adam(Optimizer):
             m /= m_div
             v /= v_div
 
-            p -= self.lr * m / (sqrt(v) + self.eps)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 
@@ -347,10 +354,10 @@ class AdamW(Optimizer):
         v_div = 1.0 - self.beta2**self.t
 
         for i, p in enumerate(self._parameters):
-            if not p.grad:
+            if p.grad is None:
                 continue
 
-            p *= 1.0 - self.lr * self.weight_decay
+            p.data *= 1.0 - self.lr * self.weight_decay
 
             # first moment estimate (exponential moving average)
             prev_m = self._state[i].get("m", 0.0)
@@ -365,7 +372,8 @@ class AdamW(Optimizer):
             m /= m_div
             v /= v_div
 
-            p -= self.lr * m / (sqrt(v) + self.eps)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 
@@ -450,8 +458,8 @@ class NAdam(Optimizer):
 
     def step(self) -> None:
         # momentum coefficient
-        mu = self.beta1 * (1.0 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
-        mu_next = self.beta1 * (
+        mu: float = self.beta1 * (1.0 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
+        mu_next: float = self.beta1 * (
             1.0 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
         )
         self._mu_prod *= mu
@@ -462,7 +470,7 @@ class NAdam(Optimizer):
         v_div = 1.0 - self.beta2**self.t
 
         for i, p in enumerate(self._parameters):
-            if not p.grad:
+            if p.grad is None:
                 continue
 
             if self.weight_decay == 0.0:
@@ -483,7 +491,8 @@ class NAdam(Optimizer):
             m = mu_next * m / m_div + (1.0 - mu) * g / g_div
             v /= v_div
 
-            p -= self.lr * m / (sqrt(v) + self.eps)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 
