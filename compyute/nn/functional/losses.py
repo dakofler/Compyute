@@ -19,7 +19,7 @@ class FMeanSquaredError(Function):
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         dif = y_pred - y_true
-        y = mean(dif**2)
+        y = mean(dif * dif)
         cache.y_pred_size, cache.dif = y_pred.size, dif
         return y
 

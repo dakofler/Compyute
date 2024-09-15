@@ -342,6 +342,8 @@ class Module(ABC):
             else:
                 dx = backward_method(module, dy)
 
+            assert not module.fcache, "FunctionCache not empty after backward."
+
             if module.retain_values and module.x:
                 module.x.grad = dx
             return dx

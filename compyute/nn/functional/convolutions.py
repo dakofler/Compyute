@@ -525,7 +525,7 @@ class FAvgPooling2D(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x_shape, kernel_size = cache.x_shape, cache.kernel_size
-        return upsample2d(dy / kernel_size**2, kernel_size, x_shape)
+        return upsample2d(dy / (kernel_size * kernel_size), kernel_size, x_shape)
 
 
 def avgpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:

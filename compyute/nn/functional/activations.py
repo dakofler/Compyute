@@ -128,22 +128,57 @@ def sigmoid(x: Tensor) -> Tensor:
     return FSigmoid.forward(PseudoCache(), x)
 
 
+class FTanh(Function):
+    """Applies the hyperbolic tangent activationfunction to an input tensor."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
+        y = cp_tanh(x)
+        cache.y = y
+        return y
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        y = cache.y
+        return (1.0 - y * y) * dy
+
+
+def tanh(x: Tensor) -> Tensor:
+    """Applies the hyperbolic tangent activationfunction to an input tensor.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+
+    See Also
+    --------
+    :class:`compyute.nn.Tanh`
+    """
+    return FTanh.forward(PseudoCache(), x)
+
+
 class FGELU(Function):
     """Applies the Gaussian Error Linear Unit function to an input tensor."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        tmp = x * 0.7978845608 * (1.0 + 0.044715 * x**2)
-        y = 0.5 * x * (1.0 + cp_tanh(tmp))
-        cache.x, cache.tmp = x, tmp
+        tanh_out = cp_tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x))
+        y = 0.5 * x * (1.0 + tanh_out)
+        cache.x, cache.tanh_out = x, tanh_out
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, tmp = cache.x, cache.tmp
-        dx1 = 1.0 + cp_tanh(tmp)
-        dx2 = x * sech(tmp) ** 2.0 * (0.7978845608 + 0.1070322244 * x**2)
-        return 0.5 * (dx1 + dx2) * dy
+        x, tanh_out = cache.x, cache.tanh_out
+        dx1 = 1.0 + tanh_out
+        dx2 = x * (1.0 - tanh_out * tanh_out) * (0.7978845608 + 0.1070322243 * x * x)
+        return 0.5 * dy * (dx1 + dx2)
 
 
 def gelu(x: Tensor) -> Tensor:
@@ -243,8 +278,8 @@ class FSoftmax(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x = exp(x - x.max(axis=-1, keepdims=True))
-        y = x / x.sum(axis=-1, keepdims=True)
+        x = exp(x - x.max(-1, keepdims=True))
+        y = x / x.sum(-1, keepdims=True)
         cache.y = y
         return y
 
@@ -274,38 +309,3 @@ def softmax(x: Tensor) -> Tensor:
     :class:`compyute.nn.Softmax`
     """
     return FSoftmax.forward(PseudoCache(), x)
-
-
-class FTanh(Function):
-    """Applies the hyperbolic tangent activationfunction to an input tensor."""
-
-    @staticmethod
-    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        y = cp_tanh(x)
-        cache.y = y
-        return y
-
-    @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        y = cache.y
-        return (1.0 - y**2) * dy
-
-
-def tanh(x: Tensor) -> Tensor:
-    """Applies the hyperbolic tangent activationfunction to an input tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Output tensor.
-
-    See Also
-    --------
-    :class:`compyute.nn.Tanh`
-    """
-    return FTanh.forward(PseudoCache(), x)

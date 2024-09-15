@@ -1,7 +1,5 @@
 """Model trainer."""
 
-import gc
-import sys
 from typing import Any, Literal, Optional
 
 from ...backend import free_cuda_memory

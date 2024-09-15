@@ -294,7 +294,7 @@ class FRMSNorm(Function):
     def forward(cache: FunctionCache, x: Tensor, w: Tensor, eps: float) -> Tensor:
         axes = tuple(-i - 1 for i in range(w.n_axes))
 
-        rms = sqrt(cpmean(x**2, axis=axes, keepdims=True) + eps)
+        rms = sqrt(cpmean(x * x, axis=axes, keepdims=True) + eps)
         x_norm = x / rms
         y = w * x_norm
 
@@ -309,7 +309,7 @@ class FRMSNorm(Function):
 
         # input grads
         dy_x_sum = cp_sum(dy * x, axis=axes, keepdims=True)
-        dx = w * (dy / rms - x * dy_x_sum / (w.size * rms**3))
+        dx = w * (dy / rms - x * dy_x_sum / (w.size * rms * rms * rms))
 
         # gamma grads
         dw = cp_sum(dy * x_norm, axis=sum_axes)
