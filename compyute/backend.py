@@ -2,7 +2,6 @@
 
 from abc import ABC
 from contextlib import contextmanager
-from functools import cache
 from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
@@ -97,7 +96,6 @@ def data_to_device(data: ArrayLike, device: Device) -> ArrayLike:
     return cupy.asarray(data)
 
 
-@cache
 def gpu_available() -> bool:
     """Checks if GPU is available."""
     try:
@@ -106,7 +104,6 @@ def gpu_available() -> bool:
         return False
 
 
-@cache
 def get_device_count() -> int:
     """Returns the number of available devices."""
     if not gpu_available():
