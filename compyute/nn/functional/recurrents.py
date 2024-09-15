@@ -8,11 +8,11 @@ from .activations import FReLU, FSigmoid, FTanh
 from .functions import Function, FunctionCache, PseudoCache
 from .linear import FLinear
 
-__all__ = ["recurrent", "lstm"]
+__all__ = ["recurrent", "lstm", "gru"]
 
 
 class FRecurrent(Function):
-    """Applies the Elman recurrent function on a tensor."""
+    """Applies the Elman recurrent function to a tensor."""
 
     @staticmethod
     def forward(
@@ -80,7 +80,7 @@ def recurrent(
     b_h: Optional[Tensor],
     activation: Literal["relu", "tanh"] = "tanh",
 ) -> Tensor:
-    """Applies the Elman recurrent function on a tensor.
+    """Applies the Elman recurrent function to a tensor.
 
     Parameters
     ----------
@@ -89,11 +89,11 @@ def recurrent(
     w_i : Tensor
         Weight tensor for the input projection.
     b_i : Tensor, optional
-        Bias tensor for the input projection. Defaults to ``None``.
+        Bias tensor for the input projection.
     w_h : Tensor
         Weight tensor for the hidden projection.
     b_h : Tensor, optional
-        Bias tensor for the hidden projection. Defaults to ``None``.
+        Bias tensor for the hidden projection.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
 
@@ -110,7 +110,7 @@ def recurrent(
 
 
 class FLSTM(Function):
-    """Applies the LSTM recurrent function on a tensor."""
+    """Applies the LSTM recurrent function to a tensor."""
 
     @staticmethod
     def forward(
@@ -295,7 +295,7 @@ def lstm(
     b_ho: Optional[Tensor],
     activation: Literal["relu", "tanh"] = "tanh",
 ) -> Tensor:
-    """Applies the LSTM recurrent function on a tensor.
+    """Applies the LSTM recurrent function to a tensor.
 
     Parameters
     ----------
@@ -304,35 +304,35 @@ def lstm(
     w_ii : Tensor
         Weight tensor for the input projection of the input gate.
     b_ii : Tensor, optional
-        Bias tensor for the input projection of the input gate. Defaults to ``None``.
+        Bias tensor for the input projection of the input gate.
     w_if : Tensor
         Weight tensor for the input projection of the forget gate.
     b_if : Tensor, optional
-        Bias tensor for the input projection of the forget gate. Defaults to ``None``.
+        Bias tensor for the input projection of the forget gate.
     w_ig : Tensor
         Weight tensor for the input projection of the input node.
     b_ig : Tensor, optional
-        Bias tensor for the input projection of the input node. Defaults to ``None``.
+        Bias tensor for the input projection of the input node.
     w_io : Tensor
         Weight tensor for the input projection of the output gate.
     b_io : Tensor, optional
-        Bias tensor for the input projection of the output gate. Defaults to ``None``.
+        Bias tensor for the input projection of the output gate.
     w_hi : Tensor
         Weight tensor for the hidden projection of the input gate.
     b_hi : Tensor, optional
-        Bias tensor for the hidden projection of the input gate. Defaults to ``None``.
+        Bias tensor for the hidden projection of the input gate.
     w_hf : Tensor
         Weight tensor for the hidden projection of the forget gate.
     b_hf : Tensor, optional
-        Bias tensor for the hidden projection of the forget gate. Defaults to ``None``.
+        Bias tensor for the hidden projection of the forget gate.
     w_hg : Tensor
         Weight tensor for the hidden projection of the input node.
     b_hg : Tensor, optional
-        Bias tensor for the hidden projection of the input node. Defaults to ``None``.
+        Bias tensor for the hidden projection of the input node.
     w_ho : Tensor
         Weight tensor for the hidden projection of the output gate.
     b_ho : Tensor, optional
-        Bias tensor for the hidden projection of the output gate. Defaults to ``None``.
+        Bias tensor for the hidden projection of the output gate.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
 
@@ -369,7 +369,7 @@ def lstm(
 
 
 class FGRU(Function):
-    """Applies the GRU recurrent function on a tensor."""
+    """Applies the GRU recurrent function to a tensor."""
 
     @staticmethod
     def forward(
@@ -520,7 +520,7 @@ def gru(
     b_hn: Optional[Tensor],
     activation: Literal["relu", "tanh"] = "tanh",
 ) -> Tensor:
-    """Applies the GRU recurrent function on a tensor.
+    """Applies the GRU recurrent function to a tensor.
 
     Parameters
     ----------
@@ -529,27 +529,27 @@ def gru(
     w_ir : Tensor
         Weight tensor for the input projection of the reset gate.
     b_ir : Tensor, optional
-        Bias tensor for the input projection of the reset gate. Defaults to ``None``.
+        Bias tensor for the input projection of the reset gate.
     w_iz : Tensor
         Weight tensor for the input projection of the update gate.
     b_iz : Tensor, optional
-        Bias tensor for the input projection of the update gate. Defaults to ``None``.
+        Bias tensor for the input projection of the update gate.
     w_in : Tensor
         Weight tensor for the input projection of the candidate hidden state.
     b_in : Tensor, optional
-        Bias tensor for the input projection of the candidate hidden state. Defaults to ``None``.
+        Bias tensor for the input projection of the candidate hidden state.
     w_hr : Tensor
         Weight tensor for the hidden projection of the reset gate.
     b_hr : Tensor, optional
-        Bias tensor for the hidden projection of the reset gate. Defaults to ``None``.
+        Bias tensor for the hidden projection of the reset gate.
     w_hz : Tensor
         Weight tensor for the hidden projection of the update gate.
     b_hz : Tensor, optional
-        Bias tensor for the hidden projection of the update gate. Defaults to ``None``.
+        Bias tensor for the hidden projection of the update gate.
     w_hn : Tensor
         Weight tensor for the hidden projection of the candidate hidden state.
     b_hn : Tensor, optional
-        Bias tensor for the hidden projection of the candidate hidden state. Defaults to ``None``.
+        Bias tensor for the hidden projection of the candidate hidden state.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
 

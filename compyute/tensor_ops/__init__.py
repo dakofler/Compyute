@@ -1,6 +1,8 @@
 """Tensor operations."""
 
 from .creating import *
+from .multiary import *
+from .reducing import *
 from .reshaping import *
 from .selecting import *
-from .transforming import *
+from .unary import *

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any, Literal, Optional
 
-from ..tensor_ops.transforming import sqrt
+from ..tensor_ops.unary import sqrt
 from ..tensors import Tensor
 from .parameter import Parameter
 

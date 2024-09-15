@@ -17,6 +17,9 @@ Tensor Operations
 
 Creating and Combining Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Functions to create new tensors or combine existing tensors.
+
 .. autosummary::
     :toctree: ../_generated/compyute
     
@@ -34,11 +37,84 @@ Creating and Combining Operations
     split
     stack
     zeros
-    zeros_like
+    zeros_like  
+
+
+Unary Operations
+~~~~~~~~~~~~~~~~
+
+Functions that operate on one tensor.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    abs
+    clip
+    cos
+    cosh
+    exp
+    fft1d
+    fft2d
+    histogram
+    ifft1d
+    ifft2d
+    invert
+    log
+    log2
+    log10
+    real
+    round
+    sech
+    sin
+    sinh
+    sqrt
+    tan
+    tanh
+
+
+Multinary Operations
+~~~~~~~~~~~~~~~~~~~~
+
+Functions that operate on two or more tensors.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    allclose
+    convolve1d_fft
+    convolve2d_fft
+    dot
+    einsum
+    inner
+    outer
+    tensorprod
+    tensorsum
+
+
+Reducing Operations
+~~~~~~~~~~~~~~~~~~~
+
+Functions that aggregate tensors.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    all
+    mean
+    norm
+    prod
+    std
+    tensorprod
+    tensorsum
+    sum
+    var
 
 
 Reshaping Operations
 ~~~~~~~~~~~~~~~~~~~~
+
+Functions that change tensor shapes.
+
 .. autosummary::
     :toctree: ../_generated/compyute
     
@@ -61,6 +137,9 @@ Reshaping Operations
 
 Selecting Operations
 ~~~~~~~~~~~~~~~~~~~~
+
+Functions that return a subset of a tensor.
+
 .. autosummary::
     :toctree: ../_generated/compyute
 
@@ -75,51 +154,6 @@ Selecting Operations
     tril
     triu
     unique
-
-
-Transforming and Computing Operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autosummary::
-    :toctree: ../_generated/compyute
-
-    abs
-    all
-    allclose
-    clip
-    convolve1d_fft
-    convolve2d_fft
-    cos
-    cosh
-    dot
-    einsum
-    exp
-    fft1d
-    fft2d
-    histogram
-    ifft1d
-    ifft2d
-    inner
-    invert
-    log
-    log2
-    log10
-    mean
-    norm
-    outer
-    prod
-    real
-    round
-    sech
-    sin
-    sinh
-    sqrt
-    std
-    tan
-    tanh
-    tensorprod
-    tensorsum
-    sum
-    var
 
 
 Data Types

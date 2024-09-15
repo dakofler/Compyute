@@ -3,8 +3,8 @@
 from collections.abc import Iterator
 
 from ...tensor_ops.creating import concat
+from ...tensor_ops.reducing import norm
 from ...tensor_ops.reshaping import flatten
-from ...tensor_ops.transforming import norm
 from ..parameter import Parameter
 
 __all__ = ["clip_grad_norm"]

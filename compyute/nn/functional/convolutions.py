@@ -3,6 +3,7 @@
 from typing import Optional
 
 from ...tensor_ops.creating import zeros
+from ...tensor_ops.multiary import convolve1d_fft, convolve2d_fft
 from ...tensor_ops.reshaping import (
     broadcast_to,
     flip,
@@ -11,7 +12,6 @@ from ...tensor_ops.reshaping import (
     pad_to_shape,
     repeat,
 )
-from ...tensor_ops.transforming import convolve1d_fft, convolve2d_fft
 from ...tensors import ShapeLike, Tensor
 from .functions import Function, FunctionCache, PseudoCache
 

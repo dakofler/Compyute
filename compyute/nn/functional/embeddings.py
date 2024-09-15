@@ -1,7 +1,7 @@
 """Neural network embedding functions."""
 
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_ops.transforming import sum as cp_sum
+from ...tensor_ops.reducing import sum as cp_sum
 from ...tensors import Tensor
 from ...typing import is_integer
 from .functions import Function, FunctionCache, PseudoCache

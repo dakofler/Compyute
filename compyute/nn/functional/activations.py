@@ -3,8 +3,8 @@
 from ...tensor_ops.creating import identity
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
 from ...tensor_ops.selecting import maximum
-from ...tensor_ops.transforming import exp, invert, sech
-from ...tensor_ops.transforming import tanh as cp_tanh
+from ...tensor_ops.unary import exp, invert
+from ...tensor_ops.unary import tanh as cp_tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 

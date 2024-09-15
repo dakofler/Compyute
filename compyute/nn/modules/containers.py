@@ -4,7 +4,7 @@ from itertools import accumulate
 from typing import Optional
 
 from ...tensor_ops.creating import concat, split
-from ...tensor_ops.transforming import tensorsum
+from ...tensor_ops.reducing import tensorsum
 from ...tensors import Tensor
 from .module import Module, ModuleList
 

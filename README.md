@@ -104,7 +104,7 @@ model = nn.Sequential(
 model.to_device(cp.cuda)  # move model to GPU
 ```
 
-Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Container` class.
+Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Module` class.
 
 With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules`. `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come.
 
@@ -124,7 +124,7 @@ class MyConvBlock(nn.Sequential):
         super().__init__(conv, relu, bn)
 ```
 
-When you want to define a custom forward-behaviour, the `Container` base class can be used.
+When you want to define a custom forward-behaviour, the `Module` base class can be used.
 
 ```python
 import compyute.nn as nn
