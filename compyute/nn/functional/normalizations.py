@@ -37,7 +37,7 @@ class FBatchNorm1D(Function):
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
-            rvar = rvar * (1 - m) + x.var(axis=axes, ddof=1) * m
+            rvar = rvar * (1 - m) + x.var(axes, ddof=1) * m
         else:
             # use running mean and variance
             rvar_ = rvar if x_is_2d else insert_dim(rvar, -1)
@@ -59,7 +59,7 @@ class FBatchNorm1D(Function):
 
         # input grads
         n = float(dy.size / dy.shape[1])
-        dy_sum = dy.sum(axis=axes, keepdims=True)
+        dy_sum = dy.sum(axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
@@ -138,14 +138,14 @@ class FBatchNorm2D(Function):
 
         if training:
             # compute mean and variance from x
-            mean = x.mean(axis=axes, keepdims=True)
-            var = x.var(axis=axes, keepdims=True)
+            mean = x.mean(axes, keepdims=True)
+            var = x.var(axes, keepdims=True)
             std = sqrt(var + eps)
             x_norm = (x - mean) / std
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
-            rvar = rvar * (1 - m) + x.var(axis=axes, ddof=1) * m
+            rvar = rvar * (1 - m) + x.var(axes, ddof=1) * m
         else:
             # use running mean and variance
             std = sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
@@ -165,7 +165,7 @@ class FBatchNorm2D(Function):
         n = float(dy.size / dy.shape[1])
 
         # input grads
-        dy_sum = dy.sum(axis=axes, keepdims=True)
+        dy_sum = dy.sum(axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
@@ -234,8 +234,8 @@ class FLayerNorm(Function):
     ) -> Tensor:
         axes = tuple(-i - 1 for i in range(w.n_axes))
 
-        std = sqrt(x.var(axis=axes, keepdims=True) + eps)
-        x_norm = (x - x.mean(axis=axes, keepdims=True)) / std
+        std = sqrt(x.var(axes, keepdims=True) + eps)
+        x_norm = (x - x.mean(axes, keepdims=True)) / std
         y = w * x_norm + b
 
         cache.w, cache.std, cache.x_norm = w, std, x_norm
@@ -248,7 +248,7 @@ class FLayerNorm(Function):
         sum_axes = tuple(range(dy.n_axes - w.n_axes))
 
         # input grads
-        dy_sum = dy.sum(axis=axes, keepdims=True)
+        dy_sum = dy.sum(axes, keepdims=True)
         dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
         dx = w / (std * w.size) * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
@@ -256,7 +256,7 @@ class FLayerNorm(Function):
         dw = cp_sum(dy * x_norm, axis=sum_axes)
 
         # beta grads
-        db = dy.sum(axis=sum_axes)
+        db = dy.sum(sum_axes)
 
         return dx, dw, db
 
