@@ -4,14 +4,14 @@ from typing import Literal, Optional, TypeAlias
 
 from ...tensors import Tensor
 from ..functional.activations import (
-    FGELU,
-    FFastGELU,
-    FLeakyReLU,
-    FReLU,
-    FSigmoid,
-    FSiLU,
-    FSoftmax,
-    FTanh,
+    FastGELUFn,
+    GELUFn,
+    LeakyReLUFn,
+    ReLUFn,
+    SigmoidFn,
+    SiLUFn,
+    SoftmaxFn,
+    TanhFn,
 )
 from .module import Module
 
@@ -41,11 +41,11 @@ class GELU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FGELU.forward(self.fcache, x)
+        return GELUFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FGELU.backward(self.fcache, dy)
+        return GELUFn.backward(self.fcache, dy)
 
 
 class FastGELU(Module):
@@ -62,11 +62,11 @@ class FastGELU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FFastGELU.forward(self.fcache, x)
+        return FastGELUFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FFastGELU.backward(self.fcache, dy)
+        return FastGELUFn.backward(self.fcache, dy)
 
 
 class LeakyReLU(Module):
@@ -89,11 +89,11 @@ class LeakyReLU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FLeakyReLU.forward(self.fcache, x, self.alpha)
+        return LeakyReLUFn.forward(self.fcache, x, self.alpha)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FLeakyReLU.backward(self.fcache, dy)
+        return LeakyReLUFn.backward(self.fcache, dy)
 
 
 class ReLU(Module):
@@ -111,11 +111,11 @@ class ReLU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FReLU.forward(self.fcache, x)
+        return ReLUFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FReLU.backward(self.fcache, dy)
+        return ReLUFn.backward(self.fcache, dy)
 
 
 class Sigmoid(Module):
@@ -132,11 +132,11 @@ class Sigmoid(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSigmoid.forward(self.fcache, x)
+        return SigmoidFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FSigmoid.backward(self.fcache, dy)
+        return SigmoidFn.backward(self.fcache, dy)
 
 
 class SiLU(Module):
@@ -153,11 +153,11 @@ class SiLU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSiLU.forward(self.fcache, x)
+        return SiLUFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FSiLU.backward(self.fcache, dy)
+        return SiLUFn.backward(self.fcache, dy)
 
 
 class Softmax(Module):
@@ -174,11 +174,11 @@ class Softmax(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FSoftmax.forward(self.fcache, x)
+        return SoftmaxFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FSoftmax.backward(self.fcache, dy)
+        return SoftmaxFn.backward(self.fcache, dy)
 
 
 class Tanh(Module):
@@ -195,11 +195,11 @@ class Tanh(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FTanh.forward(self.fcache, x)
+        return TanhFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FTanh.backward(self.fcache, dy)
+        return TanhFn.backward(self.fcache, dy)
 
 
 ActivationLike: TypeAlias = Literal[

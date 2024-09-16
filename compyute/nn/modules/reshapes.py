@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...tensors import ShapeLike, Tensor
-from ..functional.reshapes import Fflatten, FReshape
+from ..functional.reshapes import FlattenFn, FReshape
 from .module import Module
 
 __all__ = ["Flatten", "Reshape"]
@@ -20,11 +20,11 @@ class Flatten(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return Fflatten.forward(self.fcache, x)
+        return FlattenFn.forward(self.fcache, x)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return Fflatten.backward(self.fcache, dy)
+        return FlattenFn.backward(self.fcache, dy)
 
 
 class Reshape(Module):

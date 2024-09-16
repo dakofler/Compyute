@@ -1,7 +1,5 @@
 """Dataloaders."""
 
-from __future__ import annotations
-
 import math
 from collections.abc import Callable, Iterator
 from functools import wraps
@@ -38,10 +36,6 @@ class Dataloader:
     device: Device
     shuffle: bool
     drop_remaining: bool
-    _iterator = 0
-    _idx: Tensor
-    _n_samples: int
-    _n_steps: int
 
     def __init__(
         self,
@@ -52,32 +46,39 @@ class Dataloader:
         drop_remaining: bool = False,
     ) -> None:
         self.data = data
-        self._n_samples = len(self.data[0])
-        self.batch_size = min(batch_size, self._n_samples)
+        self.batch_size = batch_size
         self.device = device
         self.shuffle = shuffle_data
-        self._n_steps = self._n_samples // self.batch_size
-        if drop_remaining and self._n_steps * self.batch_size < self._n_samples:
-            self._n_steps += 1
+        self.drop_remaining = drop_remaining
 
-    def __iter__(self) -> Dataloader:
-        self._iterator = 0
-        if self.shuffle:
-            self._idx = permutation(self._n_samples)
-        else:
-            self._idx = arange(self._n_samples, dtype=int64)
-        return self
+    def __call__(self) -> Iterator[tuple[Tensor, ...]]:
+        """Yields batched data.
 
-    def __next__(self) -> tuple[Tensor, ...]:
-        if self._iterator < self._n_steps:
-            max_idx = min((self._iterator + 1) * self.batch_size, self._n_samples)
-            batch_idx = self._idx[self._iterator * self.batch_size : max_idx + 1]
-            self._iterator += 1
-            return tuple(t[batch_idx].to_device(self.device) for t in self.data)
-        raise StopIteration
+        Yields
+        -------
+        Tensor
+            Batched features.
+        Tensor
+            Batched labels.
+
+        """
+        t1 = self.data[0]
+        n = t1.shape[0]
+        n_steps = len(self)
+        b = min(self.batch_size, n)
+
+        idx = permutation(n) if self.shuffle else arange(n, dtype=int64)
+
+        for i in range(n_steps):
+            batch_idx = idx[i * b : (i + 1) * b]
+            yield tuple(t[batch_idx].to_device(self.device) for t in self.data)
+
+        if not self.drop_remaining and n_steps * b < n:
+            n_trunc = n_steps * b
+            yield tuple(t[idx[n_trunc:]].to_device(self.device) for t in self.data)
 
     def __len__(self) -> int:
-        return self._n_steps
+        return max(1, math.ceil(self.data[0].shape[0] / self.batch_size))
 
 
 def batched(
@@ -105,7 +106,7 @@ def batched(
     @wraps(func)
     def wrapper(x: Tensor, *args, **kwargs) -> Tensor:
         dataloader = Dataloader((x,), batch_size, device, shuffle_data, drop_remaining)
-        ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader]
+        ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader()]
         return concat(ys, axis=0)
 
     return wrapper

@@ -10,7 +10,7 @@ from .functions import Function, FunctionCache, PseudoCache
 __all__ = ["batchnorm1d", "batchnorm2d", "layernorm", "rmsnorm"]
 
 
-class FBatchNorm1D(Function):
+class BatchNorm1DFn(Function):
     """Performs 1D batch normalization on a tensor."""
 
     @staticmethod
@@ -49,12 +49,12 @@ class FBatchNorm1D(Function):
         b = b if x_is_2d else insert_dim(b, -1)
         y = w * x_norm + b
 
-        cache.w, cache.std, cache.x_norm = w, std, x_norm
+        cache.push(w, std, x_norm)
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, std, x_norm = cache.w, cache.std, cache.x_norm
+        w, std, x_norm = cache.pop()
         axes: int | tuple[int, ...] = 0 if dy.n_axes == 2 else (0, 2)
 
         # input grads
@@ -116,10 +116,10 @@ def batchnorm1d(
     ----------
     :class:`compyute.nn.BatchNorm1D`
     """
-    return FBatchNorm1D.forward(PseudoCache(), x, rmean, rvar, w, b, m, eps, training)
+    return BatchNorm1DFn.forward(PseudoCache(), x, rmean, rvar, w, b, m, eps, training)
 
 
-class FBatchNorm2D(Function):
+class BatchNorm2DFn(Function):
     """Performs 2D batch normalization on a tensor."""
 
     @staticmethod
@@ -155,12 +155,12 @@ class FBatchNorm2D(Function):
         b = b.to_shape((*b.shape, 1, 1))
         y = w * x_norm + b
 
-        cache.w, cache.std, cache.x_norm = w, std, x_norm
+        cache.push(w, std, x_norm)
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, std, x_norm = cache.w, cache.std, cache.x_norm
+        w, std, x_norm = cache.pop()
         axes = (0, 2, 3)
         n = float(dy.size / dy.shape[1])
 
@@ -222,10 +222,10 @@ def batchnorm2d(
     ----------
     :class:`compyute.nn.BatchNorm2D`
     """
-    return FBatchNorm2D.forward(PseudoCache(), x, rmean, rvar, w, b, m, eps, training)
+    return BatchNorm2DFn.forward(PseudoCache(), x, rmean, rvar, w, b, m, eps, training)
 
 
-class FLayerNorm(Function):
+class LayerNormFn(Function):
     """Performs layer normalization on a tensor."""
 
     @staticmethod
@@ -238,12 +238,12 @@ class FLayerNorm(Function):
         x_norm = (x - x.mean(axes, keepdims=True)) / std
         y = w * x_norm + b
 
-        cache.w, cache.std, cache.x_norm = w, std, x_norm
+        cache.push(w, std, x_norm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, std, x_norm = cache.w, cache.std, cache.x_norm
+        w, std, x_norm = cache.pop()
         axes = tuple(-i - 1 for i in range(w.n_axes))
         sum_axes = tuple(range(dy.n_axes - w.n_axes))
 
@@ -284,10 +284,10 @@ def layernorm(x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5) -> Tensor:
     ----------
     :class:`compyute.nn.LayerNorm`
     """
-    return FLayerNorm.forward(PseudoCache(), x, w, b, eps)
+    return LayerNormFn.forward(PseudoCache(), x, w, b, eps)
 
 
-class FRMSNorm(Function):
+class RMSNormFn(Function):
     """Performs RMS normalization on a tensor."""
 
     @staticmethod
@@ -298,12 +298,12 @@ class FRMSNorm(Function):
         x_norm = x / rms
         y = w * x_norm
 
-        cache.x, cache.w, cache.rms, cache.x_norm = x, w, rms, x_norm
+        cache.push(x, w, rms, x_norm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
-        x, w, rms, x_norm = cache.x, cache.w, cache.rms, cache.x_norm
+        x, w, rms, x_norm = cache.pop()
         axes = tuple(-i - 1 for i in range(w.n_axes))
         sum_axes = tuple(range(x.n_axes - w.n_axes))
 
@@ -338,4 +338,4 @@ def rmsnorm(x: Tensor, w: Tensor, eps: float = 1e-5) -> Tensor:
     ----------
     :class:`compyute.nn.RMSNorm`
     """
-    return FRMSNorm.forward(PseudoCache(), x, w, eps)
+    return RMSNormFn.forward(PseudoCache(), x, w, eps)

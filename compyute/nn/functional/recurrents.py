@@ -4,14 +4,14 @@ from typing import Literal, Optional
 
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
-from .activations import FReLU, FSigmoid, FTanh
+from .activations import ReLUFn, SigmoidFn, TanhFn
 from .functions import Function, FunctionCache, PseudoCache
-from .linear import FLinear
+from .linear import LinearFn
 
 __all__ = ["recurrent", "lstm", "gru"]
 
 
-class FRecurrent(Function):
+class RecurrentFn(Function):
     """Applies the Elman recurrent function to a tensor."""
 
     @staticmethod
@@ -22,30 +22,30 @@ class FRecurrent(Function):
         b_i: Optional[Tensor],
         w_h: Tensor,
         b_h: Optional[Tensor],
-        activation: Literal["relu", "tanh"] = "tanh",
+        activation: Literal["relu", "tanh"],
     ) -> Tensor:
-        act = FTanh if activation == "tanh" else FReLU
+        act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i
-        x_h = FLinear.forward(cache, x, w_i, b_i)
+        x_h = LinearFn.forward(cache, x, w_i, b_i)
 
         h = zeros_like(x_h)
         for t in range(x.shape[1]):
 
             # hidden projection W_h * h_t-1 + b_h
-            h_h = FLinear.forward(cache, h[:, t - 1], w_h, b_h)
+            h_h = LinearFn.forward(cache, h[:, t - 1], w_h, b_h)
 
             # apply activation h_t = act(x_t + h_h)
             h[:, t] = act.forward(cache, x_h[:, t] + h_h)
 
-        cache.h_shape, cache.act, cache.b = h.shape, act, b_i is not None
+        cache.push(h.shape, act, b_i is not None)
         return h
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor], Tensor, Optional[Tensor]]:
-        h_shape, act, b = cache.h_shape, cache.act, cache.b
+        h_shape, act, b = cache.pop()
 
         # ugly inits :(
         B, T, H = h_shape
@@ -60,14 +60,14 @@ class FRecurrent(Function):
             dpreact[:, t] = act.backward(cache, dh + dy[:, t])
 
             # hidden projection gradients
-            dh, dw_h_t, db_h_t = FLinear.backward(cache, dpreact[:, t])
+            dh, dw_h_t, db_h_t = LinearFn.backward(cache, dpreact[:, t])
             if t > 0:
                 dw_h += dw_h_t
             if db_h_t:
                 db_h += db_h_t
 
         # input projection gradients
-        dx, dw_i, db_i = FLinear.backward(cache, dpreact)
+        dx, dw_i, db_i = LinearFn.backward(cache, dpreact)
 
         return dx, dw_i, db_i, dw_h, db_h
 
@@ -106,10 +106,10 @@ def recurrent(
     ----------
     :class:`compyute.nn.Recurrent`
     """
-    return FRecurrent.forward(PseudoCache(), x, w_i, b_i, w_h, b_h, activation)
+    return RecurrentFn.forward(PseudoCache(), x, w_i, b_i, w_h, b_h, activation)
 
 
-class FLSTM(Function):
+class LSTMFn(Function):
     """Applies the LSTM recurrent function to a tensor."""
 
     @staticmethod
@@ -132,30 +132,30 @@ class FLSTM(Function):
         b_hg: Optional[Tensor],
         w_ho: Tensor,
         b_ho: Optional[Tensor],
-        activation: Literal["relu", "tanh"] = "tanh",
+        activation: Literal["relu", "tanh"],
     ) -> Tensor:
-        act = FTanh if activation == "tanh" else FReLU
+        act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i
-        x_i = FLinear.forward(cache, x, w_ii, b_ii)
-        x_f = FLinear.forward(cache, x, w_if, b_if)
-        x_g = FLinear.forward(cache, x, w_ig, b_ig)
-        x_o = FLinear.forward(cache, x, w_io, b_io)
+        x_i = LinearFn.forward(cache, x, w_ii, b_ii)
+        x_f = LinearFn.forward(cache, x, w_if, b_if)
+        x_g = LinearFn.forward(cache, x, w_ig, b_ig)
+        x_o = LinearFn.forward(cache, x, w_io, b_io)
 
         i, f, g, o = empty_like(x_i), empty_like(x_i), empty_like(x_i), empty_like(x_i)
         c, act_c, h = zeros_like(x_i), empty_like(x_i), zeros_like(x_i)
         for t in range(x.shape[1]):
 
             # hidden projection W_h * h_t-1 + b_h
-            h_i = FLinear.forward(cache, h[:, t - 1], w_hi, b_hi)
-            h_f = FLinear.forward(cache, h[:, t - 1], w_hf, b_hf)
-            h_g = FLinear.forward(cache, h[:, t - 1], w_hg, b_hg)
-            h_o = FLinear.forward(cache, h[:, t - 1], w_ho, b_ho)
+            h_i = LinearFn.forward(cache, h[:, t - 1], w_hi, b_hi)
+            h_f = LinearFn.forward(cache, h[:, t - 1], w_hf, b_hf)
+            h_g = LinearFn.forward(cache, h[:, t - 1], w_hg, b_hg)
+            h_o = LinearFn.forward(cache, h[:, t - 1], w_ho, b_ho)
 
             # gates
-            i[:, t] = FSigmoid.forward(cache, x_i[:, t] + h_i)  # input gate
-            f[:, t] = FSigmoid.forward(cache, x_f[:, t] + h_f)  # forget gate
-            o[:, t] = FSigmoid.forward(cache, x_o[:, t] + h_o)  # output gate
+            i[:, t] = SigmoidFn.forward(cache, x_i[:, t] + h_i)  # input gate
+            f[:, t] = SigmoidFn.forward(cache, x_f[:, t] + h_f)  # forget gate
+            o[:, t] = SigmoidFn.forward(cache, x_o[:, t] + h_o)  # output gate
 
             # input node
             g[:, t] = act.forward(cache, x_g[:, t] + h_g)
@@ -167,8 +167,7 @@ class FLSTM(Function):
             act_c[:, t] = act.forward(cache, c[:, t])
             h[:, t] = o[:, t] * act_c[:, t]
 
-        cache.i, cache.f, cache.g, cache.o, cache.b = i, f, g, o, b_ii is not None
-        cache.c, cache.act, cache.act_c = c, act, act_c
+        cache.push(i, f, g, o, b_ii is not None, c, act, act_c)
         return h
 
     @staticmethod
@@ -191,8 +190,7 @@ class FLSTM(Function):
         Tensor,
         Optional[Tensor],
     ]:
-        i, f, g, o, b = cache.i, cache.f, cache.g, cache.o, cache.b
-        c, act, act_c = cache.c, cache.act, cache.act_c
+        i, f, g, o, b, c, act, act_c = cache.pop()
 
         # ugly inits :(
         B, T, H = i.shape
@@ -223,15 +221,15 @@ class FLSTM(Function):
             dg_preact[:, t] = act.backward(cache, dg)
 
             # gate gradients
-            do_preact[:, t] = FSigmoid.backward(cache, do)
-            df_preact[:, t] = FSigmoid.backward(cache, df)
-            di_preact[:, t] = FSigmoid.backward(cache, di)
+            do_preact[:, t] = SigmoidFn.backward(cache, do)
+            df_preact[:, t] = SigmoidFn.backward(cache, df)
+            di_preact[:, t] = SigmoidFn.backward(cache, di)
 
             # hidden projection gradients
-            dh_o_t, dw_ho_t, db_ho_t = FLinear.backward(cache, do_preact[:, t])
-            dh_g_t, dw_hg_t, db_hg_t = FLinear.backward(cache, dg_preact[:, t])
-            dh_f_t, dw_hf_t, db_hf_t = FLinear.backward(cache, df_preact[:, t])
-            dh_i_t, dw_hi_t, db_hi_t = FLinear.backward(cache, di_preact[:, t])
+            dh_o_t, dw_ho_t, db_ho_t = LinearFn.backward(cache, do_preact[:, t])
+            dh_g_t, dw_hg_t, db_hg_t = LinearFn.backward(cache, dg_preact[:, t])
+            dh_f_t, dw_hf_t, db_hf_t = LinearFn.backward(cache, df_preact[:, t])
+            dh_i_t, dw_hi_t, db_hi_t = LinearFn.backward(cache, di_preact[:, t])
 
             if t > 0:
                 dw_hi += dw_hi_t
@@ -247,10 +245,10 @@ class FLSTM(Function):
             dh = dh_i_t + dh_f_t + dh_g_t + dh_o_t
 
         # input projection gradients
-        dx_o, dw_io, db_io = FLinear.backward(cache, do_preact)
-        dx_g, dw_ig, db_ig = FLinear.backward(cache, dg_preact)
-        dx_f, dw_if, db_if = FLinear.backward(cache, df_preact)
-        dx_i, dw_ii, db_ii = FLinear.backward(cache, di_preact)
+        dx_o, dw_io, db_io = LinearFn.backward(cache, do_preact)
+        dx_g, dw_ig, db_ig = LinearFn.backward(cache, dg_preact)
+        dx_f, dw_if, db_if = LinearFn.backward(cache, df_preact)
+        dx_i, dw_ii, db_ii = LinearFn.backward(cache, di_preact)
 
         dx = dx_i + dx_f + dx_g + dx_o
 
@@ -345,7 +343,7 @@ def lstm(
     ----------
     :class:`compyute.nn.LSTM`
     """
-    return FLSTM.forward(
+    return LSTMFn.forward(
         PseudoCache(),
         x,
         w_ii,
@@ -368,7 +366,7 @@ def lstm(
     )
 
 
-class FGRU(Function):
+class GRUFn(Function):
     """Applies the GRU recurrent function to a tensor."""
 
     @staticmethod
@@ -387,27 +385,27 @@ class FGRU(Function):
         b_hz: Optional[Tensor],
         w_hn: Tensor,
         b_hn: Optional[Tensor],
-        activation: Literal["relu", "tanh"] = "tanh",
+        activation: Literal["relu", "tanh"],
     ) -> Tensor:
-        act = FTanh if activation == "tanh" else FReLU
+        act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i
-        x_r = FLinear.forward(cache, x, w_ir, b_ir)
-        x_z = FLinear.forward(cache, x, w_iz, b_iz)
-        x_n = FLinear.forward(cache, x, w_in, b_in)
+        x_r = LinearFn.forward(cache, x, w_ir, b_ir)
+        x_z = LinearFn.forward(cache, x, w_iz, b_iz)
+        x_n = LinearFn.forward(cache, x, w_in, b_in)
 
         r, z, n = empty_like(x_r), empty_like(x_r), empty_like(x_r)
         h_n, h = empty_like(x_r), zeros_like(x_r)
         for t in range(x.shape[1]):
 
             # hidden projection W_h * h_t-1 + b_h
-            h_r = FLinear.forward(cache, h[:, t - 1], w_hr, b_hr)
-            h_z = FLinear.forward(cache, h[:, t - 1], w_hz, b_hz)
-            h_n[:, t] = FLinear.forward(cache, h[:, t - 1], w_hn, b_hn)
+            h_r = LinearFn.forward(cache, h[:, t - 1], w_hr, b_hr)
+            h_z = LinearFn.forward(cache, h[:, t - 1], w_hz, b_hz)
+            h_n[:, t] = LinearFn.forward(cache, h[:, t - 1], w_hn, b_hn)
 
             # gates
-            r[:, t] = FSigmoid.forward(cache, x_r[:, t] + h_r)  # reset gate
-            z[:, t] = FSigmoid.forward(cache, x_z[:, t] + h_z)  # update gate
+            r[:, t] = SigmoidFn.forward(cache, x_r[:, t] + h_r)  # reset gate
+            z[:, t] = SigmoidFn.forward(cache, x_z[:, t] + h_z)  # update gate
 
             # candidate hidden state n_t = act(x_n + r_t * h_t-1)
             n[:, t] = act.forward(cache, x_n[:, t] + r[:, t] * h_n[:, t])
@@ -415,8 +413,7 @@ class FGRU(Function):
             # hidden state h_t = (1 - z_t) * n_t + z_t * h_t-1
             h[:, t] = (1 - z[:, t]) * n[:, t] + z[:, t] * h[:, t - 1]
 
-        cache.r, cache.z, cache.n, cache.b = r, z, n, b_iz is not None
-        cache.h_n, cache.act, cache.h = h_n, act, h
+        cache.push(r, z, n, b_iz is not None, h_n, act, h)
         return h
 
     @staticmethod
@@ -435,8 +432,7 @@ class FGRU(Function):
         Tensor,
         Optional[Tensor],
     ]:
-        r, z, n, b = cache.r, cache.z, cache.n, cache.b
-        h_n, act, h = cache.h_n, cache.act, cache.h
+        r, z, n, b, h_n, act, h = cache.pop()
 
         # ugly inits :(
         B, T, H = r.shape
@@ -460,14 +456,14 @@ class FGRU(Function):
             dr = h_n[:, t] * dn_preact[:, t]
 
             # gate gradients
-            dz_preact[:, t] = FSigmoid.backward(cache, dz)
-            dr_preact[:, t] = FSigmoid.backward(cache, dr)
+            dz_preact[:, t] = SigmoidFn.backward(cache, dz)
+            dr_preact[:, t] = SigmoidFn.backward(cache, dr)
 
             # hidden projection gradients
             r_dn_preact = r[:, t] * dn_preact[:, t]
-            dh_n_t, dw_hn_t, db_hn_t = FLinear.backward(cache, r_dn_preact)
-            dh_z_t, dw_hz_t, db_hz_t = FLinear.backward(cache, dz_preact[:, t])
-            dh_r_t, dw_hr_t, db_hr_t = FLinear.backward(cache, dr_preact[:, t])
+            dh_n_t, dw_hn_t, db_hn_t = LinearFn.backward(cache, r_dn_preact)
+            dh_z_t, dw_hz_t, db_hz_t = LinearFn.backward(cache, dz_preact[:, t])
+            dh_r_t, dw_hr_t, db_hr_t = LinearFn.backward(cache, dr_preact[:, t])
 
             if t > 0:
                 dw_hr += dw_hr_t
@@ -481,9 +477,9 @@ class FGRU(Function):
             dh += dh_r_t + dh_z_t + dh_n_t
 
         # input projection gradients
-        dx_n, dw_in, db_in = FLinear.backward(cache, dn_preact)
-        dx_z, dw_iz, db_iz = FLinear.backward(cache, dz_preact)
-        dx_r, dw_ir, db_ir = FLinear.backward(cache, dr_preact)
+        dx_n, dw_in, db_in = LinearFn.backward(cache, dn_preact)
+        dx_z, dw_iz, db_iz = LinearFn.backward(cache, dz_preact)
+        dx_r, dw_ir, db_ir = LinearFn.backward(cache, dr_preact)
 
         dx = dx_r + dx_z + dx_n
 
@@ -562,7 +558,7 @@ def gru(
     ----------
     :class:`compyute.nn.GRU`
     """
-    return FGRU.forward(
+    return GRUFn.forward(
         PseudoCache(),
         x,
         w_ir,

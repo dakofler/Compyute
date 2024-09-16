@@ -342,7 +342,7 @@ class Module(ABC):
             else:
                 dx = backward_method(module, dy)
 
-            assert not module.fcache, "FunctionCache not empty after backward."
+            assert not module.fcache.cache, "FunctionCache not empty after backward."
 
             if module.retain_values and module.x:
                 module.x.grad = dx
@@ -358,7 +358,7 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        self.fcache.clear()
+        self.fcache.cache.clear()
 
         if not self._retain_values or force:
             self.x = self.y = None

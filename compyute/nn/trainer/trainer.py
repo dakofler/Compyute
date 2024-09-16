@@ -103,7 +103,7 @@ class Trainer:
                 # training
                 self.model.training()
                 self.loss.training()
-                for s, batch in enumerate(train_dataloader, 1):
+                for s, batch in enumerate(train_dataloader(), 1):
                     self._cache["step"] = s
                     self._callback("step_start")
                     self._cache["lr"] = self.optimizer.lr
@@ -152,7 +152,7 @@ class Trainer:
         losses, scores = [], []
 
         # compute loss/score for each batch to save memory
-        for x_batch, y_batch in dataloader:
+        for x_batch, y_batch in dataloader():
             y_pred = self.model(x_batch)
             losses.append(self.loss(y_pred, y_batch).item())
             if self.metric is not None:

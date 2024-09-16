@@ -193,7 +193,7 @@ for epoch in range(epochs):
     # training
     model.training()
     loss_fn.training()
-    for x, y in train_dl:
+    for x, y in train_dl():
 
         # forward pass
         y_pred = model(x)
@@ -208,7 +208,7 @@ for epoch in range(epochs):
     model.inference()  # prevent model from caching values for backward
     loss_fn.inference()  # prevent loss fn from caching values for backward
     val_loss = 0
-    for x, y in val_dl:
+    for x, y in val_dl():
         y_pred = model(x)
         val_loss += loss_fn(y_pred, y).item()
     val_loss /= len(val_dl)

@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-class FConvolution1D(Function):
+class Convolution1DFn(Function):
     """Computes the convolution of two tensors over their last axis."""
 
     @staticmethod
@@ -42,36 +42,36 @@ class FConvolution1D(Function):
         dilation: int,
     ) -> Tensor:
         # dilate filter and add a fake batch dimension
-        f = FDilation1D.forward(cache, f, dilation)
+        f = Dilation1DFn.forward(cache, f, dilation)
         f = insert_dim(f, 0)  # (1, Co, Ci, F)
 
         # pad input and add a fake output dimension
-        x = FPad1D.forward(cache, x, padding)
+        x = Pad1DFn.forward(cache, x, padding)
         x = insert_dim(x, 1)  # (B, 1, Ci, T)
 
         # perform convolution and sum over input dimension (B, Co, Ci, T)
-        conv = _FConvolution1D.forward(cache, x, f, stride)
+        conv = _Convolution1DFn.forward(cache, x, f, stride)
         y = conv.sum(axis=2)  # (B, Co, T)
 
         if b:
             y += insert_dim(b, -1)
 
-        cache.b, cache.conv_shape = b is not None, conv.shape
+        cache.push(b is not None, conv.shape)
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        b, conv_shape = cache.b, cache.conv_shape
+        b, conv_shape = cache.pop()
 
         # insert fake input channel dimension
         dy_ext = insert_dim(dy, 2)  # (B, Co, 1, X)
         dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, X)
-        dx, df = _FConvolution1D.backward(cache, dy_ext)
+        dx, df = _Convolution1DFn.backward(cache, dy_ext)
 
-        dx = FPad1D.backward(cache, dx.sum(axis=1))
-        df = FDilation1D.backward(cache, df.sum(axis=0))
+        dx = Pad1DFn.backward(cache, dx.sum(axis=1))
+        df = Dilation1DFn.backward(cache, df.sum(axis=0))
         db = None if not b else dy.sum(axis=(0, 2))
 
         return dx, df, db
@@ -111,16 +111,16 @@ def convolve1d(
     ----------
     :class:`compyute.nn.Convolution1d`
     """
-    return FConvolution1D.forward(PseudoCache(), x, f, b, padding, stride, dilation)
+    return Convolution1DFn.forward(PseudoCache(), x, f, b, padding, stride, dilation)
 
 
-class FDilation1D(Function):
+class Dilation1DFn(Function):
     """Dilates a tensor in its last axis."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: int) -> Tensor:
         no_dilation = dilation == 1
-        cache.no_dilation = no_dilation
+        cache.push(no_dilation, dilation)
         if no_dilation:
             return x
 
@@ -128,15 +128,13 @@ class FDilation1D(Function):
         y = zeros(x.shape[:-1] + dil_shape, device=x.device, dtype=x.dtype)
         y[..., ::dilation] = x
 
-        cache.dilation = dilation
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation = cache.no_dilation
+        no_dilation, dilation = cache.pop()
         if no_dilation:
             return dy
-        dilation = cache.dilation
         return dy[..., ::dilation]
 
 
@@ -155,30 +153,28 @@ def dilate1d(x: Tensor, dilation: int) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FDilation1D.forward(PseudoCache(), x, dilation)
+    return Dilation1DFn.forward(PseudoCache(), x, dilation)
 
 
-class FPad1D(Function):
+class Pad1DFn(Function):
     """Pads a tensor in its last axis."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, padding: int) -> Tensor:
         no_padding = padding == 0
-        cache.no_padding = no_padding
+        cache.push(no_padding, padding)
         if no_padding:
             return x
 
         widths = tuple([(0, 0)] * (x.n_axes - 1) + [(padding, padding)])
         y = pad(x, widths)
-        cache.padding = padding
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_padding = cache.no_padding
+        no_padding, padding = cache.pop()
         if no_padding:
             return dy
-        padding = cache.padding
         return dy[..., padding:-padding]
 
 
@@ -197,10 +193,10 @@ def pad1d(x: Tensor, padding: int) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FPad1D.forward(PseudoCache(), x, padding)
+    return Pad1DFn.forward(PseudoCache(), x, padding)
 
 
-class _FConvolution1D(Function):
+class _Convolution1DFn(Function):
     """Computes the 1D convolution of two tensors."""
 
     @staticmethod
@@ -208,12 +204,12 @@ class _FConvolution1D(Function):
         conv = convolve1d_fft(x, flip(f, -1))
         y = conv[..., ::stride]
 
-        cache.x, cache.f, cache.stride, cache.conv_shape = x, f, stride, conv.shape
+        cache.push(x, f, stride, conv.shape)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
-        x, f, stride, conv_shape = cache.x, cache.f, cache.stride, cache.conv_shape
+        x, f, stride, conv_shape = cache.pop()
 
         # fill elements skipped by strides with zeros
         dy = pad_to_shape(dilate1d(dy, stride), conv_shape)
@@ -224,7 +220,7 @@ class _FConvolution1D(Function):
         return dx, df
 
 
-class FConvolution2D(Function):
+class Convolution2DFn(Function):
     """Computes the convolution of two tensors over their last axis."""
 
     @staticmethod
@@ -238,36 +234,36 @@ class FConvolution2D(Function):
         dilation: int,
     ) -> Tensor:
         # dilate filter and add a fake batch dimension
-        f = FDilation2D.forward(cache, f, dilation)
+        f = Dilation2DFn.forward(cache, f, dilation)
         f = insert_dim(f, 0)  # (1, Co, Ci, Fy, Fx)
 
         # pad input and add a fake output dimension
-        x = FPad2D.forward(cache, x, padding)
+        x = Pad2DFn.forward(cache, x, padding)
         x = insert_dim(x, 1)  # (B, 1, Ci, Y, X)
 
         # perform convolution and sum over input dimension (B, Co, Ci, T)
-        conv = _FConvolution2D.forward(cache, x, f, stride)
+        conv = _Convolution2DFn.forward(cache, x, f, stride)
         y = conv.sum(axis=2)  # (B, Co, Y, X)
 
         if b:
             y += b.to_shape((*b.shape, 1, 1))
 
-        cache.b, cache.conv_shape = b is not None, conv.shape
+        cache.push(b is not None, conv.shape)
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        b, conv_shape = cache.b, cache.conv_shape
+        b, conv_shape = cache.pop()
 
         # insert fake input channel dimension
         dy_ext = insert_dim(dy, 2)  # (B, Co, 1, Y, X)
         dy_ext = broadcast_to(dy_ext, conv_shape)  # (B, Co, Ci, Y, X)
-        dx, df = _FConvolution2D.backward(cache, dy_ext)
+        dx, df = _Convolution2DFn.backward(cache, dy_ext)
 
-        dx = FPad2D.backward(cache, dx.sum(axis=1))
-        df = FDilation2D.backward(cache, df.sum(axis=0))
+        dx = Pad2DFn.backward(cache, dx.sum(axis=1))
+        df = Dilation2DFn.backward(cache, df.sum(axis=0))
         db = None if not b else dy.sum(axis=(0, 2, 3))
 
         return dx, df, db
@@ -307,32 +303,30 @@ def convolve2d(
     ----------
     :class:`compyute.nn.Convolution2d`
     """
-    return FConvolution2D.forward(PseudoCache(), x, f, b, padding, stride, dilation)
+    return Convolution2DFn.forward(PseudoCache(), x, f, b, padding, stride, dilation)
 
 
-class FDilation2D(Function):
+class Dilation2DFn(Function):
     """Dilates a tensor in its last two axes."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: int) -> Tensor:
-        no_dialution = dilation == 1
-        cache.no_dilation = no_dialution
-        if no_dialution:
+        no_dilation = dilation == 1
+        cache.push(no_dilation, dilation)
+        if no_dilation:
             return x
 
         dil_shape = (dilation * x.shape[-2] - 1, dilation * x.shape[-1] - 1)
         y = zeros(x.shape[:-2] + dil_shape, device=x.device, dtype=x.dtype)
         y[..., ::dilation, ::dilation] = x
 
-        cache.dilation = dilation
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_dilation = cache.no_dilation
+        no_dilation, dilation = cache.pop()
         if no_dilation:
             return dy
-        dilation = cache.dilation
         return dy[..., ::dilation, ::dilation]
 
 
@@ -351,29 +345,27 @@ def dilate2d(x: Tensor, dilation: int) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FDilation2D.forward(PseudoCache(), x, dilation)
+    return Dilation2DFn.forward(PseudoCache(), x, dilation)
 
 
-class FPad2D(Function):
+class Pad2DFn(Function):
     """Pads a tensor in its last two axes."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, padding: int) -> Tensor:
         no_padding = padding == 0
-        cache.no_padding = no_padding
+        cache.push(no_padding, padding)
         if no_padding:
             return x
         widths = tuple([(0, 0)] * (x.n_axes - 2) + [(padding, padding)] * 2)
         y = pad(x, widths)
-        cache.padding = padding
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        no_padding = cache.no_padding
+        no_padding, padding = cache.pop()
         if no_padding:
             return dy
-        padding = cache.padding
         return dy[..., padding:-padding, padding:-padding]
 
 
@@ -392,10 +384,10 @@ def pad2d(x: Tensor, padding: int) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FPad2D.forward(PseudoCache(), x, padding)
+    return Pad2DFn.forward(PseudoCache(), x, padding)
 
 
-class _FConvolution2D(Function):
+class _Convolution2DFn(Function):
     """Computes the 2D convolution of two tensors."""
 
     @staticmethod
@@ -403,12 +395,12 @@ class _FConvolution2D(Function):
         conv = convolve2d_fft(x, flip(f, (-2, -1)))
         y = conv[..., ::strides, ::strides]
 
-        cache.x, cache.f, cache.strides, cache.conv_shape = x, f, strides, conv.shape
+        cache.push(x, f, strides, conv.shape)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
-        x, f, strides, conv_shape = cache.x, cache.f, cache.strides, cache.conv_shape
+        x, f, strides, conv_shape = cache.pop()
 
         # fill elements skipped by strides with zeros
         dy = pad_to_shape(dilate2d(dy, strides), conv_shape)
@@ -419,7 +411,7 @@ class _FConvolution2D(Function):
         return dx, df
 
 
-class FUpsample2D(Function):
+class Upsample2DFn(Function):
     """Upsamples a tensor by repeating it's elements over the last two axes."""
 
     @staticmethod
@@ -447,10 +439,10 @@ def upsample2d(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
     Tensor
         Upsampled tensor.
     """
-    return FUpsample2D.forward(x, scaling, shape)
+    return Upsample2DFn.forward(x, scaling, shape)
 
 
-class FMaxPooling2D(Function):
+class MaxPooling2DFn(Function):
     """Performs max pooling over the last two axes."""
 
     @staticmethod
@@ -468,12 +460,12 @@ class FMaxPooling2D(Function):
         )
         y = x_trunc.to_shape(pool_shape).max(axis=(-3, -1))
 
-        cache.x, cache.kernel_size, cache.y = x, kernel_size, y
+        cache.push(x, kernel_size, y)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, kernel_size, y = cache.x, cache.kernel_size, cache.y
+        x, kernel_size, y = cache.pop()
         y_ups = upsample2d(y, kernel_size, x.shape)
         return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
 
@@ -497,10 +489,10 @@ def maxpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
     ----------
     :class:`compyute.nn.MaxPooling2D`
     """
-    return FMaxPooling2D.forward(PseudoCache(), x, kernel_size)
+    return MaxPooling2DFn.forward(PseudoCache(), x, kernel_size)
 
 
-class FAvgPooling2D(Function):
+class AvgPooling2DFn(Function):
     """Performs average pooling over the last two axes."""
 
     @staticmethod
@@ -519,12 +511,12 @@ class FAvgPooling2D(Function):
         )
         y = x_trunc.to_shape(pool_shape).mean(axis=(-3, -1))
 
-        cache.x_shape, cache.kernel_size = x.shape, kernel_size
+        cache.push(x.shape, kernel_size)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x_shape, kernel_size = cache.x_shape, cache.kernel_size
+        x_shape, kernel_size = cache.pop()
         return upsample2d(dy / (kernel_size * kernel_size), kernel_size, x_shape)
 
 
@@ -547,4 +539,4 @@ def avgpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
     ----------
     :class:`compyute.nn.AvgPooling2D`
     """
-    return FAvgPooling2D.forward(PseudoCache(), x, kernel_size)
+    return AvgPooling2DFn.forward(PseudoCache(), x, kernel_size)

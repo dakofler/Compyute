@@ -7,30 +7,28 @@ from typing import Any
 __all__ = ["Function", "FunctionCache"]
 
 
-class FunctionCache(dict[str, deque]):
+class FunctionCache:
     """LiFo Cache for intermediate data that need
     to be cached for the backward pass."""
 
-    def __getattr__(self, key) -> Any:
-        item = self.get(key)
-        if not item:
-            raise KeyError(f"No such item in cache: {key}.")
-        value = item.pop()
-        if not item:
-            del self[key]
-        return value
+    cache: deque[tuple[Any, ...]]
 
-    def __setattr__(self, key, value) -> None:
-        if key in self:
-            self[key].append(value)
-        else:
-            self[key] = deque([value])
+    def __init__(self) -> None:
+        self.cache = deque()
+
+    def push(self, *values: Any) -> None:
+        """Adds items to the function cache."""
+        self.cache.append(values)
+
+    def pop(self) -> tuple[Any, ...]:
+        """Adds the topmost items from the function cache."""
+        return self.cache.pop()
 
 
 class PseudoCache(FunctionCache):
     """Pseudo cache as a placeholder."""
 
-    def __setattr__(self, *args, **kwargs) -> None: ...
+    def push(self, *values: Any) -> None: ...
 
 
 class Function(ABC):

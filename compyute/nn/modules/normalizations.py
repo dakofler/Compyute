@@ -5,7 +5,12 @@ from typing import Optional
 from ...tensor_ops.creating import empty
 from ...tensors import ShapeLike, Tensor
 from ...typing import DType
-from ..functional.normalizations import FBatchNorm1D, FBatchNorm2D, FLayerNorm, FRMSNorm
+from ..functional.normalizations import (
+    BatchNorm1DFn,
+    BatchNorm2DFn,
+    LayerNormFn,
+    RMSNormFn,
+)
 from ..parameter import Buffer, Parameter, update_parameter_grad
 from ..utils.initializers import init_ones, init_zeros
 from .module import Module, validate_input_axes
@@ -78,7 +83,7 @@ class BatchNorm1D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [2, 3])
 
-        y, self.rmean, self.rvar = FBatchNorm1D.forward(
+        y, self.rmean, self.rvar = BatchNorm1DFn.forward(
             self.fcache,
             x,
             self.rmean,
@@ -94,7 +99,7 @@ class BatchNorm1D(Module):
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FBatchNorm1D.backward(self.fcache, dy)
+        dx, dw, db = BatchNorm1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -166,7 +171,7 @@ class BatchNorm2D(Module):
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
 
-        y, self.rmean, self.rvar = FBatchNorm2D.forward(
+        y, self.rmean, self.rvar = BatchNorm2DFn.forward(
             self.fcache,
             x,
             self.rmean,
@@ -181,7 +186,7 @@ class BatchNorm2D(Module):
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FBatchNorm2D.backward(self.fcache, dy)
+        dx, dw, db = BatchNorm2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -241,11 +246,11 @@ class LayerNorm(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FLayerNorm.forward(self.fcache, x, self.w, self.b, self.eps)
+        return LayerNormFn.forward(self.fcache, x, self.w, self.b, self.eps)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FLayerNorm.backward(self.fcache, dy)
+        dx, dw, db = LayerNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -301,10 +306,10 @@ class RMSNorm(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FRMSNorm.forward(self.fcache, x, self.w, self.eps)
+        return RMSNormFn.forward(self.fcache, x, self.w, self.eps)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw = FRMSNorm.backward(self.fcache, dy)
+        dx, dw = RMSNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         return dx

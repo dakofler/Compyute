@@ -5,9 +5,9 @@ from typing import Literal, Optional
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.activations import FReLU, FSigmoid, FTanh
-from ..functional.linear import FLinear
-from ..functional.recurrents import FGRU, FLSTM, FRecurrent
+from ..functional.activations import ReLUFn, SigmoidFn, TanhFn
+from ..functional.linear import LinearFn
+from ..functional.recurrents import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module, validate_input_axes
@@ -88,13 +88,13 @@ class Recurrent(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
-        return FRecurrent.forward(
+        return RecurrentFn.forward(
             self.fcache, x, self.w_i, self.b_i, self.w_h, self.b_h, self.activation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw_i, db_i, dw_h, db_h = FRecurrent.backward(self.fcache, dy)
+        dx, dw_i, db_i, dw_h, db_h = RecurrentFn.backward(self.fcache, dy)
         update_parameter_grad(self.w_i, dw_i)
         update_parameter_grad(self.b_i, db_i)
         update_parameter_grad(self.w_h, dw_h)
@@ -214,7 +214,7 @@ class LSTM(Module):
     @Module.register_forward
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-        return FLSTM.forward(
+        return LSTMFn.forward(
             self.fcache,
             x,
             self.w_ii,
@@ -256,7 +256,7 @@ class LSTM(Module):
             db_hg,
             dw_ho,
             db_ho,
-        ) = FLSTM.backward(self.fcache, dy)
+        ) = LSTMFn.backward(self.fcache, dy)
         update_parameter_grad(self.w_ii, dw_ii)
         update_parameter_grad(self.b_ii, db_ii)
         update_parameter_grad(self.w_if, dw_if)
@@ -366,7 +366,7 @@ class GRU(Module):
     @Module.register_forward
     def forward(self, x: Tensor):
         validate_input_axes(self, x, [3])
-        return FGRU.forward(
+        return GRUFn.forward(
             self.fcache,
             x,
             self.w_ir,
@@ -400,7 +400,7 @@ class GRU(Module):
             db_hz,
             dw_hn,
             db_hn,
-        ) = FGRU.backward(self.fcache, dy)
+        ) = GRUFn.backward(self.fcache, dy)
         update_parameter_grad(self.w_ir, dw_ir)
         update_parameter_grad(self.b_ir, db_ir)
         update_parameter_grad(self.w_iz, dw_iz)

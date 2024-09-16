@@ -5,7 +5,7 @@ from typing import Optional
 from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.linear import FLinear
+from ..functional.linear import LinearFn
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module
@@ -71,11 +71,11 @@ class Linear(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return FLinear.forward(self.fcache, x, self.w, self.b)
+        return LinearFn.forward(self.fcache, x, self.w, self.b)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FLinear.backward(self.fcache, dy)
+        dx, dw, db = LinearFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx

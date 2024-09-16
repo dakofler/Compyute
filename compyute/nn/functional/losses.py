@@ -14,20 +14,20 @@ from .functions import Function, FunctionCache, PseudoCache
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]
 
 
-class FMeanSquaredError(Function):
+class MeanSquaredErrorFn(Function):
     """Computes the mean squared error loss."""
 
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        dif = y_pred - y_true
-        y = mean(dif * dif)
-        cache.y_pred_size, cache.dif = y_pred.size, dif
+        diff = y_pred - y_true
+        y = mean(diff * diff)
+        cache.push(y_pred.size, diff)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        y_pred_size, dif = cache.y_pred_size, cache.dif
-        return 2.0 * dif / float(y_pred_size)
+        y_pred_size, diff = cache.pop()
+        return 2.0 * diff / float(y_pred_size)
 
 
 def mean_squared_error(y_pred: Tensor, y_true: Tensor) -> Tensor:
@@ -49,10 +49,10 @@ def mean_squared_error(y_pred: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.MeanSquaredError`
     """
-    return FMeanSquaredError.forward(PseudoCache(), y_pred, y_true)
+    return MeanSquaredErrorFn.forward(PseudoCache(), y_pred, y_true)
 
 
-class FCrossEntropy(Function):
+class CrossEntropyFn(Function):
     """Computes the cross entropy loss."""
 
     @staticmethod
@@ -60,12 +60,12 @@ class FCrossEntropy(Function):
         probs = softmax(y_pred)
         y_true = one_hot_encode(y_true, y_pred.shape[-1], float32)
         y = mean(cp_sum(-log(probs) * y_true, axis=-1))
-        cache.y_true, cache.probs = y_true, probs
+        cache.push(y_true, probs)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        y_true, probs = cache.y_true, cache.probs
+        y_true, probs = cache.pop()
         return (probs - y_true) / float(math.prod(y_true.shape[:-1]))
 
 
@@ -88,10 +88,10 @@ def cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-    return FCrossEntropy.forward(PseudoCache(), y_pred, y_true)
+    return CrossEntropyFn.forward(PseudoCache(), y_pred, y_true)
 
 
-class FBinaryCrossEntropy(Function):
+class BinaryCrossEntropyFn(Function):
     """Computes the binary cross entropy loss."""
 
     @staticmethod
@@ -99,12 +99,12 @@ class FBinaryCrossEntropy(Function):
         log_y_pred = clip(log(y_pred), -100, 100)
         log_one_minus_y_pred = clip(log(1 - y_pred), -100, 100)
         y = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
-        cache.y_pred, cache.y_true = y_pred, y_true
+        cache.push(y_pred, y_true)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        y_pred, y_true = cache.y_pred, cache.y_true
+        y_pred, y_true = cache.pop()
         return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / float(y_pred.size)
 
 
@@ -127,4 +127,4 @@ def binary_cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.BinaryCrossEntropy`
     """
-    return FBinaryCrossEntropy.forward(PseudoCache(), y_pred, y_true)
+    return BinaryCrossEntropyFn.forward(PseudoCache(), y_pred, y_true)

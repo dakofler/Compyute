@@ -9,7 +9,7 @@ from .functions import Function, FunctionCache, PseudoCache
 __all__ = ["embedding"]
 
 
-class FEmbedding(Function):
+class EmbeddingFn(Function):
     """Performs lookup embedding on a tensor of indices."""
 
     @staticmethod
@@ -17,12 +17,12 @@ class FEmbedding(Function):
         if not is_integer(x.dtype):
             raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
         y = embedding_table[x]
-        cache.x, cache.emb_table_shape = x, embedding_table.shape
+        cache.push(x, embedding_table.shape)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, emb_table_shape = cache.x, cache.emb_table_shape
+        x, emb_table_shape = cache.pop()
         x = one_hot_encode(x, emb_table_shape[0], dy.dtype)
         return cp_sum(x.T @ dy, axis=tuple(range(x.n_axes - 2)))
 
@@ -42,4 +42,4 @@ def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FEmbedding.forward(PseudoCache(), x, embedding_table)
+    return EmbeddingFn.forward(PseudoCache(), x, embedding_table)

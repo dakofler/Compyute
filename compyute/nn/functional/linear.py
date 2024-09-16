@@ -9,27 +9,26 @@ from .functions import Function, FunctionCache, PseudoCache
 __all__ = ["linear"]
 
 
-class FLinear(Function):
+class LinearFn(Function):
     """Applies a linear transformation to the input."""
 
     @staticmethod
     def forward(
-        cache: FunctionCache, x: Tensor, w: Tensor, b: Optional[Tensor] = None
+        cache: FunctionCache, x: Tensor, w: Tensor, b: Optional[Tensor]
     ) -> Tensor:
         y = x @ w.T
 
         if b:
             y += b
 
-        cache.x, cache.w, cache.b = x, w, b is not None
+        cache.push(x, w, b is not None)
         return y
 
     @staticmethod
     def backward(
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
-        x, w, b = cache.x, cache.w, cache.b
-
+        x, w, b = cache.pop()
         dx = dy @ w
         dw = cp_sum(dy.T @ x, axis=tuple(range(dy.n_axes - 2)))
         db = None if not b else dy.sum(axis=tuple(range(dy.n_axes - 1)))
@@ -58,4 +57,4 @@ def linear(x: Tensor, w: Tensor, b: Optional[Tensor] = None) -> Tensor:
     ----------
     :class:`compyute.nn.Linear`
     """
-    return FLinear.forward(PseudoCache(), x, w, b)
+    return LinearFn.forward(PseudoCache(), x, w, b)

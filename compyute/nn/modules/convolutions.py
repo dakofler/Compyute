@@ -6,10 +6,10 @@ from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.convolutions import (
-    FAvgPooling2D,
-    FConvolution1D,
-    FConvolution2D,
-    FMaxPooling2D,
+    AvgPooling2DFn,
+    Convolution1DFn,
+    Convolution2DFn,
+    MaxPooling2DFn,
 )
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_xavier_uniform, init_zeros
@@ -112,13 +112,13 @@ class Convolution1D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
-        return FConvolution1D.forward(
+        return Convolution1DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FConvolution1D.backward(self.fcache, dy)
+        dx, dw, db = Convolution1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -207,13 +207,13 @@ class Convolution2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-        return FConvolution2D.forward(
+        return Convolution2DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = FConvolution2D.backward(self.fcache, dy)
+        dx, dw, db = Convolution2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
@@ -236,11 +236,11 @@ class MaxPooling2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-        return FMaxPooling2D.forward(self.fcache, x, self.kernel_size)
+        return MaxPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FMaxPooling2D.backward(self.fcache, dy)
+        return MaxPooling2DFn.backward(self.fcache, dy)
 
 
 class AvgPooling2D(Module):
@@ -260,8 +260,8 @@ class AvgPooling2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-        return FAvgPooling2D.forward(self.fcache, x, self.kernel_size)
+        return AvgPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        return FAvgPooling2D.backward(self.fcache, dy)
+        return AvgPooling2DFn.backward(self.fcache, dy)

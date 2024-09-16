@@ -8,7 +8,7 @@ from typing import Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache, PseudoCache
-from .functional.losses import FBinaryCrossEntropy, FCrossEntropy, FMeanSquaredError
+from .functional.losses import BinaryCrossEntropyFn, CrossEntropyFn, MeanSquaredErrorFn
 
 __all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 
@@ -107,7 +107,7 @@ class Loss(ABC):
             else:
                 dx = backward_method(loss)
 
-            assert not loss.fcache, "FunctionCache not empty after backward."
+            assert not loss.fcache.cache, "FunctionCache not empty after backward."
             return dx
 
         return wrapper
@@ -122,11 +122,11 @@ class MeanSquaredError(Loss):
 
     @Loss.register_forward
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FMeanSquaredError.forward(self.fcache, y_pred, y_true)
+        return MeanSquaredErrorFn.forward(self.fcache, y_pred, y_true)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return FMeanSquaredError.backward(self.fcache)
+        return MeanSquaredErrorFn.backward(self.fcache)
 
 
 class CrossEntropy(Loss):
@@ -138,11 +138,11 @@ class CrossEntropy(Loss):
 
     @Loss.register_forward
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FCrossEntropy.forward(self.fcache, y_pred, y_true)
+        return CrossEntropyFn.forward(self.fcache, y_pred, y_true)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return FCrossEntropy.backward(self.fcache)
+        return CrossEntropyFn.backward(self.fcache)
 
 
 class BinaryCrossEntropy(Loss):
@@ -154,11 +154,11 @@ class BinaryCrossEntropy(Loss):
 
     @Loss.register_forward
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return FBinaryCrossEntropy.forward(self.fcache, y_pred, y_true)
+        return BinaryCrossEntropyFn.forward(self.fcache, y_pred, y_true)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return FBinaryCrossEntropy.backward(self.fcache)
+        return BinaryCrossEntropyFn.backward(self.fcache)
 
 
 _LossLike = (

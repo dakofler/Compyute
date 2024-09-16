@@ -7,27 +7,23 @@ from .functions import Function, FunctionCache, PseudoCache
 __all__ = ["dropout"]
 
 
-class FDropout(Function):
+class DropoutFn(Function):
     """Applies the softmax function over the last axis of an input tensor."""
 
     @staticmethod
-    def forward(
-        cache: FunctionCache, x: Tensor, p: float = 0.5, training: bool = False
-    ) -> Tensor:
-        training = training and p > 0.0
-        cache.training = training
-        if not training:
+    def forward(cache: FunctionCache, x: Tensor, p: float, training: bool) -> Tensor:
+        if not training or p == 0.0:
+            cache.push(False, None)  # a bit hacky
             return x
         dropout_map = bernoulli(1.0 - p, x.shape, device=x.device) / (1.0 - p)
-        cache.dropout_map = dropout_map
+        cache.push(True, dropout_map)
         return x * dropout_map
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        training = cache.training
+        training, dropout_map = cache.pop()
         if not training:
             return dy
-        dropout_map = cache.dropout_map
         return dy * dropout_map
 
 
@@ -48,4 +44,4 @@ def dropout(x: Tensor, p: float = 0.5, training: bool = False) -> Tensor:
     Tensor
         Output tensor.
     """
-    return FDropout.forward(PseudoCache(), x, p, training)
+    return DropoutFn.forward(PseudoCache(), x, p, training)
