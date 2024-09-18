@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...tensors import ShapeLike, Tensor
-from ..functional.reshapes import FlattenFn, FReshape
+from ..functional.reshape_funcs import FlattenFn, FReshape
 from .module import Module
 
 __all__ = ["Flatten", "Reshape"]

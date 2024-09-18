@@ -8,7 +8,7 @@ from ...tensor_ops.reducing import sum as cp_sum
 from ...tensor_ops.unary import clip, log
 from ...tensors import Tensor
 from ...typing import float32
-from .activations import softmax
+from .activation_funcs import softmax
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = ["mean_squared_error", "cross_entropy", "binary_cross_entropy"]

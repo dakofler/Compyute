@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ...tensors import Tensor
-from ..functional.regularizations import DropoutFn
+from ..functional.regularization_funcs import DropoutFn
 from .module import Module
 
 __all__ = ["Dropout"]

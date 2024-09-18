@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.convolutions import (
+from ..functional.convolution_funcs import (
     AvgPooling2DFn,
     Convolution1DFn,
     Convolution2DFn,

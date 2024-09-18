@@ -8,7 +8,11 @@ from typing import Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache, PseudoCache
-from .functional.losses import BinaryCrossEntropyFn, CrossEntropyFn, MeanSquaredErrorFn
+from .functional.loss_funcs import (
+    BinaryCrossEntropyFn,
+    CrossEntropyFn,
+    MeanSquaredErrorFn,
+)
 
 __all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
 

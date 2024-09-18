@@ -5,9 +5,9 @@ from typing import Literal, Optional
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.activations import ReLUFn, SigmoidFn, TanhFn
-from ..functional.linear import LinearFn
-from ..functional.recurrents import GRUFn, LSTMFn, RecurrentFn
+from ..functional.activation_funcs import ReLUFn, SigmoidFn, TanhFn
+from ..functional.linear_funcs import LinearFn
+from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module, validate_input_axes

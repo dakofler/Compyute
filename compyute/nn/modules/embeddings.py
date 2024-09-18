@@ -5,7 +5,7 @@ from typing import Optional
 from ...tensor_ops.creating import empty
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.embeddings import EmbeddingFn
+from ..functional.embedding_funcs import EmbeddingFn
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_normal
 from .module import Module

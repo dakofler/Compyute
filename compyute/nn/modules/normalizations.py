@@ -5,7 +5,7 @@ from typing import Optional
 from ...tensor_ops.creating import empty
 from ...tensors import ShapeLike, Tensor
 from ...typing import DType
-from ..functional.normalizations import (
+from ..functional.normalization_funcs import (
     BatchNorm1DFn,
     BatchNorm2DFn,
     LayerNormFn,

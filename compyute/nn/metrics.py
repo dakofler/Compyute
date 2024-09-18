@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Literal
 
 from ..tensors import Tensor
-from .functional.metrics import accuracy_score, r2_score
+from .functional.metric_funcs import accuracy_score, r2_score
 
 __all__ = ["Metric", "Accuracy", "R2"]
 

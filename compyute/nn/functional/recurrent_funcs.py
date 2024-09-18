@@ -4,9 +4,9 @@ from typing import Literal, Optional
 
 from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
-from .activations import ReLUFn, SigmoidFn, TanhFn
+from .activation_funcs import ReLUFn, SigmoidFn, TanhFn
 from .functions import Function, FunctionCache, PseudoCache
-from .linear import LinearFn
+from .linear_funcs import LinearFn
 
 __all__ = ["recurrent", "lstm", "gru"]
 

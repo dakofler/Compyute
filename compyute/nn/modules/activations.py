@@ -3,7 +3,7 @@
 from typing import Literal, Optional, TypeAlias
 
 from ...tensors import Tensor
-from ..functional.activations import (
+from ..functional.activation_funcs import (
     FastGELUFn,
     GELUFn,
     LeakyReLUFn,
