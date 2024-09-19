@@ -1,6 +1,7 @@
 """Neural network activation functions."""
 
 from ...tensor_ops.creating import identity
+from ...tensor_ops.reducing import sum as cp_sum
 from ...tensor_ops.reshaping import insert_dim, reshape, tile
 from ...tensor_ops.selecting import maximum
 from ...tensor_ops.unary import exp, invert
@@ -169,17 +170,17 @@ class GELUFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         # sqrt(2/pi) = 0.7978845608
-        tanh_out = cp_tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x))
-        y = 0.5 * x * (1.0 + tanh_out)
-        cache.push(x, tanh_out)
+        tanh_term = cp_tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x))
+        y = 0.5 * x * (1.0 + tanh_term)
+        cache.push(x, tanh_term)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, tanh_out = cache.pop()
-        dx1 = 1.0 + tanh_out
+        x, tanh_term = cache.pop()
+        dx1 = 1.0 + tanh_term
         # sqrt(2/pi) * 3 * 0.044715 = 0.1070322243
-        dx2 = x * (1.0 - tanh_out * tanh_out) * (0.7978845608 + 0.1070322243 * x * x)
+        dx2 = x * (1.0 - tanh_term * tanh_term) * (0.7978845608 + 0.1070322243 * x * x)
         return 0.5 * dy * (dx1 + dx2)
 
 
@@ -208,7 +209,8 @@ class FastGELUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        sig = SigmoidFn.forward(cache, 1.702 * x)
+        x_exp = exp(x * 1.702)
+        sig = x_exp / (1.0 + x_exp)
         y = x * sig
         cache.push(x, sig)
         return y
@@ -216,7 +218,7 @@ class FastGELUFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, sig = cache.pop()
-        return dy * sig + x * SigmoidFn.backward(cache, dy) * 1.702
+        return dy * sig * (1.0 + x * 1.702 * (1.0 - sig))
 
 
 def fast_gelu(x: Tensor) -> Tensor:
@@ -244,7 +246,8 @@ class SiLUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        sig = SigmoidFn.forward(cache, x)
+        x_exp = exp(x)
+        sig = x_exp / (1.0 + x_exp)
         y = x * sig
         cache.push(x, sig)
         return y
@@ -252,7 +255,7 @@ class SiLUFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, sig = cache.pop()
-        return x * SigmoidFn.backward(cache, dy) + sig * dy
+        return dy * sig * (1.0 + x * (1.0 - sig))
 
 
 def silu(x: Tensor) -> Tensor:
@@ -288,9 +291,12 @@ class SoftmaxFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (y,) = cache.pop()
-        dx = tile(insert_dim(y, -1), dy.shape[-1], -1)
-        dx *= identity(dy.shape[-1], device=dy.device) - dx.T
-        return reshape(dx @ insert_dim(dy, -1), dy.shape)
+        return y * (dy - cp_sum(dy * y, axis=-1, keepdims=True))  # thanks to ChatGPT
+
+
+def softmax_backward_optimized(grad_output, softmax_output):
+    # Gradient of the loss w.r.t. input
+    return
 
 
 def softmax(x: Tensor) -> Tensor:
