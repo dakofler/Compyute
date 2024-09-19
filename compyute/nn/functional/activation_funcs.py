@@ -98,8 +98,7 @@ class SigmoidFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x_exp = exp(x)
-        y = x_exp / (1.0 + x_exp)
+        y = 1.0 / (1.0 + exp(-x))
         cache.push(y)
         return y
 
@@ -209,8 +208,7 @@ class FastGELUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x_exp = exp(x * 1.702)
-        sig = x_exp / (1.0 + x_exp)
+        sig = 1.0 / (1.0 + exp(x * -1.702))
         y = x * sig
         cache.push(x, sig)
         return y
@@ -246,8 +244,7 @@ class SiLUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x_exp = exp(x)
-        sig = x_exp / (1.0 + x_exp)
+        sig = 1.0 / (1.0 + exp(-x))
         y = x * sig
         cache.push(x, sig)
         return y
@@ -279,7 +276,7 @@ def silu(x: Tensor) -> Tensor:
 
 
 class SoftmaxFn(Function):
-    """Applies the softmax function over the last axis of an input tensor."""
+    """Applies the softmax activation function over the last axis of an input tensor."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -292,11 +289,6 @@ class SoftmaxFn(Function):
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (y,) = cache.pop()
         return y * (dy - cp_sum(dy * y, axis=-1, keepdims=True))  # thanks to ChatGPT
-
-
-def softmax_backward_optimized(grad_output, softmax_output):
-    # Gradient of the loss w.r.t. input
-    return
 
 
 def softmax(x: Tensor) -> Tensor:
