@@ -5,6 +5,7 @@ compyute.random
 .. autosummary::
     :toctree: ../_generated/compyute.random
     
+    random
     normal
     uniform
     uniform_int

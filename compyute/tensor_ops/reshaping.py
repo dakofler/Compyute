@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..base_tensor import Tensor, _AxisLike, _ShapeLike
+from ..tensors import AxisLike, ShapeLike, Tensor
 from .creating import identity
 
 __all__ = [
@@ -29,7 +29,7 @@ def diagonal(x: Tensor) -> Tensor:
     return insert_dim(x, -1) * identity(x.shape[-1])
 
 
-def reshape(x: Tensor, shape: _ShapeLike) -> Tensor:
+def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a new view of the tensor of a given shape.
 
     Parameters
@@ -52,34 +52,33 @@ def flatten(x: Tensor) -> Tensor:
     return reshape(x, shape=((-1,)))
 
 
-def transpose(x: Tensor, axes: tuple[int, int] = (-2, -1)) -> Tensor:
+def transpose(x: Tensor, axes: Optional[AxisLike] = None) -> Tensor:
     """Transposes a tensor by swapping two axes.
 
     Parameters
     ----------
     x: Tensor
         Input tensor.
-    axes : tuple[int, int], optional
-        Transpose axes. Defaults to ``(-2, -1)``.
+    axes : AxisLike, optional
+        Permutation of output axes. Defaults to ``None``.
+        If ``None`` axes are reversed.
 
     Returns
     -------
     Tensor
         Transposed tensor.
     """
-    if x.n_axes < 2:
-        return x
-    return moveaxis(x, from_axis=axes[0], to_axis=axes[1])
+    return x.transpose(axes)
 
 
-def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
+def insert_dim(x: Tensor, axis: int) -> Tensor:
     """Returns a view of the tensor containing an added dimension at a given axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis : AxisLike
+    axis : int
         Where to insert the new dimension.
 
     Returns
@@ -87,7 +86,11 @@ def insert_dim(x: Tensor, axis: _AxisLike) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    return Tensor(x.engine.expand_dims(x.data, axis=axis))
+    if axis == -1:
+        return reshape(x, (*x.shape, 1))
+    if axis < 0:
+        axis += 1
+    return reshape(x, (*x.shape[:axis], 1, *x.shape[axis:]))
 
 
 def add_dims(x: Tensor, target_dims: int) -> Tensor:
@@ -108,7 +111,7 @@ def add_dims(x: Tensor, target_dims: int) -> Tensor:
     return reshape(x, x.shape + (1,) * (target_dims - x.n_axes))
 
 
-def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
+def resize(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a new tensor with the specified shape.
     If the new tensor is larger than the original one, it is filled with zeros.
 
@@ -124,7 +127,7 @@ def resize(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Resized tensor.
     """
-    return Tensor(x.engine.resize(x.data, shape))
+    return Tensor(x.device.module.resize(x.data, shape))
 
 
 def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
@@ -166,7 +169,7 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
     """
     repeats = [1] * x.n_axes
     repeats[axis] = n_repeats
-    return Tensor(x.engine.tile(x.data, tuple(repeats)))
+    return Tensor(x.device.module.tile(x.data, tuple(repeats)))
 
 
 def pad(
@@ -189,10 +192,10 @@ def pad(
     Tensor
         Padded tensor.
     """
-    return Tensor(x.engine.pad(x.data, padding))
+    return Tensor(x.device.module.pad(x.data, padding))
 
 
-def pad_to_shape(x: Tensor, shape: _ShapeLike) -> Tensor:
+def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
     """Returns a padded tensor using zero padding that matches a specified shape.
 
     Parameters
@@ -228,7 +231,7 @@ def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
     Tensor
         Tensor with a moved axes.
     """
-    return Tensor(x.engine.moveaxis(x.data, from_axis, to_axis))
+    return Tensor(x.device.module.moveaxis(x.data, from_axis, to_axis))
 
 
 def squeeze(x: Tensor) -> Tensor:
@@ -244,10 +247,10 @@ def squeeze(x: Tensor) -> Tensor:
     Tensor
         Tensor with removed axes.
     """
-    return Tensor(x.data.squeeze())
+    return x.squeeze()
 
 
-def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
+def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
     """Returns a tensor with flipped elements along given axis.
 
     Parameters
@@ -255,7 +258,7 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     x : Tensor
         Input tensor.
     axis : AxisLike, optional
-        | Axis alown which to flip the tensor. Defaults to ``None``.
+        | Axis along which to flip the tensor. Defaults to ``None``.
         | ``None``: all axes are flipped
         | ``int``: only the specified axis is flipped.
         | ``tuple[int, ...]``: all specified axes are flipped.
@@ -265,10 +268,10 @@ def flip(x: Tensor, axis: Optional[_AxisLike] = None) -> Tensor:
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(x.engine.flip(x.data, axis=axis))
+    return Tensor(x.device.module.flip(x.data, axis))
 
 
-def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
+def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
     """Broadcast a tensor to a new shape.
 
     Parameters
@@ -283,4 +286,4 @@ def broadcast_to(x: Tensor, shape: _ShapeLike) -> Tensor:
     Tensor
         Broadcasted tensor.
     """
-    return Tensor(x.engine.broadcast_to(x.data, shape=shape))
+    return Tensor(x.device.module.broadcast_to(x.data, shape))

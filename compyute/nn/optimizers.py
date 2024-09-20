@@ -1,10 +1,11 @@
 """Parameter optimizers."""
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from typing import Iterator, Literal, Optional
+from collections.abc import Iterable
+from typing import Any, Literal, Optional
 
-from ..tensor_ops.transforming import sqrt, tensorprod
+from ..tensor_ops.unary import sqrt
+from ..tensors import Tensor
 from .parameter import Parameter
 
 __all__ = ["SGD", "Adam", "AdamW", "NAdam"]
@@ -15,51 +16,59 @@ class Optimizer(ABC):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
     """
 
+    lr: float
+    t = 1
+    _parameters: list[Parameter]
+    _state: dict[int, dict[str, Tensor]]
+
     def __init__(
-        self, parameters: Optional[Iterator[Parameter]] = None, lr: float = 1e-3
+        self, parameters: Optional[Iterable[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
-        self.t: int = 1
-        self.state: dict = {}
 
         if parameters is not None:
-            self.parameters = parameters
+            self.set_parameters(parameters)
 
-    @property
-    def parameters(self) -> OrderedDict:
-        """Iterator of optimizer parameters."""
-        return self._parameters
+    def set_parameters(self, parameters: Iterable[Parameter]) -> None:
+        """Sets the parameters to optimize.
 
-    @parameters.setter
-    def parameters(self, parameters: Iterator[Parameter]) -> None:
-        self._parameters = OrderedDict(enumerate(parameters))
-        for i in range(len(self._parameters)):
-            self.state[i] = {}
+        Parameters
+        ----------
+        value : Iterable[Parameter]
+            Paramters to optimize.
+        """
+        ptrs: set[int] = set()
+        self._parameters = []
 
-    def get_state_dict(self) -> OrderedDict:
+        for p in parameters:
+            if p.ptr in ptrs:
+                continue
+            self._parameters.append(p)
+            ptrs.add(p.ptr)
+
+        self._state = {i: {} for i in range(len(self._parameters))}
+
+    def get_state_dict(self) -> dict[str, dict[Any, Any]]:
         """Returns a state dict containing variables and buffers.
 
         Returns
         -------
-        OrderedDict
-            State dict containing variables and buffers.
+        dict[str, dict[Any, Any]]
+            State dict containing buffers and variables.
         """
-        return OrderedDict(
-            state=self.state,
-            vars={
-                k: v
-                for k, v in vars(self).items()
-                if k not in ["state", "parameters", "_parameters"]
-            },
-        )
+        bad_vars = {"_parameters", "_state"}
+        return {
+            "state": self._state,
+            "vars": {k: v for k, v in vars(self).items() if k not in bad_vars},
+        }
 
-    def load_state_dict(self, state_dict: OrderedDict) -> None:
+    def load_state_dict(self, state_dict: dict[str, dict[Any, Any]]) -> None:
         """Loads the optimizer state from a state dict.
 
         .. note::
@@ -68,16 +77,16 @@ class Optimizer(ABC):
 
         Parameters
         ----------
-        state_dict : OrderedDict
+        state_dict : dict[str, dict[Any, Any]]
             State dict containing parameters and buffers.
         """
-        self.state = state_dict["state"]
+        self._state = state_dict["state"]
         for k, v in state_dict["vars"].items():
             setattr(self, k, v)
 
     def reset_grads(self) -> None:
         """Resets parameter gradients to ``None``."""
-        for p in self.parameters.values():
+        for p in self._parameters:
             p.grad = None
 
     @abstractmethod
@@ -96,14 +105,13 @@ class SGD(Optimizer):
             & \rule{115mm}{1pt} \\
             & \text{ 1: } \textbf{if } \lambda > 0 \\
             & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
-            & \text{ 3: } \textbf{if } \mu = 0 \\
-            & \text{ 4: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta g_t \\
-            & \text{ 5: } \textbf{else} \\
-            & \text{ 6: } \hspace{5mm} v_t \leftarrow \mu v_{t-1} - \eta g_t \\
-            & \text{ 7: } \hspace{5mm} \textbf{if } nesterov \\
-            & \text{ 8: } \hspace{10mm} p_t \leftarrow p_t + \mu v_t - \eta g_t \\
-            & \text{ 9: } \hspace{5mm} \textbf{else} \\
-            & \text{10: } \hspace{10mm} p_t \leftarrow p_{t-1} + v_t \\
+            & \text{ 3: } \textbf{if } \mu > 0 \\
+            & \text{ 4: } \hspace{5mm} v_t \leftarrow \mu v_{t-1} + g_t \\
+            & \text{ 5: } \hspace{5mm} \textbf{if } nesterov \\
+            & \text{ 6: } \hspace{10mm} g_t \leftarrow g_t + \mu v_t \\
+            & \text{ 7: } \hspace{5mm} \textbf{else} \\
+            & \text{ 8: } \hspace{10mm} g_t \leftarrow v_t \\
+            & \text{ 9: } \hspace{5mm} p_t \leftarrow p_{t-1} - \eta g_t \\
             & \rule{115mm}{1pt} \\
         \end{aligned}
 
@@ -118,7 +126,7 @@ class SGD(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -130,13 +138,17 @@ class SGD(Optimizer):
         Weight decay factor. Defaults to ``0``.
     """
 
+    momentum: float
+    nesterov: bool
+    weight_decay: float
+
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
-        momentum: float = 0,
+        momentum: float = 0.0,
         nesterov: bool = False,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
     ) -> None:
         super().__init__(parameters, lr)
         self.momentum = momentum
@@ -145,26 +157,27 @@ class SGD(Optimizer):
 
     def step(self) -> None:
         """Updates parameters using stochastic gradient descent."""
-        for i, p in self.parameters.items():
-            if not p.grad:
+        for i, p in enumerate(self._parameters):
+            if p.grad is None:
                 continue
 
-            grad = p.grad.copy()
+            g = p.grad.copy()
 
-            if self.weight_decay > 0:
-                grad += self.weight_decay * p
+            if self.weight_decay > 0.0:
+                g += self.weight_decay * p
 
-            if self.momentum == 0:
-                p -= self.lr * grad
-            else:
-                prev_v = self.state[i].get("v", 0)
-                v = self.momentum * prev_v - self.lr * grad  # velocity
-                self.state[i]["v"] = v
+            if self.momentum > 0.0:
+                v_prev = self._state[i].get("v", 0.0)
+                v = self.momentum * v_prev + g
+                self._state[i]["v"] = v
 
                 if self.nesterov:
-                    p += self.momentum * v - self.lr * grad
+                    g += self.momentum * v
                 else:
-                    p += v
+                    g = v
+
+            delta = self.lr * g
+            p.data -= delta.data
 
         self.t += 1
 
@@ -202,7 +215,7 @@ class Adam(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -216,14 +229,19 @@ class Adam(Optimizer):
         Weight decay factor. Defaults to ``0``.
     """
 
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
+
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
     ) -> None:
         super().__init__(parameters, lr)
         self.beta1 = beta1
@@ -232,29 +250,34 @@ class Adam(Optimizer):
         self.weight_decay = weight_decay
 
     def step(self) -> None:
-        for i, p in self.parameters.items():
-            if not p.grad:
+
+        m_div = 1.0 - self.beta1**self.t
+        v_div = 1.0 - self.beta2**self.t
+
+        for i, p in enumerate(self._parameters):
+            if p.grad is None:
                 continue
 
-            grad = p.grad.copy()
-
-            if self.weight_decay > 0:
-                grad += self.weight_decay * p
+            if self.weight_decay == 0.0:
+                g = p.grad
+            else:
+                g = p.grad + self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * grad
-            self.state[i]["m"] = m
+            m_prev = self._state[i].get("m", 0.0)
+            m = self.beta1 * m_prev + (1.0 - self.beta1) * g
+            self._state[i]["m"] = m.copy()
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
-            self.state[i]["v"] = v
+            v_prev = self._state[i].get("v", 0.0)
+            v = self.beta2 * v_prev + (1.0 - self.beta2) * g**2
+            self._state[i]["v"] = v.copy()
 
-            m /= 1 - self.beta1**self.t
-            v /= 1 - self.beta2**self.t
+            m /= m_div
+            v /= v_div
 
-            p -= self.lr * m / (sqrt(v) + self.eps)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 
@@ -269,13 +292,12 @@ class AdamW(Optimizer):
             & \textbf{AdamW} \\
             & \text{initialize: } m_0 \leftarrow 0,  v_0 \leftarrow 0 \\
             & \rule{115mm}{1pt} \\
-            & \text{ 1: } \textbf{if } \lambda > 0 \\
-            & \text{ 2: } \hspace{5mm} g_t \leftarrow g_t + \lambda p_{t-1} \\
+            & \text{ 2: } p_t \leftarrow (1 - \eta \lambda) p_{t-1} \\
             & \text{ 3: } m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
             & \text{ 4: } v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
             & \text{ 5: } \hat{m_t} \leftarrow \frac{m_t}{1 - \beta_1^t} \\
             & \text{ 6: } \hat{v_t} \leftarrow \frac{v_t}{1 - \beta_2^t} \\
-            & \text{ 7: } p_t \leftarrow p_{t-1} - \eta \left( \frac{ \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} + \lambda p_{t-1} \right)\\
+            & \text{ 7: } p_t \leftarrow p_t - \frac{\eta \hat{m_t}}{\sqrt{\hat{v_t}} + \epsilon} \\
             & \rule{115mm}{1pt} \\
         \end{aligned}
 
@@ -292,7 +314,7 @@ class AdamW(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``1e-3``.
@@ -306,9 +328,14 @@ class AdamW(Optimizer):
         Weight decay factor. Defaults to ``1e-2``.
     """
 
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
+
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 1e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -322,29 +349,31 @@ class AdamW(Optimizer):
         self.weight_decay = weight_decay
 
     def step(self) -> None:
-        for i, p in self.parameters.items():
-            if not p.grad:
+
+        m_div = 1.0 - self.beta1**self.t
+        v_div = 1.0 - self.beta2**self.t
+
+        for i, p in enumerate(self._parameters):
+            if p.grad is None:
                 continue
 
-            grad = p.grad.copy()
-
-            if self.weight_decay > 0:
-                grad += self.lr * self.weight_decay * p
+            p.data *= 1.0 - self.lr * self.weight_decay
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * p.grad
-            self.state[i]["m"] = m
+            prev_m = self._state[i].get("m", 0.0)
+            m = self.beta1 * prev_m + (1.0 - self.beta1) * p.grad
+            self._state[i]["m"] = m.copy()
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * p.grad**2
-            self.state[i]["v"] = v
+            prev_v = self._state[i].get("v", 0.0)
+            v = self.beta2 * prev_v + (1.0 - self.beta2) * p.grad**2
+            self._state[i]["v"] = v.copy()
 
-            m /= 1 - self.beta1**self.t
-            v /= 1 - self.beta2**self.t
+            m /= m_div
+            v /= v_div
 
-            p -= self.lr * (m / (sqrt(v) + self.eps) + self.weight_decay * p)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 
@@ -387,7 +416,7 @@ class NAdam(Optimizer):
 
     Parameters
     ----------
-    parameters : Iterator[Parameter], optional
+    parameters : Iterable[Parameter], optional
         Paramters to optimize. Defaults to ``None``.
     lr : float, optional
         Learning rate. Defaults to ``2e-3``.
@@ -403,14 +432,20 @@ class NAdam(Optimizer):
         Momentum decay factor. Defaults to ``4e-3``.
     """
 
+    beta1: float
+    beta2: float
+    eps: float
+    weight_decay: float
+    momentum_decay: float
+
     def __init__(
         self,
-        parameters: Optional[Iterator[Parameter]] = None,
+        parameters: Optional[Iterable[Parameter]] = None,
         lr: float = 2e-3,
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        weight_decay: float = 0,
+        weight_decay: float = 0.0,
         momentum_decay: float = 4e-3,
     ) -> None:
         super().__init__(parameters, lr)
@@ -419,40 +454,45 @@ class NAdam(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.momentum_decay = momentum_decay
-        self.state["mus"] = []
+        self._mu_prod = 1.0
 
     def step(self) -> None:
         # momentum coefficient
-        mu = self.beta1 * (1 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
-        self.state["mus"].append(mu)
-        mu_prod = tensorprod(self.state["mus"])
-        next_mu = self.beta1 * (1 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay))
+        mu: float = self.beta1 * (1.0 - 0.5 * 0.96 ** (self.t * self.momentum_decay))
+        mu_next: float = self.beta1 * (
+            1.0 - 0.5 * 0.96 ** ((self.t + 1) * self.momentum_decay)
+        )
+        self._mu_prod *= mu
+        mu_next_prod = self._mu_prod * mu_next
 
-        for i, p in self.parameters.items():
-            if not p.grad:
+        m_div = 1.0 - mu_next_prod
+        g_div = 1.0 - self._mu_prod
+        v_div = 1.0 - self.beta2**self.t
+
+        for i, p in enumerate(self._parameters):
+            if p.grad is None:
                 continue
 
-            grad = p.grad.copy()
-
-            if self.weight_decay > 0:
-                grad += self.weight_decay * p
+            if self.weight_decay == 0.0:
+                g = p.grad
+            else:
+                g = p.grad + self.weight_decay * p
 
             # first moment estimate (exponential moving average)
-            prev_m = self.state[i].get("m", 0)
-            m = self.beta1 * prev_m + (1 - self.beta1) * grad
-            self.state[i]["m"] = m
+            m_prev = self._state[i].get("m", 0.0)
+            m = self.beta1 * m_prev + (1.0 - self.beta1) * g
+            self._state[i]["m"] = m.copy()
 
             # second moment estimate (squared gradient)
-            prev_v = self.state[i].get("v", 0)
-            v = self.beta2 * prev_v + (1 - self.beta2) * grad**2
-            self.state[i]["v"] = v
+            v_prev = self._state[i].get("v", 0.0)
+            v = self.beta2 * v_prev + (1.0 - self.beta2) * g**2
+            self._state[i]["v"] = v.copy()
 
-            m_hat = next_mu * m / (1 - mu_prod * next_mu) + (1 - mu) * grad / (
-                1 - mu_prod
-            )
-            v /= 1 - self.beta2**self.t
+            m = mu_next * m / m_div + (1.0 - mu) * g / g_div
+            v /= v_div
 
-            p -= self.lr * m_hat / (sqrt(v) + self.eps)
+            delta = self.lr * m / (sqrt(v) + self.eps)
+            p.data -= delta.data
 
         self.t += 1
 

@@ -1,14 +1,13 @@
 """Neural network linear transformation modules."""
 
-import math
 from typing import Optional
 
-from ...base_tensor import Tensor
-from ...dtypes import Dtype, _DtypeLike
-from ...random.random import uniform
-from ...tensor_ops.creating import zeros
-from ..functional.linear import linear
-from ..parameter import Parameter
+from ...tensor_ops.creating import empty
+from ...tensors import Tensor
+from ...typing import DType
+from ..functional.linear_funcs import LinearFn
+from ..parameter import Parameter, update_parameter_grad
+from ..utils.initializers import init_xavier_uniform, init_zeros
 from .module import Module
 
 __all__ = ["Linear"]
@@ -36,8 +35,8 @@ class Linear(Module):
         Number of output channels (neurons).
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : _DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+    dtype : DType, optional
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -52,7 +51,7 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -60,25 +59,23 @@ class Linear(Module):
         self.out_channels = out_channels
         self.bias = bias
 
-        # init weights
-        k = 1 / math.sqrt(in_channels)
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype))
+        # init parameters
+        self.w = Parameter(empty((out_channels, in_channels), dtype=dtype))
+        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
+        self._init_parameters_and_buffers()
 
-        # init biases
-        self.b = Parameter(zeros((out_channels,), dtype)) if bias else None
+    def _init_parameters_and_buffers(self) -> None:
+        init_xavier_uniform(self.w)
+        if self.b:
+            init_zeros(self.b)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
+        return LinearFn.forward(self.fcache, x, self.w, self.b)
 
-        y, grad_fn = linear(x, self.w, self.b, self._is_training)
-
-        if self._is_training and grad_fn is not None:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx, dw, db = grad_fn(dy)
-                self._update_parameter_grad(self.w, dw)
-                self._update_parameter_grad(self.b, db)
-                return dx
-
-            self._backward = _backward
-
-        return y
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        dx, dw, db = LinearFn.backward(self.fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx

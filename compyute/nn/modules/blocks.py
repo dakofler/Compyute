@@ -2,14 +2,13 @@
 
 from typing import Optional
 
-from ...dtypes import Dtype, _DtypeLike
-from ..functional.convolutions import _PaddingLike
-from ..utils.initializers import _InitializerLike, get_initializer
-from .activations import _ActivationLike, get_activation
+from ...typing import DType
+from ..utils.initializers import InitializerLike, get_initializer
+from .activations import ActivationLike, get_activation
 from .containers import Sequential
-from .convolution import Convolution1D, Convolution2D
+from .convolutions import Convolution1D, Convolution2D, PaddingLike
 from .linear import Linear
-from .normalization import BatchNorm1D, BatchNorm2D
+from .normalizations import BatchNorm1D, BatchNorm2D
 
 __all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
 
@@ -32,19 +31,19 @@ class DenseBlock(Sequential):
         Number of input features.
     out_channels : int
         Number of output channels (neurons) of the dense block.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    bias_init : _InitializerLike, optional
+    bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : _DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+    dtype : DType, optional
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -58,11 +57,11 @@ class DenseBlock(Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        activation: _ActivationLike,
-        weight_init: _InitializerLike = "xavier_uniform",
+        activation: ActivationLike,
+        weight_init: InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: _InitializerLike = "zeros",
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        bias_init: InitializerLike = "zeros",
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         linear = Linear(in_channels, out_channels, bias, dtype)
@@ -99,16 +98,16 @@ class Convolution1DBlock(Sequential):
         Number of output channels (filters).
     kernel_size : int
         Size of each kernel.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
         Dilation used for each axis of the filter. Defaults to ``1``.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
@@ -123,7 +122,7 @@ class Convolution1DBlock(Sequential):
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -139,17 +138,17 @@ class Convolution1DBlock(Sequential):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        activation: _ActivationLike,
-        padding: _PaddingLike = "valid",
+        activation: ActivationLike,
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
-        weight_init: _InitializerLike = "xavier_uniform",
+        weight_init: InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: _InitializerLike = "zeros",
+        bias_init: InitializerLike = "zeros",
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution1D(
@@ -201,21 +200,21 @@ class Convolution2DBlock(Sequential):
         Number of output channels (filters or feature maps).
     kernel_size : int
         Size of each kernel.
-    activation : _ActivationLike
+    activation : ActivationLike
         Activation function to use in the block.
         See :ref:`activations` for more details.
-    padding : _PaddingLike, optional
+    padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
         Dilations used for each axis of the filter. Defaults to ``1``.
-    weight_init : _InitializerLike, optional
+    weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    bias_init : _InitializerLike, optional
+    bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
     batchnorm : bool, optional
@@ -225,7 +224,7 @@ class Convolution2DBlock(Sequential):
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
     dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to :class:`compyute.float32`.
+        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -241,17 +240,17 @@ class Convolution2DBlock(Sequential):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        activation: _ActivationLike,
-        padding: _PaddingLike = "valid",
+        activation: ActivationLike,
+        padding: PaddingLike = "valid",
         stride: int = 1,
         dilation: int = 1,
-        weight_init: _InitializerLike = "xavier_uniform",
+        weight_init: InitializerLike = "xavier_uniform",
         bias: bool = True,
-        bias_init: _InitializerLike = "zeros",
+        bias_init: InitializerLike = "zeros",
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: _DtypeLike = Dtype.FLOAT32,
+        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Convolution2D(

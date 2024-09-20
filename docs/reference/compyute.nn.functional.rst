@@ -8,14 +8,14 @@ Activations
 .. autosummary::
     :toctree: ../_generated/compyute.nn.functional
 
-    relu
-    leaky_relu
     gelu
+    fast_gelu
+    leaky_relu
+    relu
     sigmoid
     silu
-    tanh
     softmax
-    temperature_softmax
+    tanh
 
 
 Convolutions
@@ -39,7 +39,7 @@ Embeddings
 .. autosummary::
     :toctree: ../_generated/compyute.nn.functional
     
-    lookup_embedding
+    embedding
 
 
 Linear
@@ -78,6 +78,16 @@ Normalization
     batchnorm2d
     layernorm
     rmsnorm
+
+
+Recurrent
+--------------
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.functional
+    
+    recurrent
+    lstm
+    gru
 
 
 Regularization

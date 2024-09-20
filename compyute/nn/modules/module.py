@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import gc
+import os
+import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from contextlib import contextmanager
-from itertools import chain
-from typing import Any, Callable, Iterable, Iterator, Optional
+from collections.abc import Iterable, Iterator
+from functools import wraps
+from typing import Any, Optional
 
-from ...base_tensor import ShapeError, Tensor
-from ...engine import Device, _DeviceLike, available
+from ...backend import Device, DeviceError, free_cuda_memory, select_device
+from ...tensors import ShapeError, Tensor
+from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
+DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
 
 
 class Module(ABC):
@@ -24,245 +29,212 @@ class Module(ABC):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    label: str
+    fcache: FunctionCache
+    x: Optional[Tensor] = None
+    y: Optional[Tensor] = None
+    _buffers: OrderedDict[str, Buffer]
+    _device = select_device(None)
+    _retain_values = False
+    _trainable = True
+    _is_training = True
+    _modules: OrderedDict[str, Module]
+    _parameters: OrderedDict[str, Parameter]
+
     def __init__(self, label: Optional[str] = None) -> None:
-        self.label = label if label is not None else self.__class__.__name__
+        self.label = label or self.__class__.__name__
+        self.fcache = FunctionCache()
+        self._parameters = OrderedDict()
+        self._buffers = OrderedDict()
+        self._modules = OrderedDict()
 
-        self.y: Optional[Tensor] = None
-        self._backward: Optional[Callable[[Tensor], Tensor]] = None
-        self._device: _DeviceLike = Device.CPU
-        self._is_retaining_values: bool = False
-        self._is_trainable: bool = True
-        self._is_training: bool = False
-
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # PROPERTIES
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     @property
-    def device(self) -> _DeviceLike:
+    def device(self) -> Device:
         """Device the module parametes and variables are stored on."""
         return self._device
 
-    def to_device(self, device: _DeviceLike) -> None:
+    def to_device(self, device: Device) -> None:
         """Moves the module parameters and variables to the specified device.
 
         Parameters
         ----------
-        device : _DeviceLike
+        device : Device
             Device to move the module parameters and variables to.
         """
-        device = Device(device)
         if device == self._device:
             return
 
-        available(device)
         self._device = device
 
-        if self.y:
-            self.y.ito_device(device)
+        for t in vars(self).values():
+            if isinstance(t, Tensor):
+                t.ito_device(device)
 
-        for p in chain(self.get_buffers(), self.get_parameters()):
-            p.ito_device(device)
-
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.to_device(device)
 
     @property
-    def modules(self) -> list[Module]:
-        """List of child modules.
-
-        Returns
-        -------
-        list[Module]
-            List of child modules.
-        """
-        all_modules = []
-        for attribute in vars(self).values():
-            if isinstance(attribute, Module):
-                all_modules.append(attribute)
-            if isinstance(attribute, ModuleList):
-                for module in attribute:
-                    all_modules.append(module)
-        return all_modules
-
-    @property
-    def is_retaining_values(self) -> bool:
+    def retain_values(self) -> bool:
         """Whether the module should retain intermediate values such as outputs and gradients."""
-        return self._is_retaining_values
+        return self._retain_values
 
-    @is_retaining_values.setter
-    def is_retaining_values(self, value: bool) -> None:
-        """Set the module to retain intermediate values such as outputs and gradients.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module should retain intermediate values.
-        """
-        self._is_retaining_values = value
-        for module in self.modules:
-            module.is_retaining_values = value
+    @retain_values.setter
+    def retain_values(self, value: bool) -> None:
+        self._retain_values = value
+        for module in self.get_modules(recursive=False):
+            module.retain_values = value
 
     @property
-    def is_trainable(self) -> bool:
+    def trainable(self) -> bool:
         """Whether the module parameters are trainable."""
-        return self._is_trainable
+        return self._trainable
 
-    @is_trainable.setter
-    def is_trainable(self, value: bool) -> None:
-        """Set module parameters to be trainable.
-
-        Parameters
-        ----------
-        value : bool
-            Whether the module parameters should be trainable.
-        """
-        self._is_trainable = value
-        for module in self.modules:
-            module.is_trainable = value
+    @trainable.setter
+    def trainable(self, value: bool) -> None:
+        self._trainable = value
+        for module in self.get_modules(recursive=False):
+            module.trainable = value
 
     @property
     def is_training(self) -> bool:
         """Whether the module is in training mode."""
         return self._is_training
 
-    @is_training.setter
-    def is_training(self, value: bool) -> None:
-        """Sets module training mode.
+    def training(self) -> None:
+        """Puts the module in training mode."""
+        self._is_training = True
+        self.fcache = FunctionCache()
 
-        Parameters
-        ----------
-        value : bool
-            Whether the module parameters should be trainable.
-        """
-        self._is_training = value
-        for module in self.modules:
-            module.is_training = value
+        for module in self.get_modules(recursive=False):
+            module.training()
 
-    # ----------------------------------------------------------------------------------------------
-    # CONTEXT MANAGERS
-    # ----------------------------------------------------------------------------------------------
+    def inference(self) -> None:
+        """Puts the module in inference mode."""
+        self._is_training = False
+        self.fcache = PseudoCache()
 
-    @contextmanager
-    def retain_values(self):
-        """
-        Context manager for setting the module to retain intermediate values
-        such as outputs and gradients.
-        """
-        retain_values = self._is_retaining_values
-        self.is_retaining_values = True
-        try:
-            yield
-        finally:
-            self.is_retaining_values = retain_values
+        for module in self.get_modules(recursive=False):
+            module.inference()
 
-    @contextmanager
-    def train(self):
-        """Context manager for putting the module into training mode."""
-        training = self._is_training
-        self.is_training = True
-        try:
-            yield
-        finally:
-            self.is_training = training
+    @property
+    def n_modules(self) -> int:
+        """Number of child modules."""
+        return len(list(self.get_modules(recursive=False)))
 
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     # MAGIC METHODS
-    # ----------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        attrs = [
-            f"{a}={getattr(self, a)}"
-            for a in vars(self)
-            if is_repr_attr(a, getattr(self, a))
-        ]
+        attrs = [f"{a}={v}" for a, v in vars(self).items() if is_repr_attr(a, v)]
         repr_string = f"{self.label}(" + ", ".join(attrs) + ")"
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             repr_string += "\n" + repr(module)
         return repr_string
 
     def __call__(self, x: Tensor) -> Tensor:
-        """Performs a forward pass through the module.
-
-        Parameters
-        ----------
-        x : Tensor
-            Input tensor.
-
-        Returns
-        ----------
-        Tensor
-            Computed module output.
-        """
-        y = self.forward(x)
-        self._set_y(y)
-        return y
+        return self.forward(x)
 
     def __bool__(self) -> bool:
         return True
 
-    # ----------------------------------------------------------------------------------------------
-    # OTHER OPERATIONS
-    # ----------------------------------------------------------------------------------------------
+    def __setattr__(self, name: str, value: Any) -> None:
+        if isinstance(value, Parameter):
+            self._parameters[name] = value
+        elif isinstance(value, Buffer):
+            self._buffers[name] = value
+        elif isinstance(value, Module):
+            self._modules[name] = value
+        elif isinstance(value, ModuleList):
+            for i, m in enumerate(value):
+                self._modules[name + "." + str(i)] = m
+        return super().__setattr__(name, value)
 
-    def get_parameters(self, include_child_modules: bool = True) -> Iterator[Parameter]:
+    # ----------------------------------------------------------------------------------
+    # OTHER OPERATIONS
+    # ----------------------------------------------------------------------------------
+
+    def get_modules(self, recursive: bool = True) -> Iterator[Module]:
+        """List of child modules.
+
+        Returns
+        -------
+        Iterator[Module]
+            Child modules.
+        """
+        for m in self._modules.values():
+            yield m
+            if recursive:
+                yield from m.get_modules()
+
+    def get_parameters(self, recursive: bool = True) -> Iterator[Parameter]:
         """Returns an Iterator of module parameters.
 
         Parameters
         ----------
-        include_child_modules : bool, optional
+        recursive : bool, optional
             Whether to include child modules. Defaults to ``True``.
 
         Returns
         -------
         Iterator[Parameter]
-            Iterator of module and child module parameters.
+            Iterator of parameters.
         """
-        self_parameters = (
-            getattr(self, a)
-            for a in vars(self)
-            if isinstance(getattr(self, a), Parameter)
-        )
-        if include_child_modules:
-            child_module_parameters = (
-                p for module in self.modules for p in module.get_parameters()
-            )
-            return chain(self_parameters, child_module_parameters)
-        return self_parameters
+        for p in self._parameters.values():
+            yield p
+        if recursive:
+            for m in self.get_modules():
+                yield from m.get_parameters(recursive=False)
 
-    def get_buffers(self, include_child_modules: bool = True) -> Iterator[Buffer]:
+    def get_buffers(self, recursive: bool = True) -> Iterator[Buffer]:
         """Returns an Iterator of module buffers.
 
         Parameters
         ----------
-        include_child_modules : bool, optional
+        recursive : bool, optional
             Whether to include child modules. Defaults to ``True``.
 
         Returns
         -------
         Iterator[Buffer]
-            Iterator of module and child module buffers.
+            Iterator of buffers.
         """
-        self_buffers = (
-            getattr(self, a) for a in vars(self) if isinstance(getattr(self, a), Buffer)
-        )
-        if include_child_modules:
-            child_module_buffers = (
-                b for module in self.modules for b in module.get_buffers()
-            )
-            return chain(self_buffers, child_module_buffers)
-        else:
-            return self_buffers
+        for b in self._buffers.values():
+            yield b
+        if recursive:
+            for m in self.get_modules():
+                yield from m.get_buffers(recursive=False)
 
-    def get_state_dict(self) -> OrderedDict:
+    def get_state_dict(self) -> OrderedDict[str, Tensor]:
         """Returns a state dict containing module parameters and buffers.
 
         Returns
         -------
-        OrderedDict
+        OrderedDict[str, Tensor]
             State dict containing parameters and buffers.
         """
-        return OrderedDict(enumerate(chain(self.get_parameters(), self.get_buffers())))
+        state_dict: OrderedDict[str, Tensor] = OrderedDict()
+        state_dict.update(self._parameters)
+        state_dict.update(self._buffers)
+
+        for k, m in self._modules.items():
+            # get child module state dict
+            m_state_dict = m.get_state_dict()
+
+            # update child module state dict keys
+            new_m_state_dict = OrderedDict()
+            for key, value in m_state_dict.items():
+                new_key = k + "." + key
+                new_m_state_dict[new_key] = value
+
+            # update state dict with child module state dict
+            state_dict.update(new_m_state_dict)
+
+        return state_dict
 
     def load_state_dict(self, state_dict: OrderedDict) -> None:
         """Loads the module state from a state dict.
@@ -272,21 +244,25 @@ class Module(ABC):
         state_dict : OrderedDict
             State dict containing parameters and buffers.
         """
-        state_dict_device = next(iter(state_dict.values())).device
-        if state_dict_device != self.device:
-            raise ValueError(
-                f"Device mismatch. Module device: {self.device}, state dict device: {state_dict_device}"
-            )
+        for kv1, kv2 in zip(self.get_state_dict().items(), state_dict.items()):
+            self_key, self_value = kv1
+            other_key, other_value = kv2
 
-        for p, value in list(
-            zip(chain(self.get_parameters(), self.get_buffers()), state_dict.values())
-        ):
-            p.data = value.data
-            p.grad = value.grad
+            if self_key != other_key:
+                raise ValueError(f"State dict key mismatch: {self_key} != {other_key}")
+
+            if self_value.device != other_value.device:
+                raise DeviceError(
+                    "Device mismatch."
+                    f"Module device: {self.device}, state dict device: {other_value.device}"
+                )
+
+            self_value.data = other_value.data
+            self_value.grad = other_value.grad
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
-        """Performs a forward pass through the module.
+        """Forward pass of the module.
 
         Parameters
         ----------
@@ -294,52 +270,85 @@ class Module(ABC):
             Input tensor.
 
         Returns
-        ----------
+        -------
         Tensor
-            Computed module output.
+            Output tensor.
         """
 
+    @abstractmethod
     def backward(self, dy: Tensor) -> Tensor:
-        """Performs a backward pass through the module.
+        """Backward pass of the module.
 
         Parameters
         ----------
-        dy : :class:`compyute.Tensor`
+        dy : Tensor
             Output gradient tensor.
 
         Returns
-        ----------
+        -------
         Tensor
             Input gradient tensor.
         """
-        if not self._is_training:
-            raise AttributeError(f"{self.label} is not in training mode.")
 
-        if self._backward is None:
-            raise ModelDefinitionError(
-                """No backward function has been defined.
-                If you are using a custom model, make sure to define a backward function and assign
-                it to self._backward during the call of the forward method (see Compyute README)"""
-            )
+    @staticmethod
+    def register_forward(forward_method):
+        """Decorator for registering a forward method to the module."""
 
-        dy = dy.to_float()
-        self._set_dy(dy)
+        @wraps(forward_method)
+        def wrapper(module: Module, x: Tensor) -> Tensor:
+            if module.retain_values:
+                module.x = x
 
-        if self._backward is not None and self._is_trainable:
-            return self._backward(dy)
-        return dy
+            if DEBUG:
+                dt = time.time()
+                y = forward_method(module, x)
+                dt = (time.time() - dt) * 1e3
+                print(
+                    f"{module.label:20s} | forward  | {x.dtype:10s} | {y.dtype:10s} | {dt=:>10.4f} ms"
+                )
+            else:
+                y = forward_method(module, x)
 
-    def _set_y(self, y: Tensor) -> None:
-        if not self._is_retaining_values:
-            return
-        if self.y:
-            self.y.data = y.data.copy()
-        else:
-            self.y = y.copy()
+            if module.retain_values:
+                module.y = y
+            return y
 
-    def _set_dy(self, dy: Tensor) -> None:
-        if self._is_retaining_values and self.y:
-            self.y.grad = dy.copy()
+        return wrapper
+
+    @staticmethod
+    def register_backward(backward_method):
+        """Decorator for registering a backward method to the module."""
+
+        @wraps(backward_method)
+        def wrapper(module: Module, dy: Tensor) -> Tensor:
+            if not module.is_training:
+                raise AttributeError(f"{module.label} is not in training mode.")
+
+            if module.retain_values and module.y:
+                module.y.grad = dy
+
+            if DEBUG:
+                dt = time.time()
+                dx = backward_method(module, dy)
+                dt = (time.time() - dt) * 1e3
+                if dx:
+                    print(
+                        f"{module.label:20s} | backward | {dx.dtype:10s} | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                    )
+                else:
+                    print(
+                        f"{module.label:20s} | backward | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                    )
+            else:
+                dx = backward_method(module, dy)
+
+            assert not module.fcache.cache, "FunctionCache not empty after backward."
+
+            if module.retain_values and module.x:
+                module.x.grad = dx
+            return dx
+
+        return wrapper
 
     def clean(self, force: bool = False) -> None:
         """Removes temporary values like outputs and gradients.
@@ -349,24 +358,18 @@ class Module(ABC):
         force : bool, optional
             Whether to force clean and ignore ``retain_values``. Defaults to ``False``.
         """
-        if self._is_retaining_values and not force:
-            return
-        self.y = None
-        self._backward = None
+        self.fcache.cache.clear()
 
-        for p in self.get_parameters():
-            p.grad = None
+        if not self._retain_values or force:
+            self.x = self.y = None
+            for p in self.get_parameters(recursive=False):
+                p.grad = None
 
-        for module in self.modules:
+        for module in self.get_modules(recursive=False):
             module.clean(force)
 
-    @staticmethod
-    def _update_parameter_grad(
-        parameter: Optional[Parameter], grad: Optional[Tensor]
-    ) -> None:
-        """Updates the parameter gradients."""
-        if parameter and grad:
-            parameter.grad += grad
+        free_cuda_memory()
+        gc.collect()
 
 
 class Identity(Module):
@@ -379,8 +382,10 @@ class Identity(Module):
     """
 
     def forward(self, x: Tensor) -> Tensor:
-        self._backward = lambda dy: dy
         return x
+
+    def backward(self, dy: Tensor) -> Tensor:
+        return dy
 
 
 class ModuleList(list):
@@ -404,9 +409,9 @@ def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
     return all(
         [
-            attr != "label",
+            attr not in {"label", "fcache"},
             not attr.startswith("_"),
-            not isinstance(value, Tensor),
+            not isinstance(value, (Tensor, Module, ModuleList)),
             value is not None,
         ]
     )

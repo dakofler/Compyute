@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from ..base_tensor import Tensor, _ArrayLike
-from ..dtypes import FLOAT_DTYPES
+from typing import Optional
+
+from ..tensors import Tensor
+from ..typing import is_float
 
 __all__ = ["Buffer", "Parameter"]
 
@@ -23,9 +25,31 @@ class Parameter(Tensor):
     """
 
     def __init__(self, data: Tensor) -> None:
-        if data.dtype not in FLOAT_DTYPES:
+        if not is_float(data.dtype):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data.data)
+
+    def __repr__(self):
+        return (
+            "Parameter("
+            + self.device.module.array2string(
+                self.data,
+                100,
+                4,
+                separator=", ",
+                prefix="Parameter(",
+                floatmode="maxprec_equal",
+            )
+            + ")"
+        )
+
+
+def update_parameter_grad(
+    parameter: Optional[Parameter], grad: Optional[Tensor]
+) -> None:
+    """Updates the parameter gradients."""
+    if parameter and grad:
+        parameter.grad += grad
 
 
 class Buffer(Tensor):
@@ -39,3 +63,17 @@ class Buffer(Tensor):
 
     def __init__(self, data: Tensor) -> None:
         super().__init__(data.data)
+
+    def __repr__(self):
+        return (
+            "Buffer("
+            + self.device.module.array2string(
+                self.data,
+                100,
+                4,
+                separator=", ",
+                prefix="Buffer(",
+                floatmode="maxprec_equal",
+            )
+            + ")"
+        )

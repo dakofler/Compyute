@@ -25,14 +25,15 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.11,<3.12",
+    python_requires=">=3.12",
     install_requires=[
         "cupy_cuda12x>=13.0.0",
         "ipywidgets>=8.1.2",
+        # "ml_dtypes>=0.5.0",
         "numpy>=1.26.4,<2.0.0",
         "regex>=2023.12.25",
         "tqdm>=4.66.2",
@@ -40,6 +41,7 @@ setup(
     ],
     extras_require={
         "dev": [
+            "mypy>=1.11.2",
             "pytest>=8.2.0",
             "pytest-cov>=5.0.0",
             "torch>=2.3.0",

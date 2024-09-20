@@ -31,7 +31,6 @@ x = cp.tensor([[4, 5, 6], [7, 8, 9]])
 
 # alternatively, define data types
 x = cp.tensor([1, 2, 3], dtype=cp.int32)
-x = cp.tensor([1, 2, 3], dtype="int64")
 
 # change datatypes
 y = x.to_type(cp.float32)
@@ -40,11 +39,9 @@ y = x.to_int()
 
 # define the device the tensor is stored on
 c = cp.tensor([1, 2, 3], device=cp.cuda)
-c = cp.tensor([1, 2, 3], device="cuda")
 
 # change devices
 c = c.to_device(cp.cpu)
-c = c.to_device("cpu")
 c = c.to_cpu()
 ```
 
@@ -107,7 +104,7 @@ model = nn.Sequential(
 model.to_device(cp.cuda)  # move model to GPU
 ```
 
-Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Container` class.
+Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the `Module` class.
 
 With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more `Modules`. `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come.
 
@@ -127,41 +124,36 @@ class MyConvBlock(nn.Sequential):
         super().__init__(conv, relu, bn)
 ```
 
-When you want to define a custom forward-behaviour, the `Container` base class can be used.
+When you want to define a custom forward-behaviour, the `Module` base class can be used.
 
 ```python
 import compyute.nn as nn
 
-# create a model from scratch by inheriting from the 'Container' base class
-class MyModel(nn.Container):
+# create a model from scratch by inheriting from the 'Module' base class
+class MyModel(nn.Module):
     def __init__(self):
         super().__init__()
 
         # define your modules
         self.lin1 = nn.Linear(4, 16)
         self.relu = nn.ReLU()
-        self.bn = nn.Batchnorm1d(16)
         self.lin2 = nn.Linear(16, 3)
 
+    # define the forward pass
+    @nn.Module.register_forward
     def forward(self, x):
-        # define the forward pass
         x = self.lin1(x)
         x = self.relu(x)
-        x = self.bn(x)
         x = self.lin2(x)
-
-        # define the backward pass
-        def backward(dy):
-            dy = self.lin2.backward(dy)
-            dy = self.bn.backward(dy)
-            dy = self.relu.backward(dy)
-            dy = self.lin1.backward(dy)
-            return dy
-
-        # register the models backward function
-        self._backward = backward
-        
         return x
+
+    # define the backward pass
+    @nn.Module.register_backward
+    def backward(self, dy):
+        dy = self.lin2.backward(dy)
+        dy = self.relu.backward(dy)
+        dy = self.lin1.backward(dy)
+        return dy
 ```
 
 ### Training models
@@ -191,31 +183,34 @@ Alternatively, you can write your own training loop.
 epochs = 100
 batch_size = 32
 
-train_dl = nn.utils.Dataloader(X_train, y_train, batch_size)
-val_dl = nn.utils.Dataloader(X_val, y_val, batch_size)
-loss_func = nn.CrossEntropy()
+train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
+val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
+loss_fn = nn.CrossEntropy()
 optim = nn.optimizers.SGD(model.parameters)
 
 for epoch in range(epochs):
 
     # training
-    with model.train():
-        for x, y in train_dl():
+    model.training()
+    loss_fn.training()
+    for x, y in train_dl():
 
-            # forward pass
-            y_pred = model(x)
-            _ = loss_func(y_pred, y)
+        # forward pass
+        y_pred = model(x)
+        _ = loss_fn(y_pred, y)
 
-            # backward pass
-            optim.reset_grads()  # reset all gradients
-            model.backward(loss_func.backward())  # compute new gradients
-            optim.step()  # update parameters
+        # backward pass
+        optim.reset_grads()  # reset all gradients
+        model.backward(loss_fn.backward())  # compute new gradients
+        optim.step()  # update parameters
     
     # validiation
+    model.inference()  # prevent model from caching values for backward
+    loss_fn.inference()  # prevent loss fn from caching values for backward
     val_loss = 0
     for x, y in val_dl():
         y_pred = model(x)
-        val_loss += loss_func(y_pred, y).item()
+        val_loss += loss_fn(y_pred, y).item()
     val_loss /= len(val_dl)
     
     print(f"epoch {epoch}: {val_loss=:.4f}")

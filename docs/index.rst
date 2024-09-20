@@ -50,7 +50,6 @@ Tensors
 
     # alternatively, define data types
     x = cp.tensor([1, 2, 3], dtype=cp.int32)
-    x = cp.tensor([1, 2, 3], dtype="int64")
 
     # change datatypes
     y = x.to_type(cp.float32)
@@ -59,11 +58,9 @@ Tensors
 
     # define the device the tensor is stored on
     c = cp.tensor([1, 2, 3], device=cp.cuda)
-    c = cp.tensor([1, 2, 3], device="cuda")
 
     # change devices
     c = c.to_device(cp.cpu)
-    c = c.to_device("cpu")
     c = c.to_cpu()
 
 
@@ -169,23 +166,21 @@ When you want to define a custom forward-behaviour, the ``Module`` base class ca
             self.relu = nn.ReLU()
             self.lin2 = nn.Linear(16, 3)
 
-        def forward(self, x):
             # define the forward pass
-            x = self.lin1(x)
-            x = self.relu(x)
-            x = self.lin2(x)
+            @nn.Module.register_forward
+            def forward(self, x):
+                x = self.lin1(x)
+                x = self.relu(x)
+                x = self.lin2(x)
+                return x
 
             # define the backward pass
-            def backward(dy):
+            @nn.Module.register_backward
+            def backward(self, dy):
                 dy = self.lin2.backward(dy)
                 dy = self.relu.backward(dy)
                 dy = self.lin1.backward(dy)
-                return dy
-
-            # register the models backward function
-            self._backward = backward
-            
-            return x
+                return dy        
 
 
 Training models
@@ -218,31 +213,34 @@ Alternatively, you can write your own training loop.
     epochs = 100
     batch_size = 32
 
-    train_dl = nn.utils.Dataloader(X_train, y_train, batch_size)
-    val_dl = nn.utils.Dataloader(X_val, y_val, batch_size)
-    loss_func = nn.CrossEntropy()
+    train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
+    val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
+    loss_fn = nn.CrossEntropy()
     optim = nn.optimizers.SGD(model.parameters)
 
     for epoch in range(epochs):
 
         # training
-        with model.train():
-            for x, y in train_dl():
+        model.training()
+        loss_fn.inference()
+        for x, y in train_dl():
 
-                # forward pass
-                y_pred = model(x)
-                _ = loss_func(y_pred, y)
+            # forward pass
+            y_pred = model(x)
+            _ = loss_fn(y_pred, y)
 
-                # backward pass
-                optim.reset_grads()  # reset all gradients
-                model.backward(loss_func.backward())  # compute new gradients
-                optim.step()  # update parameters
+            # backward pass
+            optim.reset_grads()  # reset all gradients
+            model.backward(loss_fn.backward())  # compute new gradients
+            optim.step()  # update parameters
         
         # validiation
+        model.inference()  # prevent model from caching values for backward
+        loss_fn.inference()  # prevent loss fn from caching values for backward
         val_loss = 0
         for x, y in val_dl():
             y_pred = model(x)
-            val_loss += loss_func(y_pred, y).item()
+            val_loss += loss_fn(y_pred, y).item()
         val_loss /= len(val_dl)
 
         print(f"epoch {epoch}: {val_loss=:.4f}")

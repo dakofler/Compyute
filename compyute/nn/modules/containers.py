@@ -3,9 +3,9 @@
 from itertools import accumulate
 from typing import Optional
 
-from ...base_tensor import Tensor
-from ...tensor_ops.creating import concatenate, split
-from ...tensor_ops.transforming import tensorsum
+from ...tensor_ops.creating import concat, split
+from ...tensor_ops.reducing import tensorsum
+from ...tensors import Tensor
 from .module import Module, ModuleList
 
 __all__ = ["ParallelAdd", "ParallelConcat", "ResidualConnection", "Sequential"]
@@ -25,27 +25,26 @@ class Sequential(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    layers: ModuleList
+
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
             raise NoChildModulesError()
 
-        self._modules = ModuleList(modules)
+        self.layers = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        for module in self._modules:
+        for module in self.layers:
             x = module(x)
-
-        if self._is_training:
-
-            def _backward(dy: Tensor) -> Tensor:
-                for module in reversed(self._modules):
-                    dy = module.backward(dy)
-                return dy
-
-            self._backward = _backward
-
         return x
+
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        for module in reversed(self.layers):
+            dy = module.backward(dy)
+        return dy
 
 
 class ParallelConcat(Module):
@@ -65,29 +64,32 @@ class ParallelConcat(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    modules: ModuleList
+    concat_axis: int
+
     def __init__(
         self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None
     ) -> None:
         super().__init__(label)
         if not modules:
             raise NoChildModulesError()
-        self._modules = ModuleList(modules)
+
+        self.modules = ModuleList(modules)
         self.concat_axis = concat_axis
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        ys = [m(x) for m in self._modules]
-        y = concatenate(ys, axis=self.concat_axis)
+        ys = [m(x) for m in self.modules]
+        y = concat(ys, axis=self.concat_axis)
 
-        if self._is_training:
-            split_idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
-
-            def _backward(dy: Tensor) -> Tensor:
-                splits = split(dy, splits=split_idx, axis=self.concat_axis)
-                return tensorsum(m.backward(s) for m, s in zip(self._modules, splits))
-
-            self._backward = _backward
-
+        self.fcache.idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
         return y
+
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        y_idx = self.fcache.idx
+        splits = split(dy, splits=y_idx, axis=self.concat_axis)
+        return tensorsum(m.backward(s) for m, s in zip(self.modules, splits))
 
 
 class ParallelAdd(Module):
@@ -106,20 +108,22 @@ class ParallelAdd(Module):
         Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
+    modules: ModuleList
+
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
             raise NoChildModulesError()
 
-        self._modules = ModuleList(modules)
+        self.modules = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        y = tensorsum(m(x) for m in self._modules)
+        return tensorsum(m(x) for m in self.modules)
 
-        if self._is_training:
-            self._backward = lambda dy: tensorsum(m.backward(dy) for m in self._modules)
-
-        return y
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        return tensorsum(m.backward(dy) for m in self.modules)
 
 
 class ResidualConnection(Module):
@@ -141,6 +145,9 @@ class ResidualConnection(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    residual_block: Module
+    residual_proj: Optional[Module] = None
+
     def __init__(
         self,
         *modules: Module,
@@ -152,22 +159,20 @@ class ResidualConnection(Module):
         super().__init__(label)
 
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
-        self.residual_proj = residual_proj
+        if residual_proj is not None:
+            self.residual_proj = residual_proj
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y = self.residual_block(x)
         y += self.residual_proj(x) if self.residual_proj else x
-
-        if self._is_training:
-
-            def _backward(dy: Tensor) -> Tensor:
-                dx = self.residual_block.backward(dy)
-                dx += self.residual_proj.backward(dy) if self.residual_proj else dy
-                return dx
-
-            self._backward = _backward
-
         return y
+
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        dx = self.residual_block.backward(dy)
+        dx += self.residual_proj.backward(dy) if self.residual_proj else dy
+        return dx
 
 
 class NoChildModulesError(Exception):

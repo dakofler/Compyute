@@ -17,12 +17,15 @@ Tensor Operations
 
 Creating and Combining Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Functions to create new tensors or combine existing tensors.
+
 .. autosummary::
     :toctree: ../_generated/compyute
     
     append
     arange
-    concatenate
+    concat
     empty
     empty_like
     full
@@ -34,11 +37,84 @@ Creating and Combining Operations
     split
     stack
     zeros
-    zeros_like
+    zeros_like  
+
+
+Unary Operations
+~~~~~~~~~~~~~~~~
+
+Functions that operate on one tensor.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    abs
+    clip
+    cos
+    cosh
+    exp
+    fft1d
+    fft2d
+    histogram
+    ifft1d
+    ifft2d
+    invert
+    log
+    log2
+    log10
+    real
+    round
+    sech
+    sin
+    sinh
+    sqrt
+    tan
+    tanh
+
+
+Multinary Operations
+~~~~~~~~~~~~~~~~~~~~
+
+Functions that operate on two or more tensors.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    allclose
+    convolve1d_fft
+    convolve2d_fft
+    dot
+    einsum
+    inner
+    outer
+    tensorprod
+    tensorsum
+
+
+Reducing Operations
+~~~~~~~~~~~~~~~~~~~
+
+Functions that aggregate tensors.
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+
+    all
+    mean
+    norm
+    prod
+    std
+    tensorprod
+    tensorsum
+    sum
+    var
 
 
 Reshaping Operations
 ~~~~~~~~~~~~~~~~~~~~
+
+Functions that change tensor shapes.
+
 .. autosummary::
     :toctree: ../_generated/compyute
     
@@ -61,80 +137,72 @@ Reshaping Operations
 
 Selecting Operations
 ~~~~~~~~~~~~~~~~~~~~
+
+Functions that return a subset of a tensor.
+
 .. autosummary::
     :toctree: ../_generated/compyute
 
     argmax
+    get_diagonal
+    max
+    maximum
+    mean
+    min
+    minimum
     get_diagonal
     tril
     triu
     unique
 
 
-Transforming and Computing Operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autosummary::
-    :toctree: ../_generated/compyute
-
-    abs
-    all
-    allclose
-    clip
-    cos
-    cosh
-    dot
-    einsum
-    exp
-    fft1d
-    fft2d
-    histogram
-    inner
-    ifft1d
-    ifft2d
-    log
-    log2
-    log10
-    max
-    maximum
-    mean
-    min
-    minimum
-    norm
-    outer
-    prod
-    real
-    round
-    sech
-    sin
-    sinh
-    sqrt
-    std
-    tan
-    tanh
-    tensorprod
-    tensorsum
-    sum
-    var
-
-
 Data Types
 ----------
-.. autoclass:: bool
-.. autoclass:: int8
-.. autoclass:: int16
-.. autoclass:: int32
-.. autoclass:: int64
-.. autoclass:: float16
-.. autoclass:: float32
-.. autoclass:: float64
-.. autoclass:: complex64
-.. autoclass:: complex128
 
+Available data types are:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    bool_
+    int8
+    int16
+    int32
+    int64
+    float16
+    float32
+    float64
+    complex64
+    complex128
+
+
+Utilities:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    use_dtype
+    
 
 Devices
 -------
-.. autoclass:: cpu
-.. autoclass:: cuda
+
+Available devices are:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    cpu
+    cuda
+
+
+Utilities:
+
+.. autosummary::
+    :toctree: ../_generated/compyute
+    
+    Device
+    use_device
 
 
 Utility Functions

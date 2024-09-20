@@ -1,13 +1,14 @@
 """Model trainer."""
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
-from ...base_tensor import Tensor
-from ...dtypes import _ScalarLike
-from ..losses import _LossLike, get_loss_function
-from ..metrics import _MetricLike, get_metric_function
+from ...backend import free_cuda_memory
+from ...tensors import Tensor
+from ...typing import ScalarLike
+from ..losses import Loss, _LossLike, get_loss_function
+from ..metrics import Metric, _MetricLike, get_metric_function
 from ..modules.module import Module
-from ..optimizers import _OptimizerLike, get_optimizer
+from ..optimizers import Optimizer, _OptimizerLike, get_optimizer
 from ..utils import Dataloader
 from .callbacks import Callback
 
@@ -35,6 +36,14 @@ class Trainer:
         See :ref:`callbacks` for more details.
     """
 
+    model: Module
+    optimizer: Optimizer
+    loss: Loss
+    metric: Optional[Metric] = None
+    callbacks: Optional[list[Callback]] = None
+    _metric_name: Optional[str] = None
+    _cache: dict[str, Any]
+
     def __init__(
         self,
         model: Module,
@@ -46,14 +55,15 @@ class Trainer:
         super().__init__()
         self.model = model
         self.optimizer = get_optimizer(optimizer)
-        self.optimizer.parameters = model.get_parameters()
+        self.optimizer.set_parameters(model.get_parameters())
         self.loss = get_loss_function(loss)
-        self.metric = None if metric is None else get_metric_function(metric)
-        self.metric_name = (
-            None if metric is None else self.metric.__class__.__name__.lower()
-        )
-        self.callbacks = callbacks
-        self.cache: dict = {"abort": False, "t": 1}
+        if metric is not None:
+            self.metric = get_metric_function(metric)
+            self._metric_name = self.metric.__class__.__name__.lower()
+        if callbacks is not None:
+            self.callbacks = callbacks
+
+        self._cache: dict[str, Any] = {"abort": False}
 
     def train(
         self,
@@ -79,42 +89,47 @@ class Trainer:
             Number of inputs processed in parallel. Defaults to ``32``.
             If ``-1``, all samples are used.
         """
-        batch_size = len(x_train) if batch_size == -1 else batch_size
-        train_dataloader = Dataloader(x_train, y_train, batch_size, self.model.device)
-        self.cache["epochs"] = epochs
-        self.cache["train_steps"] = len(train_dataloader)
+        batch_size = batch_size if batch_size > 0 else len(x_train)
+        train_dataloader = Dataloader((x_train, y_train), batch_size, self.model.device)
+        self._cache["epochs"] = epochs
+        self._cache["train_steps"] = len(train_dataloader)
         self._callback("start")
 
-        for t in range(1, epochs + 1):
-            self.cache["t"] = t
-            self._callback("epoch_start")
+        try:
+            for t in range(1, epochs + 1):
+                self._cache["t"] = t
+                self._callback("epoch_start")
 
-            # training
-            with self.model.train():
+                # training
+                self.model.training()
+                self.loss.training()
                 for s, batch in enumerate(train_dataloader(), 1):
-                    self.cache["step"] = s
+                    self._cache["step"] = s
                     self._callback("step_start")
-                    self.cache["lr"] = self.optimizer.lr
+                    self._cache["lr"] = self.optimizer.lr
                     self._train_step(batch)
                     self._callback("step_end")
 
-            # validation
-            if val_data:
-                loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
-                self.cache["val_loss"] = loss
-                if self.metric is not None:
-                    self.cache[f"val_{self.metric_name}_score"] = score
+                # validation
+                if val_data:
+                    self.model.inference()
+                    self.loss.inference()
+                    loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
+                    self._cache["val_loss"] = loss
+                    if self.metric is not None:
+                        self._cache[f"val_{self._metric_name}_score"] = score
 
-            self._callback("epoch_end")
-            if self.cache["abort"]:
-                break
+                self._callback("epoch_end")
+                if self._cache["abort"]:
+                    break
 
-        self._callback("end")
-        self.model.clean()
+            self._callback("end")
+        finally:
+            self.model.clean()
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[_ScalarLike, Optional[_ScalarLike]]:
+    ) -> tuple[ScalarLike, Optional[ScalarLike]]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -133,14 +148,7 @@ class Trainer:
         _ScalarLike, optional
             Metric score.
         """
-        dataloader = Dataloader(
-            x,
-            y,
-            batch_size=batch_size,
-            device=self.model.device,
-            shuffle_data=False,
-        )
-
+        dataloader = Dataloader((x, y), batch_size, self.model.device, False)
         losses, scores = [], []
 
         # compute loss/score for each batch to save memory
@@ -171,21 +179,20 @@ class Trainer:
                 "epoch_start": callback.on_epoch_start,
                 "epoch_end": callback.on_epoch_end,
                 "end": callback.on_training_end,
-            }[on](self.cache)
+            }[on](self._cache)
 
-    def _train_step(self, batch: tuple[Tensor, Tensor]) -> None:
+    def _train_step(self, batch: tuple[Tensor, ...]) -> None:
         # prepare data
-        x_batch, y_batch = batch
+        x, y = batch
 
         # forward pass
-        y_pred = self.model(x_batch)
+        y_pred = self.model(x)
 
         # compute loss and metrics
-        self.cache["loss"] = self.loss(y_pred, y_batch).item()
+        self._cache["loss"] = self.loss(y_pred, y).item()
         if self.metric is not None:
-            self.cache[f"{self.metric_name}_score"] = self.metric(
-                y_pred, y_batch
-            ).item()
+            key = f"{self._metric_name}_score"
+            self._cache[key] = self.metric(y_pred, y).item()
 
         # backward pass
         self.optimizer.reset_grads()

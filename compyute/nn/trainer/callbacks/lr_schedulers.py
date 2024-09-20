@@ -6,6 +6,7 @@ from ...optimizers import Optimizer
 from ...utils.lr_schedulers import AdaptiveLrScheduler as _AdaptiveLrScheduler
 from ...utils.lr_schedulers import CosineLrScheduler as _CosineLrScheduler
 from ...utils.lr_schedulers import ExponentialLrScheduler as _ExponentialLrScheduler
+from ...utils.lr_schedulers import LrScheduler as _LrScheduler
 from ...utils.lr_schedulers import MultistepLrScheduler as _MultistepLrScheduler
 from ...utils.lr_schedulers import StepLrScheduler as _StepLrScheduler
 from .callback import Callback
@@ -35,6 +36,8 @@ class StepLrScheduler(Callback):
     --------
     :class:`compyute.nn.utils.lr_schedulers.StepLrScheduler`
     """
+
+    scheduler: _LrScheduler
 
     def __init__(
         self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1

@@ -33,9 +33,12 @@ class LrScheduler(ABC):
         Optimizer, whose learning rate will be adapted.
     """
 
+    optimizer: Optimizer
+    cache: LrSchedulerCache
+
     def __init__(self, optimizer: Optimizer) -> None:
         self.optimizer = optimizer
-        self.cache: LrSchedulerCache = {"lr_history": []}
+        self.cache = LrSchedulerCache(lr_history=[])
 
     def _log_lr(self) -> None:
         self.cache["lr_history"].append(self.optimizer.lr)
@@ -57,6 +60,9 @@ class StepLrScheduler(LrScheduler):
     lr_decay : float, optional
         Decay factor. Defaults to ``0.1``.
     """
+
+    t_decay: int
+    lr_decay: float
 
     def __init__(
         self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1
@@ -84,6 +90,9 @@ class MultistepLrScheduler(LrScheduler):
         Decay factor. Defaults to ``0.1``.
     """
 
+    t_decay_step: int
+    lr_decay: float
+
     def __init__(
         self, optimizer: Optimizer, t_decay_step: int, lr_decay: float = 0.1
     ) -> None:
@@ -109,6 +118,9 @@ class ExponentialLrScheduler(LrScheduler):
     lr_decay : float, optional
         Decay factor the learning rate is multiplied by each step. Defaults to ``0.1``.
     """
+
+    decay_steps: int
+    lr_decay: float
 
     def __init__(
         self, optimizer: Optimizer, decay_steps: int, lr_decay: float = 0.1
@@ -138,6 +150,12 @@ class CosineLrScheduler(LrScheduler):
     decay_steps : int
         How many times the update is applied after the warmup.
     """
+
+    target_lr: float
+    lr_decay: float
+    warmup_steps: int
+    decay_steps: int
+    _max_lr: float
 
     def __init__(
         self,
@@ -185,6 +203,10 @@ class AdaptiveLrScheduler(LrScheduler):
     lr_upscale_factor : float, optional
         Factor to scale the learning rate up by if the metric is improving. Defaults to ``1.0``.
     """
+
+    patience: int
+    lr_downscale_factor: float
+    lr_upscale_factor: float
 
     def __init__(
         self,

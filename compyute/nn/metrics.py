@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from ..base_tensor import Tensor
-from .functional.metrics import accuracy_score, r2_score
+from ..tensors import Tensor
+from .functional.metric_funcs import accuracy_score, r2_score
 
 __all__ = ["Metric", "Accuracy", "R2"]
 
