@@ -1,8 +1,13 @@
 """Tensor data types."""
 
 from contextlib import contextmanager
-from enum import StrEnum, auto
+from dataclasses import dataclass
 from typing import Optional, TypeAlias
+
+# import ml_dtypes
+import numpy
+
+# bfloat16 does not work with a lot of things yet
 
 __all__ = [
     "bool_",
@@ -11,6 +16,7 @@ __all__ = [
     "int32",
     "int64",
     "float16",
+    # "bfloat16",
     "float32",
     "float64",
     "complex64",
@@ -19,65 +25,70 @@ __all__ = [
 ]
 
 
-class DType(StrEnum):
-    """Data type enum."""
+@dataclass
+class DType:
 
-    BOOL = auto()
-    INT8 = auto()
-    INT16 = auto()
-    INT32 = auto()
-    INT64 = auto()
-    FLOAT16 = auto()
-    FLOAT32 = auto()
-    FLOAT64 = auto()
-    COMPLEX64 = auto()
-    COMPLEX128 = auto()
+    type: type
+    name: str
 
     def __repr__(self) -> str:
-        return "compyute." + self.value
+        return "compyute." + self.name
 
     def __str__(self) -> str:
         return self.__repr__()
 
 
-bool_ = DType.BOOL
+bool_ = DType(numpy.bool_, "int8")
 bool_.__doc__ = "Boolean."
-int8 = DType.INT8
+
+int8 = DType(numpy.int8, "int8")
 int8.__doc__ = "Signed 8 bit integer."
-int16 = DType.INT16
+
+int16 = DType(numpy.int16, "int16")
 int16.__doc__ = "Signed 16 bit integer."
-int32 = DType.INT32
+
+int32 = DType(numpy.int32, "int32")
 int32.__doc__ = "Signed 32 bit integer."
-int64 = DType.INT64
+
+int64 = DType(numpy.int64, "int64")
 int64.__doc__ = "Signed 64 bit integer."
-float16 = DType.FLOAT16
+
+float16 = DType(numpy.float16, "float16")
 float16.__doc__ = "16 bit floating point."
-float32 = DType.FLOAT32
+
+# bfloat16 = DType(ml_dtypes.bfloat16, "bfloat16")
+# bfloat16.__doc__ = "16 bit brain floating point."
+
+float32 = DType(numpy.float32, "float32")
 float32.__doc__ = "32 bit floating point."
-float64 = DType.FLOAT64
+
+float64 = DType(numpy.float64, "float64")
 float64.__doc__ = "64 bit floating point."
-complex64 = DType.COMPLEX64
+
+complex64 = DType(numpy.complex64, "complex64")
 complex64.__doc__ = "Complex 64 bit floating point."
-complex128 = DType.COMPLEX128
+
+complex128 = DType(numpy.complex128, "complex128")
 complex128.__doc__ = "Complex 128 bit floating point."
 
 
 DTYPES = {
-    bool_,
-    int8,
-    int16,
-    int32,
-    int64,
-    float16,
-    float32,
-    float64,
-    complex64,
-    complex128,
+    "bool": bool_,
+    "int8": int8,
+    "int16": int16,
+    "int32": int32,
+    "int64": int64,
+    "float16": float16,
+    # "bfloat16": bfloat16,
+    "float32": float32,
+    "float64": float64,
+    "complex64": complex64,
+    "complex128": complex128,
 }
 
-FLOAT_DTYPES = {d for d in DTYPES if "float" in str(d)}
-INT_DTYPES = {d for d in DTYPES if "int" in str(d)}
-COMPLEX_DTYPES = {d for d in DTYPES if "complex" in str(d)}
+FLOAT_DTYPES = tuple(d for d in DTYPES.values() if "float" in d.name)
+INT_DTYPES = tuple(d for d in DTYPES.values() if "int" in d.name)
+COMPLEX_DTYPES = tuple(d for d in DTYPES.values() if "complex" in d.name)
 
 ScalarLike: TypeAlias = int | float | complex
 

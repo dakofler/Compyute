@@ -16,6 +16,7 @@ from .backend import (
     get_device_from_array,
 )
 from .typing import (
+    DTYPES,
     DType,
     ScalarLike,
     complex64,
@@ -62,8 +63,8 @@ def tensor(
     """
     device = device or get_default_device() or get_device_from_array(type(data))
     dtype = dtype or get_default_dtype()
-    dtype_str = dtype.value if dtype is not None else None
-    return Tensor(device.module.asarray(data, dtype_str))
+    np_dtype = dtype.type if dtype is not None else None
+    return Tensor(device.module.asarray(data, np_dtype))
 
 
 class Tensor:
@@ -98,7 +99,7 @@ class Tensor:
     @property
     def dtype(self) -> DType:
         """Tensor data type."""
-        return DType(str(self.data.dtype))
+        return DTYPES[self.data.dtype.name]
 
     @property
     def n_axes(self) -> int:
@@ -356,7 +357,7 @@ class Tensor:
         if self.dtype == dtype:
             return self
 
-        return Tensor(self.data.astype(dtype.value, copy=False))
+        return Tensor(self.data.astype(dtype.type, copy=False))
 
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.

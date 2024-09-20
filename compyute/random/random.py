@@ -75,7 +75,7 @@ def random(
     device = select_device(device)
     dtype = select_dtype(dtype)
     data = device.module.random.random(shape)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(data.astype(dtype.type, copy=False))
 
 
 def normal(
@@ -109,7 +109,7 @@ def normal(
     device = select_device(device)
     dtype = select_dtype(dtype)
     data = device.module.random.normal(mean, std, shape)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(data.astype(dtype.type, copy=False))
 
 
 def uniform(
@@ -143,7 +143,7 @@ def uniform(
     device = select_device(device)
     dtype = select_dtype(dtype)
     data = device.module.random.uniform(low, high, shape)
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(data.astype(dtype.type, copy=False))
 
 
 def uniform_int(
@@ -175,7 +175,7 @@ def uniform_int(
         Tensor of samples.
     """
     device = select_device(device)
-    return Tensor(device.module.random.randint(low, high, shape, dtype.value))
+    return Tensor(device.module.random.randint(low, high, shape, dtype.type))
 
 
 def permutation(n: int, *, device: Optional[Device] = None) -> Tensor:
@@ -217,9 +217,9 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
     """
     if isinstance(x, int):
         data = p.device.module.random.choice(x, shape, p=p.data)
-        return Tensor(data.astype(int64.value, copy=False))
+        return Tensor(data.astype(int64.type, copy=False))
     data = p.device.module.random.choice(x.data, shape, p=p.data)
-    return Tensor(data.astype(x.dtype.value, copy=False))
+    return Tensor(data.astype(x.dtype.type, copy=False))
 
 
 def bernoulli(
@@ -250,7 +250,7 @@ def bernoulli(
     device = select_device(device)
     dtype = select_dtype(dtype)
     data = device.module.random.random(shape) < p
-    return Tensor(data.astype(dtype.value, copy=False))
+    return Tensor(data.astype(dtype.type, copy=False))
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:

@@ -77,7 +77,7 @@ def arange(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.module.arange(start, stop, step, dtype.value))
+    return Tensor(device.module.arange(start, stop, step, dtype.type))
 
 
 def concat(tensors: Sequence[Tensor], axis: AxisLike = -1) -> Tensor:
@@ -123,7 +123,7 @@ def empty(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.module.empty(shape, dtype.value))
+    return Tensor(device.module.empty(shape, dtype.type))
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -169,7 +169,7 @@ def full(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.full(shape, value, dtype.value))
+    return Tensor(device.module.full(shape, value, dtype.type))
 
 
 def full_like(x: Tensor, value: ScalarLike) -> Tensor:
@@ -214,7 +214,7 @@ def identity(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.identity(n, dtype.value))
+    return Tensor(device.module.identity(n, dtype.type))
 
 
 def linspace(
@@ -248,7 +248,7 @@ def linspace(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.linspace(start, stop, num, dtype=dtype.value))
+    return Tensor(device.module.linspace(start, stop, num, dtype=dtype.type))
 
 
 def ones(
@@ -275,7 +275,7 @@ def ones(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.ones(shape, dtype.value))
+    return Tensor(device.module.ones(shape, dtype.type))
 
 
 def ones_like(x: Tensor) -> Tensor:
@@ -358,7 +358,7 @@ def zeros(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.zeros(shape, dtype.value))
+    return Tensor(device.module.zeros(shape, dtype.type))
 
 
 def zeros_like(x: Tensor) -> Tensor:
