@@ -29,7 +29,7 @@ setup(
         "Topic :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.11,<3.12",
+    python_requires=">=3.12",
     install_requires=[
         "cupy_cuda12x>=13.0.0",
         "ipywidgets>=8.1.2",
@@ -41,6 +41,7 @@ setup(
     ],
     extras_require={
         "dev": [
+            "mypy>=1.11.2",
             "pytest>=8.2.0",
             "pytest-cov>=5.0.0",
             "torch>=2.3.0",
