@@ -25,7 +25,7 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
