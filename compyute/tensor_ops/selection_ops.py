@@ -19,17 +19,15 @@ __all__ = [
 ]
 
 
-def argmax(
-    x: Tensor, axis: Optional[AxisLike] = None, *, keepdims: bool = False
-) -> Tensor:
+def argmax(x: Tensor, axis: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
     """Returns the indices of maximum values along a given axis.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis : AxisLike, optional
-        Axes, along which the maximum value is located. Defaults to ``None``.
+    axis : int, optional
+        Axis, along which the maximum value is located. Defaults to ``None``.
         If ``None`` it is computed over the flattened tensor.
     keepdims : bool, optional
         Whether to keep the tensors dimensions. Defaults to ``False``.

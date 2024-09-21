@@ -1,5 +1,6 @@
 """Neural network convolution modules."""
 
+import math
 from typing import Literal, Optional
 
 from ...tensor_ops.creation_ops import empty
@@ -12,7 +13,7 @@ from ..functional.convolution_funcs import (
     MaxPooling2DFn,
 )
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_xavier_uniform, init_zeros
+from ..utils.initializers import init_uniform
 from .module import Module, validate_input_axes
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
@@ -70,8 +71,8 @@ class Convolution1D(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{in} \cdot \text{kernel_size}}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in} \cdot \text{kernel_size}}}`.
     """
 
     def __init__(
@@ -105,9 +106,10 @@ class Convolution1D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(self.w)
+        std = 1.0 / math.sqrt(self.in_channels * self.kernel_size)
+        init_uniform(self.w, low=-std, high=std)
         if self.b:
-            init_zeros(self.b)
+            init_uniform(self.b, low=-std, high=std)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -163,8 +165,8 @@ class Convolution2D(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{in} * \text{kernel_size}^2}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in} * \text{kernel_size}^2}}`.
     """
 
     def __init__(
@@ -200,9 +202,10 @@ class Convolution2D(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(self.w)
+        std = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
+        init_uniform(self.w, low=-std, high=std)
         if self.b:
-            init_zeros(self.b)
+            init_uniform(self.b, low=-std, high=std)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

@@ -503,9 +503,7 @@ class Tensor:
         """
         return Tensor(self.data.all(axis, keepdims=keepdims))
 
-    def argmax(
-        self, axis: Optional[AxisLike] = None, *, keepdims: bool = False
-    ) -> Tensor:
+    def argmax(self, axis: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         See Also

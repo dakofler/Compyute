@@ -1,15 +1,14 @@
 """Neural network recurrent modules."""
 
+import math
 from typing import Literal, Optional
 
-from ...tensor_ops.creation_ops import empty, empty_like, zeros, zeros_like
+from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.activation_funcs import ReLUFn, SigmoidFn, TanhFn
-from ..functional.linear_funcs import LinearFn
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_xavier_uniform, init_zeros
+from ..utils.initializers import init_uniform
 from .module import Module, validate_input_axes
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -51,8 +50,8 @@ class Recurrent(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`.
     """
 
     def __init__(
@@ -81,9 +80,10 @@ class Recurrent(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(self.w_i, self.w_h)
+        std = 1.0 / math.sqrt(self.h_channels)
+        init_uniform(self.w_i, self.w_h, low=-std, high=std)
         if self.b_i and self.b_h:
-            init_zeros(self.b_i, self.b_h)
+            init_uniform(self.b_i, self.b_h, low=-std, high=std)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -147,8 +147,8 @@ class LSTM(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`.
     """
 
     def __init__(
@@ -189,7 +189,8 @@ class LSTM(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(
+        std = 1.0 / math.sqrt(self.h_channels)
+        init_uniform(
             self.w_ii,
             self.w_if,
             self.w_ig,
@@ -198,6 +199,8 @@ class LSTM(Module):
             self.w_hf,
             self.w_hg,
             self.w_ho,
+            low=-std,
+            high=std,
         )
         if (
             self.b_ii
@@ -209,7 +212,7 @@ class LSTM(Module):
             and self.b_hg
             and self.b_ho
         ):
-            init_zeros(
+            init_uniform(
                 self.b_ii,
                 self.b_if,
                 self.b_ig,
@@ -218,6 +221,8 @@ class LSTM(Module):
                 self.b_hf,
                 self.b_hg,
                 self.b_ho,
+                low=-std,
+                high=std,
             )
 
     @Module.register_forward
@@ -328,8 +333,8 @@ class GRU(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{h}}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{h}}}`.
     """
 
     def __init__(
@@ -366,8 +371,16 @@ class GRU(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(
-            self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn
+        std = 1.0 / math.sqrt(self.h_channels)
+        init_uniform(
+            self.w_ir,
+            self.w_iz,
+            self.w_in,
+            self.w_hr,
+            self.w_hz,
+            self.w_hn,
+            low=-std,
+            high=std,
         )
         if (
             self.b_ir
@@ -377,7 +390,16 @@ class GRU(Module):
             and self.b_hz
             and self.b_hn
         ):
-            init_zeros(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
+            init_uniform(
+                self.b_ir,
+                self.b_iz,
+                self.b_in,
+                self.b_hr,
+                self.b_hz,
+                self.b_hn,
+                low=-std,
+                high=std,
+            )
 
     @Module.register_forward
     def forward(self, x: Tensor):

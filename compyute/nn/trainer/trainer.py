@@ -127,7 +127,7 @@ class Trainer:
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[ScalarLike, Optional[ScalarLike]]:
+    ) -> tuple[float, Optional[float]]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -141,9 +141,9 @@ class Trainer:
 
         Returns
         ----------
-        _ScalarLike
+        float
             Loss value.
-        _ScalarLike, optional
+        float, optional
             Metric score.
         """
         dataloader = Dataloader((x, y), batch_size, self.model.device, False)
@@ -159,7 +159,8 @@ class Trainer:
 
         loss = sum(losses) / len(losses)
         if self.metric is not None:
-            return loss, sum(scores) / len(scores)
+            metric = sum(scores) / len(scores)
+            return loss, metric
         return loss, None
 
     def _callback(
