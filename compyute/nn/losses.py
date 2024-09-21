@@ -1,10 +1,13 @@
 """Loss functions."""
 
+from __future__ import annotations
+
 import os
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from functools import wraps
-from typing import Literal
+from typing import Any, Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
@@ -62,42 +65,42 @@ class Loss(ABC):
         """
 
     @staticmethod
-    def register_forward(forward_method):
+    def register_forward(forward_method: Callable) -> Callable:
         """Decorator for registering a forward method to the loss function."""
 
         @wraps(forward_method)
-        def wrapper(loss: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
-            loss.fcache.cache.clear()
+        def wrapper(cls: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
+            cls.fcache.cache.clear()
 
             if DEBUG:
                 dt = time.perf_counter()
-                y = forward_method(loss, y_pred, y_true)
+                y = forward_method(cls, y_pred, y_true)
                 dt = (time.perf_counter() - dt) * 1e3
                 print(
-                    f"{loss.label:20s} | forward  | {y_pred.dtype:10s} | {y_true.dtype:10s} | {dt=:>10.4f} ms"
+                    f"{cls.label:20s} | forward  | {y_pred.dtype:10s} | {y_true.dtype:10s} | {dt=:>10.4f} ms"
                 )
             else:
-                y = forward_method(loss, y_pred, y_true)
+                y = forward_method(cls, y_pred, y_true)
 
             return y
 
         return wrapper
 
     @staticmethod
-    def register_backward(backward_method):
+    def register_backward(backward_method: Callable) -> Callable:
         """Decorator for registering a backward method to the loss function."""
 
         @wraps(backward_method)
-        def wrapper(loss: Loss) -> Tensor:
+        def wrapper(cls: Loss) -> Tensor:
             if DEBUG:
                 dt = time.perf_counter()
-                dx = backward_method(loss)
+                dx = backward_method(cls)
                 dt = (time.perf_counter() - dt) * 1e3
-                print(f"{loss.label:20s} | backward | {dx.dtype:10s} | {dt=:>10.4f} ms")
+                print(f"{cls.label:20s} | backward | {dx.dtype:10s} | {dt=:>10.4f} ms")
             else:
-                dx = backward_method(loss)
+                dx = backward_method(cls)
 
-            assert not loss.fcache.cache, "FunctionCache not empty after backward."
+            assert not cls.fcache.cache, "FunctionCache not empty after backward."
             return dx
 
         return wrapper

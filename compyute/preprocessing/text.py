@@ -194,8 +194,10 @@ class BPETokenizer(Tokenizer):
             self._merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
 
-    def _merge(self, token_ids, bigram, idx):
-        new_ids = []
+    def _merge(
+        self, token_ids: list[int], bigram: tuple[int, int], idx: int
+    ) -> list[int]:
+        new_ids: list[int] = []
         i = 0
 
         while i < len(token_ids):
@@ -213,7 +215,7 @@ class BPETokenizer(Tokenizer):
 
         return new_ids
 
-    def _encode_chunk(self, text_bytes):
+    def _encode_chunk(self, text_bytes: bytes) -> list[int]:
         token_ids = list(text_bytes)
 
         while len(token_ids) >= 2:
@@ -229,12 +231,11 @@ class BPETokenizer(Tokenizer):
         return token_ids
 
     def encode(self, text: str) -> list[int]:
-        text_chunks = regex.findall(self._pattern, text)
+        text_chunks: list[str] = regex.findall(self._pattern, text)
         token_ids = []
 
         for chunk in text_chunks:
-            chunk_bytes = chunk.encode("utf-8")
-            chunk_ids = self._encode_chunk(chunk_bytes)
+            chunk_ids = self._encode_chunk(chunk.encode("utf-8"))
             token_ids.extend(chunk_ids)
 
         return token_ids

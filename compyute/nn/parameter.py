@@ -29,7 +29,7 @@ class Parameter(Tensor):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data.data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "Parameter("
             + self.device.module.array2string(
@@ -64,7 +64,7 @@ class Buffer(Tensor):
     def __init__(self, data: Tensor) -> None:
         super().__init__(data.data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "Buffer("
             + self.device.module.array2string(

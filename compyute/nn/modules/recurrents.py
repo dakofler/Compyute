@@ -226,7 +226,7 @@ class LSTM(Module):
             )
 
     @Module.register_forward
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
         return LSTMFn.forward(
             self.fcache,
@@ -402,7 +402,7 @@ class GRU(Module):
             )
 
     @Module.register_forward
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [3])
         return GRUFn.forward(
             self.fcache,

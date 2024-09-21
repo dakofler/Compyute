@@ -1,5 +1,6 @@
 """Tensor data types."""
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Optional, TypeAlias
@@ -113,7 +114,7 @@ def set_default_dtype(dtype: Optional[DType]) -> None:
 
 
 @contextmanager
-def use_dtype(dtype: DType):
+def use_dtype(dtype: DType) -> Generator:
     """Context manager to set the default dtype when creating tensors."""
     set_default_dtype(dtype)
     try:

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections import deque
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
@@ -41,17 +42,17 @@ class Function(ABC):
     def __init__(self) -> None:
         raise NotImplementedError("Function cannot be instantiated.")
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError("Use ``forward()`` instead.")
 
     @staticmethod
     @abstractmethod
-    def forward(*args, **kwargs) -> Any:
+    def forward(*args: Any, **kwargs: Any) -> Any:
         """Forward pass of the function."""
 
     @staticmethod
     @abstractmethod
-    def backward(*args, **kwargs) -> Any:
+    def backward(*args: Any, **kwargs: Any) -> Any:
         """Backward pass of the function."""
 
 
@@ -70,7 +71,7 @@ def set_caching_enabled(enabled: bool) -> None:
 
 
 @contextmanager
-def no_caching():
+def no_caching() -> Generator:
     """Context manager to disable caching of values for gradient computation."""
     set_caching_enabled(False)
     try:

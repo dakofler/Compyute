@@ -7,9 +7,9 @@ import os
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from functools import wraps
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 from ...backend import Device, DeviceError, free_cuda_memory, select_device
 from ...tensors import ShapeError, Tensor
@@ -18,6 +18,8 @@ from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
 DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
+
+from types import MethodType
 
 
 class Module(ABC):
@@ -291,64 +293,64 @@ class Module(ABC):
         """
 
     @staticmethod
-    def register_forward(forward_method):
+    def register_forward(forward_method: Callable) -> Callable:
         """Decorator for registering a forward method to the module."""
 
         @wraps(forward_method)
-        def wrapper(module: Module, x: Tensor) -> Tensor:
-            if module.retain_values:
-                module.x = x
+        def wrapper(cls: Module, x: Tensor) -> Tensor:
+            if cls.retain_values:
+                cls.x = x
 
-            if module.fcache.cache:
-                module.fcache.cache.clear()
+            if cls.fcache.cache:
+                cls.fcache.cache.clear()
 
             if DEBUG:
                 dt = time.perf_counter()
-                y = forward_method(module, x)
+                y = forward_method(cls, x)
                 dt = (time.perf_counter() - dt) * 1e3
                 print(
-                    f"{module.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
+                    f"{cls.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
                 )
             else:
-                y = forward_method(module, x)
+                y = forward_method(cls, x)
 
-            if module.retain_values:
-                module.y = y
+            if cls.retain_values:
+                cls.y = y
             return y
 
         return wrapper
 
     @staticmethod
-    def register_backward(backward_method):
+    def register_backward(backward_method: Callable) -> Callable:
         """Decorator for registering a backward method to the module."""
 
         @wraps(backward_method)
-        def wrapper(module: Module, dy: Tensor) -> Tensor:
-            if not module.is_training:
-                raise AttributeError(f"{module.label} is not in training mode.")
+        def wrapper(cls: Module, dy: Tensor) -> Tensor:
+            if not cls.is_training:
+                raise AttributeError(f"{cls.label} is not in training mode.")
 
-            if module.retain_values and module.y:
-                module.y.grad = dy
+            if cls.retain_values and cls.y:
+                cls.y.grad = dy
 
             if DEBUG:
                 dt = time.perf_counter()
-                dx = backward_method(module, dy)
+                dx = backward_method(cls, dy)
                 dt = (time.perf_counter() - dt) * 1e3
                 if dx:
                     print(
-                        f"{module.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
+                        f"{cls.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
                     )
                 else:
                     print(
-                        f"{module.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms"
+                        f"{cls.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms"
                     )
             else:
-                dx = backward_method(module, dy)
+                dx = backward_method(cls, dy)
 
-            assert not module.fcache.cache, "FunctionCache not empty after backward."
+            assert not cls.fcache.cache, "FunctionCache not empty after backward."
 
-            if module.retain_values and module.x:
-                module.x.grad = dx
+            if cls.retain_values and cls.x:
+                cls.x.grad = dx
             return dx
 
         return wrapper

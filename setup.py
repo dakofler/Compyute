@@ -2,6 +2,7 @@
 
 import pathlib
 
+# from mypyc.build import mypycify
 from setuptools import find_packages, setup
 
 setup(
@@ -56,4 +57,5 @@ setup(
     },
     packages=find_packages(exclude=["tests", ".github", ".venv", "docs"]),
     include_package_data=True,
+    # ext_modules=mypycify(["compyute", "--disallow-untyped-defs"]),
 )

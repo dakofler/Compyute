@@ -1,5 +1,6 @@
 """Randomness based tensor functions."""
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Optional
 
@@ -35,7 +36,7 @@ def set_seed(value: Optional[int] = None) -> None:
 
 
 @contextmanager
-def seed(value: int):
+def seed(value: int) -> Generator:
     """Context manager to set the seed of the random number generator for reproducability.
 
     Parameters
