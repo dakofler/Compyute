@@ -222,7 +222,6 @@ Alternatively, you can write your own training loop.
 
         # training
         model.training()
-        loss_fn.inference()
         for x, y in train_dl():
 
             # forward pass
@@ -235,13 +234,13 @@ Alternatively, you can write your own training loop.
             optim.step()  # update parameters
         
         # validiation
-        model.inference()  # prevent model from caching values for backward
-        loss_fn.inference()  # prevent loss fn from caching values for backward
-        val_loss = 0
-        for x, y in val_dl():
-            y_pred = model(x)
-            val_loss += loss_fn(y_pred, y).item()
-        val_loss /= len(val_dl)
+        model.inference()
+        with nn.no_caching():  # disable caching values for gradient computation
+            val_loss = 0
+            for x, y in val_dl():
+                y_pred = model(x)
+                val_loss += loss_fn(y_pred, y).item()
+            val_loss /= len(val_dl)
 
         print(f"epoch {epoch}: {val_loss=:.4f}")
 

@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Literal
 
 from ..tensors import Tensor
-from .functional.functions import FunctionCache, PseudoCache
+from .functional.functions import FunctionCache
 from .functional.loss_funcs import (
     BinaryCrossEntropyFn,
     CrossEntropyFn,
@@ -30,21 +30,6 @@ class Loss(ABC):
     def __init__(self) -> None:
         self.fcache = FunctionCache()
         self.label = self.__class__.__name__
-
-    @property
-    def is_training(self) -> bool:
-        """Whether the loss function is in training mode."""
-        return self._is_training
-
-    def training(self) -> None:
-        """Puts the module in training mode."""
-        self._is_training = True
-        self.fcache = FunctionCache()
-
-    def inference(self) -> None:
-        """Puts the module in inference mode."""
-        self._is_training = False
-        self.fcache = PseudoCache()
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return self.forward(y_pred, y_true)
@@ -82,6 +67,8 @@ class Loss(ABC):
 
         @wraps(forward_method)
         def wrapper(loss: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
+            loss.fcache.cache.clear()
+
             if DEBUG:
                 dt = time.perf_counter()
                 y = forward_method(loss, y_pred, y_true)

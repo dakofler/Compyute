@@ -33,6 +33,9 @@ class DType:
     def __repr__(self) -> str:
         return f"DType({self.t.__name__})"
 
+    def __format__(self, __format_spec: str) -> str:
+        return self.__repr__().__format__(__format_spec)
+
 
 bool_ = DType(numpy.bool_)
 bool_.__doc__ = "Boolean."

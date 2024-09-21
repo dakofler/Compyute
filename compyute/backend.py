@@ -1,7 +1,5 @@
 """Compyute engine utilities."""
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -30,6 +28,9 @@ class Device(ABC):
 
     def __repr__(self) -> str:
         return f"Device({self.t}:{self.index})"
+
+    def __format__(self, __format_spec: str) -> str:
+        return self.__repr__().__format__(__format_spec)
 
     @property
     @abstractmethod

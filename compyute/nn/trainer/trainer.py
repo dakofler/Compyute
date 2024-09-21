@@ -2,9 +2,9 @@
 
 from typing import Any, Literal, Optional
 
-from ...backend import free_cuda_memory
 from ...tensors import Tensor
 from ...typing import ScalarLike
+from ..functional.functions import no_caching
 from ..losses import Loss, _LossLike, get_loss_function
 from ..metrics import Metric, _MetricLike, get_metric_function
 from ..modules.module import Module
@@ -102,7 +102,6 @@ class Trainer:
 
                 # training
                 self.model.training()
-                self.loss.training()
                 for s, batch in enumerate(train_dataloader(), 1):
                     self._cache["step"] = s
                     self._callback("step_start")
@@ -113,7 +112,6 @@ class Trainer:
                 # validation
                 if val_data:
                     self.model.inference()
-                    self.loss.inference()
                     loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
                     self._cache["val_loss"] = loss
                     if self.metric is not None:
@@ -152,11 +150,12 @@ class Trainer:
         losses, scores = [], []
 
         # compute loss/score for each batch to save memory
-        for x_batch, y_batch in dataloader():
-            y_pred = self.model(x_batch)
-            losses.append(self.loss(y_pred, y_batch).item())
-            if self.metric is not None:
-                scores.append(self.metric(y_pred, y_batch).item())
+        with no_caching():
+            for x_batch, y_batch in dataloader():
+                y_pred = self.model(x_batch)
+                losses.append(self.loss(y_pred, y_batch).item())
+                if self.metric is not None:
+                    scores.append(self.metric(y_pred, y_batch).item())
 
         loss = sum(losses) / len(losses)
         if self.metric is not None:
