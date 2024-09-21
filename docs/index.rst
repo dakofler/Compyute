@@ -8,8 +8,8 @@ Compyute documentation
 `Source Repository <https://github.com/dakofler/Compyute>`_ |
 `Issue Tracker <https://github.com/dakofler/Compyute/issues>`_
 
-Compyute is a machine learning toolbox developed in pure NumPy/CuPy for tensor-based computation and building neural networks.
-It focuses on readability and education rather than performance.
+Python deep learning library focused on transparency and readability only using ``NumPy`` and ``CuPY`` under the hood.
+Gradient computation is implemented from scratch to facilitate understanding of the inner workings of neural networks.
 
 .. toctree::
     :maxdepth: 1

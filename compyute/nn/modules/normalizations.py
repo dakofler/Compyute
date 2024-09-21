@@ -82,8 +82,7 @@ class BatchNorm1D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [2, 3])
-
-        y, self.rmean, self.rvar = BatchNorm1DFn.forward(
+        y, rmean, rvar = BatchNorm1DFn.forward(
             self.fcache,
             x,
             self.rmean,
@@ -94,7 +93,8 @@ class BatchNorm1D(Module):
             self.eps,
             self._is_training,
         )
-
+        self.rmean.data = rmean.data
+        self.rvar.data = rvar.data
         return y
 
     @Module.register_backward
@@ -170,8 +170,7 @@ class BatchNorm2D(Module):
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         validate_input_axes(self, x, [4])
-
-        y, self.rmean, self.rvar = BatchNorm2DFn.forward(
+        y, rmean, rvar = BatchNorm2DFn.forward(
             self.fcache,
             x,
             self.rmean,
@@ -182,6 +181,8 @@ class BatchNorm2D(Module):
             self.eps,
             self._is_training,
         )
+        self.rmean.data = rmean.data
+        self.rvar.data = rvar.data
         return y
 
     @Module.register_backward

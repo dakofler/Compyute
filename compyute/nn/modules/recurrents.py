@@ -60,7 +60,7 @@ class Recurrent(Module):
         in_channels: int,
         h_channels: int,
         bias: bool = True,
-        activation: Literal["relu", "tanh"] = "tanh",
+        activation: str = "tanh",
         dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
@@ -82,7 +82,7 @@ class Recurrent(Module):
 
     def _init_parameters_and_buffers(self) -> None:
         init_xavier_uniform(self.w_i, self.w_h)
-        if self.bias:
+        if self.b_i and self.b_h:
             init_zeros(self.b_i, self.b_h)
 
     @Module.register_forward
@@ -199,7 +199,16 @@ class LSTM(Module):
             self.w_hg,
             self.w_ho,
         )
-        if self.bias:
+        if (
+            self.b_ii
+            and self.b_if
+            and self.b_ig
+            and self.b_io
+            and self.b_hi
+            and self.b_hf
+            and self.b_hg
+            and self.b_ho
+        ):
             init_zeros(
                 self.b_ii,
                 self.b_if,
@@ -360,7 +369,14 @@ class GRU(Module):
         init_xavier_uniform(
             self.w_ir, self.w_iz, self.w_in, self.w_hr, self.w_hz, self.w_hn
         )
-        if self.bias:
+        if (
+            self.b_ir
+            and self.b_iz
+            and self.b_in
+            and self.b_hr
+            and self.b_hz
+            and self.b_hn
+        ):
             init_zeros(self.b_ir, self.b_iz, self.b_in, self.b_hr, self.b_hz, self.b_hn)
 
     @Module.register_forward

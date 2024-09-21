@@ -2,7 +2,8 @@
 
 [![CI/CD](https://github.com/dakofler/Compyute/actions/workflows/tests.yml/badge.svg)](https://github.com/dakofler/Compyute/actions/workflows/tests.yml)
 
-Machine learning toolbox developed in pure `NumPy`/`CuPy` for tensor-based computation and building neural networks.
+Python deep learning library focused on transparency and readability only using `NumPy` and `CuPY` under the hood.
+Gradient computation is implemented from scratch to facilitate understanding of the inner workings of neural networks.
 
 ## Installation
 

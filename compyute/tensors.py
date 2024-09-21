@@ -436,14 +436,13 @@ class Tensor:
             new_tensor.grad = self.grad.copy()
         return new_tensor
 
-    def item(self) -> ScalarLike:
-        """Returns the scalar value of the tensor data.
-        Only works for scalar tensors.
+    def item(self) -> Any:
+        """Returns the element as a Python type for 1-element tensors.
 
         Returns
         -------
-        _ScalarLike
-            Scalar value of the tensor data.
+        Any
+            Tensor element.
         """
         return self.data.item()
 
