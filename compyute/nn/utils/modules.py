@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from ...tensor_ops.creating import ones
+from ...tensor_ops.creation_ops import ones
 from ...tensors import ShapeLike
 from ...typing import DType, float32
 from ..modules.module import Module

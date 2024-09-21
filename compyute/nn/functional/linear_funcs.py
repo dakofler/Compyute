@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...tensor_ops.reducing import sum as cp_sum
+from ...tensor_ops.reduction_ops import sum as cp_sum
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 

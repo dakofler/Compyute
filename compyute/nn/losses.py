@@ -83,13 +83,12 @@ class Loss(ABC):
         @wraps(forward_method)
         def wrapper(loss: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 y = forward_method(loss, y_pred, y_true)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 print(
                     f"{loss.label:20s} | forward  | {y_pred.dtype:10s} | {y_true.dtype:10s} | {dt=:>10.4f} ms"
                 )
-                return y
             else:
                 y = forward_method(loss, y_pred, y_true)
 
@@ -104,9 +103,9 @@ class Loss(ABC):
         @wraps(backward_method)
         def wrapper(loss: Loss) -> Tensor:
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 dx = backward_method(loss)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 print(f"{loss.label:20s} | backward | {dx.dtype:10s} | {dt=:>10.4f} ms")
             else:
                 dx = backward_method(loss)

@@ -6,7 +6,7 @@ from functools import partial
 from typing import Literal, Optional
 
 from ...random.random import normal, uniform
-from ...tensor_ops.creating import ones, zeros
+from ...tensor_ops.creation_ops import ones, zeros
 from ...tensors import ShapeLike, Tensor
 from ..modules.activations import ActivationLike
 

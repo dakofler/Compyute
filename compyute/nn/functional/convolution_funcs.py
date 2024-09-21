@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from ...tensor_ops.creating import zeros
-from ...tensor_ops.multiary import convolve1d_fft, convolve2d_fft
-from ...tensor_ops.reshaping import (
+from ...tensor_ops.creation_ops import zeros
+from ...tensor_ops.multiary_ops import convolve1d_fft, convolve2d_fft
+from ...tensor_ops.reshape_ops import (
     broadcast_to,
     flip,
     insert_dim,

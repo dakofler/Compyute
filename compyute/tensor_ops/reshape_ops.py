@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ..tensors import AxisLike, ShapeLike, Tensor
-from .creating import identity
+from .creation_ops import identity
 
 __all__ = [
     "diagonal",

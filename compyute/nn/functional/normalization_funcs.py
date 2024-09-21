@@ -1,9 +1,9 @@
 """Neural network normalization functions."""
 
-from ...tensor_ops.reducing import mean as cpmean
-from ...tensor_ops.reducing import sum as cp_sum
-from ...tensor_ops.reshaping import insert_dim, squeeze
-from ...tensor_ops.unary import sqrt
+from ...tensor_ops.reduction_ops import mean as cpmean
+from ...tensor_ops.reduction_ops import sum as cp_sum
+from ...tensor_ops.reshape_ops import insert_dim, squeeze
+from ...tensor_ops.unary_ops import sqrt
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 

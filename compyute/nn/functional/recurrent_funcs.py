@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
+from ...tensor_ops.creation_ops import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from .activation_funcs import ReLUFn, SigmoidFn, TanhFn
 from .functions import Function, FunctionCache, PseudoCache

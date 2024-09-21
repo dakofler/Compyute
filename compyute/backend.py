@@ -1,7 +1,10 @@
 """Compyute engine utilities."""
 
-from abc import ABC
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, Optional, TypeAlias
 
@@ -11,62 +14,52 @@ import numpy
 __all__ = ["cpu", "cuda", "Device", "use_device"]
 
 
+class CUDARuntimeError(Exception):
+    """Cuda error."""
+
+
+@dataclass(eq=False, repr=False, frozen=True)
 class Device(ABC):
     """Device base class."""
 
-    type: str
-
-    @property
-    def module(self) -> ModuleType:
-        """Computation engine."""
-        raise NotImplementedError
+    t: str
+    index: int = 0
 
     def __eq__(self, other) -> bool:
-        return isinstance(other, Device) and repr(self) == repr(other)
-
-    @property
-    def properties(self) -> Optional[dict[str, Any]]:
-        """Returns information about the device."""
-        ...
-
-    @property
-    def memory_info(self) -> Optional[dict[str, int]]:
-        """Returns information about the device memory in bytes."""
-        ...
-
-
-class CPU(Device):
-    """CPU device."""
-
-    type: str = "cpu"
+        return repr(self) == repr(other)
 
     def __repr__(self) -> str:
-        return 'compyute.Device(type="cpu")'
+        return f"Device({self.t}:{self.index})"
+
+    @property
+    @abstractmethod
+    def module(self) -> ModuleType:
+        """Computation engine."""
+        ...
+
+
+@dataclass(eq=False, repr=False, frozen=True)
+class CPU(Device):
+    """CPU device."""
 
     @property
     def module(self) -> ModuleType:
         return numpy
 
 
+@dataclass(eq=False, repr=False, frozen=True)
 class CUDA(Device):
     """GPU device."""
 
-    type: str = "cuda"
-    index: int
-    _cupy_device: cupy.cuda.Device
-
-    def __init__(self, index: int = 0):
-        self.index = index
-        self._cupy_device = cupy.cuda.Device(self.index)
-
-    def __repr__(self):
-        return f'compyute.Device(type="cuda:{self.index}")'
-
     def __enter__(self, *args):
-        return self._cupy_device.__enter__(*args)
+        return self.cupy_device.__enter__(*args)
 
     def __exit__(self, *args):
-        return self._cupy_device.__exit__(*args)
+        return self.cupy_device.__exit__(*args)
+
+    @property
+    def cupy_device(self) -> cupy.cuda.Device:
+        return cupy.cuda.Device(self.index)
 
     @property
     def module(self) -> ModuleType:
@@ -74,16 +67,22 @@ class CUDA(Device):
 
     @property
     def properties(self) -> Optional[dict[str, Any]]:
-        return cupy.cuda.runtime.getDeviceProperties(self.index)
+        try:
+            return cupy.cuda.runtime.getDeviceProperties(self.index)
+        except Exception:
+            raise CUDARuntimeError("No such device.")
 
     @property
     def memory_info(self) -> dict[str, int]:
-        free, total = self._cupy_device.mem_info
-        return {"used": total - free, "free": free, "total": total}
+        try:
+            free, total = self.cupy_device.mem_info
+            return {"used": total - free, "free": free, "total": total}
+        except Exception:
+            raise CUDARuntimeError("No such device.")
 
 
-cpu = CPU()
-cuda = CUDA(0)
+cpu = CPU("cpu")
+cuda = CUDA("cuda", 0)
 
 
 ArrayLike: TypeAlias = numpy.ndarray | cupy.ndarray

@@ -300,9 +300,9 @@ class Module(ABC):
                 module.x = x
 
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 y = forward_method(module, x)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 print(
                     f"{module.label:20s} | forward  | {x.dtype:10s} | {y.dtype:10s} | {dt=:>10.4f} ms"
                 )
@@ -328,9 +328,9 @@ class Module(ABC):
                 module.y.grad = dy
 
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 dx = backward_method(module, dy)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 if dx:
                     print(
                         f"{module.label:20s} | backward | {dx.dtype:10s} | {dy.dtype:10s} | {dt=:>10.4f} ms"
