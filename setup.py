@@ -34,7 +34,7 @@ setup(
         "cupy_cuda12x>=13.0.0",
         "ipywidgets>=8.1.2",
         # "ml_dtypes>=0.5.0",
-        "numpy>=1.26.4,<2.0.0",
+        "numpy>=1.26.4",
         "regex>=2023.12.25",
         "tqdm>=4.66.2",
         "tensorboardX>=2.6.2.2",

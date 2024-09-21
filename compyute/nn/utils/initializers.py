@@ -6,7 +6,7 @@ from functools import partial
 from typing import Literal, Optional
 
 from ...random.random import normal, uniform
-from ...tensor_ops.creating import ones, zeros
+from ...tensor_ops.creation_ops import ones, zeros
 from ...tensors import ShapeLike, Tensor
 from ..modules.activations import ActivationLike
 
@@ -75,7 +75,7 @@ def init_kaiming_normal(
     """
     gain = _get_gain(activation)
     for t in tensors:
-        fan_in = _get_fan_in(t.shape)
+        fan_in = get_fan_in(t.shape)
         std = gain / math.sqrt(fan_in)
         t.data = normal(t.shape, 0, std, device=t.device, dtype=t.dtype).data
 
@@ -93,7 +93,7 @@ def init_kaiming_uniform(
     """
     gain = _get_gain(activation)
     for t in tensors:
-        fan_in = _get_fan_in(t.shape)
+        fan_in = get_fan_in(t.shape)
         k = gain * math.sqrt(3 / fan_in)
         t.data = uniform(t.shape, -k, k, device=t.device, dtype=t.dtype).data
 
@@ -111,8 +111,8 @@ def init_xavier_normal(
     """
     gain = _get_gain(activation)
     for t in tensors:
-        fan_in = _get_fan_in(t.shape)
-        fan_out = _get_fan_out(t.shape)
+        fan_in = get_fan_in(t.shape)
+        fan_out = get_fan_out(t.shape)
         std = gain * math.sqrt(2 / (fan_in + fan_out))
         t.data = normal(t.shape, 0, std, device=t.device, dtype=t.dtype).data
 
@@ -130,13 +130,14 @@ def init_xavier_uniform(
     """
     gain = _get_gain(activation)
     for t in tensors:
-        fan_in = _get_fan_in(t.shape)
-        fan_out = _get_fan_out(t.shape)
+        fan_in = get_fan_in(t.shape)
+        fan_out = get_fan_out(t.shape)
         k = gain * math.sqrt(6 / (fan_in + fan_out))
         t.data = uniform(t.shape, -k, k, device=t.device, dtype=t.dtype).data
 
 
 InitializerLike = Literal[
+    "default",
     "kaiming_normal",
     "kaiming_uniform",
     "normal",
@@ -180,7 +181,7 @@ def get_initializer(
     """Returns an instance of an initializer."""
     if initializer not in INITIALIZERS:
         raise ValueError(f"Unknown initializer: {initializer}.")
-    if initializer in {
+    elif initializer in {
         "xavier_normal",
         "xavier_uniform",
         "kaiming_normal",
@@ -190,11 +191,11 @@ def get_initializer(
     return INITIALIZERS[initializer]
 
 
-def _get_fan_in(shape: ShapeLike) -> int:
+def get_fan_in(shape: ShapeLike) -> int:
     """Returns the fan-in value for a given shape."""
     return math.prod(shape[1:])
 
 
-def _get_fan_out(shape: ShapeLike) -> int:
+def get_fan_out(shape: ShapeLike) -> int:
     """Returns the fan-out value for a given shape."""
     return math.prod((shape[0],) + shape[2:])

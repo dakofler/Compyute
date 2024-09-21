@@ -1,7 +1,7 @@
 """Tensor multinary operations."""
 
 from ..tensors import ShapeError, Tensor
-from .unary import fft1d, fft2d, ifft1d, ifft2d, real
+from .unary_ops import fft1d, fft2d, ifft1d, ifft2d, real
 
 __all__ = [
     "allclose",

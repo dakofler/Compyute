@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...tensor_ops.creating import empty
+from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.embedding_funcs import EmbeddingFn

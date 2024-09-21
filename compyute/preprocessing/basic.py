@@ -3,7 +3,7 @@
 from typing import Optional
 
 from ..random.random import shuffle
-from ..tensor_ops.creating import identity
+from ..tensor_ops.creation_ops import identity
 from ..tensors import AxisLike, Tensor
 from ..typing import DType, int64, is_integer
 

@@ -3,9 +3,9 @@
 import math
 
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_ops.reducing import mean
-from ...tensor_ops.reducing import sum as cp_sum
-from ...tensor_ops.unary import clip, log
+from ...tensor_ops.reduction_ops import mean
+from ...tensor_ops.reduction_ops import sum as cp_sum
+from ...tensor_ops.unary_ops import clip, log
 from ...tensors import Tensor
 from ...typing import float32
 from .activation_funcs import softmax

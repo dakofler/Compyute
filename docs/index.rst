@@ -8,8 +8,8 @@ Compyute documentation
 `Source Repository <https://github.com/dakofler/Compyute>`_ |
 `Issue Tracker <https://github.com/dakofler/Compyute/issues>`_
 
-Compyute is a machine learning toolbox developed in pure NumPy/CuPy for tensor-based computation and building neural networks.
-It focuses on readability and education rather than performance.
+Python deep learning library focused on transparency and readability only using ``NumPy`` and ``CuPY`` under the hood.
+Gradient computation is implemented from scratch to facilitate understanding of the inner workings of neural networks.
 
 .. toctree::
     :maxdepth: 1
@@ -222,7 +222,6 @@ Alternatively, you can write your own training loop.
 
         # training
         model.training()
-        loss_fn.inference()
         for x, y in train_dl():
 
             # forward pass
@@ -235,13 +234,13 @@ Alternatively, you can write your own training loop.
             optim.step()  # update parameters
         
         # validiation
-        model.inference()  # prevent model from caching values for backward
-        loss_fn.inference()  # prevent loss fn from caching values for backward
-        val_loss = 0
-        for x, y in val_dl():
-            y_pred = model(x)
-            val_loss += loss_fn(y_pred, y).item()
-        val_loss /= len(val_dl)
+        model.inference()
+        with nn.no_caching():  # disable caching values for gradient computation
+            val_loss = 0
+            for x, y in val_dl():
+                y_pred = model(x)
+                val_loss += loss_fn(y_pred, y).item()
+            val_loss /= len(val_dl)
 
         print(f"epoch {epoch}: {val_loss=:.4f}")
 

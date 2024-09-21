@@ -3,6 +3,12 @@ compyute.nn
 .. currentmodule:: compyute.nn
 
 
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+
+    no_caching
+
+
 .. _losses:
 
 Losses

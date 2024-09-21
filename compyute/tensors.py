@@ -63,7 +63,7 @@ def tensor(
     """
     device = device or get_default_device() or get_device_from_array(type(data))
     dtype = dtype or get_default_dtype()
-    np_dtype = dtype.type if dtype is not None else None
+    np_dtype = dtype.t if dtype is not None else None
     return Tensor(device.module.asarray(data, np_dtype))
 
 
@@ -357,7 +357,7 @@ class Tensor:
         if self.dtype == dtype:
             return self
 
-        return Tensor(self.data.astype(dtype.type, copy=False))
+        return Tensor(self.data.astype(dtype.t, copy=False))
 
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.
@@ -436,14 +436,13 @@ class Tensor:
             new_tensor.grad = self.grad.copy()
         return new_tensor
 
-    def item(self) -> ScalarLike:
-        """Returns the scalar value of the tensor data.
-        Only works for scalar tensors.
+    def item(self) -> Any:
+        """Returns the element as a Python type for 1-element tensors.
 
         Returns
         -------
-        _ScalarLike
-            Scalar value of the tensor data.
+        Any
+            Tensor element.
         """
         return self.data.item()
 
@@ -504,9 +503,7 @@ class Tensor:
         """
         return Tensor(self.data.all(axis, keepdims=keepdims))
 
-    def argmax(
-        self, axis: Optional[AxisLike] = None, *, keepdims: bool = False
-    ) -> Tensor:
+    def argmax(self, axis: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
         """Returns the indices of maximum values along a given axis.
 
         See Also

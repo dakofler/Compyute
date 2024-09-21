@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from ...tensor_ops.creating import empty, empty_like, zeros, zeros_like
+from ...tensor_ops.creation_ops import empty, empty_like, zeros, zeros_like
 from ...tensors import Tensor
 from .activation_funcs import ReLUFn, SigmoidFn, TanhFn
 from .functions import Function, FunctionCache, PseudoCache
@@ -22,8 +22,10 @@ class RecurrentFn(Function):
         b_i: Optional[Tensor],
         w_h: Tensor,
         b_h: Optional[Tensor],
-        activation: Literal["relu", "tanh"],
+        activation: str,
     ) -> Tensor:
+        if activation not in {"relu", "tanh"}:
+            raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i
@@ -132,8 +134,10 @@ class LSTMFn(Function):
         b_hg: Optional[Tensor],
         w_ho: Tensor,
         b_ho: Optional[Tensor],
-        activation: Literal["relu", "tanh"],
+        activation: str,
     ) -> Tensor:
+        if activation not in {"relu", "tanh"}:
+            raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i
@@ -385,8 +389,10 @@ class GRUFn(Function):
         b_hz: Optional[Tensor],
         w_hn: Tensor,
         b_hn: Optional[Tensor],
-        activation: Literal["relu", "tanh"],
+        activation: str,
     ) -> Tensor:
+        if activation not in {"relu", "tanh"}:
+            raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
 
         # input projection W_i * x_t + b_i

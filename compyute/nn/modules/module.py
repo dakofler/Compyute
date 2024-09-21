@@ -299,12 +299,15 @@ class Module(ABC):
             if module.retain_values:
                 module.x = x
 
+            if module.fcache.cache:
+                module.fcache.cache.clear()
+
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 y = forward_method(module, x)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 print(
-                    f"{module.label:20s} | forward  | {x.dtype:10s} | {y.dtype:10s} | {dt=:>10.4f} ms"
+                    f"{module.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
                 )
             else:
                 y = forward_method(module, x)
@@ -328,16 +331,16 @@ class Module(ABC):
                 module.y.grad = dy
 
             if DEBUG:
-                dt = time.time()
+                dt = time.perf_counter()
                 dx = backward_method(module, dy)
-                dt = (time.time() - dt) * 1e3
+                dt = (time.perf_counter() - dt) * 1e3
                 if dx:
                     print(
-                        f"{module.label:20s} | backward | {dx.dtype:10s} | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                        f"{module.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
                     )
                 else:
                     print(
-                        f"{module.label:20s} | backward | {dy.dtype:10s} | {dt=:>10.4f} ms"
+                        f"{module.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms"
                     )
             else:
                 dx = backward_method(module, dy)

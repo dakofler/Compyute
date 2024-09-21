@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 import string
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from collections import Counter, OrderedDict
+from itertools import pairwise
 from typing import Optional
 
 import regex
@@ -173,15 +174,18 @@ class BPETokenizer(Tokenizer):
         for i in trange(n_merges, desc="Merges", unit="merges"):
 
             # get counts for bigrams
-            counts: dict[tuple[int], int] = {}
-            for chunk_ids in token_ids:
-                self._update_counts(chunk_ids, counts)
+            counts: Counter[tuple[int, int]] = Counter()
+            for chunk in token_ids:
+                chunk_counts = Counter(pairwise(chunk))
+                for bigram, count in chunk_counts.items():
+                    counts[bigram] = counts.get(bigram, 0) + count
 
-            # get most occuring bigram
             if len(counts) == 0:
                 print(f"Step {i+1}/{n_merges}. No more possible merges found.")
                 break
-            bigram: tuple[int, int] = max(counts, key=counts.get)
+
+            # get most occuring bigram
+            bigram = counts.most_common(1)[0][0]
 
             # replace occurences of bigram with merge id
             idx = 256 + i
@@ -189,12 +193,6 @@ class BPETokenizer(Tokenizer):
 
             self._merges[bigram] = idx
             self.vocab[idx] = self.vocab[bigram[0]] + self.vocab[bigram[1]]
-
-    def _update_counts(self, token_ids, counts=None):
-        counts = counts if counts is not None else {}
-        for bigram in zip(token_ids, token_ids[1:]):
-            counts[bigram] = counts.get(bigram, 0) + 1
-        return counts
 
     def _merge(self, token_ids, bigram, idx):
         new_ids = []
@@ -219,7 +217,7 @@ class BPETokenizer(Tokenizer):
         token_ids = list(text_bytes)
 
         while len(token_ids) >= 2:
-            counts = self._update_counts(token_ids)
+            counts = Counter(pairwise(token_ids))
 
             # get bigram that first occured in merges
             bigram = min(counts, key=lambda p: self._merges.get(p, float("inf")))

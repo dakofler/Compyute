@@ -3,8 +3,8 @@
 from itertools import accumulate
 from typing import Optional
 
-from ...tensor_ops.creating import concat, split
-from ...tensor_ops.reducing import tensorsum
+from ...tensor_ops.creation_ops import concat, split
+from ...tensor_ops.reduction_ops import tensorsum
 from ...tensors import Tensor
 from .module import Module, ModuleList
 
@@ -81,13 +81,12 @@ class ParallelConcat(Module):
     def forward(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self.modules]
         y = concat(ys, axis=self.concat_axis)
-
-        self.fcache.idx = list(accumulate(y.shape[self.concat_axis] for y in ys[:-1]))
+        self.fcache.push(list(accumulate(y.shape[self.concat_axis] for y in ys[:-1])))
         return y
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        y_idx = self.fcache.idx
+        (y_idx,) = self.fcache.pop()
         splits = split(dy, splits=y_idx, axis=self.concat_axis)
         return tensorsum(m.backward(s) for m, s in zip(self.modules, splits))
 

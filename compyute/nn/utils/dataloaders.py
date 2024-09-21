@@ -6,7 +6,7 @@ from functools import wraps
 
 from ...backend import Device, cpu
 from ...random.random import permutation
-from ...tensor_ops.creating import arange, concat
+from ...tensor_ops.creation_ops import arange, concat
 from ...tensors import Tensor
 from ...typing import int64
 

@@ -1,9 +1,9 @@
 """Neural network normalization functions."""
 
-from ...tensor_ops.reducing import mean as cpmean
-from ...tensor_ops.reducing import sum as cp_sum
-from ...tensor_ops.reshaping import insert_dim, squeeze
-from ...tensor_ops.unary import sqrt
+from ...tensor_ops.reduction_ops import mean as cpmean
+from ...tensor_ops.reduction_ops import sum as cp_sum
+from ...tensor_ops.reshape_ops import insert_dim, squeeze
+from ...tensor_ops.unary_ops import sqrt
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -26,7 +26,7 @@ class BatchNorm1DFn(Function):
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
         x_is_2d = x.n_axes == 2
-        axes: int | tuple[int, ...] = 0 if x_is_2d else (0, 2)
+        axes: tuple[int, ...] = (0,) if x.n_axes == 2 else (0, 2)
 
         if training:
             # compute mean and variance from x
@@ -49,13 +49,12 @@ class BatchNorm1DFn(Function):
         b = b if x_is_2d else insert_dim(b, -1)
         y = w * x_norm + b
 
-        cache.push(w, std, x_norm)
+        cache.push(w, axes, std, x_norm)
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, std, x_norm = cache.pop()
-        axes: int | tuple[int, ...] = 0 if dy.n_axes == 2 else (0, 2)
+        w, axes, std, x_norm = cache.pop()
 
         # input grads
         n = float(dy.size / dy.shape[1])
@@ -232,10 +231,10 @@ class LayerNormFn(Function):
     def forward(
         cache: FunctionCache, x: Tensor, w: Tensor, b: Tensor, eps: float
     ) -> Tensor:
-        axes = tuple(-i - 1 for i in range(w.n_axes))
+        feat_axes = tuple(-i - 1 for i in range(w.n_axes))
 
-        std = sqrt(x.var(axes, keepdims=True) + eps)
-        x_norm = (x - x.mean(axes, keepdims=True)) / std
+        std = sqrt(x.var(feat_axes, keepdims=True) + eps)
+        x_norm = (x - x.mean(feat_axes, keepdims=True)) / std
         y = w * x_norm + b
 
         cache.push(w, std, x_norm)
@@ -244,21 +243,57 @@ class LayerNormFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         w, std, x_norm = cache.pop()
-        axes = tuple(-i - 1 for i in range(w.n_axes))
-        sum_axes = tuple(range(dy.n_axes - w.n_axes))
+        feat_axes = tuple(-i - 1 for i in range(w.n_axes))
+        batch_axes = tuple(range(dy.n_axes - w.n_axes))
 
         # input grads
-        dy_sum = dy.sum(axes, keepdims=True)
-        dy_x_norm_sum = cp_sum(dy * x_norm, axis=axes, keepdims=True)
+        dy_sum = dy.sum(feat_axes, keepdims=True)
+        dy_x_norm_sum = cp_sum(dy * x_norm, axis=feat_axes, keepdims=True)
         dx = w / (std * w.size) * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
-        dw = cp_sum(dy * x_norm, axis=sum_axes)
+        dw = cp_sum(dy * x_norm, axis=batch_axes)
 
         # beta grads
-        db = dy.sum(sum_axes)
+        db = dy.sum(batch_axes)
 
         return dx, dw, db
+
+
+# class LayerNormFn2(Function):
+#     """Performs layer normalization on a tensor."""
+
+#     @staticmethod
+#     def forward(
+#         cache: FunctionCache, x: Tensor, w: Tensor, b: Tensor, eps: float
+#     ) -> Tensor:
+#         axes = tuple(-i - 1 for i in range(w.n_axes))
+
+#         mean = x.mean(axes, keepdims=True)
+#         std = sqrt(x.var(axes, keepdims=True) + eps)
+#         x_norm = (x - mean) / std
+#         y = w * x_norm + b
+
+#         cache.push(x, w, mean, std, x_norm)
+#         return y
+
+#     @staticmethod
+#     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+#         x, w, mean, std, x_norm = cache.pop()
+#         axes = tuple(-i - 1 for i in range(w.n_axes))
+#         sum_axes = tuple(range(dy.n_axes - w.n_axes))
+
+#         # Step 3: Gradient w.r.t. x
+#         dx_norm = dy * w  # (N, D)
+#         dvar = cp_sum(dx_norm * (x - mean) * (-0.5) * std ** (-3), axes, keepdims=True)
+#         dmean = cp_sum(dx_norm * (-1 / std), axes, keepdims=True) + dvar * cpmean(
+#             -2 * (x - mean), axes, keepdims=True
+#         )
+#         dw = cp_sum(dy * x_norm, axis=sum_axes)
+#         db = cp_sum(dy, axis=sum_axes)
+
+#         dx = dx_hat / std + dvar * 2 * (x - mean) / D + dmean / D  # (N, D)
+#         return dx, dw, db
 
 
 def layernorm(x: Tensor, w: Tensor, b: Tensor, eps: float = 1e-5) -> Tensor:

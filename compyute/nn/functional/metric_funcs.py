@@ -2,7 +2,7 @@
 
 import math
 
-from ...tensor_ops.reducing import sum as cp_sum
+from ...tensor_ops.reduction_ops import sum as cp_sum
 from ...tensors import Tensor
 
 __all__ = ["accuracy_score", "r2_score"]

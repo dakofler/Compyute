@@ -2,9 +2,9 @@
 
 from typing import Any, Literal, Optional
 
-from ...backend import free_cuda_memory
 from ...tensors import Tensor
 from ...typing import ScalarLike
+from ..functional.functions import no_caching
 from ..losses import Loss, _LossLike, get_loss_function
 from ..metrics import Metric, _MetricLike, get_metric_function
 from ..modules.module import Module
@@ -102,7 +102,6 @@ class Trainer:
 
                 # training
                 self.model.training()
-                self.loss.training()
                 for s, batch in enumerate(train_dataloader(), 1):
                     self._cache["step"] = s
                     self._callback("step_start")
@@ -113,7 +112,6 @@ class Trainer:
                 # validation
                 if val_data:
                     self.model.inference()
-                    self.loss.inference()
                     loss, score = self.evaluate_model(*val_data, batch_size=batch_size)
                     self._cache["val_loss"] = loss
                     if self.metric is not None:
@@ -129,7 +127,7 @@ class Trainer:
 
     def evaluate_model(
         self, x: Tensor, y: Tensor, batch_size: int = 32
-    ) -> tuple[ScalarLike, Optional[ScalarLike]]:
+    ) -> tuple[float, Optional[float]]:
         """Evaluates the model using a defined metric.
 
         Parameters
@@ -143,24 +141,26 @@ class Trainer:
 
         Returns
         ----------
-        _ScalarLike
+        float
             Loss value.
-        _ScalarLike, optional
+        float, optional
             Metric score.
         """
         dataloader = Dataloader((x, y), batch_size, self.model.device, False)
         losses, scores = [], []
 
         # compute loss/score for each batch to save memory
-        for x_batch, y_batch in dataloader():
-            y_pred = self.model(x_batch)
-            losses.append(self.loss(y_pred, y_batch).item())
-            if self.metric is not None:
-                scores.append(self.metric(y_pred, y_batch).item())
+        with no_caching():
+            for x_batch, y_batch in dataloader():
+                y_pred = self.model(x_batch)
+                losses.append(self.loss(y_pred, y_batch).item())
+                if self.metric is not None:
+                    scores.append(self.metric(y_pred, y_batch).item())
 
         loss = sum(losses) / len(losses)
         if self.metric is not None:
-            return loss, sum(scores) / len(scores)
+            metric = sum(scores) / len(scores)
+            return loss, metric
         return loss, None
 
     def _callback(

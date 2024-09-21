@@ -1,13 +1,14 @@
 """Neural network linear transformation modules."""
 
+import math
 from typing import Optional
 
-from ...tensor_ops.creating import empty
+from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.linear_funcs import LinearFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_xavier_uniform, init_zeros
+from ..utils.initializers import init_uniform
 from .module import Module
 
 __all__ = ["Linear"]
@@ -42,8 +43,8 @@ class Linear(Module):
 
 
     .. note::
-        Weights are initialized from :math:`\mathcal{U}(-k, k)`, where
-        :math:`k = \sqrt{\frac{1}{C_{in}}}`. Biases are initialized as zeros.
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in}}}`.
     """
 
     def __init__(
@@ -65,9 +66,10 @@ class Linear(Module):
         self._init_parameters_and_buffers()
 
     def _init_parameters_and_buffers(self) -> None:
-        init_xavier_uniform(self.w)
+        std = 1.0 / math.sqrt(self.in_channels)
+        init_uniform(self.w, low=-std, high=std)
         if self.b:
-            init_zeros(self.b)
+            init_uniform(self.b, low=-std, high=std)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
