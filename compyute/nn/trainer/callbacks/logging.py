@@ -19,7 +19,7 @@ class History(Callback):
     def __init__(self) -> None:
         self._cache = {}
 
-    def __getitem__(self, key) -> list[float]:
+    def __getitem__(self, key: str) -> list[float]:
         return self._cache[key]
 
     def _log_stats(self, stats: Iterable[str], trainer_cache: dict[str, Any]) -> None:

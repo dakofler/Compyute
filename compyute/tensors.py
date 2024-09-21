@@ -137,7 +137,7 @@ class Tensor:
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "Tensor("
             + self.device.module.array2string(
@@ -268,10 +268,12 @@ class Tensor:
     def __len__(self) -> int:
         return self.shape[0]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __array__(self, dtype=None, copy=None):
+    def __array__(
+        self, dtype: Optional[type] = None, copy: Optional[bool] = None
+    ) -> numpy.ndarray:
         return self.to_numpy()
 
     def __bool__(self) -> bool:

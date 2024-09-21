@@ -14,7 +14,9 @@ __all__ = [
 ]
 
 
-def allclose(x1: Tensor, x2: Tensor, *, rtol=1e-05, atol=1e-08) -> bool:
+def allclose(
+    x1: Tensor, x2: Tensor, *, rtol: float = 1e-05, atol: float = 1e-08
+) -> bool:
     """Returns ``True`` if all elements in the tensor are ``True``.
 
     Parameters
@@ -23,9 +25,9 @@ def allclose(x1: Tensor, x2: Tensor, *, rtol=1e-05, atol=1e-08) -> bool:
         Input tensor.
     x2 : Tensor
         Input tensor.
-    rtol : float
+    rtol : float, optional
         Relative tolerance. Defaults to ``1e-05``.
-    atol : float
+    atol : float, optional
         Absolute tolerance. Defaults to ``1e-08``.
 
     Returns

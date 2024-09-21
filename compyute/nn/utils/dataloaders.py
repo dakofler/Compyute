@@ -3,6 +3,7 @@
 import math
 from collections.abc import Callable, Iterator
 from functools import wraps
+from typing import Any
 
 from ...backend import Device, cpu
 from ...random.random import permutation
@@ -104,7 +105,7 @@ def batched(
     """
 
     @wraps(func)
-    def wrapper(x: Tensor, *args, **kwargs) -> Tensor:
+    def wrapper(x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         dataloader = Dataloader((x,), batch_size, device, shuffle_data, drop_remaining)
         ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader()]
         return concat(ys, axis=0)

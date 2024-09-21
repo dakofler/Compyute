@@ -1,6 +1,7 @@
 """Compyute engine utilities."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import ModuleType
@@ -23,7 +24,7 @@ class Device(ABC):
     t: str
     index: int = 0
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return repr(self) == repr(other)
 
     def __repr__(self) -> str:
@@ -52,10 +53,10 @@ class CPU(Device):
 class CUDA(Device):
     """GPU device."""
 
-    def __enter__(self, *args):
-        return self.cupy_device.__enter__(*args)
+    def __enter__(self) -> None:
+        return self.cupy_device.__enter__()
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         return self.cupy_device.__exit__(*args)
 
     @property
@@ -143,16 +144,13 @@ def set_default_device(device: Optional[Device]) -> None:
 
 
 @contextmanager
-def use_device(device: Device):
+def use_device(device: Device) -> Generator:
     """Context manager to set the default device when creating tensors."""
     set_default_device(device)
     try:
         yield
     finally:
         set_default_device(None)
-
-
-from typing import Any
 
 
 def get_device_from_array(array: ArrayLike) -> Device:

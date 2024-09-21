@@ -3,7 +3,7 @@
 import math
 from abc import ABC, abstractmethod
 from itertools import pairwise
-from typing import NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from ..optimizers import Optimizer
 
@@ -44,7 +44,7 @@ class LrScheduler(ABC):
         self.cache["lr_history"].append(self.optimizer.lr)
 
     @abstractmethod
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         """Updates the optimizer learning rate."""
 
 
@@ -71,7 +71,7 @@ class StepLrScheduler(LrScheduler):
         self.t_decay = t_decay
         self.lr_decay = lr_decay
 
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         self._log_lr()
         if self.optimizer.t - 1 == self.t_decay:
             self.optimizer.lr *= self.lr_decay
@@ -100,7 +100,7 @@ class MultistepLrScheduler(LrScheduler):
         self.t_decay_step = t_decay_step
         self.lr_decay = lr_decay
 
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         self._log_lr()
         if (self.optimizer.t - 1) % self.t_decay_step == 0:
             self.optimizer.lr *= self.lr_decay
@@ -129,7 +129,7 @@ class ExponentialLrScheduler(LrScheduler):
         self.decay_steps = decay_steps
         self.lr_decay = lr_decay
 
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         self._log_lr()
         if self.optimizer.t - 1 <= self.decay_steps:
             self.optimizer.lr *= self.lr_decay
@@ -170,7 +170,7 @@ class CosineLrScheduler(LrScheduler):
         self.decay_steps = decay_steps
         self._max_lr = optimizer.lr
 
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         self._log_lr()
 
         # warmup phase
@@ -220,7 +220,7 @@ class AdaptiveLrScheduler(LrScheduler):
         self.lr_downscale_factor = lr_downscale_factor
         self.lr_upscale_factor = lr_upscale_factor
 
-    def step(self, **kwargs) -> None:
+    def step(self, **kwargs: Any) -> None:
         if len(kwargs) != 1:
             raise ValueError(
                 "Exactly one metric value must be passed as keyword argument."
