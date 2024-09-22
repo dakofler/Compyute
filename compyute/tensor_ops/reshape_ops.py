@@ -21,12 +21,14 @@ __all__ = [
     "squeeze",
     "flip",
     "broadcast_to",
+    "pooling1d",
+    "pooling2d",
 ]
 
 
 def diagonal(x: Tensor) -> Tensor:
     """Expands a tensor by turning the last dim into a diagonal matrix."""
-    return insert_dim(x, -1) * identity(x.shape[-1])
+    return x.view((*x.shape, 1)) * identity(x.shape[-1])
 
 
 def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -210,6 +212,8 @@ def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
     Tensor
         Padded tensor.
     """
+    if x.shape == shape:
+        return x
     padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.n_axes))
     return pad(x, padding)
 
@@ -287,3 +291,63 @@ def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
         Broadcasted tensor.
     """
     return Tensor(x.device.module.broadcast_to(x.data, shape))
+
+
+def pooling1d(x: Tensor, window_size: int, stride: int = 1):
+    """Returns a windowed view of a tensor across the last axis.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    window_size : int
+        Size of the pooling window.
+    stride : int
+        Stride of the pooling operation.
+
+    Returns
+    -------
+    Tensor
+        Windowed view of the input tensor.
+    """
+
+    # compute output shape
+    out = (x.shape[-1] - window_size) // stride + 1
+    out_shape = (*x.shape[:-1], out, window_size)
+
+    # compute output strides
+    x_str = x.strides
+    out_strides = (*x_str[:-1], x_str[-1] * stride, x_str[-1])
+
+    str_func = x.device.module.lib.stride_tricks.as_strided
+    return Tensor(str_func(x.data, out_shape, out_strides))
+
+
+def pooling2d(x: Tensor, window_size: int, stride: int = 1):
+    """Returns a windowed view of a tensor across the last two axes.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    window_size : int
+        Size of the pooling window.
+    stride : int
+        Stride of the pooling operation.
+
+    Returns
+    -------
+    Tensor
+        Windowed view of the input tensor.
+    """
+
+    # compute output shape
+    out = (x.shape[-1] - window_size) // stride + 1
+    out_shape = (*x.shape[:-2], out, out, window_size, window_size)
+
+    # compute output strides
+    x_str = x.strides
+    out_strides = (*x_str[:-2], x_str[-2] * stride, x_str[-1] * stride, *x_str[-2:])
+
+    str_func = x.device.module.lib.stride_tricks.as_strided
+    return Tensor(str_func(x.data, out_shape, out_strides))
