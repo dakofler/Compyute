@@ -18,6 +18,7 @@ class LinearFn(Function):
         y = x @ w.T
         if b:
             y += b
+
         cache.push(x, w, b is not None)
         return y
 
@@ -26,6 +27,7 @@ class LinearFn(Function):
         cache: FunctionCache, dy: Tensor
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
         x, w, b = cache.pop()
+
         dx = dy @ w
         dw = (dy.T @ x).sum(tuple(range(dy.n_axes - 2)))
         db = None if not b else dy.sum(axis=tuple(range(dy.n_axes - 1)))

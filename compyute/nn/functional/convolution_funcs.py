@@ -6,7 +6,6 @@ from ...tensor_ops.creation_ops import zeros
 from ...tensor_ops.multiary_ops import einsum
 from ...tensor_ops.reshape_ops import (
     flip,
-    insert_dim,
     pad,
     pad_to_shape,
     pooling1d,
@@ -46,7 +45,7 @@ class Convolution1DFn(Function):
         x = Pad1DFn.forward(cache, x, padding)
         y = _Convolution1DFn.forward(cache, x, f, stride)
         if b:
-            y += insert_dim(b, -1)
+            y += b.view((*b.shape, 1))
 
         cache.push(b is not None)
         return y
@@ -238,7 +237,7 @@ class Convolution2DFn(Function):
         x = Pad2DFn.forward(cache, x, padding)
         y = _Convolution2DFn.forward(cache, x, f, stride)
         if b:
-            y += b.to_shape((*b.shape, 1, 1))
+            y += b.view((*b.shape, 1, 1))
 
         cache.push(b is not None)
         return y

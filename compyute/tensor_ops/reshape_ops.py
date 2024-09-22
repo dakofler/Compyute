@@ -28,7 +28,7 @@ __all__ = [
 
 def diagonal(x: Tensor) -> Tensor:
     """Expands a tensor by turning the last dim into a diagonal matrix."""
-    return insert_dim(x, -1) * identity(x.shape[-1])
+    return x.view((*x.shape, 1)) * identity(x.shape[-1])
 
 
 def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -303,12 +303,12 @@ def pooling1d(x: Tensor, window_size: int, stride: int = 1):
     window_size : int
         Size of the pooling window.
     stride : int
-        Stride of the pooling window.
+        Stride of the pooling operation.
 
     Returns
     -------
     Tensor
-        Sliding window view of the input tensor.
+        Windowed view of the input tensor.
     """
 
     # compute output shape
@@ -333,12 +333,12 @@ def pooling2d(x: Tensor, window_size: int, stride: int = 1):
     window_size : int
         Size of the pooling window.
     stride : int
-        Stride of the pooling window.
+        Stride of the pooling operation.
 
     Returns
     -------
     Tensor
-        Sliding window view of the input tensor.
+        Windowed view of the input tensor.
     """
 
     # compute output shape

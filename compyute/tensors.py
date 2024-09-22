@@ -458,7 +458,7 @@ class Tensor:
         """
         return self.to_cpu().data
 
-    def to_shape(self, shape: ShapeLike) -> Tensor:
+    def view(self, shape: ShapeLike) -> Tensor:
         """Returns a view of the tensor of a given shape.
 
         Parameters

@@ -1,6 +1,6 @@
 """Neural network normalization functions."""
 
-from ...tensor_ops.reshape_ops import insert_dim, squeeze
+from ...tensor_ops.reshape_ops import squeeze
 from ...tensor_ops.unary_ops import sqrt
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -37,13 +37,13 @@ class BatchNorm1DFn(Function):
             rvar = rvar * (1 - m) + x.var(batch_axes, ddof=1) * m
         else:
             # use running mean and variance
-            var = rvar if x_is_2d else insert_dim(rvar, -1)
-            mean = rmean if x_is_2d else insert_dim(rmean, -1)
+            var = rvar if x_is_2d else rvar.view((*rvar.shape, 1))
+            mean = rmean if x_is_2d else rmean.view((*rmean.shape, 1))
             std = sqrt(var + eps)
             x_norm = (x - mean) / std
 
-        w = w if x_is_2d else insert_dim(w, -1)
-        b = b if x_is_2d else insert_dim(b, -1)
+        w = w if x_is_2d else w.view((*w.shape, 1))
+        b = b if x_is_2d else b.view((*b.shape, 1))
         y = w * x_norm + b
 
         cache.push(w, batch_axes, std, x_norm)
@@ -143,12 +143,12 @@ class BatchNorm2DFn(Function):
             rvar = rvar * (1 - m) + x.var(batch_axes, ddof=1) * m
         else:
             # use running mean and variance
-            mean = rmean.to_shape((*rmean.shape, 1, 1))
-            std = sqrt(rvar.to_shape((*rvar.shape, 1, 1)) + eps)
+            mean = rmean.view((*rmean.shape, 1, 1))
+            std = sqrt(rvar.view((*rvar.shape, 1, 1)) + eps)
             x_norm = (x - mean) / std
 
-        w = w.to_shape((*w.shape, 1, 1))
-        b = b.to_shape((*b.shape, 1, 1))
+        w = w.view((*w.shape, 1, 1))
+        b = b.view((*b.shape, 1, 1))
         y = w * x_norm + b
 
         cache.push(w, batch_axes, std, x_norm)
