@@ -1,0 +1,6 @@
+compyute.preprocessing.text.WordTokenizer.fit
+=============================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: WordTokenizer.fit

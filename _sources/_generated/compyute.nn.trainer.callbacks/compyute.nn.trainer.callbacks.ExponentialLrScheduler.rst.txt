@@ -1,0 +1,28 @@
+﻿compyute.nn.trainer.callbacks.ExponentialLrScheduler
+====================================================
+
+.. currentmodule:: compyute.nn.trainer.callbacks
+
+.. autoclass:: ExponentialLrScheduler
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~ExponentialLrScheduler.__init__
+        ~ExponentialLrScheduler.on_epoch_end
+        ~ExponentialLrScheduler.on_epoch_start
+        ~ExponentialLrScheduler.on_start
+        ~ExponentialLrScheduler.on_step_end
+        ~ExponentialLrScheduler.on_step_start
+        ~ExponentialLrScheduler.on_training_end
+    
+    
+
+
+    
+    
+    

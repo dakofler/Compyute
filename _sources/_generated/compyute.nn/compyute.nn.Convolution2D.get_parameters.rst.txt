@@ -1,0 +1,6 @@
+compyute.nn.Convolution2D.get\_parameters
+=========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2D.get_parameters

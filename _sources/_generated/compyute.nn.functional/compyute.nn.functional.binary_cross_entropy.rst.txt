@@ -1,0 +1,6 @@
+﻿compyute.nn.functional.binary\_cross\_entropy
+=============================================
+
+.. currentmodule:: compyute.nn.functional
+
+.. autofunction:: binary_cross_entropy

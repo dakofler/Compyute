@@ -1,0 +1,6 @@
+compyute.nn.CrossEntropy.\_\_init\_\_
+=====================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: CrossEntropy.__init__

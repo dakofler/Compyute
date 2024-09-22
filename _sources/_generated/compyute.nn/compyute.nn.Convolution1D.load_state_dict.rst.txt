@@ -1,0 +1,6 @@
+compyute.nn.Convolution1D.load\_state\_dict
+===========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1D.load_state_dict

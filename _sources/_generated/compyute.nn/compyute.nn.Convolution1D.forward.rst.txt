@@ -1,0 +1,6 @@
+compyute.nn.Convolution1D.forward
+=================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1D.forward

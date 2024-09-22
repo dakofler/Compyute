@@ -1,0 +1,38 @@
+﻿compyute.nn.optimizers.AdamW
+============================
+
+.. currentmodule:: compyute.nn.optimizers
+
+.. autoclass:: AdamW
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~AdamW.__init__
+        ~AdamW.get_state_dict
+        ~AdamW.load_state_dict
+        ~AdamW.reset_grads
+        ~AdamW.set_parameters
+        ~AdamW.step
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~AdamW.t
+        ~AdamW.beta1
+        ~AdamW.beta2
+        ~AdamW.eps
+        ~AdamW.weight_decay
+        ~AdamW.lr
+    
+    

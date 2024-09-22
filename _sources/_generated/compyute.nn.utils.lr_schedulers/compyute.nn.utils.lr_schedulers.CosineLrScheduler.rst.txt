@@ -1,0 +1,34 @@
+﻿compyute.nn.utils.lr\_schedulers.CosineLrScheduler
+==================================================
+
+.. currentmodule:: compyute.nn.utils.lr_schedulers
+
+.. autoclass:: CosineLrScheduler
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~CosineLrScheduler.__init__
+        ~CosineLrScheduler.step
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~CosineLrScheduler.target_lr
+        ~CosineLrScheduler.lr_decay
+        ~CosineLrScheduler.warmup_steps
+        ~CosineLrScheduler.decay_steps
+        ~CosineLrScheduler.optimizer
+        ~CosineLrScheduler.cache
+    
+    

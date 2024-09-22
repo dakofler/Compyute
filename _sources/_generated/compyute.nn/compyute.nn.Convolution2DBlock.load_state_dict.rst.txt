@@ -1,0 +1,6 @@
+compyute.nn.Convolution2DBlock.load\_state\_dict
+================================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2DBlock.load_state_dict

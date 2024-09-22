@@ -1,0 +1,6 @@
+compyute.preprocessing.text.WordTokenizer.decode
+================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: WordTokenizer.decode

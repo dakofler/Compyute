@@ -1,0 +1,6 @@
+compyute.nn.Convolution1DBlock.get\_buffers
+===========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1DBlock.get_buffers

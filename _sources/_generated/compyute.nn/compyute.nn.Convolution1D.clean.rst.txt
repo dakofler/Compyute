@@ -1,0 +1,6 @@
+compyute.nn.Convolution1D.clean
+===============================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1D.clean

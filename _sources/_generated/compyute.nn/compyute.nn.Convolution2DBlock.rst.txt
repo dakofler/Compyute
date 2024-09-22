@@ -1,0 +1,50 @@
+﻿compyute.nn.Convolution2DBlock
+==============================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: Convolution2DBlock
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~Convolution2DBlock.__init__
+        ~Convolution2DBlock.backward
+        ~Convolution2DBlock.clean
+        ~Convolution2DBlock.forward
+        ~Convolution2DBlock.get_buffers
+        ~Convolution2DBlock.get_modules
+        ~Convolution2DBlock.get_parameters
+        ~Convolution2DBlock.get_state_dict
+        ~Convolution2DBlock.inference
+        ~Convolution2DBlock.load_state_dict
+        ~Convolution2DBlock.register_backward
+        ~Convolution2DBlock.register_forward
+        ~Convolution2DBlock.to_device
+        ~Convolution2DBlock.training
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~Convolution2DBlock.device
+        ~Convolution2DBlock.is_training
+        ~Convolution2DBlock.n_modules
+        ~Convolution2DBlock.retain_values
+        ~Convolution2DBlock.trainable
+        ~Convolution2DBlock.x
+        ~Convolution2DBlock.y
+        ~Convolution2DBlock.layers
+        ~Convolution2DBlock.label
+        ~Convolution2DBlock.fcache
+    
+    

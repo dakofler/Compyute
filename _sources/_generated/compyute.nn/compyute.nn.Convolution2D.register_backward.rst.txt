@@ -1,0 +1,6 @@
+compyute.nn.Convolution2D.register\_backward
+============================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2D.register_backward

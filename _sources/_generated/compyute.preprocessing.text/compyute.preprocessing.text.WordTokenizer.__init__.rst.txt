@@ -1,0 +1,6 @@
+compyute.preprocessing.text.WordTokenizer.\_\_init\_\_
+======================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: WordTokenizer.__init__

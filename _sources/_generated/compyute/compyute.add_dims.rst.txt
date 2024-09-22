@@ -1,0 +1,6 @@
+﻿compyute.add\_dims
+==================
+
+.. currentmodule:: compyute
+
+.. autofunction:: add_dims

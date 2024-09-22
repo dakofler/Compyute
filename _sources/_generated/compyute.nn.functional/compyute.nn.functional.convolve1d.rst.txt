@@ -1,0 +1,6 @@
+﻿compyute.nn.functional.convolve1d
+=================================
+
+.. currentmodule:: compyute.nn.functional
+
+.. autofunction:: convolve1d

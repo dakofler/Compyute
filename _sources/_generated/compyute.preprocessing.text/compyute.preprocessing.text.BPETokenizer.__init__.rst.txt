@@ -1,0 +1,6 @@
+compyute.preprocessing.text.BPETokenizer.\_\_init\_\_
+=====================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: BPETokenizer.__init__

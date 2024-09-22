@@ -1,0 +1,6 @@
+compyute.nn.CrossEntropy.register\_backward
+===========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: CrossEntropy.register_backward

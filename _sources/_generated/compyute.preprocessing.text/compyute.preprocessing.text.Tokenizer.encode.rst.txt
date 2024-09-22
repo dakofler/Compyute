@@ -1,0 +1,6 @@
+compyute.preprocessing.text.Tokenizer.encode
+============================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: Tokenizer.encode

@@ -1,0 +1,6 @@
+compyute.nn.BinaryCrossEntropy.forward
+======================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: BinaryCrossEntropy.forward

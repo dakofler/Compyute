@@ -1,0 +1,6 @@
+compyute.preprocessing.text.Tokenizer.\_\_init\_\_
+==================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: Tokenizer.__init__

@@ -1,0 +1,6 @@
+compyute.preprocessing.text.Tokenizer.load\_state\_dict
+=======================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: Tokenizer.load_state_dict

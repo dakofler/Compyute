@@ -1,0 +1,6 @@
+﻿compyute.moveaxis
+=================
+
+.. currentmodule:: compyute
+
+.. autofunction:: moveaxis

@@ -1,0 +1,28 @@
+﻿compyute.nn.trainer.callbacks.Callback
+======================================
+
+.. currentmodule:: compyute.nn.trainer.callbacks
+
+.. autoclass:: Callback
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~Callback.__init__
+        ~Callback.on_epoch_end
+        ~Callback.on_epoch_start
+        ~Callback.on_start
+        ~Callback.on_step_end
+        ~Callback.on_step_start
+        ~Callback.on_training_end
+    
+    
+
+
+    
+    
+    

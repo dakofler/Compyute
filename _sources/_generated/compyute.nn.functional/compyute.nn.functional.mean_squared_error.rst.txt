@@ -1,0 +1,6 @@
+﻿compyute.nn.functional.mean\_squared\_error
+===========================================
+
+.. currentmodule:: compyute.nn.functional
+
+.. autofunction:: mean_squared_error

@@ -1,0 +1,6 @@
+compyute.preprocessing.text.BPETokenizer.encode
+===============================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: BPETokenizer.encode

@@ -1,0 +1,6 @@
+compyute.nn.Convolution2DBlock.to\_device
+=========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2DBlock.to_device

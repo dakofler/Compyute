@@ -1,0 +1,50 @@
+﻿compyute.nn.Sequential
+======================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: Sequential
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~Sequential.__init__
+        ~Sequential.backward
+        ~Sequential.clean
+        ~Sequential.forward
+        ~Sequential.get_buffers
+        ~Sequential.get_modules
+        ~Sequential.get_parameters
+        ~Sequential.get_state_dict
+        ~Sequential.inference
+        ~Sequential.load_state_dict
+        ~Sequential.register_backward
+        ~Sequential.register_forward
+        ~Sequential.to_device
+        ~Sequential.training
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~Sequential.device
+        ~Sequential.is_training
+        ~Sequential.n_modules
+        ~Sequential.retain_values
+        ~Sequential.trainable
+        ~Sequential.x
+        ~Sequential.y
+        ~Sequential.layers
+        ~Sequential.label
+        ~Sequential.fcache
+    
+    

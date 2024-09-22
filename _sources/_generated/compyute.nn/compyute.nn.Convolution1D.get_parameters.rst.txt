@@ -1,0 +1,6 @@
+compyute.nn.Convolution1D.get\_parameters
+=========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1D.get_parameters

@@ -1,0 +1,36 @@
+﻿compyute.preprocessing.text.WordTokenizer
+=========================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. autoclass:: WordTokenizer
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~WordTokenizer.__init__
+        ~WordTokenizer.decode
+        ~WordTokenizer.encode
+        ~WordTokenizer.fit
+        ~WordTokenizer.get_state_dict
+        ~WordTokenizer.load_state_dict
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~WordTokenizer.vocab_size
+        ~WordTokenizer.oov_token
+        ~WordTokenizer.vocab
+        ~WordTokenizer.ivocab
+    
+    

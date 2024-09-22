@@ -1,0 +1,6 @@
+compyute.preprocessing.text.Tokenizer.decode
+============================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: Tokenizer.decode

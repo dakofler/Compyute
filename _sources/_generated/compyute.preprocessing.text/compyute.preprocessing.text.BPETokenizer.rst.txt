@@ -1,0 +1,36 @@
+﻿compyute.preprocessing.text.BPETokenizer
+========================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. autoclass:: BPETokenizer
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~BPETokenizer.__init__
+        ~BPETokenizer.decode
+        ~BPETokenizer.encode
+        ~BPETokenizer.fit
+        ~BPETokenizer.get_state_dict
+        ~BPETokenizer.load_state_dict
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~BPETokenizer.vocab_size
+        ~BPETokenizer.oov_token
+        ~BPETokenizer.vocab
+        ~BPETokenizer.ivocab
+    
+    

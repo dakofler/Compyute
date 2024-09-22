@@ -1,0 +1,33 @@
+﻿compyute.nn.BinaryCrossEntropy
+==============================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: BinaryCrossEntropy
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~BinaryCrossEntropy.__init__
+        ~BinaryCrossEntropy.backward
+        ~BinaryCrossEntropy.forward
+        ~BinaryCrossEntropy.register_backward
+        ~BinaryCrossEntropy.register_forward
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~BinaryCrossEntropy.fcache
+        ~BinaryCrossEntropy.label
+    
+    

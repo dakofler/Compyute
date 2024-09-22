@@ -1,0 +1,6 @@
+compyute.preprocessing.text.BPETokenizer.load\_state\_dict
+==========================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: BPETokenizer.load_state_dict

@@ -1,0 +1,33 @@
+﻿compyute.nn.CrossEntropy
+========================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: CrossEntropy
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~CrossEntropy.__init__
+        ~CrossEntropy.backward
+        ~CrossEntropy.forward
+        ~CrossEntropy.register_backward
+        ~CrossEntropy.register_forward
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~CrossEntropy.fcache
+        ~CrossEntropy.label
+    
+    

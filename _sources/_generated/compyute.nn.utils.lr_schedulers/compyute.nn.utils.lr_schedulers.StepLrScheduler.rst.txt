@@ -1,0 +1,32 @@
+﻿compyute.nn.utils.lr\_schedulers.StepLrScheduler
+================================================
+
+.. currentmodule:: compyute.nn.utils.lr_schedulers
+
+.. autoclass:: StepLrScheduler
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~StepLrScheduler.__init__
+        ~StepLrScheduler.step
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~StepLrScheduler.t_decay
+        ~StepLrScheduler.lr_decay
+        ~StepLrScheduler.optimizer
+        ~StepLrScheduler.cache
+    
+    

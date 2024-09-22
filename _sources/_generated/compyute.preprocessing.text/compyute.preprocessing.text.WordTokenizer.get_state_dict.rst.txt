@@ -1,0 +1,6 @@
+compyute.preprocessing.text.WordTokenizer.get\_state\_dict
+==========================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: WordTokenizer.get_state_dict

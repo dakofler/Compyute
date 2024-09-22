@@ -1,0 +1,6 @@
+compyute.nn.BinaryCrossEntropy.\_\_init\_\_
+===========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: BinaryCrossEntropy.__init__

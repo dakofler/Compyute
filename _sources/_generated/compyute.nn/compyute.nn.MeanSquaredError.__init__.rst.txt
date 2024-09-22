@@ -1,0 +1,6 @@
+compyute.nn.MeanSquaredError.\_\_init\_\_
+=========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: MeanSquaredError.__init__

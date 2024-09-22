@@ -1,0 +1,6 @@
+compyute.nn.Convolution1DBlock.forward
+======================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1DBlock.forward

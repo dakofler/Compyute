@@ -1,0 +1,6 @@
+compyute.nn.Convolution2D.get\_state\_dict
+==========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2D.get_state_dict

@@ -1,0 +1,6 @@
+compyute.preprocessing.text.CharacterTokenizer.fit
+==================================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. automethod:: CharacterTokenizer.fit

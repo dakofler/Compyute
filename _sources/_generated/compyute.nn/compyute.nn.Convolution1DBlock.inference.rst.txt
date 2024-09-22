@@ -1,0 +1,6 @@
+compyute.nn.Convolution1DBlock.inference
+========================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1DBlock.inference

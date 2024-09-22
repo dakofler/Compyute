@@ -1,0 +1,6 @@
+﻿compyute.resize
+===============
+
+.. currentmodule:: compyute
+
+.. autofunction:: resize

@@ -1,0 +1,33 @@
+﻿compyute.nn.MeanSquaredError
+============================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: MeanSquaredError
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~MeanSquaredError.__init__
+        ~MeanSquaredError.backward
+        ~MeanSquaredError.forward
+        ~MeanSquaredError.register_backward
+        ~MeanSquaredError.register_forward
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~MeanSquaredError.fcache
+        ~MeanSquaredError.label
+    
+    

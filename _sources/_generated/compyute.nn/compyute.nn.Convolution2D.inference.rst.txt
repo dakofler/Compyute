@@ -1,0 +1,6 @@
+compyute.nn.Convolution2D.inference
+===================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2D.inference

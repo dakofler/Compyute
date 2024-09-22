@@ -1,0 +1,6 @@
+﻿compyute.invert
+===============
+
+.. currentmodule:: compyute
+
+.. autofunction:: invert

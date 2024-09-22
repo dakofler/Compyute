@@ -1,0 +1,36 @@
+﻿compyute.preprocessing.text.CharacterTokenizer
+==============================================
+
+.. currentmodule:: compyute.preprocessing.text
+
+.. autoclass:: CharacterTokenizer
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~CharacterTokenizer.__init__
+        ~CharacterTokenizer.decode
+        ~CharacterTokenizer.encode
+        ~CharacterTokenizer.fit
+        ~CharacterTokenizer.get_state_dict
+        ~CharacterTokenizer.load_state_dict
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~CharacterTokenizer.vocab_size
+        ~CharacterTokenizer.oov_token
+        ~CharacterTokenizer.vocab
+        ~CharacterTokenizer.ivocab
+    
+    

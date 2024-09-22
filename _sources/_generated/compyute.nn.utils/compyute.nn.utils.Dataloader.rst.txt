@@ -1,0 +1,32 @@
+﻿compyute.nn.utils.Dataloader
+============================
+
+.. currentmodule:: compyute.nn.utils
+
+.. autoclass:: Dataloader
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~Dataloader.__init__
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~Dataloader.data
+        ~Dataloader.batch_size
+        ~Dataloader.device
+        ~Dataloader.shuffle
+        ~Dataloader.drop_remaining
+    
+    

@@ -1,0 +1,6 @@
+compyute.nn.Convolution1D.to\_device
+====================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution1D.to_device

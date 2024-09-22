@@ -1,0 +1,6 @@
+compyute.nn.Convolution2D.\_\_init\_\_
+======================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: Convolution2D.__init__

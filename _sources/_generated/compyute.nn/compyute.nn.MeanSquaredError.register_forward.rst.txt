@@ -1,0 +1,6 @@
+compyute.nn.MeanSquaredError.register\_forward
+==============================================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: MeanSquaredError.register_forward
