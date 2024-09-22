@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from ...tensor_ops.reduction_ops import sum as cp_sum
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -17,10 +16,8 @@ class LinearFn(Function):
         cache: FunctionCache, x: Tensor, w: Tensor, b: Optional[Tensor]
     ) -> Tensor:
         y = x @ w.T
-
         if b:
             y += b
-
         cache.push(x, w, b is not None)
         return y
 
@@ -30,7 +27,7 @@ class LinearFn(Function):
     ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
         x, w, b = cache.pop()
         dx = dy @ w
-        dw = cp_sum(dy.T @ x, axis=tuple(range(dy.n_axes - 2)))
+        dw = (dy.T @ x).sum(tuple(range(dy.n_axes - 2)))
         db = None if not b else dy.sum(axis=tuple(range(dy.n_axes - 1)))
 
         return dx, dw, db

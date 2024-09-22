@@ -1,7 +1,6 @@
 """Neural network embedding functions."""
 
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_ops.reduction_ops import sum as cp_sum
 from ...tensors import Tensor
 from ...typing import is_integer
 from .functions import Function, FunctionCache, PseudoCache
@@ -13,18 +12,19 @@ class EmbeddingFn(Function):
     """Performs lookup embedding on a tensor of indices."""
 
     @staticmethod
-    def forward(cache: FunctionCache, x: Tensor, embedding_table: Tensor) -> Tensor:
+    def forward(cache: FunctionCache, x: Tensor, emb_table: Tensor) -> Tensor:
         if not is_integer(x.dtype):
             raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
-        y = embedding_table[x]
-        cache.push(x, embedding_table.shape)
+        y = emb_table[x]
+        cache.push(x, emb_table.shape[0])
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, emb_table_shape = cache.pop()
-        x = one_hot_encode(x, emb_table_shape[0], dy.dtype)
-        return cp_sum(x.T @ dy, axis=tuple(range(x.n_axes - 2)))
+        x, n_embs = cache.pop()
+        batch_axes = tuple(range(x.n_axes - 1))
+        x = one_hot_encode(x, n_embs, dy.dtype)
+        return (x.T @ dy).sum(batch_axes)
 
 
 def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:
@@ -33,9 +33,9 @@ def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:
     Parameters
     ----------
     x : Tensor
-        Input tensor containing indeces. Must be of type ``int8``.
-    embedding_table : Tensor
-        Tensor of embedding values.
+        Input tensor containing indices. Must be integers.
+    emb_table : Tensor
+        Tensor of embeddings.
 
     Returns
     -------

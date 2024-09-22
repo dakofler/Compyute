@@ -162,6 +162,10 @@ class Convolution2D(Module):
         Dilations used for each axis of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
+    dtype : DType, optional
+        Datatype of weights and biases. Defaults to ``None``.
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
 
 
     .. note::

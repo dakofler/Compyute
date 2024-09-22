@@ -129,6 +129,8 @@ Functions that change tensor shapes.
     tile
     pad
     pad_to_shape
+    pool1d
+    pool2d
     moveaxis
     squeeze
     flip

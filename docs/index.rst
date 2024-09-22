@@ -8,7 +8,7 @@ Compyute documentation
 `Source Repository <https://github.com/dakofler/Compyute>`_ |
 `Issue Tracker <https://github.com/dakofler/Compyute/issues>`_
 
-Python deep learning library focused on transparency and readability only using ``NumPy`` and ``CuPY`` under the hood.
+Python deep learning library focused on transparency and readability only using ``NumPy`` and ``CuPy`` under the hood.
 Gradient computation is implemented from scratch to facilitate understanding of the inner workings of neural networks.
 
 .. toctree::
@@ -90,35 +90,13 @@ The ``Tensor`` object supports most operations also known from ``PyTorch`` tenso
     z = cp.full(shape=(10, 10), value=99)
     z = cp.random.normal(shape=(10, 10))
 
-
-Data preprocessing & encoding
------------------------------
-The framework offers some utility functions to preprocess ...
-
-.. code-block:: python
-
-    from compyute.preprocessing import split_train_val_test
-
-    train, val, test = split_train_val_test(x, ratio_val=0.25, ratio_test=0.25)
-
-
-... and encode data before using it for training.
-
-.. code-block:: python
-
-    from compyute.preprocessing.text import BPETokenizer
-
-    tokenizer = BPETokenizer()
-    tokenizer.fit(data, vocab_size=400)
-
-
 Building models
 ---------------
-Models can be built using predefined modules (such as ``Linear`` or ``ReLU``) and containers (such as ``Sequential``).
+Models can be built using predefined modules (such as ``Linear`` or ``ReLU``) and containers (such as ``Sequential``). ``Compyute`` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. For a list of available modules, see :ref:`modules`.
 
 .. code-block:: python
 
-    import compyute.nn as nn
+    from compyute import nn
 
     model = nn.Sequential(
         nn.Linear(4, 16),
@@ -131,37 +109,35 @@ Models can be built using predefined modules (such as ``Linear`` or ``ReLU``) an
 
 Alternatively, models can also be built entirely from scratch by defining custom classes that inherit from the ``Module`` base class.
 
-With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more ``Modules``. ``Compyute`` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. For a list of available modules, see :ref:`modules`.
+With custom models, the user defines what modules to use and how data and gradients flow through the network. Models are generally composed of one or more ``Modules``.
 
-When inheriting from predefined containers, such as ``Sequential``, the forward-function is already defined (in the case of ``Sequential``, Modules are processed in the order specified in the arguments). This way, you can create reusable blocks.
+When inheriting from predefined containers, such as ``Sequential``, the forward-function is already defined.
 
 .. code-block:: python
 
-    import compyute.nn as nn
+    from compyute import nn
 
-    # create a block with custom arguments by inheriting from the 'Sequential' container
     class MyConvBlock(nn.Sequential):
         def __init__(self, in_channels, out_channels):
 
             conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
             relu = nn.ReLU()
-            bn = Batchnorm1D(out_channels)
-
+            bn = Batchnorm1d(out_channels)
+            
+            # pass modules to the `Sequential` base class
             super().__init__(conv, relu, bn)
 
 
-When you want to define a custom forward-behaviour, the ``Module`` base class can be used.
+If you want to define a custom forward-method, the `Module` base class can be used.
 
 .. code-block:: python
 
-    import compyute.nn as nn
+    from compyute import nn
 
-    # create a model from scratch by inheriting from the 'Module' base class
     class MyModel(nn.Module):
         def __init__(self):
             super().__init__()
 
-            # define your modules
             self.lin1 = nn.Linear(4, 16)
             self.relu = nn.ReLU()
             self.lin2 = nn.Linear(16, 3)
@@ -195,7 +171,7 @@ All modules can be trained and updated using common optimizer algorithms, such a
 
     # define trainer
     trainer = Trainer(
-        model=my_model,
+        model=model,
         optimizer="sgd",
         loss_function="crossentropy",
         metric_function="accuracy",
@@ -216,7 +192,7 @@ Alternatively, you can write your own training loop.
     train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
     val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
     loss_fn = nn.CrossEntropy()
-    optim = nn.optimizers.SGD(model.parameters)
+    optim = nn.optimizers.SGD(model.get_parameters())
 
     for epoch in range(epochs):
 
@@ -235,7 +211,7 @@ Alternatively, you can write your own training loop.
         
         # validiation
         model.inference()
-        with nn.no_caching():  # disable caching values for gradient computation
+        with nn.no_caching():  # disable caching for gradient computation
             val_loss = 0
             for x, y in val_dl():
                 y_pred = model(x)
@@ -258,8 +234,7 @@ Model checkpoints can also be saved and loaded later on.
 
     # load the states
     model = MyModel()
-    optim = nn.optimizers.SGD(model.parameters)
-    
+    optim = nn.optimizers.SGD(model.get_parameters())
     loaded_state = cp.load("my_model.cp")
     model.load_state_dict(loaded_state["model"])
     optim.load_state_dict(loaded_state["optimizer"])

@@ -1,11 +1,8 @@
 """Neural network activation functions."""
 
-from ...tensor_ops.creation_ops import identity
-from ...tensor_ops.reduction_ops import sum as cp_sum
-from ...tensor_ops.reshape_ops import insert_dim, reshape, tile
 from ...tensor_ops.selection_ops import maximum
 from ...tensor_ops.unary_ops import exp, invert
-from ...tensor_ops.unary_ops import tanh as cp_tanh
+from ...tensor_ops.unary_ops import tanh as _tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -133,7 +130,7 @@ class TanhFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        y = cp_tanh(x)
+        y = _tanh(x)
         cache.push(y)
         return y
 
@@ -169,7 +166,7 @@ class GELUFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
         # sqrt(2/pi) = 0.7978845608
-        tanh_term = cp_tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x))
+        tanh_term = _tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x))
         y = 0.5 * x * (1.0 + tanh_term)
         cache.push(x, tanh_term)
         return y
@@ -288,7 +285,7 @@ class SoftmaxFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (y,) = cache.pop()
-        return y * (dy - cp_sum(dy * y, axis=-1, keepdims=True))  # thanks to ChatGPT
+        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thanks to ChatGPT
 
 
 def softmax(x: Tensor) -> Tensor:

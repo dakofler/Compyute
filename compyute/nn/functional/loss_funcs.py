@@ -3,11 +3,8 @@
 import math
 
 from ...preprocessing.basic import one_hot_encode
-from ...tensor_ops.reduction_ops import mean
-from ...tensor_ops.reduction_ops import sum as cp_sum
 from ...tensor_ops.unary_ops import clip, log
 from ...tensors import Tensor
-from ...typing import float32
 from .activation_funcs import softmax
 from .functions import Function, FunctionCache, PseudoCache
 
@@ -20,7 +17,7 @@ class MeanSquaredErrorFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         diff = y_pred - y_true
-        y = mean(diff * diff)
+        y = (diff * diff).mean()
         cache.push(y_pred.size, diff)
         return y
 
@@ -58,8 +55,8 @@ class CrossEntropyFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         probs = softmax(y_pred)
-        y_true = one_hot_encode(y_true, y_pred.shape[-1], float32)
-        y = mean(cp_sum(-log(probs) * y_true, axis=-1))
+        y_true = one_hot_encode(y_true, y_pred.shape[-1], probs.dtype)
+        y = (-log(probs) * y_true).sum(-1).mean()
         cache.push(y_true, probs)
         return y
 
@@ -97,15 +94,15 @@ class BinaryCrossEntropyFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
         log_y_pred = clip(log(y_pred), -100, 100)
-        log_one_minus_y_pred = clip(log(1 - y_pred), -100, 100)
-        y = -mean(y_true * log_y_pred + (1 - y_true) * log_one_minus_y_pred)
+        log_one_minus_y_pred = clip(log(1.0 - y_pred), -100, 100)
+        y = -(y_true * log_y_pred + (1.0 - y_true) * log_one_minus_y_pred).mean()
         cache.push(y_pred, y_true)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
         y_pred, y_true = cache.pop()
-        return (-y_true / y_pred + (1 - y_true) / (1 - y_pred)) / float(y_pred.size)
+        return (-y_true / y_pred + (1.0 - y_true) / (1.0 - y_pred)) / float(y_pred.size)
 
 
 def binary_cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
