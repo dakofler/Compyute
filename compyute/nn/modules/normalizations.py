@@ -73,7 +73,6 @@ class BatchNorm1D(Module):
         self.rmean = Buffer(zeros((channels,), dtype=dtype))
         self.rvar = Buffer(ones((channels,), dtype=dtype))
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y, rmean, rvar = BatchNorm1DFn.forward(
             self.fcache,
@@ -90,7 +89,6 @@ class BatchNorm1D(Module):
         self.rvar.data = rvar.data
         return y
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -155,7 +153,6 @@ class BatchNorm2D(Module):
         self.rmean = Buffer(zeros((channels,), dtype=dtype))
         self.rvar = Buffer(ones((channels,), dtype=dtype))
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y, rmean, rvar = BatchNorm2DFn.forward(
             self.fcache,
@@ -172,7 +169,6 @@ class BatchNorm2D(Module):
         self.rvar.data = rvar.data
         return y
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -227,11 +223,9 @@ class LayerNorm(Module):
         self.w = Parameter(ones(normalized_shape, dtype=dtype))
         self.b = Parameter(zeros(normalized_shape, dtype=dtype))
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return LayerNormFn.forward(self.fcache, x, self.w, self.b, self.eps)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = LayerNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -283,11 +277,9 @@ class RMSNorm(Module):
         # init parameters
         self.w = Parameter(ones(normalized_shape, dtype=dtype))
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return RMSNormFn.forward(self.fcache, x, self.w, self.eps)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw = RMSNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)

@@ -68,11 +68,9 @@ class Linear(Module):
             else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
         )
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return LinearFn.forward(self.fcache, x, self.w, self.b)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = LinearFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)

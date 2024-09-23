@@ -80,13 +80,11 @@ class Recurrent(Module):
         self.w_h = Parameter(w_h_init())
         self.b_h = Parameter(b_init())
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return RecurrentFn.forward(
             self.fcache, x, self.w_i, self.b_i, self.w_h, self.b_h, self.activation
         )
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw_i, db_i, dw_h, db_h = RecurrentFn.backward(self.fcache, dy)
         update_parameter_grad(self.w_i, dw_i)
@@ -184,7 +182,6 @@ class LSTM(Module):
         self.w_ho = Parameter(w_h_init())
         self.b_ho = None if not bias else Parameter(b_init())
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return LSTMFn.forward(
             self.fcache,
@@ -208,7 +205,6 @@ class LSTM(Module):
             self.activation,
         )
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         (
             dx,
@@ -330,7 +326,6 @@ class GRU(Module):
         self.w_hn = Parameter(w_h_init())
         self.b_hn = None if not bias else Parameter(b_init())
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return GRUFn.forward(
             self.fcache,
@@ -350,7 +345,6 @@ class GRU(Module):
             self.activation,
         )
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         (
             dx,

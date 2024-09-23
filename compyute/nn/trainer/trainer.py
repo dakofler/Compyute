@@ -187,7 +187,8 @@ class Trainer:
 
         # backward pass
         self.optimizer.reset_grads()
-        self.model.backward(self.loss.backward())
+        loss_grads = self.loss.compute_grads()
+        self.model.compute_grads(loss_grads)
 
         # update parameters
         self.optimizer.step()

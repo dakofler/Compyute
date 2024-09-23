@@ -130,9 +130,6 @@ class Module(ABC):
             repr_string += "\n" + repr(module)
         return repr_string
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
-
     def __bool__(self) -> bool:
         return True
 
@@ -254,6 +251,65 @@ class Module(ABC):
             self_value.data = other_value.data
             self_value.grad = other_value.grad
 
+    def __call__(self, x: Tensor) -> Tensor:
+        if self.retain_values:
+            self.x = x
+
+        if self.fcache.cache:
+            self.fcache.cache.clear()
+
+        if DEBUG:
+            dt = time.perf_counter()
+            y = self.forward(x)
+            dt = (time.perf_counter() - dt) * 1e3
+            print(
+                f"{self.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
+            )
+        else:
+            y = self.forward(x)
+
+        if self.retain_values:
+            self.y = y
+        return y
+
+    def compute_grads(self, dy: Tensor) -> Tensor:
+        """Computes gradients for all trainable parameters.
+
+        Parameters
+        ----------
+        dy : Tensor
+            Output gradients.
+
+        Returns
+        -------
+        Tensor
+            Input gradients.
+        """
+        if not self.is_training:
+            raise AttributeError(f"{self.label} is not in training mode.")
+
+        if self.retain_values and self.y:
+            self.y.grad = dy
+
+        if DEBUG:
+            dt = time.perf_counter()
+            dx = self.backward(dy)
+            dt = (time.perf_counter() - dt) * 1e3
+            if dx:
+                print(
+                    f"{self.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
+                )
+            else:
+                print(f"{self.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms")
+        else:
+            dx = self.backward(dy)
+
+        assert not self.fcache.cache, "FunctionCache not empty after backward."
+
+        if self.retain_values and self.x:
+            self.x.grad = dx
+        return dx
+
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the module.
@@ -283,69 +339,6 @@ class Module(ABC):
         Tensor
             Input gradient tensor.
         """
-
-    @staticmethod
-    def register_forward(forward_method: Callable) -> Callable:
-        """Decorator for registering a forward method to the module."""
-
-        @wraps(forward_method)
-        def wrapper(cls: Module, x: Tensor) -> Tensor:
-            if cls.retain_values:
-                cls.x = x
-
-            if cls.fcache.cache:
-                cls.fcache.cache.clear()
-
-            if DEBUG:
-                dt = time.perf_counter()
-                y = forward_method(cls, x)
-                dt = (time.perf_counter() - dt) * 1e3
-                print(
-                    f"{cls.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
-                )
-            else:
-                y = forward_method(cls, x)
-
-            if cls.retain_values:
-                cls.y = y
-            return y
-
-        return wrapper
-
-    @staticmethod
-    def register_backward(backward_method: Callable) -> Callable:
-        """Decorator for registering a backward method to the module."""
-
-        @wraps(backward_method)
-        def wrapper(cls: Module, dy: Tensor) -> Tensor:
-            if not cls.is_training:
-                raise AttributeError(f"{cls.label} is not in training mode.")
-
-            if cls.retain_values and cls.y:
-                cls.y.grad = dy
-
-            if DEBUG:
-                dt = time.perf_counter()
-                dx = backward_method(cls, dy)
-                dt = (time.perf_counter() - dt) * 1e3
-                if dx:
-                    print(
-                        f"{cls.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
-                    )
-                else:
-                    print(
-                        f"{cls.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms"
-                    )
-            else:
-                dx = backward_method(cls, dy)
-
-            assert not cls.fcache.cache, "FunctionCache not empty after backward."
-
-            if cls.retain_values and cls.x:
-                cls.x.grad = dx
-            return dx
-
-        return wrapper
 
     def clean(self, force: bool = False) -> None:
         """Removes temporary values like outputs and gradients.

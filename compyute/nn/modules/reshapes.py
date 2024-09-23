@@ -18,11 +18,9 @@ class Flatten(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return FlattenFn.forward(self.fcache, x)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return FlattenFn.backward(self.fcache, dy)
 
@@ -42,10 +40,8 @@ class Reshape(Module):
         super().__init__(label)
         self.shape = shape
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return ReshapeFn.forward(self.fcache, x, self.shape)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return ReshapeFn.backward(self.fcache, dy)

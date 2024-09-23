@@ -3,6 +3,7 @@
 from typing import Optional
 
 from ...random import normal
+from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.embedding_funcs import EmbeddingFn
@@ -53,11 +54,10 @@ class Embedding(Module):
         # init parameters
         self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return EmbeddingFn.forward(self.fcache, x, self.w)
 
-    @Module.register_backward
-    def backward(self, dy: Tensor) -> None:
+    def backward(self, dy: Tensor) -> Tensor:
         dw = EmbeddingFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
+        return empty((0,))

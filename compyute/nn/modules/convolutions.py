@@ -109,13 +109,11 @@ class Convolution1D(Module):
             else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
         )
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return Convolution1DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = Convolution1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -205,13 +203,11 @@ class Convolution2D(Module):
             else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
         )
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return Convolution2DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = Convolution2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -233,11 +229,9 @@ class MaxPooling2D(Module):
         super().__init__(label)
         self.kernel_size = kernel_size
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return MaxPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return MaxPooling2DFn.backward(self.fcache, dy)
 
@@ -256,10 +250,8 @@ class AvgPooling2D(Module):
         super().__init__(label)
         self.kernel_size = kernel_size
 
-    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return AvgPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return AvgPooling2DFn.backward(self.fcache, dy)
