@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator
 from functools import wraps
-from typing import Any, Optional, Self
+from typing import Any, Optional
 
 from ...backend import Device, DeviceError, free_cuda_memory, select_device
 from ...tensors import ShapeError, Tensor
@@ -18,8 +18,6 @@ from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
 DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
-
-from types import MethodType
 
 
 class Module(ABC):
@@ -31,24 +29,18 @@ class Module(ABC):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    label: str
-    fcache: FunctionCache
-    x: Optional[Tensor] = None
-    y: Optional[Tensor] = None
-    _buffers: OrderedDict[str, Buffer]
-    _device = select_device(None)
-    _retain_values = False
-    _trainable = True
-    _is_training = True
-    _modules: OrderedDict[str, Module]
-    _parameters: OrderedDict[str, Parameter]
-
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
         self.fcache = FunctionCache()
-        self._parameters = OrderedDict()
-        self._buffers = OrderedDict()
-        self._modules = OrderedDict()
+        self.x: Optional[Tensor] = None
+        self.y: Optional[Tensor] = None
+        self._device = select_device(None)
+        self._is_training = True
+        self._retain_values = False
+        self._trainable = True
+        self._parameters: OrderedDict[str, Parameter] = OrderedDict()
+        self._buffers: OrderedDict[str, Buffer] = OrderedDict()
+        self._modules: OrderedDict[str, Module] = OrderedDict()
 
     # ----------------------------------------------------------------------------------
     # PROPERTIES

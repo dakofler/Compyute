@@ -25,12 +25,10 @@ class Sequential(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    layers: ModuleList
-
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
 
         self.layers = ModuleList(modules)
 
@@ -64,15 +62,12 @@ class ParallelConcat(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    modules: ModuleList
-    concat_axis: int
-
     def __init__(
         self, *modules: Module, concat_dim: int = -1, label: Optional[str] = None
     ) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
 
         self.modules = ModuleList(modules)
         self.concat_dim = concat_dim
@@ -107,13 +102,10 @@ class ParallelAdd(Module):
         Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
-    modules: ModuleList
-
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
-
+            raise EmptyContainerError()
         self.modules = ModuleList(modules)
 
     @Module.register_forward
@@ -144,9 +136,6 @@ class ResidualConnection(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    residual_block: Module
-    residual_proj: Optional[Module] = None
-
     def __init__(
         self,
         *modules: Module,
@@ -154,12 +143,11 @@ class ResidualConnection(Module):
         label: Optional[str] = None
     ) -> None:
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
         super().__init__(label)
 
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
-        if residual_proj is not None:
-            self.residual_proj = residual_proj
+        self.residual_proj = residual_proj
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -174,7 +162,7 @@ class ResidualConnection(Module):
         return dx
 
 
-class NoChildModulesError(Exception):
+class EmptyContainerError(Exception):
     """Exception for empty containers."""
 
     def __init__(self, message: str = "At least one module is required.") -> None:

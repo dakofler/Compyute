@@ -37,8 +37,6 @@ class StepLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.StepLrScheduler`
     """
 
-    scheduler: _LrScheduler
-
     def __init__(
         self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1
     ) -> None:

@@ -14,10 +14,8 @@ __all__ = ["History", "ProgressBar", "Tensorboard"]
 class History(Callback):
     """Training history saved as a dictionary."""
 
-    _cache: dict[str, list[float]]
-
     def __init__(self) -> None:
-        self._cache = {}
+        self._cache: dict[str, list[float]] = {}
 
     def __getitem__(self, key: str) -> list[float]:
         return self._cache[key]
@@ -53,11 +51,9 @@ class ProgressBar(Callback):
         | ``step``: a new progress bar is shown per epoch and updated for each step.
     """
 
-    pbar: Optional[tqdm] = None
-    mode: Literal["step", "epoch"]
-
     def __init__(self, mode: Literal["step", "epoch"] = "step") -> None:
         self.mode = mode
+        self.pbar: Optional[tqdm] = None
 
     def on_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
@@ -105,8 +101,6 @@ class Tensorboard(Callback):
     --------
     :class:`compyute.nn.utils.tensorboard`
     """
-
-    writer: SummaryWriter
 
     def __init__(self, logdir: str) -> None:
         self.writer = SummaryWriter(logdir=logdir)

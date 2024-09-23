@@ -39,7 +39,7 @@ class ShapeError(Exception):
 
 
 def tensor(
-    data: ArrayLike | ScalarLike,
+    data: ArrayLike | ScalarLike | list,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -48,7 +48,7 @@ def tensor(
 
     Parameters
     ----------
-    data : ArrayLike | _ScalarLike
+    data : ArrayLike | ScalarLike | list
         Data to initialize the tensor data.
         Can be a list, tuple, NumPy/Cupy ndarray, scalar, and other types.
     device : Device, optional
@@ -81,12 +81,12 @@ class Tensor:
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
     """
 
-    data: ArrayLike
-    grad: Optional[Tensor] = None
-    _iterator = 0
+    __slots__ = "data", "grad", "_iterator"
 
     def __init__(self, data: ArrayLike) -> None:
         self.data = data
+        self.grad: Optional[Tensor] = None
+        self._iterator = 0
 
     # ----------------------------------------------------------------------------------
     # PROPERTIES

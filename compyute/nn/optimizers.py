@@ -22,15 +22,13 @@ class Optimizer(ABC):
         Learning rate. Defaults to ``1e-3``.
     """
 
-    lr: float
-    t = 1
-    _parameters: list[Parameter]
-    _state: dict[int, dict[str, Tensor]]
-
     def __init__(
         self, parameters: Optional[Iterable[Parameter]] = None, lr: float = 1e-3
     ) -> None:
         self.lr = lr
+        self.t = 1
+        self._parameters: list[Parameter] = []
+        self._state: dict[int, dict[str, Tensor]] = {}
 
         if parameters is not None:
             self.set_parameters(parameters)
@@ -138,10 +136,6 @@ class SGD(Optimizer):
         Weight decay factor. Defaults to ``0``.
     """
 
-    momentum: float
-    nesterov: bool
-    weight_decay: float
-
     def __init__(
         self,
         parameters: Optional[Iterable[Parameter]] = None,
@@ -228,11 +222,6 @@ class Adam(Optimizer):
     weight_decay : float, optional
         Weight decay factor. Defaults to ``0``.
     """
-
-    beta1: float
-    beta2: float
-    eps: float
-    weight_decay: float
 
     def __init__(
         self,
@@ -327,11 +316,6 @@ class AdamW(Optimizer):
     weight_decay : float, optional
         Weight decay factor. Defaults to ``1e-2``.
     """
-
-    beta1: float
-    beta2: float
-    eps: float
-    weight_decay: float
 
     def __init__(
         self,
@@ -431,12 +415,6 @@ class NAdam(Optimizer):
     momentum_decay : float, optional
         Momentum decay factor. Defaults to ``4e-3``.
     """
-
-    beta1: float
-    beta2: float
-    eps: float
-    weight_decay: float
-    momentum_decay: float
 
     def __init__(
         self,

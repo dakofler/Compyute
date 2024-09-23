@@ -32,12 +32,6 @@ class Dataloader:
         ``batch_size``. Defaults to ``False``.
     """
 
-    data: tuple[Tensor, ...]
-    batch_size: int
-    device: Device
-    shuffle: bool
-    drop_remaining: bool
-
     def __init__(
         self,
         data: tuple[Tensor, ...],

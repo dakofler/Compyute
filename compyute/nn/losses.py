@@ -7,7 +7,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Literal
+from typing import Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
@@ -26,13 +26,10 @@ DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
 class Loss(ABC):
     """Loss base class."""
 
-    fcache: FunctionCache
-    label: str
-    _is_training = True
-
     def __init__(self) -> None:
         self.fcache = FunctionCache()
         self.label = self.__class__.__name__
+        self._is_training = True
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return self.forward(y_pred, y_true)

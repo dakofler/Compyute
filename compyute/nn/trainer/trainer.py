@@ -36,14 +36,6 @@ class Trainer:
         See :ref:`callbacks` for more details.
     """
 
-    model: Module
-    optimizer: Optimizer
-    loss: Loss
-    metric: Optional[Metric] = None
-    callbacks: Optional[list[Callback]] = None
-    _metric_name: Optional[str] = None
-    _cache: dict[str, Any]
-
     def __init__(
         self,
         model: Module,
@@ -57,12 +49,11 @@ class Trainer:
         self.optimizer = get_optimizer(optimizer)
         self.optimizer.set_parameters(model.get_parameters())
         self.loss = get_loss_function(loss)
-        if metric is not None:
-            self.metric = get_metric_function(metric)
-            self._metric_name = self.metric.__class__.__name__.lower()
-        if callbacks is not None:
-            self.callbacks = callbacks
-
+        self.metric = get_metric_function(metric) if metric is not None else None
+        self._metric_name = (
+            self.metric.__class__.__name__.lower() if metric is not None else None
+        )
+        self.callbacks = callbacks if callbacks is not None else None
         self._cache: dict[str, Any] = {"abort": False}
 
     def train(

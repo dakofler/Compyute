@@ -23,12 +23,6 @@ class EarlyStopping(Callback):
         Metric to consider. Defaults to ``loss``.
     """
 
-    model: Module
-    patience: int
-    use_best_params: bool
-    target: str
-    _cache: dict[str, Any]
-
     def __init__(
         self,
         model: Module,
@@ -40,7 +34,12 @@ class EarlyStopping(Callback):
         self.patience = patience
         self.use_best_params = use_best_params
         self.target = target
-        self._cache = {"best_epoch": 1, "best_loss": float("inf"), "history": []}
+
+        self._cache: dict[str, Any] = {
+            "best_epoch": 1,
+            "best_loss": float("inf"),
+            "history": [],
+        }
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         self._cache["history"].append(trainer_cache[self.target])
