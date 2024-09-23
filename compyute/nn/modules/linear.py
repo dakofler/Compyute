@@ -3,12 +3,11 @@
 import math
 from typing import Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import uniform
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.linear_funcs import LinearFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_uniform
 from .module import Module
 
 __all__ = ["Linear"]
@@ -61,15 +60,13 @@ class Linear(Module):
         self.bias = bias
 
         # init parameters
-        self.w = Parameter(empty((out_channels, in_channels), dtype=dtype))
-        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.in_channels)
-        init_uniform(self.w, low=-std, high=std)
-        if self.b:
-            init_uniform(self.b, low=-std, high=std)
+        k = 1.0 / math.sqrt(self.in_channels)
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype=dtype))
+        self.b = (
+            None
+            if not bias
+            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
+        )
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

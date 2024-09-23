@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...tensor_ops.creation_ops import ones, zeros
 from ...tensors import ShapeLike, Tensor
 from ...typing import DType
 from ..functional.normalization_funcs import (
@@ -12,7 +12,6 @@ from ..functional.normalization_funcs import (
     RMSNormFn,
 )
 from ..parameter import Buffer, Parameter, update_parameter_grad
-from ..utils.initializers import init_ones, init_zeros
 from .module import Module
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -69,15 +68,10 @@ class BatchNorm1D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(empty((channels,), dtype=dtype))
-        self.b = Parameter(empty((channels,), dtype=dtype))
-        self.rmean = Buffer(empty((channels,), dtype=dtype))
-        self.rvar = Buffer(empty((channels,), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w, self.rvar)
-        init_zeros(self.b, self.rmean)
+        self.w = Parameter(ones((channels,), dtype=dtype))
+        self.b = Parameter(zeros((channels,), dtype=dtype))
+        self.rmean = Buffer(zeros((channels,), dtype=dtype))
+        self.rvar = Buffer(ones((channels,), dtype=dtype))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -156,15 +150,10 @@ class BatchNorm2D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(empty((channels,), dtype=dtype))
-        self.b = Parameter(empty((channels,), dtype=dtype))
-        self.rmean = Buffer(empty((channels,), dtype=dtype))
-        self.rvar = Buffer(empty((channels,), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w, self.rvar)
-        init_zeros(self.b, self.rmean)
+        self.w = Parameter(ones((channels,), dtype=dtype))
+        self.b = Parameter(zeros((channels,), dtype=dtype))
+        self.rmean = Buffer(zeros((channels,), dtype=dtype))
+        self.rvar = Buffer(ones((channels,), dtype=dtype))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -235,13 +224,8 @@ class LayerNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(empty(normalized_shape, dtype=dtype))
-        self.b = Parameter(empty(normalized_shape, dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w)
-        init_zeros(self.b)
+        self.w = Parameter(ones(normalized_shape, dtype=dtype))
+        self.b = Parameter(zeros(normalized_shape, dtype=dtype))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -297,11 +281,7 @@ class RMSNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(empty(normalized_shape, dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w)
+        self.w = Parameter(ones(normalized_shape, dtype=dtype))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

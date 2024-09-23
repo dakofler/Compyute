@@ -3,12 +3,11 @@
 import math
 from typing import Literal, Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import uniform
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_uniform
 from .module import Module
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -69,21 +68,17 @@ class Recurrent(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_i = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
+        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
 
-        # init hidden parameters
-        self.w_h = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_h = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_i = Parameter(w_i_init())
+        self.b_i = Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(self.w_i, self.w_h, low=-std, high=std)
-        if self.b_i and self.b_h:
-            init_uniform(self.b_i, self.b_h, low=-std, high=std)
+        self.w_h = Parameter(w_h_init())
+        self.b_h = Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -165,64 +160,29 @@ class LSTM(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_ii = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ii = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_if = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_if = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_ig = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ig = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_io = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_io = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
+        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
 
-        # init hidden parameters
-        self.w_hi = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hi = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hf = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hf = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hg = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hg = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_ho = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_ho = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_ii = Parameter(w_i_init())
+        self.b_ii = None if not bias else Parameter(b_init())
+        self.w_if = Parameter(w_i_init())
+        self.b_if = None if not bias else Parameter(b_init())
+        self.w_ig = Parameter(w_i_init())
+        self.b_ig = None if not bias else Parameter(b_init())
+        self.w_io = Parameter(w_i_init())
+        self.b_io = None if not bias else Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(
-            self.w_ii,
-            self.w_if,
-            self.w_ig,
-            self.w_io,
-            self.w_hi,
-            self.w_hf,
-            self.w_hg,
-            self.w_ho,
-            low=-std,
-            high=std,
-        )
-        if (
-            self.b_ii
-            and self.b_if
-            and self.b_ig
-            and self.b_io
-            and self.b_hi
-            and self.b_hf
-            and self.b_hg
-            and self.b_ho
-        ):
-            init_uniform(
-                self.b_ii,
-                self.b_if,
-                self.b_ig,
-                self.b_io,
-                self.b_hi,
-                self.b_hf,
-                self.b_hg,
-                self.b_ho,
-                low=-std,
-                high=std,
-            )
+        self.w_hi = Parameter(w_h_init())
+        self.b_hi = None if not bias else Parameter(b_init())
+        self.w_hf = Parameter(w_h_init())
+        self.b_hf = None if not bias else Parameter(b_init())
+        self.w_hg = Parameter(w_h_init())
+        self.b_hg = None if not bias else Parameter(b_init())
+        self.w_ho = Parameter(w_h_init())
+        self.b_ho = None if not bias else Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -350,54 +310,25 @@ class GRU(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_ir = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ir = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_iz = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_iz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_in = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_in = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
+        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
 
-        # init hidden parameters
-        self.w_hr = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hr = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hz = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hn = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hn = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_ir = Parameter(w_i_init())
+        self.b_ir = None if not bias else Parameter(b_init())
+        self.w_iz = Parameter(w_i_init())
+        self.b_iz = None if not bias else Parameter(b_init())
+        self.w_in = Parameter(w_i_init())
+        self.b_in = None if not bias else Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(
-            self.w_ir,
-            self.w_iz,
-            self.w_in,
-            self.w_hr,
-            self.w_hz,
-            self.w_hn,
-            low=-std,
-            high=std,
-        )
-        if (
-            self.b_ir
-            and self.b_iz
-            and self.b_in
-            and self.b_hr
-            and self.b_hz
-            and self.b_hn
-        ):
-            init_uniform(
-                self.b_ir,
-                self.b_iz,
-                self.b_in,
-                self.b_hr,
-                self.b_hz,
-                self.b_hn,
-                low=-std,
-                high=std,
-            )
+        self.w_hr = Parameter(w_h_init())
+        self.b_hr = None if not bias else Parameter(b_init())
+        self.w_hz = Parameter(w_h_init())
+        self.b_hz = None if not bias else Parameter(b_init())
+        self.w_hn = Parameter(w_h_init())
+        self.b_hn = None if not bias else Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

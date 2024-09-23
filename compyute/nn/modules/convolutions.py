@@ -3,7 +3,7 @@
 import math
 from typing import Literal, Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import uniform
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.convolution_funcs import (
@@ -13,7 +13,6 @@ from ..functional.convolution_funcs import (
     MaxPooling2DFn,
 )
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_uniform
 from .module import Module
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
@@ -101,15 +100,14 @@ class Convolution1D(Module):
         self.bias = bias
 
         # init parameters
-        self.w = Parameter(empty((out_channels, in_channels, kernel_size), dtype=dtype))
-        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.in_channels * self.kernel_size)
-        init_uniform(self.w, low=-std, high=std)
-        if self.b:
-            init_uniform(self.b, low=-std, high=std)
+        k = 1.0 / math.sqrt(self.in_channels * self.kernel_size)
+        w_shape = (out_channels, in_channels, kernel_size)
+        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
+        self.b = (
+            None
+            if not bias
+            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
+        )
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -198,17 +196,14 @@ class Convolution2D(Module):
         self.bias = bias
 
         # init parameters
-        self.w = Parameter(
-            empty((out_channels, in_channels, kernel_size, kernel_size), dtype=dtype)
+        k = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
+        w_shape = (out_channels, in_channels, kernel_size, kernel_size)
+        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
+        self.b = (
+            None
+            if not bias
+            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
         )
-        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
-        init_uniform(self.w, low=-std, high=std)
-        if self.b:
-            init_uniform(self.b, low=-std, high=std)
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

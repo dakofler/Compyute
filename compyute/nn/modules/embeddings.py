@@ -2,12 +2,11 @@
 
 from typing import Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import normal
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.embedding_funcs import EmbeddingFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_normal
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -52,11 +51,7 @@ class Embedding(Module):
         self.embedding_dim = embedding_dim
 
         # init parameters
-        self.w = Parameter(empty((n_embeddings, embedding_dim), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_normal(self.w)
+        self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
