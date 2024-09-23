@@ -14,7 +14,7 @@ from ..functional.convolution_funcs import (
 )
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_uniform
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
 
@@ -42,7 +42,7 @@ class Convolution1D(Module):
         - Input :math:`(B, C_{in}, S_{in})`
         - Output :math:`(B, C_{out}, S_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`S_{in}` ... input sequence
         - :math:`C_{out}` ... output channels
@@ -61,7 +61,7 @@ class Convolution1D(Module):
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter. Defaults to ``1``.
+        Dilation used for each dimension of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DType, optional
@@ -113,7 +113,6 @@ class Convolution1D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return Convolution1DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
@@ -138,7 +137,7 @@ class Convolution2D(Module):
         - Input :math:`(B, C_{in}, Y_{in}, X_{in})`
         - Output :math:`(B, C_{out}, Y_{out}, X_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`Y_{in}` ... input height
         - :math:`X_{in}` ... input width
@@ -159,7 +158,7 @@ class Convolution2D(Module):
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
-        Dilations used for each axis of the filter. Defaults to ``1``.
+        Dilations used for each dimension of the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
     dtype : DType, optional
@@ -213,7 +212,6 @@ class Convolution2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [4])
         return Convolution2DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
@@ -242,7 +240,6 @@ class MaxPooling2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [4])
         return MaxPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward
@@ -266,7 +263,6 @@ class AvgPooling2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [4])
         return AvgPooling2DFn.forward(self.fcache, x, self.kernel_size)
 
     @Module.register_backward

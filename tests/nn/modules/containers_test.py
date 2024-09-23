@@ -74,7 +74,7 @@ def test_parallel_concat_container(shape) -> None:
     compyute_lin2 = Linear(Cin, Cout, bias=False)
     compyute_lin1.w = compyute_w1
     compyute_lin2.w = compyute_w2
-    compyute_module = ParallelConcat(compyute_lin1, compyute_lin2, concat_axis=-1)
+    compyute_module = ParallelConcat(compyute_lin1, compyute_lin2, concat_dim=-1)
 
     # init torch module
     lin1 = torch.nn.Linear(Cin, Cout, bias=False)

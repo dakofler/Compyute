@@ -8,7 +8,7 @@ __all__ = ["dropout"]
 
 
 class DropoutFn(Function):
-    """Applies the softmax function over the last axis of an input tensor."""
+    """Randomly sets tensor values to zero."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, p: float, training: bool) -> Tensor:

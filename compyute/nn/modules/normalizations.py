@@ -13,7 +13,7 @@ from ..functional.normalization_funcs import (
 )
 from ..parameter import Buffer, Parameter, update_parameter_grad
 from ..utils.initializers import init_ones, init_zeros
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
 
@@ -32,7 +32,7 @@ class BatchNorm1D(Module):
         - Input :math:`(B, C, S)` or :math:`(B, C)`
         - Output :math:`(B, C, S)` or :math:`(B, C)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C` ... channels
         - :math:`S` ... sequence
 
@@ -81,7 +81,6 @@ class BatchNorm1D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [2, 3])
         y, rmean, rvar = BatchNorm1DFn.forward(
             self.fcache,
             x,
@@ -119,7 +118,7 @@ class BatchNorm2D(Module):
         - Input :math:`(B, C, Y, X)`
         - Output :math:`(B, C, Y, X)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C` ... channels
         - :math:`Y` ... height
         - :math:`X` ... width
@@ -169,7 +168,6 @@ class BatchNorm2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [4])
         y, rmean, rvar = BatchNorm2DFn.forward(
             self.fcache,
             x,
@@ -207,7 +205,7 @@ class LayerNorm(Module):
         - Input :math:`(B, ...)`
         - Output :math:`(B, ...)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
 
     Parameters
     ----------
@@ -271,7 +269,7 @@ class RMSNorm(Module):
         - Input :math:`(B, ...)`
         - Output :math:`(B, ...)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
 
     Parameters
     ----------

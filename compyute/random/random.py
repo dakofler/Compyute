@@ -255,7 +255,7 @@ def bernoulli(
 
 
 def shuffle(x: Tensor) -> tuple[Tensor, Tensor]:
-    """Shuffles a tensor along axis 0.
+    """Shuffles a tensor along the first dimension.
 
     Parameters
     ----------

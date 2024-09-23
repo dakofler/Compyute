@@ -3,7 +3,7 @@
 from typing import Literal, Optional
 
 from ...tensor_ops.creation_ops import empty, empty_like, zeros, zeros_like
-from ...tensors import Tensor
+from ...tensors import ShapeError, Tensor
 from .activation_funcs import ReLUFn, SigmoidFn, TanhFn
 from .functions import Function, FunctionCache, PseudoCache
 from .linear_funcs import LinearFn
@@ -24,6 +24,8 @@ class RecurrentFn(Function):
         b_h: Optional[Tensor],
         activation: str,
     ) -> Tensor:
+        if x.ndim != 3:
+            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
@@ -136,6 +138,8 @@ class LSTMFn(Function):
         b_ho: Optional[Tensor],
         activation: str,
     ) -> Tensor:
+        if x.ndim != 3:
+            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
@@ -391,6 +395,8 @@ class GRUFn(Function):
         b_hn: Optional[Tensor],
         activation: str,
     ) -> Tensor:
+        if x.ndim != 3:
+            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn

@@ -422,11 +422,11 @@ def is_repr_attr(attr: str, value: Any) -> bool:
     )
 
 
-def validate_input_axes(module: Module, x: Tensor, valid_n_axes: Iterable[int]) -> None:
+def validate_input_axes(module: Module, x: Tensor, valid_ndim: Iterable[int]) -> None:
     """Checks if the number of axes of a tensor is valid."""
-    if x.n_axes in valid_n_axes:
+    if x.ndim in valid_ndim:
         return
-    vdims = ", ".join(str(d) for d in valid_n_axes)
+    vdims = ", ".join(str(d) for d in valid_ndim)
     raise ShapeError(
-        f"{module.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}."
+        f"{module.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}."
     )

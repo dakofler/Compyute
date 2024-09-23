@@ -84,7 +84,7 @@ class Convolution1DBlock(Sequential):
         - Input :math:`(B, C_{in}, S_{in})`
         - Output :math:`(B, C_{out}, S_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`S_{in}` ... input sequence
         - :math:`C_{out}` ... output channels
@@ -106,7 +106,7 @@ class Convolution1DBlock(Sequential):
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter. Defaults to ``1``.
+        Dilation used for each dimension of the filter. Defaults to ``1``.
     weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
@@ -184,7 +184,7 @@ class Convolution2DBlock(Sequential):
         - Input :math:`(B, C_{in}, Y_{in}, X_{in})`
         - Output :math:`(B, C_{out}, Y_{out}, X_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`Y_{in}` ... input height
         - :math:`X_{in}` ... input width
@@ -208,7 +208,7 @@ class Convolution2DBlock(Sequential):
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
-        Dilations used for each axis of the filter. Defaults to ``1``.
+        Dilations used for each dimension of the filter. Defaults to ``1``.
     weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.

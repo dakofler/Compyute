@@ -22,7 +22,7 @@ class EmbeddingFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, n_embs = cache.pop()
-        batch_axes = tuple(range(x.n_axes - 1))
+        batch_axes = tuple(range(x.ndim - 1))
         x = one_hot_encode(x, n_embs, dy.dtype)
         return (x.T @ dy).sum(batch_axes)
 

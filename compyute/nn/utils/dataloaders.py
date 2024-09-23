@@ -108,6 +108,6 @@ def batched(
     def wrapper(x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         dataloader = Dataloader((x,), batch_size, device, shuffle_data, drop_remaining)
         ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader()]
-        return concat(ys, axis=0)
+        return concat(ys, dim=0)
 
     return wrapper

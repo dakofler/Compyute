@@ -12,7 +12,7 @@ from ...tensor_ops.reshape_ops import (
     pooling2d,
     repeat,
 )
-from ...tensors import ShapeLike, Tensor
+from ...tensors import ShapeError, ShapeLike, Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = [
@@ -29,7 +29,7 @@ __all__ = [
 
 
 class Convolution1DFn(Function):
-    """Computes the convolution of two tensors over their last axis."""
+    """Computes the convolution of two tensors over their last dimension."""
 
     @staticmethod
     def forward(
@@ -41,6 +41,9 @@ class Convolution1DFn(Function):
         stride: int,
         dilation: int,
     ) -> Tensor:
+        if x.ndim != 3:
+            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
+
         f = Dilation1DFn.forward(cache, f, dilation)
         x = Pad1DFn.forward(cache, x, padding)
         y = _Convolution1DFn.forward(cache, x, f, stride)
@@ -59,7 +62,7 @@ class Convolution1DFn(Function):
         dx, df = _Convolution1DFn.backward(cache, dy)
         dx = Pad1DFn.backward(cache, dx)
         df = Dilation1DFn.backward(cache, df)
-        db = None if not b else dy.sum(axis=(0, 2))
+        db = None if not b else dy.sum((0, 2))
 
         return dx, df, db
 
@@ -72,7 +75,7 @@ def convolve1d(
     stride: int = 1,
     dilation: int = 1,
 ) -> Tensor:
-    """Computes the convolution of two tensors over their last axis.
+    """Computes the convolution of two tensors over their last dimension.
 
     Parameters
     ----------
@@ -87,7 +90,7 @@ def convolve1d(
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation factor to use for each axis of the filter. Defaults to ``1``.
+        Dilation factor to use for each dimension of the filter. Defaults to ``1``.
 
     Returns
     -------
@@ -102,7 +105,7 @@ def convolve1d(
 
 
 class Dilation1DFn(Function):
-    """Dilates a tensor in its last axis."""
+    """Dilates a tensor in its last dimension."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: int) -> Tensor:
@@ -126,7 +129,7 @@ class Dilation1DFn(Function):
 
 
 def dilate1d(x: Tensor, dilation: int) -> Tensor:
-    """Dilates a tensor in its last axis.
+    """Dilates a tensor in its last dimension.
 
     Parameters
     ----------
@@ -144,7 +147,7 @@ def dilate1d(x: Tensor, dilation: int) -> Tensor:
 
 
 class Pad1DFn(Function):
-    """Pads a tensor in its last axis."""
+    """Pads a tensor in its last dimension."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, padding: int) -> Tensor:
@@ -153,7 +156,7 @@ class Pad1DFn(Function):
         if no_padding:
             return x
 
-        widths = tuple([(0, 0)] * (x.n_axes - 1) + [(padding, padding)])
+        widths = tuple([(0, 0)] * (x.ndim - 1) + [(padding, padding)])
         y = pad(x, widths)
         return y
 
@@ -166,14 +169,14 @@ class Pad1DFn(Function):
 
 
 def pad1d(x: Tensor, padding: int) -> Tensor:
-    """Pads a tensor in its last axis.
+    """Pads a tensor in its last dimension.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     padding : int
-        Padding width applied to the beginning and end of the last axis.
+        Padding width applied to the beginning and end of the last dimension.
 
     Returns
     -------
@@ -188,7 +191,7 @@ class _Convolution1DFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
-        x_pooled = pooling1d(x, f.shape[-1], stride)  # reshape x to (B, Ci, So, F)
+        x_pooled = pooling1d(x, f.shape[-1], stride)  # view as (B, Ci, So, F)
         y = einsum("bitf,oif->bot", x_pooled, f)  # multiply and add
         cache.push(x, f, stride)
         return y
@@ -208,20 +211,20 @@ class _Convolution1DFn(Function):
         dy = pad1d(dy, f.shape[-1] - 1)
 
         # input grads
-        dy_pooled = pooling1d(dy, f.shape[-1])  # reshape to (B, Co, Si, F)
-        f = flip(f, axis=-1)
+        dy_pooled = pooling1d(dy, f.shape[-1])  # view as (B, Co, Si, F)
+        f = flip(f, dim=-1)
         dx = einsum("bosf,oif->bis", dy_pooled, f)
 
         # filter grads
-        dy_pooled = pooling1d(dy, x.shape[-1])  # reshape to (B, Co, F, Si)
+        dy_pooled = pooling1d(dy, x.shape[-1])  # view as (B, Co, F, Si)
         df = einsum("bofs,bis->oif", dy_pooled, x)
-        df = flip(df, axis=-1)
+        df = flip(df, dim=-1)
 
         return dx, df
 
 
 class Convolution2DFn(Function):
-    """Computes the convolution of two tensors over their last axis."""
+    """Computes the convolution of two tensors over their last dimension."""
 
     @staticmethod
     def forward(
@@ -233,6 +236,9 @@ class Convolution2DFn(Function):
         stride: int,
         dilation: int,
     ) -> Tensor:
+        if x.ndim != 4:
+            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
+
         f = Dilation2DFn.forward(cache, f, dilation)
         x = Pad2DFn.forward(cache, x, padding)
         y = _Convolution2DFn.forward(cache, x, f, stride)
@@ -251,7 +257,7 @@ class Convolution2DFn(Function):
         dx, df = _Convolution2DFn.backward(cache, dy)
         dx = Pad2DFn.backward(cache, dx)
         df = Dilation2DFn.backward(cache, df)
-        db = None if not b else dy.sum(axis=(0, 2, 3))
+        db = None if not b else dy.sum((0, 2, 3))
 
         return dx, df, db
 
@@ -264,7 +270,7 @@ def convolve2d(
     stride: int = 1,
     dilation: int = 1,
 ) -> Tensor:
-    """Computes the convolution of two tensors over their last two axes.
+    """Computes the convolution of two tensors over their last two dimensions.
 
     Parameters
     ----------
@@ -279,7 +285,7 @@ def convolve2d(
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation factor to use for each axis of the filter. Defaults to ``1``.
+        Dilation factor to use for each dimension of the filter. Defaults to ``1``.
 
     Returns
     -------
@@ -294,7 +300,7 @@ def convolve2d(
 
 
 class Dilation2DFn(Function):
-    """Dilates a tensor in its last two axes."""
+    """Dilates a tensor in its last two dimensions."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, dilation: int) -> Tensor:
@@ -318,7 +324,7 @@ class Dilation2DFn(Function):
 
 
 def dilate2d(x: Tensor, dilation: int) -> Tensor:
-    """Dilates a tensor in its last two axes.
+    """Dilates a tensor in its last two dimensions.
 
     Parameters
     ----------
@@ -336,7 +342,7 @@ def dilate2d(x: Tensor, dilation: int) -> Tensor:
 
 
 class Pad2DFn(Function):
-    """Pads a tensor in its last two axes."""
+    """Pads a tensor in its last two dimensions."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, padding: int) -> Tensor:
@@ -344,7 +350,7 @@ class Pad2DFn(Function):
         cache.push(no_padding, padding)
         if no_padding:
             return x
-        widths = tuple([(0, 0)] * (x.n_axes - 2) + [(padding, padding)] * 2)
+        widths = tuple([(0, 0)] * (x.ndim - 2) + [(padding, padding)] * 2)
         y = pad(x, widths)
         return y
 
@@ -357,14 +363,14 @@ class Pad2DFn(Function):
 
 
 def pad2d(x: Tensor, padding: int) -> Tensor:
-    """Pads a tensor in its last two axes.
+    """Pads a tensor in its last two dimensions.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     padding : int
-        Padding width applied to the beginning and end of the last two axes.
+        Padding width applied to the beginning and end of the last two dimensions.
 
     Returns
     -------
@@ -379,10 +385,8 @@ class _Convolution2DFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
-        x1_pooled = pooling2d(
-            x, f.shape[-1], stride
-        )  # reshape to (B, Ci, Y, X, Fy, Fx)
-        y = einsum("biyxjk,oijk->boyx", x1_pooled, f)  # multiply and add
+        x_pooled = pooling2d(x, f.shape[-1], stride)  # view as (B, Ci, Y, X, Fy, Fx)
+        y = einsum("biyxjk,oijk->boyx", x_pooled, f)  # multiply and add
         cache.push(x, f, stride)
         return y
 
@@ -401,20 +405,20 @@ class _Convolution2DFn(Function):
         dy = pad2d(dy, f.shape[-1] - 1)
 
         # input grads
-        dy_pooled = pooling2d(dy, f.shape[-1])  # reshape to (B, Co, Y, X, Fy, Fx)
-        f = flip(f, axis=(-2, -1))
+        dy_pooled = pooling2d(dy, f.shape[-1])  # view as (B, Co, Y, X, Fy, Fx)
+        f = flip(f, dim=(-2, -1))
         dx = einsum("boyxjk,oijk->biyx", dy_pooled, f)
 
         # filter grads
-        dy_pooled = pooling2d(dy, x.shape[-1])  # reshape to (B, Co, Fy, Fx, Y, X)
+        dy_pooled = pooling2d(dy, x.shape[-1])  # view as (B, Co, Fy, Fx, Y, X)
         df = einsum("bojkyx,biyx->oijk", dy_pooled, x)
-        df = flip(df, axis=(-2, -1))
+        df = flip(df, dim=(-2, -1))
 
         return dx, df
 
 
 class Upsample2DFn(Function):
-    """Upsamples a tensor by repeating it's elements over the last two axes."""
+    """Upsamples a tensor by repeating it's elements over the last two dimensions."""
 
     @staticmethod
     def forward(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
@@ -424,14 +428,14 @@ class Upsample2DFn(Function):
 
 
 def upsample2d(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
-    """Upsamples a tensor by repeating it's elements over the last two axes.
+    """Upsamples a tensor by repeating it's elements over the last two dimensions.
 
     Parameters
     ----------
     x : Tensor
         Tensor to be stretched out.
     scaling : int
-        Number of repeating values along each axis.
+        Number of repeating values along each dimension.
     shape : ShapeLike
         Shape of the target tensor. If the shape does not match after upsampling,
         remaining values are filled with zeroes.
@@ -445,11 +449,13 @@ def upsample2d(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
 
 
 class MaxPooling2DFn(Function):
-    """Performs max pooling over the last two axes."""
+    """Performs max pooling over the last two dimensions."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, kernel_size: int) -> Tensor:
-        y = pooling2d(x, kernel_size, kernel_size).max(axis=(-2, -1))
+        if x.ndim != 4:
+            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
+        y = pooling2d(x, kernel_size, kernel_size).max((-2, -1))
         cache.push(x, kernel_size, y)
         return y
 
@@ -461,7 +467,7 @@ class MaxPooling2DFn(Function):
 
 
 def maxpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
-    """Performs max pooling over the last two axes.
+    """Performs max pooling over the last two dimensions.
 
     Parameters
     ----------
@@ -483,11 +489,13 @@ def maxpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
 
 
 class AvgPooling2DFn(Function):
-    """Performs average pooling over the last two axes."""
+    """Performs average pooling over the last two dimensions."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, kernel_size: int) -> Tensor:
-        y = pooling2d(x, kernel_size, kernel_size).mean(axis=(-2, -1))
+        if x.ndim != 4:
+            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
+        y = pooling2d(x, kernel_size, kernel_size).mean((-2, -1))
         cache.push(x.shape, kernel_size)
         return y
 
@@ -498,7 +506,7 @@ class AvgPooling2DFn(Function):
 
 
 def avgpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
-    """Performs average pooling over the last two axes.
+    """Performs average pooling over the last two dimensions.
 
     Parameters
     ----------

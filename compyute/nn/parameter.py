@@ -49,7 +49,10 @@ def update_parameter_grad(
 ) -> None:
     """Updates the parameter gradients."""
     if parameter and grad:
-        parameter.grad += grad
+        if parameter.grad is None:
+            parameter.grad = grad
+        else:
+            parameter.grad += grad
 
 
 class Buffer(Tensor):

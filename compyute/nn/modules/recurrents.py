@@ -9,7 +9,7 @@ from ...typing import DType
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
 from ..utils.initializers import init_uniform
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
 
@@ -28,7 +28,7 @@ class Recurrent(Module):
         - Input :math:`(B, S, C_{in})`
         - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -87,7 +87,6 @@ class Recurrent(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return RecurrentFn.forward(
             self.fcache, x, self.w_i, self.b_i, self.w_h, self.b_h, self.activation
         )
@@ -125,7 +124,7 @@ class LSTM(Module):
         - Input :math:`(B, S, C_{in})`
         - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -227,7 +226,6 @@ class LSTM(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return LSTMFn.forward(
             self.fcache,
             x,
@@ -311,7 +309,7 @@ class GRU(Module):
         - Input :math:`(B, S, C_{in})`
         - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -403,7 +401,6 @@ class GRU(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return GRUFn.forward(
             self.fcache,
             x,

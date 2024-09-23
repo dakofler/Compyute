@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..tensors import AxisLike, ShapeLike, Tensor
+from ..tensors import DimLike, ShapeLike, Tensor
 from .creation_ops import identity
 
 __all__ = [
@@ -11,13 +11,11 @@ __all__ = [
     "flatten",
     "transpose",
     "insert_dim",
-    "add_dims",
-    "resize",
     "repeat",
     "tile",
     "pad",
     "pad_to_shape",
-    "moveaxis",
+    "movedim",
     "squeeze",
     "flip",
     "broadcast_to",
@@ -38,7 +36,7 @@ def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
     ----------
     x : Tensor
         Input tensor.
-    shape : _ShapeLike
+    shape : ShapeLike
         Shape of the new tensor.
 
     Returns
@@ -50,37 +48,48 @@ def reshape(x: Tensor, shape: ShapeLike) -> Tensor:
 
 
 def flatten(x: Tensor) -> Tensor:
-    """Returns a flattened, one-dimensional tensor."""
-    return reshape(x, shape=((-1,)))
-
-
-def transpose(x: Tensor, axes: Optional[AxisLike] = None) -> Tensor:
-    """Transposes a tensor by swapping two axes.
+    """Returns a flattened 1D-tensor.
 
     Parameters
     ----------
     x: Tensor
         Input tensor.
-    axes : AxisLike, optional
-        Permutation of output axes. Defaults to ``None``.
-        If ``None`` axes are reversed.
+
+    Returns
+    -------
+    Tensor
+        Flattened tensor.
+    """
+    return x.view((-1,))
+
+
+def transpose(x: Tensor, dims: Optional[tuple[int, ...]] = None) -> Tensor:
+    """Transposes a tensor by swapping two dimensions.
+
+    Parameters
+    ----------
+    x: Tensor
+        Input tensor.
+    dims : tuple[int, int], optional
+        Permutation of output dimensions. Defaults to ``None``.
+        If ``None`` dimensions are reversed.
 
     Returns
     -------
     Tensor
         Transposed tensor.
     """
-    return x.transpose(axes)
+    return x.transpose(dims)
 
 
-def insert_dim(x: Tensor, axis: int) -> Tensor:
-    """Returns a view of the tensor containing an added dimension at a given axis.
+def insert_dim(x: Tensor, dim: int) -> Tensor:
+    """Returns a view of the tensor with an added dimension.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis : int
+    dim : int
         Where to insert the new dimension.
 
     Returns
@@ -88,51 +97,14 @@ def insert_dim(x: Tensor, axis: int) -> Tensor:
     Tensor
         Tensor with an added dimension.
     """
-    if axis == -1:
-        return reshape(x, (*x.shape, 1))
-    if axis < 0:
-        axis += 1
-    return reshape(x, (*x.shape[:axis], 1, *x.shape[axis:]))
+    if dim == -1:
+        return x.view((*x.shape, 1))
+    if dim < 0:
+        dim += 1
+    return x.view((*x.shape[:dim], 1, *x.shape[dim:]))
 
 
-def add_dims(x: Tensor, target_dims: int) -> Tensor:
-    """Returns a view of the tensor with added trailing dimensions.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    target_dims : int
-        Total number of dimensions needed.
-
-    Returns
-    -------
-    Tensor
-        Tensor with specified number of dimensions.
-    """
-    return reshape(x, x.shape + (1,) * (target_dims - x.n_axes))
-
-
-def resize(x: Tensor, shape: ShapeLike) -> Tensor:
-    """Returns a new tensor with the specified shape.
-    If the new tensor is larger than the original one, it is filled with zeros.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    shape : ShapeLike
-        Shape of the new tensor.
-
-    Returns
-    -------
-    Tensor
-        Resized tensor.
-    """
-    return Tensor(x.device.module.resize(x.data, shape))
-
-
-def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
+def repeat(x: Tensor, n_repeats: int, dim: int) -> Tensor:
     """Repeat elements of a tensor.
 
     Parameters
@@ -141,18 +113,18 @@ def repeat(x: Tensor, n_repeats: int, axis: int) -> Tensor:
         Input tensor.
     n_repeats : int
         Number of repeats.
-    axis : int
-        Axis, along which the values are repeated.
+    dim : int
+        Dimension along which the values are repeated.
 
     Returns
     -------
     Tensor
         Tensor with repeated values.
     """
-    return Tensor(x.data.repeat(n_repeats, axis))
+    return Tensor(x.data.repeat(n_repeats, dim))
 
 
-def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
+def tile(x: Tensor, n_repeats: int, dim: int) -> Tensor:
     """Repeat elements of a tensor.
 
     Parameters
@@ -161,16 +133,16 @@ def tile(x: Tensor, n_repeats: int, axis: int) -> Tensor:
         Input tensor.
     n_repeats : int
         Number of repeats.
-    axis : int
-        Axis, along which the values are repeated.
+    dim : int
+        Dimension along which the values are repeated.
 
     Returns
     -------
     Tensor
         Tensor with repeated values.
     """
-    repeats = [1] * x.n_axes
-    repeats[axis] = n_repeats
+    repeats = [1] * x.ndim
+    repeats[dim] = n_repeats
     return Tensor(x.device.module.tile(x.data, tuple(repeats)))
 
 
@@ -185,9 +157,9 @@ def pad(
         Input tensor.
     pad_width : int | tuple[int, int] | tuple[tuple[int, int], ...]
         | Padding width(s).
-        | ``int``: same padding width at the begining and end of all axes.
-        | ``tuple[int, int]``: specific widths at the beginning and end of all axes.
-        | ``tuple[tuple[int, int]]``: specific widths in the beginning and end for each axis.
+        | ``int``: same padding width at the begining and end of all dimensions.
+        | ``tuple[int, int]``: specific widths at the beginning and end of all dimensions.
+        | ``tuple[tuple[int, int]]``: specific widths in the beginning and end for each dim.
 
     Returns
     -------
@@ -214,32 +186,33 @@ def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
     """
     if x.shape == shape:
         return x
-    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.n_axes))
+    padding = tuple((int(0), shape[i] - x.shape[i]) for i in range(x.ndim))
     return pad(x, padding)
 
 
-def moveaxis(x: Tensor, from_axis: int, to_axis: int) -> Tensor:
-    """Move axes of an array to new positions. Other axes remain in their original order.
+def movedim(x: Tensor, from_dim: int, to_dim: int) -> Tensor:
+    """Move dimensions of a tensor to new positions.
+    Other dimensions remain in their original order.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    from_axis : int
-        Original position of the axis to move.
-    to_axis : int
-        New position of the axis.
+    from_dim : int
+        Original position of the dimension to move.
+    to_dim : int
+        New position of the dimension.
 
     Returns
     -------
     Tensor
-        Tensor with a moved axes.
+        Tensor with a moved dimensions.
     """
-    return Tensor(x.device.module.moveaxis(x.data, from_axis, to_axis))
+    return Tensor(x.device.module.movedim(x.data, from_dim, to_dim))
 
 
 def squeeze(x: Tensor) -> Tensor:
-    """Returns a tensor with removed axes where ``dim=1``.
+    """Returns a tensor with removed dimensions where ``dim=1``.
 
     Parameters
     ----------
@@ -249,30 +222,29 @@ def squeeze(x: Tensor) -> Tensor:
     Returns
     -------
     Tensor
-        Tensor with removed axes.
+        Tensor with removed dimensions.
     """
     return x.squeeze()
 
 
-def flip(x: Tensor, axis: Optional[AxisLike] = None) -> Tensor:
-    """Returns a tensor with flipped elements along given axis.
+def flip(x: Tensor, dim: Optional[DimLike] = None) -> Tensor:
+    """Returns a tensor with flipped elements along given dim.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    axis : AxisLike, optional
-        | Axis along which to flip the tensor. Defaults to ``None``.
-        | ``None``: all axes are flipped
-        | ``int``: only the specified axis is flipped.
-        | ``tuple[int, ...]``: all specified axes are flipped.
+    dim : DimLike, optional
+        | Dimension along which to flip the tensor. Defaults to ``None``.
+        | ``None``: all dimensions are flipped
+        | ``int`` or ``tuple[int, ...]``: specified dimensions are flipped.
 
     Returns
     -------
     Tensor
         Tensor containing flipped values.
     """
-    return Tensor(x.device.module.flip(x.data, axis))
+    return Tensor(x.device.module.flip(x.data, dim))
 
 
 def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
@@ -282,7 +254,7 @@ def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
     ----------
     x : Tensor
         Input tensor.
-    shape : _ShapeLike
+    shape : ShapeLike
         Shape of the new tensor
 
     Returns
@@ -294,7 +266,7 @@ def broadcast_to(x: Tensor, shape: ShapeLike) -> Tensor:
 
 
 def pooling1d(x: Tensor, window_size: int, stride: int = 1):
-    """Returns a windowed view of a tensor across the last axis.
+    """Returns a windowed view of a tensor across the last dim.
 
     Parameters
     ----------
@@ -324,7 +296,7 @@ def pooling1d(x: Tensor, window_size: int, stride: int = 1):
 
 
 def pooling2d(x: Tensor, window_size: int, stride: int = 1):
-    """Returns a windowed view of a tensor across the last two axes.
+    """Returns a windowed view of a tensor across the last two dimensions.
 
     Parameters
     ----------

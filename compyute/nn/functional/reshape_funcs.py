@@ -18,7 +18,7 @@ class FlattenFn(Function):
         return dy.view(x_shape)
 
 
-class FReshape(Function):
+class ReshapeFn(Function):
     """Reshapes tensors."""
 
     @staticmethod

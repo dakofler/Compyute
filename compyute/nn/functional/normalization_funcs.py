@@ -2,7 +2,7 @@
 
 from ...tensor_ops.reshape_ops import squeeze
 from ...tensor_ops.unary_ops import sqrt
-from ...tensors import Tensor
+from ...tensors import ShapeError, Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = ["batchnorm1d", "batchnorm2d", "layernorm", "rmsnorm"]
@@ -23,8 +23,11 @@ class BatchNorm1DFn(Function):
         eps: float,
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
-        x_is_2d = x.n_axes == 2
-        batch_axes: tuple[int, ...] = (0,) if x.n_axes == 2 else (0, 2)
+        if x.ndim not in {2, 3}:
+            raise ShapeError(f"Expected input to be a 2D or 3D-tensor, got {x.ndim}D.")
+
+        x_is_2d = x.ndim == 2
+        batch_axes: tuple[int, ...] = (0,) if x.ndim == 2 else (0, 2)
 
         if training:
             # compute mean and variance from x
@@ -130,6 +133,8 @@ class BatchNorm2DFn(Function):
         eps: float,
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
+        if x.ndim != 4:
+            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
         batch_axes = (0, 2, 3)
 
         if training:
@@ -227,7 +232,7 @@ class LayerNormFn(Function):
     def forward(
         cache: FunctionCache, x: Tensor, w: Tensor, b: Tensor, eps: float
     ) -> Tensor:
-        feat_axes = tuple(-i - 1 for i in range(w.n_axes))
+        feat_axes = tuple(-i - 1 for i in range(w.ndim))
 
         mean = x.mean(feat_axes, keepdims=True)
         std = sqrt(x.var(feat_axes, keepdims=True) + eps)
@@ -240,7 +245,7 @@ class LayerNormFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         w, feat_axes, std, x_norm = cache.pop()
-        batch_axes = tuple(range(dy.n_axes - w.n_axes))
+        batch_axes = tuple(range(dy.ndim - w.ndim))
 
         # input grads
         dy_sum = dy.sum(feat_axes, keepdims=True)
@@ -288,7 +293,7 @@ class RMSNormFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, w: Tensor, eps: float) -> Tensor:
-        feat_axes = tuple(-i - 1 for i in range(w.n_axes))
+        feat_axes = tuple(-i - 1 for i in range(w.ndim))
 
         rms = sqrt((x * x).mean(feat_axes, keepdims=True) + eps)
         x_norm = x / rms
@@ -300,7 +305,7 @@ class RMSNormFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
         x, w, feat_axes, rms, x_norm = cache.pop()
-        sum_axes = tuple(range(x.n_axes - w.n_axes))
+        sum_axes = tuple(range(x.ndim - w.ndim))
 
         # input grads
         dy_x_sum = (dy * x).sum(feat_axes, keepdims=True)
