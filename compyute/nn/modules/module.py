@@ -252,63 +252,7 @@ class Module(ABC):
             self_value.grad = other_value.grad
 
     def __call__(self, x: Tensor) -> Tensor:
-        if self.retain_values:
-            self.x = x
-
-        if self.fcache.cache:
-            self.fcache.cache.clear()
-
-        if DEBUG:
-            dt = time.perf_counter()
-            y = self.forward(x)
-            dt = (time.perf_counter() - dt) * 1e3
-            print(
-                f"{self.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
-            )
-        else:
-            y = self.forward(x)
-
-        if self.retain_values:
-            self.y = y
-        return y
-
-    def compute_grads(self, dy: Tensor) -> Tensor:
-        """Computes gradients for all trainable parameters.
-
-        Parameters
-        ----------
-        dy : Tensor
-            Output gradients.
-
-        Returns
-        -------
-        Tensor
-            Input gradients.
-        """
-        if not self.is_training:
-            raise AttributeError(f"{self.label} is not in training mode.")
-
-        if self.retain_values and self.y:
-            self.y.grad = dy
-
-        if DEBUG:
-            dt = time.perf_counter()
-            dx = self.backward(dy)
-            dt = (time.perf_counter() - dt) * 1e3
-            if dx:
-                print(
-                    f"{self.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
-                )
-            else:
-                print(f"{self.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms")
-        else:
-            dx = self.backward(dy)
-
-        assert not self.fcache.cache, "FunctionCache not empty after backward."
-
-        if self.retain_values and self.x:
-            self.x.grad = dx
-        return dx
+        return self.forward(x)
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
@@ -339,6 +283,73 @@ class Module(ABC):
         Tensor
             Input gradient tensor.
         """
+
+    @staticmethod
+    def register_forward(fwd_fn: Callable) -> Callable:
+        """Registers a the forward method to the module."""
+
+        @wraps(fwd_fn)
+        def wrapper(m: Module, x: Tensor) -> Tensor:
+            m.fcache.cache.clear()
+
+            if DEBUG:
+                dt = time.perf_counter()
+                y = fwd_fn(m, x)
+                dt = (time.perf_counter() - dt) * 1e3
+                print(
+                    f"{m.label:20s} | fwd | "
+                    f"{x.dtype:15s} | "
+                    f"{y.dtype:15s} | "
+                    f"{dt=:>10.4f} ms"
+                )
+            else:
+                y = fwd_fn(m, x)
+
+            if not m.is_training:
+                assert not m.fcache.cache, "FunctionCache not empty after backward."
+
+            if m.retain_values:
+                m.x = x
+                m.y = y
+
+            return y
+
+        return wrapper
+
+    @staticmethod
+    def register_backward(bwd_fn: Callable) -> Callable:
+        """Registers a the backward method for the module."""
+
+        @wraps(bwd_fn)
+        def wrapper(m: Module, dy: Tensor) -> Tensor:
+            if not m.is_training:
+                raise AttributeError(f"{m.label} is not in training mode.")
+
+            if DEBUG:
+                dt = time.perf_counter()
+                dx = bwd_fn(m, dy)
+                dt = (time.perf_counter() - dt) * 1e3
+                if dx:
+                    print(
+                        f"{m.label:20s} | bwd | "
+                        f"{dx.dtype:15s} | "
+                        f"{dy.dtype:15s} | "
+                        f"{dt=:>10.4f} ms"
+                    )
+                else:
+                    print(f"{m.label:20s} | bwd | {dy.dtype:15s} | {dt=:>10.4f} ms")
+            else:
+                dx = bwd_fn(m, dy)
+
+            assert not m.fcache.cache, "FunctionCache not empty after backward."
+
+            if m.retain_values and m.x and m.y:
+                m.x.grad = dx
+                m.y.grad = dy
+
+            return dx
+
+        return wrapper
 
     def clean(self, force: bool = False) -> None:
         """Removes temporary values like outputs and gradients.
@@ -404,14 +415,4 @@ def is_repr_attr(attr: str, value: Any) -> bool:
             not isinstance(value, (Tensor, Module, ModuleList)),
             value is not None,
         ]
-    )
-
-
-def validate_input_axes(module: Module, x: Tensor, valid_ndim: Iterable[int]) -> None:
-    """Checks if the number of axes of a tensor is valid."""
-    if x.ndim in valid_ndim:
-        return
-    vdims = ", ".join(str(d) for d in valid_ndim)
-    raise ShapeError(
-        f"{module.label}: Invalid input dims {x.ndim}. Can be one of: {vdims}."
     )

@@ -25,7 +25,7 @@ class BatchNorm1D(Module):
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
     where :math:`E[x]` and :math:`Var[x]` are computed over the
-    :math:`B` and :math:`S` axes.
+    :math:`B` and :math:`S` dimensions.
 
     Shapes:
         - Input :math:`(B, C, S)` or :math:`(B, C)`
@@ -73,6 +73,7 @@ class BatchNorm1D(Module):
         self.rmean = Buffer(zeros((channels,), dtype=dtype))
         self.rvar = Buffer(ones((channels,), dtype=dtype))
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y, rmean, rvar = BatchNorm1DFn.forward(
             self.fcache,
@@ -104,7 +105,7 @@ class BatchNorm2D(Module):
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
     where :math:`E[x]` and :math:`Var[x]` are computed over the
-    :math:`B`, :math:`Y` and :math:`X` axes.
+    :math:`B`, :math:`Y` and :math:`X` dimensions.
 
     Shapes:
         - Input :math:`(B, C, Y, X)`
@@ -153,6 +154,7 @@ class BatchNorm2D(Module):
         self.rmean = Buffer(zeros((channels,), dtype=dtype))
         self.rvar = Buffer(ones((channels,), dtype=dtype))
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y, rmean, rvar = BatchNorm2DFn.forward(
             self.fcache,
@@ -183,7 +185,7 @@ class LayerNorm(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over feature axes
+    where :math:`E[x]` and :math:`Var[x]` are computed over feature dimensions
     specified by `normalized_shape`.
 
     Shapes:
@@ -223,6 +225,7 @@ class LayerNorm(Module):
         self.w = Parameter(ones(normalized_shape, dtype=dtype))
         self.b = Parameter(zeros(normalized_shape, dtype=dtype))
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return LayerNormFn.forward(self.fcache, x, self.w, self.b, self.eps)
 
@@ -241,7 +244,7 @@ class RMSNorm(Module):
         y = w \cdot \frac{x}{\text{RMS}(x)} + b
 
     where :math:`\text{RMS}(x) = \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2}`.
-    The :math:`\text{RMS}` is computed over feature axes specified by `normalized_shape`.
+    The :math:`\text{RMS}` is computed over feature dimensions specified by `normalized_shape`.
 
     Shapes:
         - Input :math:`(B, ...)`
@@ -277,9 +280,11 @@ class RMSNorm(Module):
         # init parameters
         self.w = Parameter(ones(normalized_shape, dtype=dtype))
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return RMSNormFn.forward(self.fcache, x, self.w, self.eps)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw = RMSNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)

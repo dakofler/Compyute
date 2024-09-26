@@ -21,7 +21,7 @@ class DenseBlock(Sequential):
         - Input :math:`(B_1, ... , B_n, C_{in})`
         - Output :math:`(B_1, ... , B_n, C_{out})`
     where
-        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`B_1, ... , B_n` ... batch dimensions
         - :math:`C_{in}` ... input channels
         - :math:`C_{out}` ... output channels
 

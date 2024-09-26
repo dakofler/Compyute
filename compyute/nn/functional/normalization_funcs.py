@@ -27,17 +27,17 @@ class BatchNorm1DFn(Function):
             raise ShapeError(f"Expected input to be a 2D or 3D-tensor, got {x.ndim}D.")
 
         x_is_2d = x.ndim == 2
-        batch_axes: tuple[int, ...] = (0,) if x.ndim == 2 else (0, 2)
+        batch_dims: tuple[int, ...] = (0,) if x.ndim == 2 else (0, 2)
 
         if training:
             # compute mean and variance from x
-            mean = x.mean(batch_axes, keepdims=True)
-            std = sqrt(x.var(batch_axes, keepdims=True) + eps)
+            mean = x.mean(batch_dims, keepdims=True)
+            std = sqrt(x.var(batch_dims, keepdims=True) + eps)
             x_norm = (x - mean) / std
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
-            rvar = rvar * (1 - m) + x.var(batch_axes, ddof=1) * m
+            rvar = rvar * (1 - m) + x.var(batch_dims, ddof=1) * m
         else:
             # use running mean and variance
             var = rvar if x_is_2d else rvar.view((*rvar.shape, 1))
@@ -49,17 +49,17 @@ class BatchNorm1DFn(Function):
         b = b if x_is_2d else b.view((*b.shape, 1))
         y = w * x_norm + b
 
-        cache.push(w, batch_axes, std, x_norm)
+        cache.push(w, batch_dims, std, x_norm)
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, batch_axes, std, x_norm = cache.pop()
+        w, batch_dims, std, x_norm = cache.pop()
         n = float(dy.size / dy.shape[1])
 
         # input grads
-        dy_sum = dy.sum(batch_axes, keepdims=True)
-        dy_x_norm_sum = (dy * x_norm).sum(batch_axes, keepdims=True)
+        dy_sum = dy.sum(batch_dims, keepdims=True)
+        dy_x_norm_sum = (dy * x_norm).sum(batch_dims, keepdims=True)
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
@@ -135,17 +135,17 @@ class BatchNorm2DFn(Function):
     ) -> tuple[Tensor, Tensor, Tensor]:
         if x.ndim != 4:
             raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
-        batch_axes = (0, 2, 3)
+        batch_dims = (0, 2, 3)
 
         if training:
             # compute mean and variance from x
-            mean = x.mean(batch_axes, keepdims=True)
-            std = sqrt(x.var(batch_axes, keepdims=True) + eps)
+            mean = x.mean(batch_dims, keepdims=True)
+            std = sqrt(x.var(batch_dims, keepdims=True) + eps)
             x_norm = (x - mean) / std
 
             # keep running stats
             rmean = rmean * (1 - m) + squeeze(mean) * m
-            rvar = rvar * (1 - m) + x.var(batch_axes, ddof=1) * m
+            rvar = rvar * (1 - m) + x.var(batch_dims, ddof=1) * m
         else:
             # use running mean and variance
             mean = rmean.view((*rmean.shape, 1, 1))
@@ -156,17 +156,17 @@ class BatchNorm2DFn(Function):
         b = b.view((*b.shape, 1, 1))
         y = w * x_norm + b
 
-        cache.push(w, batch_axes, std, x_norm)
+        cache.push(w, batch_dims, std, x_norm)
         return y, rmean, rvar
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, batch_axes, std, x_norm = cache.pop()
+        w, batch_dims, std, x_norm = cache.pop()
         n = float(dy.size / dy.shape[1])
 
         # input grads
-        dy_sum = dy.sum(batch_axes, keepdims=True)
-        dy_x_norm_sum = (dy * x_norm).sum(batch_axes, keepdims=True)
+        dy_sum = dy.sum(batch_dims, keepdims=True)
+        dy_x_norm_sum = (dy * x_norm).sum(batch_dims, keepdims=True)
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
@@ -232,32 +232,32 @@ class LayerNormFn(Function):
     def forward(
         cache: FunctionCache, x: Tensor, w: Tensor, b: Tensor, eps: float
     ) -> Tensor:
-        feat_axes = tuple(-i - 1 for i in range(w.ndim))
+        feat_dims = tuple(-i - 1 for i in range(w.ndim))
 
-        mean = x.mean(feat_axes, keepdims=True)
-        std = sqrt(x.var(feat_axes, keepdims=True) + eps)
+        mean = x.mean(feat_dims, keepdims=True)
+        std = sqrt(x.var(feat_dims, keepdims=True) + eps)
         x_norm = (x - mean) / std
         y = w * x_norm + b
 
-        cache.push(w, feat_axes, std, x_norm)
+        cache.push(w, feat_dims, std, x_norm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        w, feat_axes, std, x_norm = cache.pop()
-        batch_axes = tuple(range(dy.ndim - w.ndim))
+        w, feat_dims, std, x_norm = cache.pop()
+        batch_dims = tuple(range(dy.ndim - w.ndim))
 
         # input grads
-        dy_sum = dy.sum(feat_axes, keepdims=True)
+        dy_sum = dy.sum(feat_dims, keepdims=True)
         dy_x_norm = dy * x_norm
-        dy_x_norm_sum = dy_x_norm.sum(feat_axes, keepdims=True)
+        dy_x_norm_sum = dy_x_norm.sum(feat_dims, keepdims=True)
         dx = w / (std * w.size) * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
-        dw = dy_x_norm.sum(batch_axes)
+        dw = dy_x_norm.sum(batch_dims)
 
         # beta grads
-        db = dy.sum(batch_axes)
+        db = dy.sum(batch_dims)
 
         return dx, dw, db
 
@@ -293,26 +293,26 @@ class RMSNormFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, w: Tensor, eps: float) -> Tensor:
-        feat_axes = tuple(-i - 1 for i in range(w.ndim))
+        feat_dims = tuple(-i - 1 for i in range(w.ndim))
 
-        rms = sqrt((x * x).mean(feat_axes, keepdims=True) + eps)
+        rms = sqrt((x * x).mean(feat_dims, keepdims=True) + eps)
         x_norm = x / rms
         y = w * x_norm
 
-        cache.push(x, w, feat_axes, rms, x_norm)
+        cache.push(x, w, feat_dims, rms, x_norm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor]:
-        x, w, feat_axes, rms, x_norm = cache.pop()
-        sum_axes = tuple(range(x.ndim - w.ndim))
+        x, w, feat_dims, rms, x_norm = cache.pop()
+        sum_dims = tuple(range(x.ndim - w.ndim))
 
         # input grads
-        dy_x_sum = (dy * x).sum(feat_axes, keepdims=True)
+        dy_x_sum = (dy * x).sum(feat_dims, keepdims=True)
         dx = w / rms * (dy - x_norm * dy_x_sum / (w.size * rms))
 
         # gamma grads
-        dw = (dy * x_norm).sum(sum_axes)
+        dw = (dy * x_norm).sum(sum_dims)
 
         return dx, dw
 

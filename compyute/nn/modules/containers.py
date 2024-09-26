@@ -32,11 +32,13 @@ class Sequential(Module):
 
         self.layers = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         for module in self.layers:
             x = module(x)
         return x
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         for module in reversed(self.layers):
             dy = module.backward(dy)
@@ -70,12 +72,14 @@ class ParallelConcat(Module):
         self.modules = ModuleList(modules)
         self.concat_dim = concat_dim
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self.modules]
         y = concat(ys, dim=self.concat_dim)
         self.fcache.push(list(accumulate(y.shape[self.concat_dim] for y in ys[:-1])))
         return y
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         (y_idx,) = self.fcache.pop()
         splits = split(dy, splits=y_idx, dim=self.concat_dim)
@@ -104,9 +108,11 @@ class ParallelAdd(Module):
             raise EmptyContainerError()
         self.modules = ModuleList(modules)
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return tensorsum(m(x) for m in self.modules)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return tensorsum(m.backward(dy) for m in self.modules)
 
@@ -143,11 +149,13 @@ class ResidualConnection(Module):
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
         self.residual_proj = residual_proj
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         y = self.residual_block(x)
         y += self.residual_proj(x) if self.residual_proj else x
         return y
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx = self.residual_block.backward(dy)
         dx += self.residual_proj.backward(dy) if self.residual_proj else dy

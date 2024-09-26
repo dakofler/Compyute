@@ -19,7 +19,7 @@ __all__ = [
 
 
 class ReLUFn(Function):
-    """Applies the softmax function over the last axis of an input tensor."""
+    """Applies the Rectified Linear Unit activation function to an input tensor."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -273,7 +273,7 @@ def silu(x: Tensor) -> Tensor:
 
 
 class SoftmaxFn(Function):
-    """Applies the softmax activation function over the last axis of an input tensor."""
+    """Applies the softmax activation function to the last dimension of an input tensor."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -289,7 +289,7 @@ class SoftmaxFn(Function):
 
 
 def softmax(x: Tensor) -> Tensor:
-    """Applies the softmax function over the last axis of an input tensor.
+    """Applies the softmax activation function to the last dimension of an input tensor.
 
     Parameters
     ----------

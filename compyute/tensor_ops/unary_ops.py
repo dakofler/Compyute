@@ -137,7 +137,7 @@ def fft1d(x: Tensor, n: Optional[int] = None, dim: int = -1) -> Tensor:
 
 
 def fft2d(
-    x: Tensor, n: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
+    x: Tensor, n: Optional[ShapeLike] = None, dims: tuple[int, int] = (-2, -1)
 ) -> Tensor:
     """Computes the 2D Fast Fourier Transform over given dimensions.
 
@@ -155,7 +155,7 @@ def fft2d(
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    return Tensor(x.device.module.fft.fft2(x.data, n, axes))
+    return Tensor(x.device.module.fft.fft2(x.data, n, dims))
 
 
 def ifft1d(x: Tensor, n: Optional[int] = None, dim: int = -1) -> Tensor:
@@ -179,9 +179,9 @@ def ifft1d(x: Tensor, n: Optional[int] = None, dim: int = -1) -> Tensor:
 
 
 def ifft2d(
-    x: Tensor, s: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
+    x: Tensor, s: Optional[ShapeLike] = None, dims: tuple[int, int] = (-2, -1)
 ) -> Tensor:
-    """Computes the inverse 2D Fast Fourier Transform over given axes.
+    """Computes the inverse 2D Fast Fourier Transform over given dims.
 
     Parameters
     ----------
@@ -197,7 +197,7 @@ def ifft2d(
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    return Tensor(x.device.module.fft.ifft2(x.data, s, axes))
+    return Tensor(x.device.module.fft.ifft2(x.data, s, dims))
 
 
 def imag(x: Tensor) -> Tensor:

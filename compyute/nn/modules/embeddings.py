@@ -20,7 +20,7 @@ class Embedding(Module):
         - Input :math:`(B_1, ... , B_n, S)`
         - Output :math:`(B_1, ... , B_n, S, E)`
     where
-        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`B_1, ... , B_n` ... batch dimensions
         - :math:`S` ... sequence
         - :math:`E` ... embedding dimension
 
@@ -54,9 +54,11 @@ class Embedding(Module):
         # init parameters
         self.w = Parameter(normal((n_embeddings, embedding_dim), dtype=dtype))
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return EmbeddingFn.forward(self.fcache, x, self.w)
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dw = EmbeddingFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)

@@ -206,7 +206,7 @@ Alternatively, you can write your own training loop.
 
             # backward pass
             optim.reset_grads()  # reset all gradients
-            model.compute_grads(loss_fn.compute_grads())  # compute new gradients
+            model.backward(loss_fn.backward())  # compute new gradients
             optim.step()  # update parameters
         
         # validiation
