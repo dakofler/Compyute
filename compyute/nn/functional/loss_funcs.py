@@ -53,10 +53,12 @@ class CrossEntropyFn(Function):
     """Computes the cross entropy loss."""
 
     @staticmethod
-    def forward(cache: FunctionCache, y_pred: Tensor, y_true: Tensor) -> Tensor:
+    def forward(
+        cache: FunctionCache, y_pred: Tensor, y_true: Tensor, eta: float
+    ) -> Tensor:
         probs = softmax(y_pred)
         y_true = one_hot_encode(y_true, y_pred.shape[-1], probs.dtype)
-        y = (-log(probs) * y_true).sum(-1).mean()
+        y = (-log(probs + eta) * y_true).sum(-1).mean()
         cache.push(y_true, probs)
         return y
 
@@ -66,7 +68,7 @@ class CrossEntropyFn(Function):
         return (probs - y_true) / float(math.prod(y_true.shape[:-1]))
 
 
-def cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
+def cross_entropy(y_pred: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
     """Computes the cross entropy loss.
 
     Parameters
@@ -75,6 +77,9 @@ def cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
         Model logits.
     y_true : Tensor
         Target class labels, must be of type ``int``.
+    eta : float, optional
+        A small constant added for numerical stability. Defaults to ``1e-8``.
+
 
     Returns
     -------
@@ -85,7 +90,7 @@ def cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-    return CrossEntropyFn.forward(PseudoCache(), y_pred, y_true)
+    return CrossEntropyFn.forward(PseudoCache(), y_pred, y_true, eta)
 
 
 class BinaryCrossEntropyFn(Function):

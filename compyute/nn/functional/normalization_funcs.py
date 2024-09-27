@@ -1,6 +1,5 @@
 """Neural network normalization functions."""
 
-from ...tensor_ops.reshape_ops import squeeze
 from ...tensor_ops.unary_ops import sqrt
 from ...tensors import ShapeError, Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -36,7 +35,7 @@ class BatchNorm1DFn(Function):
             x_norm = (x - mean) / std
 
             # keep running stats
-            rmean = rmean * (1 - m) + squeeze(mean) * m
+            rmean = rmean * (1 - m) + mean.squeeze() * m
             rvar = rvar * (1 - m) + x.var(batch_dims, ddof=1) * m
         else:
             # use running mean and variance
@@ -63,10 +62,10 @@ class BatchNorm1DFn(Function):
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
-        dw = squeeze(dy_x_norm_sum)
+        dw = dy_x_norm_sum.squeeze()
 
         # beta grads
-        db = squeeze(dy_sum)
+        db = dy_sum.squeeze()
 
         return dx, dw, db
 
@@ -144,7 +143,7 @@ class BatchNorm2DFn(Function):
             x_norm = (x - mean) / std
 
             # keep running stats
-            rmean = rmean * (1 - m) + squeeze(mean) * m
+            rmean = rmean * (1 - m) + mean.squeeze() * m
             rvar = rvar * (1 - m) + x.var(batch_dims, ddof=1) * m
         else:
             # use running mean and variance
@@ -170,10 +169,10 @@ class BatchNorm2DFn(Function):
         dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
-        dw = squeeze(dy_x_norm_sum)
+        dw = dy_x_norm_sum.squeeze()
 
         # beta grads
-        db = squeeze(dy_sum)
+        db = dy_sum.squeeze()
 
         return dx, dw, db
 

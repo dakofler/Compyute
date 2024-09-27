@@ -208,7 +208,7 @@ def movedim(x: Tensor, from_dim: int, to_dim: int) -> Tensor:
     Tensor
         Tensor with a moved dimensions.
     """
-    return Tensor(x.device.module.movedim(x.data, from_dim, to_dim))
+    return Tensor(x.device.module.moveaxis(x.data, from_dim, to_dim))
 
 
 def squeeze(x: Tensor) -> Tensor:

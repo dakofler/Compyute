@@ -131,8 +131,8 @@ class CrossEntropy(Loss):
     """
 
     @Loss.register_forward
-    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return CrossEntropyFn.forward(self.fcache, y_pred, y_true)
+    def forward(self, y_pred: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
+        return CrossEntropyFn.forward(self.fcache, y_pred, y_true, eta)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
