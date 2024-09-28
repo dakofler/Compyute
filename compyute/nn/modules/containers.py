@@ -3,8 +3,8 @@
 from itertools import accumulate
 from typing import Optional
 
-from ...tensor_ops.creation_ops import concat, split
 from ...tensor_ops.reduction_ops import tensorsum
+from ...tensor_ops.shape_ops import concat, split
 from ...tensors import Tensor
 from .module import Module, ModuleList
 

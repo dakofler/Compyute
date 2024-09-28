@@ -23,9 +23,7 @@ Functions to create new tensors or combine existing tensors.
 .. autosummary::
     :toctree: ../_generated/compyute
     
-    append
     arange
-    concat
     empty
     empty_like
     full
@@ -34,8 +32,6 @@ Functions to create new tensors or combine existing tensors.
     linspace
     ones
     ones_like
-    split
-    stack
     zeros
     zeros_like  
 
@@ -110,7 +106,7 @@ Functions that aggregate tensors.
     var
 
 
-Reshaping Operations
+Shape Operations
 ~~~~~~~~~~~~~~~~~~~~
 
 Functions that change tensor shapes.
@@ -118,23 +114,25 @@ Functions that change tensor shapes.
 .. autosummary::
     :toctree: ../_generated/compyute
     
+    append
+    broadcast_to
+    concat
     diagonal
-    reshape
     flatten
-    transpose
+    flip
     insert_dim
-    add_dims
-    resize
-    repeat
-    tile
+    movedim
     pad
     pad_to_shape
-    pool1d
-    pool2d
-    moveaxis
+    pooling1d
+    pooling2d
+    repeat
+    reshape
+    split
     squeeze
-    flip
-    broadcast_to
+    stack
+    tile
+    transpose
 
 
 Selecting Operations

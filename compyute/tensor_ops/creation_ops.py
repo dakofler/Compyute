@@ -1,16 +1,13 @@
 """Tensor creation and combination operations."""
 
-from collections.abc import Sequence
 from typing import Optional
 
 from ..backend import Device, select_device
-from ..tensors import DimLike, ShapeLike, Tensor
+from ..tensors import ShapeLike, Tensor
 from ..typing import DType, ScalarLike, select_dtype
 
 __all__ = [
-    "append",
     "arange",
-    "concat",
     "empty",
     "empty_like",
     "full",
@@ -19,31 +16,9 @@ __all__ = [
     "linspace",
     "ones",
     "ones_like",
-    "split",
-    "stack",
     "zeros",
     "zeros_like",
 ]
-
-
-def append(x: Tensor, values: Tensor, dim: int = -1) -> Tensor:
-    """Returns a copy of the tensor with appended values.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    values : Tensor
-        Values to append.
-    dim : int, optional
-        Dimension along which to append the values. Defaults to ``-1``.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing appended values.
-    """
-    return Tensor(x.device.module.append(x.data, values.data, axis=dim))
 
 
 def arange(
@@ -78,25 +53,6 @@ def arange(
     device = select_device(device)
     dtype = select_dtype(dtype)
     return Tensor(device.module.arange(start, stop, step, dtype.t))
-
-
-def concat(tensors: Sequence[Tensor], dim: DimLike = -1) -> Tensor:
-    """Returns a new tensor by joining a sequence of tensors along a given dimension.
-
-    Parameters
-    ----------
-    tensors : Sequence[Tensor]
-        Sequence of Tensors to be joined.
-    dim : DimLike, optional
-        Dimension along which to join the tensors. Defaults to ``-1``.
-
-    Returns
-    -------
-    Tensor
-        Concatenated tensor.
-    """
-    data = tensors[0].device.module.concatenate([t.data for t in tensors], axis=dim)
-    return Tensor(data)
 
 
 def empty(
@@ -292,46 +248,6 @@ def ones_like(x: Tensor) -> Tensor:
         Tensor filled with ones.
     """
     return ones(x.shape, dtype=x.dtype, device=x.device)
-
-
-def split(x: Tensor, splits: int | Sequence[int], dim: int = -1) -> list[Tensor]:
-    """Returns a list of new tensors by splitting the tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    splits : int | list[int]
-        | Where to split the tensor.
-        | ``int``: the tensor is split into n equally sized tensors.
-        | ``Sequence[int]``: the tensor is split at the given indices.
-    dim : int, optional
-        Dimension along which to split the tensor. Defaults to ``-1``.
-
-    Returns
-    -------
-    list[Tensor]
-        List of tensors containing the split data.
-    """
-    return [Tensor(s) for s in x.device.module.split(x.data, splits, dim)]
-
-
-def stack(tensors: Sequence[Tensor], dim: DimLike = 0) -> Tensor:
-    """Returns a new tensor by stacking a sequence of tensors along a given dimension.
-
-    Parameters
-    ----------
-    tensors : Sequence[Tensor]
-        Sequence of Tensors to be stacked.
-    dim : DimLike, optional
-        Dimension along which to stack the tensors. Defaults to ``0``.
-
-    Returns
-    -------
-    Tensor
-        Stacked tensor.
-    """
-    return Tensor(tensors[0].device.module.stack([t.data for t in tensors], dim))
 
 
 def zeros(

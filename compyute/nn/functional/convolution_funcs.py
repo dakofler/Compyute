@@ -4,7 +4,7 @@ from typing import Optional
 
 from ...tensor_ops.creation_ops import zeros
 from ...tensor_ops.multiary_ops import einsum
-from ...tensor_ops.reshape_ops import (
+from ...tensor_ops.shape_ops import (
     flip,
     pad,
     pad_to_shape,
