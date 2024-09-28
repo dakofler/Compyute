@@ -401,20 +401,19 @@ def tile(x: Tensor, n_repeats: int, dim: int) -> Tensor:
     return Tensor(x.device.module.tile(x.data, tuple(repeats)))
 
 
-def transpose(x: Tensor, dims: Optional[tuple[int, ...]] = None) -> Tensor:
+def transpose(x: Tensor, dim1: int, dim2: int) -> Tensor:
     """Transposes a tensor by swapping two dimensions.
 
     Parameters
     ----------
     x: Tensor
         Input tensor.
-    dims : tuple[int, int], optional
-        Permutation of output dimensions. Defaults to ``None``.
-        If ``None`` dimensions are reversed.
+    dim1, dim2 : int
+        Dimensions to transpose.
 
     Returns
     -------
     Tensor
         Transposed tensor.
     """
-    return x.transpose(dims)
+    return x.transpose(dim1, dim2)

@@ -245,12 +245,13 @@ class LayerNormFn(Function):
     def backward(cache: FunctionCache, dy: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         w, feat_dims, std, x_norm = cache.pop()
         batch_dims = tuple(range(dy.ndim - w.ndim))
+        n = w.size
 
         # input grads
         dy_sum = dy.sum(feat_dims, keepdims=True)
         dy_x_norm = dy * x_norm
         dy_x_norm_sum = dy_x_norm.sum(feat_dims, keepdims=True)
-        dx = w / (std * w.size) * (w.size * dy - dy_sum - x_norm * dy_x_norm_sum)
+        dx = w / (std * n) * (n * dy - dy_sum - x_norm * dy_x_norm_sum)
 
         # gamma grads
         dw = dy_x_norm.sum(batch_dims)

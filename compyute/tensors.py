@@ -61,10 +61,10 @@ def tensor(
     Tensor
         Tensor object.
     """
-    device = device or get_default_device() or get_device_from_array(type(data))
+    device = device or get_default_device() or get_device_from_array(data)
     dtype = dtype or get_default_dtype()
-    np_dtype = dtype.t if dtype is not None else None
-    return Tensor(device.module.asarray(data, np_dtype))
+    array_dtype = dtype.t if dtype is not None else None
+    return Tensor(device.module.asarray(data, array_dtype))
 
 
 class Tensor:
@@ -126,7 +126,7 @@ class Tensor:
         """View of the tensor with its last two dimensions transposed."""
         if self.ndim < 2:
             return Tensor(self.data)
-        return self.transpose((*range(self.ndim - 2), -1, -2))
+        return self.transpose(-1, -2)
 
     @property
     def ptr(self) -> int:
@@ -138,14 +138,15 @@ class Tensor:
     # ----------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
+        prefix = self.__class__.__name__
         return (
-            "Tensor("
+            f"{prefix}("
             + self.device.module.array2string(
                 self.data,
                 100,
                 4,
                 separator=", ",
-                prefix="Tensor(",
+                prefix=f"{prefix}(",
                 floatmode="maxprec_equal",
             )
             + ")"
@@ -165,10 +166,11 @@ class Tensor:
         return self
 
     def __next__(self) -> Tensor:
-        if self._iterator < self.shape[0]:
-            self._iterator += 1
-            return self[self._iterator - 1]
-        raise StopIteration
+        if self._iterator == self.shape[0]:
+            raise StopIteration
+        y = self[self._iterator]
+        self._iterator += 1
+        return y
 
     def __add__(self, other: Tensor | ScalarLike) -> Tensor:
         return Tensor(self.data + to_arraylike(other))
@@ -586,17 +588,21 @@ class Tensor:
         """
         return Tensor(self.data.sum(dim, keepdims=keepdims))
 
-    def transpose(self, dim: Optional[DimLike] = None) -> Tensor:
+    def transpose(self, dim1: int, dim2: int) -> Tensor:
         """Returns a view of the tensor with its dimensions permuted.
 
         See Also
         --------
         :func:`compyute.transpose`
         """
-        return Tensor(self.data.transpose(dim))
+        return Tensor(self.data.swapaxes(dim1, dim2))
 
     def var(
-        self, dim: Optional[DimLike] = None, *, ddof: int = 0, keepdims: bool = False
+        self,
+        dim: Optional[DimLike] = None,
+        *,
+        ddof: int = 0,
+        keepdims: bool = False,
     ) -> Tensor:
         """Computes the variance of tensor elements over a given dimension.
 

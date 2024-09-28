@@ -15,9 +15,13 @@ class DropoutFn(Function):
         if not training or p == 0.0:
             cache.push(False, None)  # a bit hacky
             return x
-        dropout_map = bernoulli(1.0 - p, x.shape, device=x.device) / (1.0 - p)
+
+        p = 1.0 - p
+        dropout_map = bernoulli(p, x.shape, device=x.device) / p
+        y = x * dropout_map
+
         cache.push(True, dropout_map)
-        return x * dropout_map
+        return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
