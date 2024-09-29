@@ -75,7 +75,8 @@ def random(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.random(shape)
+    with device:
+        data = device.module.random.random(shape)
     return Tensor(data.astype(dtype.t, copy=False))
 
 
@@ -109,7 +110,8 @@ def normal(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.normal(mean, std, shape)
+    with device:
+        data = device.module.random.normal(mean, std, shape)
     return Tensor(data.astype(dtype.t, copy=False))
 
 
@@ -143,7 +145,8 @@ def uniform(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.uniform(low, high, shape)
+    with device:
+        data = device.module.random.uniform(low, high, shape)
     return Tensor(data.astype(dtype.t, copy=False))
 
 
@@ -176,7 +179,9 @@ def uniform_int(
         Tensor of samples.
     """
     device = select_device(device)
-    return Tensor(device.module.random.randint(low, high, shape, dtype.t))
+    with device:
+        data = device.module.random.randint(low, high, shape, dtype.t)
+    return Tensor(data)
 
 
 def permutation(n: int, *, device: Optional[Device] = None) -> Tensor:
@@ -195,7 +200,9 @@ def permutation(n: int, *, device: Optional[Device] = None) -> Tensor:
         Permuted tensor.
     """
     device = select_device(device)
-    return Tensor(device.module.random.permutation(n))
+    with device:
+        data = device.module.random.permutation(n)
+    return Tensor(data)
 
 
 def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
@@ -217,9 +224,12 @@ def multinomial(x: Tensor | int, p: Tensor, shape: ShapeLike) -> Tensor:
         Tensor of samples.
     """
     if isinstance(x, int):
-        data = p.device.module.random.choice(x, shape, p=p.data)
+        with p.device:
+            data = p.device.module.random.choice(x, shape, p=p.data)
         return Tensor(data.astype(int64.t, copy=False))
-    data = p.device.module.random.choice(x.data, shape, p=p.data)
+
+    with p.device:
+        data = p.device.module.random.choice(x.data, shape, p=p.data)
     return Tensor(data.astype(x.dtype.t, copy=False))
 
 
@@ -250,7 +260,8 @@ def bernoulli(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    data = device.module.random.random(shape) < p
+    with device:
+        data = device.module.random.random(shape) < p
     return Tensor(data.astype(dtype.t, copy=False))
 
 

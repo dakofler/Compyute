@@ -402,10 +402,6 @@ class ModuleList(list):
         super().__init__(modules)
 
 
-class ModelDefinitionError(Exception):
-    """Model definition error."""
-
-
 def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
     return all(

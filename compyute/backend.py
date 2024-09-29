@@ -1,20 +1,25 @@
 """Compyute engine utilities."""
 
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+from abc import ABC
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Optional, TypeAlias
+from typing import Any, ClassVar, Optional, TypeAlias
 
 import cupy
 import numpy
 
-__all__ = ["cpu", "cuda", "Device", "use_device"]
+__all__ = ["cpu", "cuda", "CUDA", "CPU", "use_device"]
 
 
 class CUDARuntimeError(Exception):
     """Cuda error."""
+
+    def __init__(self, message: str = "invalid device ordinal.") -> None:
+        super().__init__(message)
 
 
 @dataclass(eq=False, repr=False, frozen=True)
@@ -23,6 +28,7 @@ class Device(ABC):
 
     t: str
     index: int = 0
+    module: ClassVar[ModuleType] = numpy
 
     def __eq__(self, other: Any) -> bool:
         return repr(self) == repr(other)
@@ -33,25 +39,21 @@ class Device(ABC):
     def __format__(self, __format_spec: str) -> str:
         return self.__repr__().__format__(__format_spec)
 
-    @property
-    @abstractmethod
-    def module(self) -> ModuleType:
-        """Computation engine."""
-        ...
+    def __enter__(self) -> None: ...
+
+    def __exit__(self, *args: Any) -> None: ...
 
 
 @dataclass(eq=False, repr=False, frozen=True)
 class CPU(Device):
     """CPU device."""
 
-    @property
-    def module(self) -> ModuleType:
-        return numpy
-
 
 @dataclass(eq=False, repr=False, frozen=True)
 class CUDA(Device):
     """GPU device."""
+
+    module: ClassVar[ModuleType] = cupy
 
     def __enter__(self) -> None:
         return self.cupy_device.__enter__()
@@ -64,15 +66,11 @@ class CUDA(Device):
         return cupy.cuda.Device(self.index)
 
     @property
-    def module(self) -> ModuleType:
-        return cupy
-
-    @property
     def properties(self) -> Optional[dict[str, Any]]:
         try:
             return cupy.cuda.runtime.getDeviceProperties(self.index)
         except Exception:
-            raise CUDARuntimeError("No such device.")
+            raise CUDARuntimeError()
 
     @property
     def memory_info(self) -> dict[str, int]:
@@ -80,7 +78,7 @@ class CUDA(Device):
             free, total = self.cupy_device.mem_info
             return {"used": total - free, "free": free, "total": total}
         except Exception:
-            raise CUDARuntimeError("No such device.")
+            raise CUDARuntimeError()
 
 
 cpu = CPU("cpu")

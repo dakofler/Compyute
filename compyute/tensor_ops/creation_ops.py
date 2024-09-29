@@ -52,7 +52,9 @@ def arange(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.module.arange(start, stop, step, dtype.t))
+    with device:
+        data = device.module.arange(start, stop, step, dtype.t)
+    return Tensor(data)
 
 
 def empty(
@@ -79,7 +81,9 @@ def empty(
     """
     device = select_device(device)
     dtype = select_dtype(dtype)
-    return Tensor(device.module.empty(shape, dtype.t))
+    with device:
+        data = device.module.empty(shape, dtype.t)
+    return Tensor(data)
 
 
 def empty_like(x: Tensor) -> Tensor:
@@ -125,7 +129,9 @@ def full(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.full(shape, value, dtype.t))
+    with device:
+        data = device.module.full(shape, value, dtype.t)
+    return Tensor(data)
 
 
 def full_like(x: Tensor, value: ScalarLike) -> Tensor:
@@ -170,7 +176,9 @@ def identity(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.identity(n, dtype.t))
+    with device:
+        data = device.module.identity(n, dtype.t)
+    return Tensor(data)
 
 
 def linspace(
@@ -204,7 +212,9 @@ def linspace(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.linspace(start, stop, n, dtype=dtype.t))
+    with device:
+        data = device.module.linspace(start, stop, n, dtype=dtype.t)
+    return Tensor(data)
 
 
 def ones(
@@ -231,7 +241,9 @@ def ones(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.ones(shape, dtype.t))
+    with device:
+        data = device.module.ones(shape, dtype.t)
+    return Tensor(data)
 
 
 def ones_like(x: Tensor) -> Tensor:
@@ -274,7 +286,9 @@ def zeros(
     """
     dtype = select_dtype(dtype)
     device = select_device(device)
-    return Tensor(device.module.zeros(shape, dtype.t))
+    with device:
+        data = device.module.zeros(shape, dtype.t)
+    return Tensor(data)
 
 
 def zeros_like(x: Tensor) -> Tensor:

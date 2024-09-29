@@ -64,7 +64,9 @@ def tensor(
     device = device or get_default_device() or get_device_from_array(data)
     dtype = dtype or get_default_dtype()
     array_dtype = dtype.t if dtype is not None else None
-    return Tensor(device.module.asarray(data, array_dtype))
+    with device:
+        data = device.module.asarray(data, array_dtype)
+    return Tensor(data)
 
 
 class Tensor:
