@@ -91,8 +91,6 @@ Convolution
     
     Convolution1D
     Convolution2D
-    MaxPooling2D
-    AvgPooling2D
 
 
 Embedding
@@ -120,6 +118,16 @@ Normalizations
     BatchNorm2D
     LayerNorm
     RMSNorm
+
+
+Pooling
+~~~~~~~~~
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+
+    MaxPooling2D
+    AvgPooling2D
+    Upsample2D
 
 
 Recurrent

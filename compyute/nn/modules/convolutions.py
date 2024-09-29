@@ -6,16 +6,11 @@ from typing import Literal, Optional
 from ...random import uniform
 from ...tensors import Tensor
 from ...typing import DType
-from ..functional.convolution_funcs import (
-    AvgPooling2DFn,
-    Convolution1DFn,
-    Convolution2DFn,
-    MaxPooling2DFn,
-)
+from ..functional.convolution_funcs import Convolution1DFn, Convolution2DFn
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
 
-__all__ = ["Convolution1D", "Convolution2D", "MaxPooling2D", "AvgPooling2D"]
+__all__ = ["Convolution1D", "Convolution2D"]
 
 
 PaddingLike = int | Literal["valid", "same"]
@@ -217,49 +212,3 @@ class Convolution2D(Module):
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
-
-
-class MaxPooling2D(Module):
-    """Pooling layer used for downsampling where the
-    maximum value within the pooling window is used.
-
-    Parameters
-    ----------
-    kernel_size : int, optional
-        Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    """
-
-    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
-        super().__init__(label)
-        self.kernel_size = kernel_size
-
-    @Module.register_forward
-    def forward(self, x: Tensor) -> Tensor:
-        return MaxPooling2DFn.forward(self.fcache, x, self.kernel_size)
-
-    @Module.register_backward
-    def backward(self, dy: Tensor) -> Tensor:
-        return MaxPooling2DFn.backward(self.fcache, dy)
-
-
-class AvgPooling2D(Module):
-    """Pooling layer used for downsampling where the
-    average value within the pooling window is used.
-
-    Parameters
-    ----------
-    kernel_size : int, optional
-        Size of the pooling window used for the pooling operation. Defaults to ``2``.
-    """
-
-    def __init__(self, kernel_size: int = 2, label: Optional[str] = None) -> None:
-        super().__init__(label)
-        self.kernel_size = kernel_size
-
-    @Module.register_forward
-    def forward(self, x: Tensor) -> Tensor:
-        return AvgPooling2DFn.forward(self.fcache, x, self.kernel_size)
-
-    @Module.register_backward
-    def backward(self, dy: Tensor) -> Tensor:
-        return AvgPooling2DFn.backward(self.fcache, dy)

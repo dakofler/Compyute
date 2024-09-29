@@ -101,7 +101,7 @@ class MyConvBlock(nn.Sequential):
 
         conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
         relu = nn.ReLU()
-        bn = Batchnorm1d(out_channels)
+        bn = nn.Batchnorm1d(out_channels)
         
         # pass modules to the `Sequential` base class
         super().__init__(conv, relu, bn)
@@ -143,9 +143,8 @@ All modules can be trained and updated using common optimizer algorithms, such a
 
 ```python
 from compyute.nn.trainer import Trainer
-from compyute.nn.callbacks import EarlyStopping, History, Progressbar
+from compyute.nn.trainer.callbacks import EarlyStopping, History, Progressbar
 
-# define trainer
 trainer = Trainer(
     model=model,
     optimizer="sgd",
@@ -154,7 +153,6 @@ trainer = Trainer(
     callbacks=[EarlyStopping(), History(), Progressbar()]
 )
 
-# train model
 trainer.train(X_train, y_train, epochs=10)
 ```
 
@@ -165,7 +163,8 @@ epochs = 100
 batch_size = 32
 
 train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
-val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
+val_dl = nn.utils.Dataloader((X_val, y_val), batch_size, shuffle=False)
+
 loss_fn = nn.CrossEntropy()
 optim = nn.optimizers.SGD(model.get_parameters())
 
@@ -186,7 +185,7 @@ for epoch in range(epochs):
     
     # validiation
     model.inference()
-    with nn.no_caching():  # disable caching for gradient computation
+    with nn.no_caching():  # disable caching required for gradient computation
         val_loss = 0
         for x, y in val_dl():
             y_pred = model(x)

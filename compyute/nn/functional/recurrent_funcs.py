@@ -25,7 +25,7 @@ class RecurrentFn(Function):
         activation: str,
     ) -> Tensor:
         if x.ndim != 3:
-            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 3D, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
@@ -139,7 +139,7 @@ class LSTMFn(Function):
         activation: str,
     ) -> Tensor:
         if x.ndim != 3:
-            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 3D, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn
@@ -396,7 +396,7 @@ class GRUFn(Function):
         activation: str,
     ) -> Tensor:
         if x.ndim != 3:
-            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 3D, got {x.ndim}D.")
         if activation not in {"relu", "tanh"}:
             raise ValueError("Activation must be either 'relu' or 'tanh'.")
         act = TanhFn if activation == "tanh" else ReLUFn

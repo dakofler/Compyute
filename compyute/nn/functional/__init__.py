@@ -8,6 +8,7 @@ from .linear_funcs import *
 from .loss_funcs import *
 from .metric_funcs import *
 from .normalization_funcs import *
+from .pooling_funcs import *
 from .recurrent_funcs import *
 from .regularization_funcs import *
-from .reshape_funcs import *
+from .shape_funcs import *

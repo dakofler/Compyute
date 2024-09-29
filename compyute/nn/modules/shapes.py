@@ -1,9 +1,9 @@
-"""Neural network reshaping modules."""
+"""Neural network shape changing modules."""
 
 from typing import Optional
 
 from ...tensors import ShapeLike, Tensor
-from ..functional.reshape_funcs import FlattenFn, ReshapeFn
+from ..functional.shape_funcs import FlattenFn, ReshapeFn
 from .module import Module
 
 __all__ = ["Flatten", "Reshape"]

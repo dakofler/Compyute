@@ -1,4 +1,4 @@
-"""Neural network reshaping functions."""
+"""Neural network shape changing functions."""
 
 from ...tensors import ShapeLike, Tensor
 from .functions import Function, FunctionCache

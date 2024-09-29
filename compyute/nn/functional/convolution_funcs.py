@@ -4,15 +4,8 @@ from typing import Optional
 
 from ...tensor_ops.creation_ops import zeros
 from ...tensor_ops.multiary_ops import einsum
-from ...tensor_ops.shape_ops import (
-    flip,
-    pad,
-    pad_to_shape,
-    pooling1d,
-    pooling2d,
-    repeat,
-)
-from ...tensors import ShapeError, ShapeLike, Tensor
+from ...tensor_ops.shape_ops import flip, pad, pad_to_shape, pooling1d, pooling2d
+from ...tensors import ShapeError, Tensor
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = [
@@ -22,9 +15,6 @@ __all__ = [
     "convolve2d",
     "dilate2d",
     "pad2d",
-    "upsample2d",
-    "maxpooling2d",
-    "avgpooling2d",
 ]
 
 
@@ -42,7 +32,7 @@ class Convolution1DFn(Function):
         dilation: int,
     ) -> Tensor:
         if x.ndim != 3:
-            raise ShapeError(f"Expected input to be a 3D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 3D, got {x.ndim}D.")
 
         f = Dilation1DFn.forward(cache, f, dilation)
         x = Pad1DFn.forward(cache, x, padding)
@@ -237,7 +227,7 @@ class Convolution2DFn(Function):
         dilation: int,
     ) -> Tensor:
         if x.ndim != 4:
-            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 4D, got {x.ndim}D.")
 
         f = Dilation2DFn.forward(cache, f, dilation)
         x = Pad2DFn.forward(cache, x, padding)
@@ -415,113 +405,3 @@ class _Convolution2DFn(Function):
         df = flip(df, dim=(-2, -1))
 
         return dx, df
-
-
-class Upsample2DFn(Function):
-    """Upsamples a tensor by repeating it's elements over the last two dimensions."""
-
-    @staticmethod
-    def forward(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
-        x = repeat(repeat(x, scaling, -1), scaling, -2)
-        y = x if x.shape == shape else pad_to_shape(x, shape)
-        return y
-
-
-def upsample2d(x: Tensor, scaling: int, shape: ShapeLike) -> Tensor:
-    """Upsamples a tensor by repeating it's elements over the last two dimensions.
-
-    Parameters
-    ----------
-    x : Tensor
-        Tensor to be stretched out.
-    scaling : int
-        Number of repeating values along each dimension.
-    shape : ShapeLike
-        Shape of the target tensor. If the shape does not match after upsampling,
-        remaining values are filled with zeroes.
-
-    Returns
-    -------
-    Tensor
-        Upsampled tensor.
-    """
-    return Upsample2DFn.forward(x, scaling, shape)
-
-
-class MaxPooling2DFn(Function):
-    """Performs max pooling over the last two dimensions."""
-
-    @staticmethod
-    def forward(cache: FunctionCache, x: Tensor, kernel_size: int) -> Tensor:
-        if x.ndim != 4:
-            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
-        y = pooling2d(x, kernel_size, kernel_size).max((-2, -1))
-        cache.push(x, kernel_size, y)
-        return y
-
-    @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, kernel_size, y = cache.pop()
-        y_ups = upsample2d(y, kernel_size, x.shape)
-        return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
-
-
-def maxpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
-    """Performs max pooling over the last two dimensions.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    kernel_size : int, optional
-        Size of the pooling window. Defaults to ``2``.
-
-    Returns
-    -------
-    Tensor
-        Output tensor.
-
-    See Also
-    ----------
-    :class:`compyute.nn.MaxPooling2D`
-    """
-    return MaxPooling2DFn.forward(PseudoCache(), x, kernel_size)
-
-
-class AvgPooling2DFn(Function):
-    """Performs average pooling over the last two dimensions."""
-
-    @staticmethod
-    def forward(cache: FunctionCache, x: Tensor, kernel_size: int) -> Tensor:
-        if x.ndim != 4:
-            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
-        y = pooling2d(x, kernel_size, kernel_size).mean((-2, -1))
-        cache.push(x.shape, kernel_size)
-        return y
-
-    @staticmethod
-    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x_shape, kernel_size = cache.pop()
-        return upsample2d(dy / (kernel_size * kernel_size), kernel_size, x_shape)
-
-
-def avgpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:
-    """Performs average pooling over the last two dimensions.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-    kernel_size : int, optional
-        Size of the pooling window. Defaults to ``2``.
-
-    Returns
-    -------
-    Tensor
-        Output tensor.
-
-    See Also
-    ----------
-    :class:`compyute.nn.AvgPooling2D`
-    """
-    return AvgPooling2DFn.forward(PseudoCache(), x, kernel_size)

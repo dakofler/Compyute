@@ -19,7 +19,8 @@ __all__ = [
     "pad_to_shape",
     "pooling1d",
     "pooling2d",
-    "repeat",
+    "repeat1d",
+    "repeat2d",
     "reshape",
     "squeeze",
     "split",
@@ -243,11 +244,11 @@ def pooling1d(x: Tensor, window_size: int, stride: int = 1):
         Windowed view of the input tensor.
     """
 
-    # compute output shape
+    # compute strided shape
     out = (x.shape[-1] - window_size) // stride + 1
     out_shape = (*x.shape[:-1], out, window_size)
 
-    # compute output strides
+    # compute strides
     x_str = x.strides
     out_strides = (*x_str[:-1], x_str[-1] * stride, x_str[-1])
 
@@ -273,11 +274,11 @@ def pooling2d(x: Tensor, window_size: int, stride: int = 1):
         Windowed view of the input tensor.
     """
 
-    # compute output shape
+    # compute strided shape
     out = (x.shape[-1] - window_size) // stride + 1
     out_shape = (*x.shape[:-2], out, out, window_size, window_size)
 
-    # compute output strides
+    # compute strides
     x_str = x.strides
     out_strides = (*x_str[:-2], x_str[-2] * stride, x_str[-1] * stride, *x_str[-2:])
 
@@ -285,24 +286,58 @@ def pooling2d(x: Tensor, window_size: int, stride: int = 1):
     return Tensor(str_func(x.data, out_shape, out_strides))
 
 
-def repeat(x: Tensor, n_repeats: int, dim: int) -> Tensor:
-    """Repeat elements of a tensor.
+def repeat1d(x: Tensor, n: int) -> Tensor:
+    """Repeat elements of a tensor along the last dimension.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
-    n_repeats : int
+    n : int
         Number of repeats.
-    dim : int
-        Dimension along which the values are repeated.
 
     Returns
     -------
     Tensor
         Tensor with repeated values.
     """
-    return Tensor(x.data.repeat(n_repeats, dim))
+
+    # compute strided shape
+    out_shape = (*x.shape, n)
+
+    # compute strides
+    out_strides = (*x.strides, 0)
+
+    str_func = x.device.module.lib.stride_tricks.as_strided
+    y = str_func(x.data, out_shape, out_strides)
+    return Tensor(y.reshape((*y.shape[:-2], y.shape[-2] * n)))
+
+
+def repeat2d(x: Tensor, n: int) -> Tensor:
+    """Repeat elements of a tensor along the last two dimensions.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    n : int
+        Number of repeats.
+
+    Returns
+    -------
+    Tensor
+        Tensor with repeated values.
+    """
+
+    # compute strided shape
+    out_shape = (*x.shape[:-1], n, x.shape[-1], n)
+
+    # compute strides
+    out_strides = (*x.strides[:-1], 0, x.strides[-1], 0)
+
+    str_func = x.device.module.lib.stride_tricks.as_strided
+    y = str_func(x.data, out_shape, out_strides)
+    return Tensor(y.reshape((*y.shape[:-4], y.shape[-4] * n, y.shape[-2] * n)))
 
 
 def reshape(x: Tensor, shape: ShapeLike) -> Tensor:

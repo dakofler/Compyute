@@ -126,7 +126,8 @@ Functions that change tensor shapes.
     pad_to_shape
     pooling1d
     pooling2d
-    repeat
+    repeat1d
+    repeat2d
     reshape
     split
     squeeze

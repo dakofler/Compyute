@@ -23,7 +23,7 @@ class BatchNorm1DFn(Function):
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
         if x.ndim not in {2, 3}:
-            raise ShapeError(f"Expected input to be a 2D or 3D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 2D or 3D, got {x.ndim}D.")
 
         x_is_2d = x.ndim == 2
         batch_dims: tuple[int, ...] = (0,) if x.ndim == 2 else (0, 2)
@@ -133,7 +133,7 @@ class BatchNorm2DFn(Function):
         training: bool,
     ) -> tuple[Tensor, Tensor, Tensor]:
         if x.ndim != 4:
-            raise ShapeError(f"Expected input to be a 4D-tensor, got {x.ndim}D.")
+            raise ShapeError(f"Expected input to be 4D, got {x.ndim}D.")
         batch_dims = (0, 2, 3)
 
         if training:
