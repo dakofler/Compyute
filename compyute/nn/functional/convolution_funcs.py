@@ -155,7 +155,7 @@ class Pad1DFn(Function):
         no_padding, padding = cache.pop()
         if no_padding:
             return dy
-        return dy[..., padding:-padding]
+        return dy[..., padding:-padding].to_contiguous()
 
 
 def pad1d(x: Tensor, padding: int) -> Tensor:
@@ -182,7 +182,7 @@ class _Convolution1DFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
         x_pooled = pooling1d(x, f.shape[-1], stride)  # view as (B, Ci, So, F)
-        y = einsum("bitf,oif->bot", x_pooled, f)  # multiply and add
+        y = einsum("bitf,oif->bot", x_pooled, f).to_contiguous()  # multiply and add
         cache.push(x, f, stride)
         return y
 
@@ -203,12 +203,12 @@ class _Convolution1DFn(Function):
         # input grads
         dy_pooled = pooling1d(dy, f.shape[-1])  # view as (B, Co, Si, F)
         f = flip(f, dim=-1)
-        dx = einsum("bosf,oif->bis", dy_pooled, f)
+        dx = einsum("bosf,oif->bis", dy_pooled, f).to_contiguous()
 
         # filter grads
         dy_pooled = pooling1d(dy, x.shape[-1])  # view as (B, Co, F, Si)
         df = einsum("bofs,bis->oif", dy_pooled, x)
-        df = flip(df, dim=-1)
+        df = flip(df, dim=-1).to_contiguous()
 
         return dx, df
 
@@ -349,7 +349,7 @@ class Pad2DFn(Function):
         no_padding, padding = cache.pop()
         if no_padding:
             return dy
-        return dy[..., padding:-padding, padding:-padding]
+        return dy[..., padding:-padding, padding:-padding].to_contiguous()
 
 
 def pad2d(x: Tensor, padding: int) -> Tensor:
@@ -376,7 +376,7 @@ class _Convolution2DFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, f: Tensor, stride: int) -> Tensor:
         x_pooled = pooling2d(x, f.shape[-1], stride)  # view as (B, Ci, Y, X, Fy, Fx)
-        y = einsum("biyxjk,oijk->boyx", x_pooled, f)  # multiply and add
+        y = einsum("biyxjk,oijk->boyx", x_pooled, f).to_contiguous()  # multiply and add
         cache.push(x, f, stride)
         return y
 
@@ -397,11 +397,11 @@ class _Convolution2DFn(Function):
         # input grads
         dy_pooled = pooling2d(dy, f.shape[-1])  # view as (B, Co, Y, X, Fy, Fx)
         f = flip(f, dim=(-2, -1))
-        dx = einsum("boyxjk,oijk->biyx", dy_pooled, f)
+        dx = einsum("boyxjk,oijk->biyx", dy_pooled, f).to_contiguous()
 
         # filter grads
         dy_pooled = pooling2d(dy, x.shape[-1])  # view as (B, Co, Fy, Fx, Y, X)
         df = einsum("bojkyx,biyx->oijk", dy_pooled, x)
-        df = flip(df, dim=(-2, -1))
+        df = flip(df, dim=(-2, -1)).to_contiguous()
 
         return dx, df

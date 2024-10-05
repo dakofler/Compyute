@@ -135,6 +135,11 @@ class Tensor:
         """Pointer to the tensor data in memory."""
         return id(self.data)
 
+    @property
+    def contiguous(self) -> Optional[bool]:
+        """Whether the tensor data is stored as a C-contiguous array."""
+        return self.data.flags.c_contiguous
+
     # ----------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------
@@ -429,6 +434,21 @@ class Tensor:
     # OTHER METHODS
     # ----------------------------------------------------------------------------------
 
+    def view(self, shape: ShapeLike) -> Tensor:
+        """Returns a view of the tensor of a given shape.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the view.
+
+        Returns
+        -------
+        Tensor
+            View of the tensor.
+        """
+        return Tensor(self.data.reshape(shape))
+
     def copy(self) -> Tensor:
         """Returns a copy of the tensor.
 
@@ -462,21 +482,6 @@ class Tensor:
         """
         return self.to_cpu().data
 
-    def view(self, shape: ShapeLike) -> Tensor:
-        """Returns a view of the tensor of a given shape.
-
-        Parameters
-        ----------
-        shape : ShapeLike
-            Shape of the view.
-
-        Returns
-        -------
-        Tensor
-            View of the tensor.
-        """
-        return Tensor(self.data.reshape(shape))
-
     def to_list(self) -> list:
         """Returns the tensor data as a list.
 
@@ -486,6 +491,18 @@ class Tensor:
             List of the tensor data.
         """
         return self.data.tolist()
+
+    def to_contiguous(self) -> Tensor:
+        """Returns a C-contiguous tensor.
+
+        Returns
+        -------
+        list
+            C-contiguous tensor.
+        """
+        if self.contiguous:
+            return self
+        return Tensor(self.device.module.ascontiguousarray(self.data))
 
     # ----------------------------------------------------------------------------------
     # UNARY TENSOR OPS
