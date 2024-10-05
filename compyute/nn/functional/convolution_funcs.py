@@ -15,6 +15,7 @@ __all__ = [
     "convolve2d",
     "dilate2d",
     "pad2d",
+    "deconvolve2d",
 ]
 
 
@@ -80,7 +81,7 @@ def convolve1d(
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation factor to use for each dimension of the filter. Defaults to ``1``.
+        Dilation factor used for the filter. Defaults to ``1``.
 
     Returns
     -------
@@ -104,8 +105,8 @@ class Dilation1DFn(Function):
         if no_dilation:
             return x
 
-        dil_shape = (dilation * x.shape[-1] - 1,)
-        y = zeros(x.shape[:-1] + dil_shape, device=x.device, dtype=x.dtype)
+        y_shape = (*x.shape[:-1], dilation * (x.shape[-1] - 1) + 1)
+        y = zeros(y_shape, device=x.device, dtype=x.dtype)
         y[..., ::dilation] = x
 
         return y
@@ -275,7 +276,7 @@ def convolve2d(
     stride : int, optional
         Stride used in the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation factor to use for each dimension of the filter. Defaults to ``1``.
+        Dilation factor used for the filter. Defaults to ``1``.
 
     Returns
     -------
@@ -299,8 +300,9 @@ class Dilation2DFn(Function):
         if no_dilation:
             return x
 
-        dil_shape = (dilation * x.shape[-2] - 1, dilation * x.shape[-1] - 1)
-        y = zeros(x.shape[:-2] + dil_shape, device=x.device, dtype=x.dtype)
+        y_height = dilation * (x.shape[-2] - 1) + 1
+        y_width = dilation * (x.shape[-1] - 1) + 1
+        y = zeros((*x.shape[:-2], y_height, y_width), device=x.device, dtype=x.dtype)
         y[..., ::dilation, ::dilation] = x
 
         return y
@@ -405,3 +407,105 @@ class _Convolution2DFn(Function):
         df = flip(df, dim=(-2, -1)).to_contiguous()
 
         return dx, df
+
+
+class _InvPad2DFn(Function):
+    """Removes rows and cols from a tensor in its last two dimensions."""
+
+    @staticmethod
+    def forward(cache: FunctionCache, x: Tensor, padding: int) -> Tensor:
+        no_padding = padding == 0
+        cache.push(no_padding, padding)
+        if no_padding:
+            return x
+        return x[..., padding:-padding, padding:-padding].to_contiguous()
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        no_padding, padding = cache.pop()
+        if no_padding:
+            return dy
+        widths = tuple([(0, 0)] * (dy.ndim - 2) + [(padding, padding)] * 2)
+        return pad(dy, widths)
+
+
+class Deconvolution2DFn(Function):
+    """Computes the deconvolution of two tensors over their last dimension."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache,
+        x: Tensor,
+        f: Tensor,
+        b: Optional[Tensor],
+        padding: int,
+        stride: int,
+        dilation: int,
+    ) -> Tensor:
+        if x.ndim != 4:
+            raise ShapeError(f"Expected input to be 4D, got {x.ndim}D.")
+
+        f = Dilation2DFn.forward(cache, f, dilation)
+        f = flip(f, (-2, -1))
+        x = Dilation2DFn.forward(cache, x, stride)
+        x = Pad2DFn.forward(cache, x, f.shape[-1] - 1)
+        y = _Convolution2DFn.forward(cache, x, f, stride=1)
+        y = _InvPad2DFn.forward(cache, y, padding)
+        if b:
+            y += b.view((*b.shape, 1, 1))
+
+        cache.push(b is not None)
+        return y
+
+    @staticmethod
+    def backward(
+        cache: FunctionCache, dy: Tensor
+    ) -> tuple[Tensor, Tensor, Optional[Tensor]]:
+        (b,) = cache.pop()
+
+        dy = _InvPad2DFn.backward(cache, dy)
+        dx, df = _Convolution2DFn.backward(cache, dy)
+        dx = Pad2DFn.backward(cache, dx)
+        dx = Dilation2DFn.backward(cache, dx)
+        df = flip(df, (-2, -1)).to_contiguous()
+        df = Dilation2DFn.backward(cache, df)
+        db = None if not b else dy.sum((0, 2, 3))
+
+        return dx, df, db
+
+
+def deconvolve2d(
+    x: Tensor,
+    f: Tensor,
+    b: Optional[Tensor] = None,
+    padding: int = 0,
+    stride: int = 1,
+    dilation: int = 1,
+) -> Tensor:
+    """Computes the deconvolution of two tensors over their last dimension.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    f : Tensor
+        Filter tensor.
+    b : Tensor, optional
+        Bias tensor. Defaults to ``None. If ``None``, no bias is added.
+    padding : int, optional
+        Number of rows and cols removed from the output tensor. Defaults to ``0``.
+    stride : int, optional
+        Stride used in the deconvolution operation. Defaults to ``1``.
+    dilation : int, optional
+        Dilation factor used for the filter. Defaults to ``1``.
+
+    Returns
+    -------
+    Tensor
+        Output tensor.
+
+    See Also
+    ----------
+    :class:`compyute.nn.Convolution2D`
+    """
+    return Deconvolution2DFn.forward(PseudoCache(), x, f, b, padding, stride, dilation)

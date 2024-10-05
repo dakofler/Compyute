@@ -23,8 +23,8 @@ class Upsample2DFn(Function):
         scaling: int,
         target_shape: Optional[ShapeLike],
     ) -> Tensor:
-        if x.ndim != 4:
-            raise ShapeError(f"Expected input to be 4D, got {x.ndim}D.")
+        # if x.ndim != 4:
+        #     raise ShapeError(f"Expected input to be 4D, got {x.ndim}D.")
 
         y = repeat2d(x, scaling)
         if target_shape is not None and y.shape != target_shape:
@@ -53,7 +53,7 @@ def upsample2d(
     scaling : int, optional
         Scaling factor for the upsampling. Defaults to ``2``.
     target_shape : ShapeLike, optional
-        | Shape of the target tensor. Defaults to ``None``. If not ``None`` and
+        Shape of the target tensor. Defaults to ``None``. If not ``None`` and
         shapes do not match after upsampling, remaining values are filled with zeroes.
 
     Returns

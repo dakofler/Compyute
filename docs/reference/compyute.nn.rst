@@ -91,6 +91,7 @@ Convolution
     
     Convolution1D
     Convolution2D
+    Deconvolution2D
 
 
 Embedding

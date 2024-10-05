@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Optional, TypeAlias
 import cupy
 import numpy
 
-__all__ = ["cpu", "cuda", "CUDA", "CPU", "use_device"]
+__all__ = ["cpu", "cuda", "Device", "CUDA", "CPU", "use_device"]
 
 
 class CUDARuntimeError(Exception):

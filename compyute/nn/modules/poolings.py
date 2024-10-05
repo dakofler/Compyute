@@ -17,7 +17,7 @@ class Upsample2D(Module):
     scaling : int, optional
         Scaling factor for the upsampling. Defaults to ``2``.
     target_shape : ShapeLike, optional
-        | Shape of the target tensor. Defaults to ``None``. If not ``None`` and
+        Shape of the target tensor. Defaults to ``None``. If not ``None`` and
         shapes do not match after upsampling, remaining values are filled with zeroes.
     """
 

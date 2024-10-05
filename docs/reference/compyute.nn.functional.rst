@@ -29,6 +29,7 @@ Convolutions
     convolve2d
     dilate2d
     pad2d
+    deconvolve2d
 
 
 Embeddings
