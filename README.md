@@ -99,9 +99,9 @@ from compyute import nn
 class MyConvBlock(nn.Sequential):
     def __init__(self, in_channels, out_channels):
 
-        conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
+        conv = nn.Conv2D(in_channels, out_channels, kernel_size=3)
         relu = nn.ReLU()
-        bn = nn.Batchnorm1d(out_channels)
+        bn = nn.BatchNorm2D(out_channels)
         
         # pass modules to the `Sequential` base class
         super().__init__(conv, relu, bn)

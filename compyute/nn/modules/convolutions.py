@@ -7,14 +7,15 @@ from ...random import uniform
 from ...tensors import Tensor
 from ...typing import DType
 from ..functional.convolution_funcs import (
-    Convolution1DFn,
-    Convolution2DFn,
-    Deconvolution2DFn,
+    Conv1DFn,
+    Conv2DFn,
+    ConvTranspose1DFn,
+    ConvTranspose2DFn,
 )
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
 
-__all__ = ["Convolution1D", "Convolution2D", "Deconvolution2D"]
+__all__ = ["Conv1D", "Conv2D", "ConvTranspose1D", "ConvTranspose2D"]
 
 
 PaddingLike = int | Literal["valid", "same"]
@@ -28,7 +29,7 @@ def _str_to_pad(
     return (kernel_size * dilation - 1) // 2
 
 
-class Convolution1D(Module):
+class Conv1D(Module):
     r"""Applies a 1D convolution to the input for feature extraction.
 
     .. math::
@@ -110,19 +111,19 @@ class Convolution1D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return Convolution1DFn.forward(
+        return Conv1DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = Convolution1DFn.backward(self.fcache, dy)
+        dx, dw, db = Conv1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
 
 
-class Convolution2D(Module):
+class Conv2D(Module):
     r"""Applies a 2D convolution to the input for feature extraction.
 
     .. math::
@@ -153,7 +154,7 @@ class Convolution2D(Module):
     padding : PaddingLike, optional
         Padding applied before convolution. Defaults to ``valid``.
     stride : int , optional
-        Strides used for the convolution operation. Defaults to ``1``.
+        Stride used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
@@ -206,20 +207,109 @@ class Convolution2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return Convolution2DFn.forward(
+        return Conv2DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = Convolution2DFn.backward(self.fcache, dy)
+        dx, dw, db = Conv2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx
 
 
-class Deconvolution2D(Module):
-    r"""Applies a 2D deconvolution (transposed convolution) to the input for upsampling.
+class ConvTranspose1D(Module):
+    r"""Applies a 1D transposed convolution to the input for upsampling.
+
+    Shapes:
+        - Input :math:`(B, C_{in}, S_{in})`
+        - Output :math:`(B, C_{out}, S_{out})`
+    where
+        - :math:`B` ... batch dimension
+        - :math:`C_{in}` ... input channels
+        - :math:`S_{in}` ... input sequence
+        - :math:`C_{out}` ... output channels
+        - :math:`S_{out}` ... output sequence
+
+    Parameters
+    ----------
+    in_channels : int
+        Number of input channels.
+    out_channels : int
+        Number of output channels (filters).
+    kernel_size : int
+        Size of each kernel.
+    padding : PaddingLike, optional
+        Number of cols removed from the output. Defaults to ``valid``.
+    stride : int , optional
+        Stride used for the deconvolution operation. Defaults to ``1``.
+    dilation : int , optional
+        Dilation factor used for the filter. Defaults to ``1``.
+    bias : bool, optional
+        Whether to use bias values. Defaults to ``True``.
+    dtype : DType, optional
+        Datatype of weights and biases. Defaults to ``None``.
+    label : str, optional
+        Module label. Defaults to ``None``. If ``None``, the class name is used.
+
+
+    .. note::
+        Weights and biases are initialized from :math:`\mathcal{U}(-k, k)`, where
+        :math:`k = \sqrt{\frac{1}{C_{in} * \text{kernel_size}^2}}`.
+    """
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        padding: PaddingLike = "valid",
+        stride: int = 1,
+        dilation: int = 1,
+        bias: bool = True,
+        dtype: Optional[DType] = None,
+        label: Optional[str] = None,
+    ) -> None:
+        super().__init__(label)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.padding = (
+            padding
+            if isinstance(padding, int)
+            else _str_to_pad(padding, kernel_size, dilation)
+        )
+        self.stride = stride
+        self.dilation = dilation
+        self.bias = bias
+
+        # init parameters
+        k = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
+        w_shape = (out_channels, in_channels, kernel_size, kernel_size)
+        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
+        self.b = (
+            None
+            if not bias
+            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
+        )
+
+    @Module.register_forward
+    def forward(self, x: Tensor) -> Tensor:
+        return ConvTranspose1DFn.forward(
+            self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
+        )
+
+    @Module.register_backward
+    def backward(self, dy: Tensor) -> Tensor:
+        dx, dw, db = ConvTranspose1DFn.backward(self.fcache, dy)
+        update_parameter_grad(self.w, dw)
+        update_parameter_grad(self.b, db)
+        return dx
+
+
+class ConvTranspose2D(Module):
+    r"""Applies a 2D transposed convolution to the input for upsampling.
 
     Shapes:
         - Input :math:`(B, C_{in}, Y_{in}, X_{in})`
@@ -244,7 +334,7 @@ class Deconvolution2D(Module):
     padding : PaddingLike, optional
         Number of rows and cols removed from the output. Defaults to ``valid``.
     stride : int , optional
-        Strides used for the deconvolution operation. Defaults to ``1``.
+        Stride used for the deconvolution operation. Defaults to ``1``.
     dilation : int , optional
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
@@ -297,13 +387,13 @@ class Deconvolution2D(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return Deconvolution2DFn.forward(
+        return ConvTranspose2DFn.forward(
             self.fcache, x, self.w, self.b, self.padding, self.stride, self.dilation
         )
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
-        dx, dw, db = Deconvolution2DFn.backward(self.fcache, dy)
+        dx, dw, db = ConvTranspose2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
         update_parameter_grad(self.b, db)
         return dx

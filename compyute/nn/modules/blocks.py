@@ -6,11 +6,11 @@ from ...typing import DType
 from ..utils.initializers import InitializerLike, get_initializer
 from .activations import ActivationLike, get_activation
 from .containers import Sequential
-from .convolutions import Convolution1D, Convolution2D, PaddingLike
+from .convolutions import Conv1D, Conv2D, PaddingLike
 from .linear import Linear
 from .normalizations import BatchNorm1D, BatchNorm2D
 
-__all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
+__all__ = ["Conv1DBlock", "Conv2DBlock", "DenseBlock"]
 
 
 class DenseBlock(Sequential):
@@ -76,7 +76,7 @@ class DenseBlock(Sequential):
         super().__init__(linear, act, label=label)
 
 
-class Convolution1DBlock(Sequential):
+class Conv1DBlock(Sequential):
     """Convolution block containing a 1D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -151,7 +151,7 @@ class Convolution1DBlock(Sequential):
         dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution1D(
+        conv = Conv1D(
             in_channels,
             out_channels,
             kernel_size,
@@ -176,7 +176,7 @@ class Convolution1DBlock(Sequential):
             super().__init__(conv, act, label=label)
 
 
-class Convolution2DBlock(Sequential):
+class Conv2DBlock(Sequential):
     """Convolution block containing a 2D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -253,7 +253,7 @@ class Convolution2DBlock(Sequential):
         dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution2D(
+        conv = Conv2D(
             in_channels,
             out_channels,
             kernel_size,

@@ -23,13 +23,14 @@ Convolutions
 .. autosummary::
     :toctree: ../_generated/compyute.nn.functional
 
-    convolve1d
+    conv1d
     dilate1d
     pad1d
-    convolve2d
+    conv2d
     dilate2d
     pad2d
-    deconvolve2d
+    conv_transpose1d
+    conv_transpose2d
 
 
 Embeddings
