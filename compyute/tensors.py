@@ -571,6 +571,15 @@ class Tensor:
         """
         return Tensor(self.data.min(dim, keepdims=keepdims))
 
+    def permute(self, dims: tuple[int, ...]) -> Tensor:
+        """Returns a view of the tensor with permuted dimensions.
+
+        See Also
+        --------
+        :func:`compyute.permute`
+        """
+        return Tensor(self.data.transpose(dims))
+
     def real(self) -> Tensor:
         """Returns the real part of a complex tensor.
 
@@ -608,7 +617,7 @@ class Tensor:
         return Tensor(self.data.sum(dim, keepdims=keepdims))
 
     def transpose(self, dim1: int, dim2: int) -> Tensor:
-        """Returns a view of the tensor with its dimensions permuted.
+        """Returns a view of the tensor with its dimensions transposed.
 
         See Also
         --------

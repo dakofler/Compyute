@@ -226,6 +226,24 @@ def pad_to_shape(x: Tensor, shape: ShapeLike) -> Tensor:
     return pad(x, padding)
 
 
+def permute(x: Tensor, dims: tuple[int, ...]) -> Tensor:
+    """Permutes a tensor's dimensions.
+
+    Parameters
+    ----------
+    x: Tensor
+        Input tensor.
+    dims : tuple[int, ...]
+        Rearranged dimensions.
+
+    Returns
+    -------
+    Tensor
+        Permuted tensor.
+    """
+    return x.permute(dims)
+
+
 def pooling1d(x: Tensor, window_size: int, stride: int = 1):
     """Returns a windowed view of a tensor across the last dim.
 

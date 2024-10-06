@@ -124,6 +124,7 @@ Functions that change tensor shapes.
     movedim
     pad
     pad_to_shape
+    permute
     pooling1d
     pooling2d
     repeat1d
