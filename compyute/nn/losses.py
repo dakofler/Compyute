@@ -155,9 +155,7 @@ class BinaryCrossEntropy(Loss):
         return BinaryCrossEntropyFn.backward(self.fcache)
 
 
-_LossLike = (
-    Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
-)
+LossLike = Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
 LOSSES: dict[str, type[Loss]] = {
     "binary_cross_entropy": BinaryCrossEntropy,
     "cross_entropy": CrossEntropy,
@@ -165,7 +163,7 @@ LOSSES: dict[str, type[Loss]] = {
 }
 
 
-def get_loss_function(loss: _LossLike) -> Loss:
+def get_loss_function(loss: LossLike) -> Loss:
     """Returns an instance of a loss function."""
     if isinstance(loss, Loss):
         return loss

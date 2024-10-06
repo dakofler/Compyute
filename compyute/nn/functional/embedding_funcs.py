@@ -27,7 +27,7 @@ class EmbeddingFn(Function):
         return (x.T @ dy).sum(batch_dims)
 
 
-def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:
+def embedding(x: Tensor, emb_table: Tensor) -> Tensor:
     """Performs lookup embedding on a tensor of indices.
 
     Parameters
@@ -42,4 +42,4 @@ def embedding(x: Tensor, embedding_table: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return EmbeddingFn.forward(PseudoCache(), x, embedding_table)
+    return EmbeddingFn.forward(PseudoCache(), x, emb_table)

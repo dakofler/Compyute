@@ -19,7 +19,7 @@ __all__ = [
 
 
 class ReLUFn(Function):
-    """Applies the Rectified Linear Unit activation function to an input tensor."""
+    """Applies the Rectified Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -34,7 +34,7 @@ class ReLUFn(Function):
 
 
 def relu(x: Tensor) -> Tensor:
-    """Applies the Rectified Linear Unit activation function to an input tensor.
+    """Applies the Rectified Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -126,7 +126,7 @@ def sigmoid(x: Tensor) -> Tensor:
 
 
 class TanhFn(Function):
-    """Applies the hyperbolic tangent activationfunction to an input tensor."""
+    """Applies the hyperbolic tangent activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -141,7 +141,7 @@ class TanhFn(Function):
 
 
 def tanh(x: Tensor) -> Tensor:
-    """Applies the hyperbolic tangent activationfunction to an input tensor.
+    """Applies the hyperbolic tangent activation function to the input.
 
     Parameters
     ----------
@@ -161,7 +161,7 @@ def tanh(x: Tensor) -> Tensor:
 
 
 class GELUFn(Function):
-    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+    """Applies the Gaussian Error Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -181,7 +181,7 @@ class GELUFn(Function):
 
 
 def gelu(x: Tensor) -> Tensor:
-    """Applies the Gaussian Error Linear Unit function to an input tensor.
+    """Applies the Gaussian Error Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -201,7 +201,7 @@ def gelu(x: Tensor) -> Tensor:
 
 
 class FastGELUFn(Function):
-    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+    """Applies the Gaussian Error Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -217,7 +217,7 @@ class FastGELUFn(Function):
 
 
 def fast_gelu(x: Tensor) -> Tensor:
-    """Applies the Gaussian Error Linear Unit function to an input tensor.
+    """Applies the Gaussian Error Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -237,7 +237,7 @@ def fast_gelu(x: Tensor) -> Tensor:
 
 
 class SiLUFn(Function):
-    """Applies the Sigmoid Linear Unit activation function to an input tensor."""
+    """Applies the Sigmoid Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -253,7 +253,7 @@ class SiLUFn(Function):
 
 
 def silu(x: Tensor) -> Tensor:
-    """Applies the Sigmoid Linear Unit activation function to an input tensor.
+    """Applies the Sigmoid Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -285,7 +285,7 @@ class SoftmaxFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (y,) = cache.pop()
-        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thanks to ChatGPT
+        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thank you ChatGPT
 
 
 def softmax(x: Tensor) -> Tensor:

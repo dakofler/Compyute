@@ -55,7 +55,7 @@ class ProgressBar(Callback):
         self.mode = mode
         self.pbar: Optional[tqdm] = None
 
-    def on_start(self, trainer_cache: dict[str, Any]) -> None:
+    def on_run_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
             self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
 
@@ -128,5 +128,5 @@ class Tensorboard(Callback):
         stats = [s for s in trainer_cache.keys() if "val_" in s]
         self._log_stats(stats, trainer_cache)
 
-    def on_training_end(self, trainer_cache: dict[str, Any]) -> None:
+    def on_run_end(self, trainer_cache: dict[str, Any]) -> None:
         self.writer.close()

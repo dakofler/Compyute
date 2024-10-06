@@ -475,11 +475,11 @@ class NAdam(Optimizer):
         self.t += 1
 
 
-_OptimizerLike = Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
+OptimizerLike = Optimizer | Literal["sgd", "adam", "adamw", "nadam"]
 OPTIMIZERS = {"sgd": SGD, "adam": Adam, "adamw": AdamW, "nadam": NAdam}
 
 
-def get_optimizer(optimizer: _OptimizerLike) -> Optimizer:
+def get_optimizer(optimizer: OptimizerLike) -> Optimizer:
     """Returns an instance of an optimizer."""
     if isinstance(optimizer, Optimizer):
         return optimizer

@@ -25,7 +25,7 @@ class Recurrent(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
         - :math:`B` ... batch dimension
         - :math:`S` ... sequence
@@ -117,7 +117,7 @@ class LSTM(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
         - :math:`B` ... batch dimension
         - :math:`S` ... sequence
@@ -267,7 +267,7 @@ class GRU(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
         - :math:`B` ... batch dimension
         - :math:`S` ... sequence
