@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gc
-import os
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -12,12 +11,12 @@ from functools import wraps
 from typing import Any, Optional
 
 from ...backend import Device, DeviceError, free_cuda_memory, select_device
-from ...tensors import ShapeError, Tensor
+from ...tensors import Tensor
+from ...utils import get_debug_mode
 from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
-DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
 
 
 class Module(ABC):
@@ -292,7 +291,7 @@ class Module(ABC):
         def wrapper(m: Module, x: Tensor) -> Tensor:
             m.fcache.cache.clear()
 
-            if DEBUG:
+            if get_debug_mode():
                 dt = time.perf_counter()
                 y = fwd_fn(m, x)
                 dt = (time.perf_counter() - dt) * 1e3
@@ -325,7 +324,7 @@ class Module(ABC):
             if not m.is_training:
                 raise AttributeError(f"{m.label} is not in training mode.")
 
-            if DEBUG:
+            if get_debug_mode():
                 dt = time.perf_counter()
                 dx = bwd_fn(m, dy)
                 dt = (time.perf_counter() - dt) * 1e3

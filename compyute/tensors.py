@@ -27,6 +27,7 @@ from .typing import (
     int32,
     int64,
 )
+from .utils import get_debug_mode
 
 __all__ = ["tensor", "Tensor"]
 
@@ -145,18 +146,23 @@ class Tensor:
     # ----------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        prefix = self.__class__.__name__
+        prefix = f"{self.__class__.__name__}("
+        suffix = (
+            ")"
+            if not get_debug_mode()
+            else f", shape={self.shape}, dtype={self.dtype.name}, device={self.device.name}, contiguous={self.contiguous})"
+        )
         return (
-            f"{prefix}("
+            prefix
             + self.device.module.array2string(
                 self.data,
                 100,
                 4,
                 separator=", ",
-                prefix=f"{prefix}(",
+                prefix=prefix,
                 floatmode="maxprec_equal",
             )
-            + ")"
+            + suffix
         )
 
     def __getitem__(self, key: Any) -> Tensor:

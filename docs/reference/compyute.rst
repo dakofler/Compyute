@@ -183,6 +183,7 @@ Utilities:
 .. autosummary::
     :toctree: ../_generated/compyute
     
+    set_default_dtype
     use_dtype
     
 
@@ -204,6 +205,7 @@ Utilities:
     :toctree: ../_generated/compyute
     
     Device
+    set_default_device
     use_device
 
 
@@ -214,3 +216,5 @@ Utility Functions
 
     save
     load
+    set_debug_mode
+    debug

@@ -22,6 +22,7 @@ __all__ = [
     "float64",
     "complex64",
     "complex128",
+    "set_default_dtype",
     "use_dtype",
 ]
 
@@ -36,6 +37,10 @@ class DType:
 
     def __format__(self, __format_spec: str) -> str:
         return self.__repr__().__format__(__format_spec)
+
+    @property
+    def name(self) -> str:
+        return self.t.__name__
 
 
 bool_ = DType(numpy.bool_)
@@ -107,25 +112,31 @@ fallback_default_dtype: DType = float32
 default_dtype: Optional[DType] = None
 
 
+def get_default_dtype() -> Optional[DType]:
+    """Returns the default data type."""
+    return default_dtype
+
+
 def set_default_dtype(dtype: Optional[DType]) -> None:
-    """Sets the default data type."""
+    """Sets the default data type for new tensors.
+
+    Parameters
+    ----------
+    dtype : DType, optional
+        The data type to use. Defaults to ``None``.
+    """
     global default_dtype
     default_dtype = dtype
 
 
 @contextmanager
 def use_dtype(dtype: DType) -> Generator:
-    """Context manager to set the default dtype when creating tensors."""
+    """Context manager to set the default dtype for new tensors."""
     set_default_dtype(dtype)
     try:
         yield
     finally:
         set_default_dtype(None)
-
-
-def get_default_dtype() -> Optional[DType]:
-    """Returns the default data type."""
-    return default_dtype
 
 
 def select_dtype(dtype: Optional[DType]) -> DType:
