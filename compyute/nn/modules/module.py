@@ -10,8 +10,9 @@ from collections.abc import Callable, Iterable, Iterator
 from functools import wraps
 from typing import Any, Optional
 
-from ...backend import Device, DeviceError, free_cuda_memory, select_device
+from ...backend import Device, DeviceError, free_cuda_memory
 from ...tensors import Tensor
+from ...typing import DType
 from ...utils import get_debug_mode
 from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
@@ -33,7 +34,6 @@ class Module(ABC):
         self.fcache = FunctionCache()
         self.x: Optional[Tensor] = None
         self.y: Optional[Tensor] = None
-        self._device = select_device(None)
         self._is_training = True
         self._retain_values = False
         self._trainable = True
@@ -47,28 +47,43 @@ class Module(ABC):
 
     @property
     def device(self) -> Device:
-        """Device the module parametes and variables are stored on."""
-        return self._device
+        """Device module parameters and variables are stored on."""
+        return next(self.get_parameters()).device
 
     def to_device(self, device: Device) -> None:
-        """Moves the module parameters and variables to the specified device.
+        """Moves module parameters and variables to the specified device.
 
         Parameters
         ----------
         device : Device
             Device to move the module parameters and variables to.
         """
-        if device == self._device:
-            return
-
-        self._device = device
-
         for t in vars(self).values():
             if isinstance(t, Tensor):
                 t.ito_device(device)
 
         for module in self.get_modules(recursive=False):
             module.to_device(device)
+
+    @property
+    def dtype(self) -> DType:
+        """Data type of module parameters and variables."""
+        return next(self.get_parameters()).dtype
+
+    def to_type(self, dtype: DType) -> None:
+        """Casts module parameters and variables to the specified dtype.
+
+        Parameters
+        ----------
+        dtype : DType
+            DType to cast module parameters and variables to.
+        """
+        for t in vars(self).values():
+            if isinstance(t, Tensor):
+                t.ito_type(dtype)
+
+        for module in self.get_modules(recursive=False):
+            module.to_type(dtype)
 
     @property
     def retain_values(self) -> bool:
@@ -244,7 +259,7 @@ class Module(ABC):
             if self_value.device != other_value.device:
                 raise DeviceError(
                     "Device mismatch."
-                    f"Module device: {self.device}, state dict device: {other_value.device}"
+                    f"Module device: {self_value.device}, state dict device: {other_value.device}"
                 )
 
             self_value.data = other_value.data
@@ -289,7 +304,6 @@ class Module(ABC):
 
         @wraps(fwd_fn)
         def wrapper(m: Module, x: Tensor) -> Tensor:
-            m.fcache.cache.clear()
 
             if get_debug_mode():
                 dt = time.perf_counter()
@@ -303,9 +317,6 @@ class Module(ABC):
                 )
             else:
                 y = fwd_fn(m, x)
-
-            if not m.is_training:
-                assert not m.fcache.cache, "FunctionCache not empty after backward."
 
             if m.retain_values:
                 m.x = x
@@ -339,8 +350,6 @@ class Module(ABC):
                     print(f"{m.label:20s} | bwd | {dy.dtype:15s} | {dt=:>10.4f} ms")
             else:
                 dx = bwd_fn(m, dy)
-
-            assert not m.fcache.cache, "FunctionCache not empty after backward."
 
             if m.retain_values and m.x and m.y:
                 m.x.grad = dx

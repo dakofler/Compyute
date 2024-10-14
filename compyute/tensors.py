@@ -376,6 +376,21 @@ class Tensor:
 
         return Tensor(self.data.astype(dtype.t, copy=False))
 
+    def ito_type(self, dtype: DType) -> None:
+        """Inplace operation to cast the tensor to the given dtype.
+
+        Parameters
+        ----------
+        dtype : DType
+            Datatype to cast tensor-elements to.
+        """
+        if self.dtype == dtype:
+            return
+
+        self.data = self.data.astype(dtype.t, copy=False)
+        if self.grad:
+            self.grad.ito_type(dtype)
+
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.
 
@@ -503,7 +518,7 @@ class Tensor:
 
         Returns
         -------
-        list
+        Tensor
             C-contiguous tensor.
         """
         if self.contiguous:

@@ -5,7 +5,6 @@ from typing import Literal, Optional
 
 from ...random import uniform
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
@@ -42,8 +41,6 @@ class Recurrent(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -59,7 +56,6 @@ class Recurrent(Module):
         h_channels: int,
         bias: bool = True,
         activation: str = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -70,9 +66,9 @@ class Recurrent(Module):
 
         # init parameters
         k = 1.0 / math.sqrt(self.h_channels)
-        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
-        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
-        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
         self.w_i = Parameter(w_i_init())
         self.b_i = Parameter(b_init())
@@ -134,8 +130,6 @@ class LSTM(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -151,7 +145,6 @@ class LSTM(Module):
         h_channels: int,
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -162,9 +155,9 @@ class LSTM(Module):
 
         # init parameters
         k = 1.0 / math.sqrt(self.h_channels)
-        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
-        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
-        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
         self.w_ii = Parameter(w_i_init())
         self.b_ii = None if not bias else Parameter(b_init())
@@ -284,8 +277,6 @@ class GRU(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -301,7 +292,6 @@ class GRU(Module):
         h_channels: int,
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -312,9 +302,9 @@ class GRU(Module):
 
         # init parameters
         k = 1.0 / math.sqrt(self.h_channels)
-        w_i_init = lambda: uniform((h_channels, in_channels), -k, k, dtype=dtype)
-        w_h_init = lambda: uniform((h_channels, h_channels), -k, k, dtype=dtype)
-        b_init = lambda: uniform((h_channels,), -k, k, dtype=dtype)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
         self.w_ir = Parameter(w_i_init())
         self.b_ir = None if not bias else Parameter(b_init())

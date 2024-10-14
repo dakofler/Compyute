@@ -4,7 +4,6 @@ from typing import Optional
 
 from ...tensor_ops.creation_ops import ones, zeros
 from ...tensors import ShapeLike, Tensor
-from ...typing import DType
 from ..functional.normalization_funcs import (
     BatchNorm1DFn,
     BatchNorm2DFn,
@@ -43,8 +42,6 @@ class BatchNorm1D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -59,7 +56,6 @@ class BatchNorm1D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -68,10 +64,10 @@ class BatchNorm1D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+        self.w = Parameter(ones((channels,)))
+        self.b = Parameter(zeros((channels,)))
+        self.rmean = Buffer(zeros((channels,)))
+        self.rvar = Buffer(ones((channels,)))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -124,8 +120,6 @@ class BatchNorm2D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -140,7 +134,6 @@ class BatchNorm2D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -149,10 +142,10 @@ class BatchNorm2D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(ones((channels,), dtype=dtype))
-        self.b = Parameter(zeros((channels,), dtype=dtype))
-        self.rmean = Buffer(zeros((channels,), dtype=dtype))
-        self.rvar = Buffer(ones((channels,), dtype=dtype))
+        self.w = Parameter(ones((channels,)))
+        self.b = Parameter(zeros((channels,)))
+        self.rmean = Buffer(zeros((channels,)))
+        self.rvar = Buffer(ones((channels,)))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -200,8 +193,6 @@ class LayerNorm(Module):
         Shape of the normalized tensor.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -214,7 +205,6 @@ class LayerNorm(Module):
         self,
         normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -222,8 +212,8 @@ class LayerNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
-        self.b = Parameter(zeros(normalized_shape, dtype=dtype))
+        self.w = Parameter(ones(normalized_shape))
+        self.b = Parameter(zeros(normalized_shape))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -256,8 +246,6 @@ class RMSNorm(Module):
     ----------
     normalized_shape : _ShapeLike
         Shape of the normalized tensor.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -270,7 +258,6 @@ class RMSNorm(Module):
         self,
         normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -278,7 +265,7 @@ class RMSNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(ones(normalized_shape, dtype=dtype))
+        self.w = Parameter(ones(normalized_shape))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

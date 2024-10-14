@@ -5,7 +5,6 @@ from typing import Literal, Optional
 
 from ...random import uniform
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.convolution_funcs import (
     Conv1DFn,
     Conv2DFn,
@@ -63,8 +62,6 @@ class Conv1D(Module):
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -83,7 +80,6 @@ class Conv1D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -102,12 +98,8 @@ class Conv1D(Module):
         # init parameters
         k = 1.0 / math.sqrt(self.in_channels * self.kernel_size)
         w_shape = (out_channels, in_channels, kernel_size)
-        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
-        self.b = (
-            None
-            if not bias
-            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
-        )
+        self.w = Parameter(uniform(w_shape, -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -159,8 +151,6 @@ class Conv2D(Module):
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -179,7 +169,6 @@ class Conv2D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -198,12 +187,8 @@ class Conv2D(Module):
         # init parameters
         k = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
         w_shape = (out_channels, in_channels, kernel_size, kernel_size)
-        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
-        self.b = (
-            None
-            if not bias
-            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
-        )
+        self.w = Parameter(uniform(w_shape, -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -248,8 +233,6 @@ class ConvTranspose1D(Module):
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -268,7 +251,6 @@ class ConvTranspose1D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -287,12 +269,8 @@ class ConvTranspose1D(Module):
         # init parameters
         k = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
         w_shape = (out_channels, in_channels, kernel_size, kernel_size)
-        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
-        self.b = (
-            None
-            if not bias
-            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
-        )
+        self.w = Parameter(uniform(w_shape, -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -339,8 +317,6 @@ class ConvTranspose2D(Module):
         Dilation factor used for the filter. Defaults to ``1``.
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -359,7 +335,6 @@ class ConvTranspose2D(Module):
         stride: int = 1,
         dilation: int = 1,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -378,12 +353,8 @@ class ConvTranspose2D(Module):
         # init parameters
         k = 1.0 / math.sqrt(self.in_channels * self.kernel_size * self.kernel_size)
         w_shape = (out_channels, in_channels, kernel_size, kernel_size)
-        self.w = Parameter(uniform(w_shape, -k, k, dtype=dtype))
-        self.b = (
-            None
-            if not bias
-            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
-        )
+        self.w = Parameter(uniform(w_shape, -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

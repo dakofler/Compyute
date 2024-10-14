@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from ...typing import DType
 from ..utils.initializers import InitializerLike, get_initializer
 from .activations import ActivationLike, get_activation
 from .containers import Sequential
@@ -42,8 +41,6 @@ class DenseBlock(Sequential):
     bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -61,10 +58,9 @@ class DenseBlock(Sequential):
         weight_init: InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: InitializerLike = "zeros",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        linear = Linear(in_channels, out_channels, bias, dtype)
+        linear = Linear(in_channels, out_channels, bias)
         w_init = get_initializer(weight_init, activation)
         w_init(linear.w)
         if linear.b:
@@ -121,8 +117,6 @@ class Conv1DBlock(Sequential):
         Constant for numerical stability used in batch normalization. Defaults to ``1e-5``.
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -148,7 +142,6 @@ class Conv1DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Conv1D(
@@ -159,7 +152,6 @@ class Conv1DBlock(Sequential):
             stride,
             dilation,
             bias,
-            dtype,
         )
         w_init = get_initializer(weight_init, activation)
         w_init(conv.w)
@@ -170,7 +162,7 @@ class Conv1DBlock(Sequential):
         act = get_activation(activation)
 
         if batchnorm:
-            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)
@@ -223,8 +215,6 @@ class Conv2DBlock(Sequential):
         Constant for numerical stability used in batch normalization. Defaults to ``1e-5``.
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -250,18 +240,10 @@ class Conv2DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         conv = Conv2D(
-            in_channels,
-            out_channels,
-            kernel_size,
-            padding,
-            stride,
-            dilation,
-            bias,
-            dtype,
+            in_channels, out_channels, kernel_size, padding, stride, dilation, bias
         )
         w_init = get_initializer(weight_init, activation)
         w_init(conv.w)
@@ -272,7 +254,7 @@ class Conv2DBlock(Sequential):
         act = get_activation(activation)
 
         if batchnorm:
-            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)

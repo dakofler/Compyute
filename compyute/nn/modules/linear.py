@@ -5,7 +5,6 @@ from typing import Optional
 
 from ...random import uniform
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.linear_funcs import LinearFn
 from ..parameter import Parameter, update_parameter_grad
 from .module import Module
@@ -35,8 +34,6 @@ class Linear(Module):
         Number of output channels (neurons).
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -51,7 +48,6 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -61,12 +57,8 @@ class Linear(Module):
 
         # init parameters
         k = 1.0 / math.sqrt(self.in_channels)
-        self.w = Parameter(uniform((out_channels, in_channels), -k, k, dtype=dtype))
-        self.b = (
-            None
-            if not bias
-            else Parameter(uniform((out_channels,), -k, k, dtype=dtype))
-        )
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
