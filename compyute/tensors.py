@@ -259,6 +259,9 @@ class Tensor:
     def __neg__(self) -> Tensor:
         return Tensor(self.data.__neg__())
 
+    def __invert__(self) -> Tensor:
+        return Tensor(self.data.__invert__())
+
     def __matmul__(self, other: Tensor) -> Tensor:
         return Tensor(self.data @ other.data)
 

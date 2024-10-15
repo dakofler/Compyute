@@ -1,7 +1,7 @@
 """Neural network activation functions."""
 
 from ...tensor_ops.selection_ops import maximum
-from ...tensor_ops.unary_ops import exp, invert
+from ...tensor_ops.unary_ops import exp
 from ...tensor_ops.unary_ops import tanh as _tanh
 from ...tensors import Tensor
 from .functions import Function, FunctionCache, PseudoCache
@@ -65,7 +65,7 @@ class LeakyReLUFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         alpha, y = cache.pop()
-        return (y + invert(y).to_type(dy.dtype) * alpha) * dy
+        return (y + (~y).to_type(dy.dtype) * alpha) * dy
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:

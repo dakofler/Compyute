@@ -162,15 +162,15 @@ def topk(x: Tensor, k: int, dim: DimLike = -1) -> tuple[Tensor, Tensor]:
     tuple[Tensor, Tensor]
         Tuple containing the top k elements and their indices.
     """
-    ind = x.device.module.argpartition(-x.data, k, dim=dim)
-    ind = x.device.module.take(ind, x.device.module.arange(k), dim=dim)
-    data = x.device.module.take_along_dim(-x.data, ind, dim=dim)
+    ind = x.device.module.argpartition(-x.data, k, axis=dim)
+    ind = x.device.module.take(ind, x.device.module.arange(k), axis=dim)
+    data = x.device.module.take_along_axis(-x.data, ind, axis=dim)
 
     # sort within k elements
-    ind_part = x.device.module.argsort(data, dim=dim)
-    ind = x.device.module.take_along_dim(ind, ind_part, dim=dim)
+    ind_part = x.device.module.argsort(data, axis=dim)
+    ind = x.device.module.take_along_axis(ind, ind_part, axis=dim)
 
-    val = x.device.module.take_along_dim(-data, ind_part, dim=dim)
+    val = x.device.module.take_along_axis(-data, ind_part, axis=dim)
     return Tensor(val), Tensor(ind)
 
 

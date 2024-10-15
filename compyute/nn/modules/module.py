@@ -377,8 +377,8 @@ class Module(ABC):
         for module in self.get_modules(recursive=False):
             module.clean(force)
 
-        free_cuda_memory()
         gc.collect()
+        free_cuda_memory()
 
 
 class Identity(Module):

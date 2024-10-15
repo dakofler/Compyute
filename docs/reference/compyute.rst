@@ -54,7 +54,6 @@ Functions that operate on one tensor.
     histogram
     ifft1d
     ifft2d
-    invert
     log
     log2
     log10

@@ -58,7 +58,7 @@ class CrossEntropyFn(Function):
     ) -> Tensor:
         probs = softmax(y_pred)
         y_true = one_hot_encode(y_true, y_pred.shape[-1], probs.dtype)
-        y = (-log(probs + eta) * y_true).sum(-1).mean()
+        y = -(log(probs + eta) * y_true).sum(-1).mean()
         cache.push(y_true, probs)
         return y
 

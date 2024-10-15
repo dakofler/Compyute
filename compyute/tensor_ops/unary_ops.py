@@ -15,7 +15,6 @@ __all__ = [
     "histogram",
     "ifft1d",
     "ifft2d",
-    "invert",
     "log",
     "log2",
     "log10",
@@ -214,22 +213,6 @@ def imag(x: Tensor) -> Tensor:
         Tensor containing imaginary values.
     """
     return x.imag()
-
-
-def invert(x: Tensor) -> Tensor:
-    """Returns the element-wise invertion of a boolean tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing inverted values.
-    """
-    return Tensor(x.device.module.invert(x.data))
 
 
 def histogram(
