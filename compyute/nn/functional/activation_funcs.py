@@ -4,6 +4,7 @@ from ...tensor_ops.selection_ops import maximum
 from ...tensor_ops.unary_ops import exp
 from ...tensor_ops.unary_ops import tanh as _tanh
 from ...tensors import Tensor
+from ...typing import int8
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = [
@@ -23,14 +24,14 @@ class ReLUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        y = maximum(x, 0)
-        cache.push(y > 0)
+        y = maximum(x, 0.0)
+        cache.push(y > 0.0)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        (y,) = cache.pop()
-        return y * dy
+        (mask,) = cache.pop()
+        return dy * mask
 
 
 def relu(x: Tensor) -> Tensor:
@@ -64,8 +65,8 @@ class LeakyReLUFn(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        alpha, y = cache.pop()
-        return (y + (~y).to_type(dy.dtype) * alpha) * dy
+        alpha, mask = cache.pop()
+        return dy * (mask + (~mask).to_type(dy.dtype) * alpha)
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:

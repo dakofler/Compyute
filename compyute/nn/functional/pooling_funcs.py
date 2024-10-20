@@ -78,8 +78,8 @@ class MaxPooling2DFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         x, kernel_size, y = cache.pop()
-        y_ups = upsample2d(y, kernel_size, x.shape)
-        return upsample2d(dy, kernel_size, x.shape) * (x == y_ups)
+        mask = upsample2d(y, kernel_size, x.shape) == x
+        return upsample2d(dy, kernel_size, x.shape) * mask
 
 
 def maxpooling2d(x: Tensor, kernel_size: int = 2) -> Tensor:

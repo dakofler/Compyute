@@ -2,6 +2,7 @@
 
 from ...random.random import bernoulli
 from ...tensors import Tensor
+from ...typing import int8
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = ["dropout"]
@@ -17,18 +18,18 @@ class DropoutFn(Function):
             return x
 
         p = 1.0 - p
-        dropout_map = bernoulli(p, x.shape, device=x.device) / p
-        y = x * dropout_map
+        dropout_mask = bernoulli(p, x.shape, device=x.device, dtype=int8)
+        y = x * dropout_mask / p
 
-        cache.push(True, dropout_map)
+        cache.push(True, p, dropout_mask)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        training, dropout_map = cache.pop()
+        training, p, dropout_mask = cache.pop()
         if not training:
             return dy
-        return dy * dropout_map
+        return dy * dropout_mask / p
 
 
 def dropout(x: Tensor, p: float = 0.5, training: bool = False) -> Tensor:
