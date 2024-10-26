@@ -14,7 +14,7 @@ class DropoutFn(Function):
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor, p: float, training: bool) -> Tensor:
         if not training or p == 0.0:
-            cache.push(False, None)  # a bit hacky
+            cache.push(False, p, None)  # a bit hacky
             return x
 
         p = 1.0 - p
