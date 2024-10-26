@@ -57,7 +57,7 @@ class ProgressBar(Callback):
 
     def on_run_start(self, trainer_cache: dict[str, Any]) -> None:
         if self.mode == "epoch":
-            self.pbar = tqdm(unit="epoch", total=trainer_cache["epochs"])
+            self.pbar = tqdm(unit=" epochs", total=trainer_cache["epochs"])
 
     def on_step_end(self, trainer_cache: dict[str, Any]) -> None:
         if self.pbar is not None and self.mode == "step":

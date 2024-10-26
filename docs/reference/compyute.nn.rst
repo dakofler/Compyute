@@ -150,13 +150,14 @@ Regularization
     Dropout
 
 
-Reshape
-~~~~~~~
+Shape
+~~~~~
 .. autosummary::
     :toctree: ../_generated/compyute.nn
     
     Flatten
     Reshape
+    Slice
 
 
 Parameter and Buffer

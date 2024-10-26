@@ -21,12 +21,11 @@ Gradient computation is implemented from scratch to facilitate understanding of 
 Installation
 ============
 
-All you need is to pip install .
+You can install Compyute directly from GitHub.
 
 .. code-block:: bash
 
-    git clone https://github.com/dakofler/Compyute
-    pip install .
+    pip install git+https://github.com/dakofler/Compyute.git
 
 
 As of ``CuPy`` v13, the package does not require a GPU toolkit to be installed, so ``Compyute`` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit following the `installation guide <https://docs.cupy.dev/en/stable/install.html>`_ of ``CuPy``.
@@ -128,7 +127,7 @@ When inheriting from predefined containers, such as ``Sequential``, the forward-
             super().__init__(conv, relu, bn)
 
 
-If you want to define a custom forward-method, the `Module` base class can be used.
+If you want to define a custom forward-method, the ``Module`` base class can be used.
 
 .. code-block:: python
 
@@ -237,6 +236,12 @@ Model checkpoints can also be saved and loaded later on.
     loaded_state = cp.load("my_model.cp")
     model.load_state_dict(loaded_state["model"])
     optim.load_state_dict(loaded_state["optimizer"])
+
+
+Examples
+===========
+
+see https://github.com/dakofler/Compyute/tree/main/examples.
 
 
 Final notes

@@ -7,10 +7,9 @@ Gradient computation is implemented from scratch to facilitate understanding of 
 
 ## Installation
 
-All you need is to pip install .
+You can install Compyute directly from GitHub.
 ```bash
-git clone https://github.com/dakofler/Compyute
-pip install .
+pip install git+https://github.com/dakofler/Compyute.git
 ```
 As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit following the installation guide of `CuPy` (https://docs.cupy.dev/en/stable/install.html).
 
@@ -73,7 +72,7 @@ z = cp.random.normal(shape=(10, 10))
 ```
 
 ### Building models
-Models can be built using predefined modules (such as `Linear` or `ReLU`) and containers (such as `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come.
+Models can be built using predefined modules (such as `Linear` or `ReLU`) and containers (such as `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. For a list of available modules, please check the docs.
 
 ```python
 from compyute import nn
@@ -212,6 +211,10 @@ loaded_state = cp.load("my_model.cp")
 model.load_state_dict(loaded_state["model"])
 optim.load_state_dict(loaded_state["optimizer"])
 ```
+
+## Examples
+see [Examples](https://github.com/dakofler/Compyute/tree/main/examples).
+
 
 ## Author
 Daniel Kofler - AI Research Associate ([dkofler@outlook.com](mailto:dkofler@outlook.com))
