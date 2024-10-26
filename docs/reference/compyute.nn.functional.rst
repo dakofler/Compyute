@@ -23,15 +23,14 @@ Convolutions
 .. autosummary::
     :toctree: ../_generated/compyute.nn.functional
 
-    convolve1d
+    conv1d
     dilate1d
     pad1d
-    convolve2d
+    conv2d
     dilate2d
     pad2d
-    upsample2d
-    maxpooling2d
-    avgpooling2d
+    conv_transpose1d
+    conv_transpose2d
 
 
 Embeddings
@@ -79,6 +78,16 @@ Normalization
     layernorm
     rmsnorm
 
+
+Pooling
+--------------
+.. autosummary::
+    :toctree: ../_generated/compyute.nn.functional
+
+    maxpooling2d
+    avgpooling2d
+    upsample2d
+    
 
 Recurrent
 --------------

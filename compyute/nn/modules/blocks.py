@@ -2,15 +2,14 @@
 
 from typing import Optional
 
-from ...typing import DType
 from ..utils.initializers import InitializerLike, get_initializer
 from .activations import ActivationLike, get_activation
 from .containers import Sequential
-from .convolutions import Convolution1D, Convolution2D, PaddingLike
+from .convolutions import Conv1D, Conv2D, PaddingLike
 from .linear import Linear
 from .normalizations import BatchNorm1D, BatchNorm2D
 
-__all__ = ["Convolution1DBlock", "Convolution2DBlock", "DenseBlock"]
+__all__ = ["Conv1DBlock", "Conv2DBlock", "DenseBlock"]
 
 
 class DenseBlock(Sequential):
@@ -21,7 +20,7 @@ class DenseBlock(Sequential):
         - Input :math:`(B_1, ... , B_n, C_{in})`
         - Output :math:`(B_1, ... , B_n, C_{out})`
     where
-        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`B_1, ... , B_n` ... batch dimensions
         - :math:`C_{in}` ... input channels
         - :math:`C_{out}` ... output channels
 
@@ -42,8 +41,6 @@ class DenseBlock(Sequential):
     bias_init : InitializerLike, optional
         What method to use for initializing bias parameters. Defaults to ``zeros``.
         See :ref:`initializers` for more details.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -61,10 +58,9 @@ class DenseBlock(Sequential):
         weight_init: InitializerLike = "xavier_uniform",
         bias: bool = True,
         bias_init: InitializerLike = "zeros",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        linear = Linear(in_channels, out_channels, bias, dtype)
+        linear = Linear(in_channels, out_channels, bias)
         w_init = get_initializer(weight_init, activation)
         w_init(linear.w)
         if linear.b:
@@ -76,7 +72,7 @@ class DenseBlock(Sequential):
         super().__init__(linear, act, label=label)
 
 
-class Convolution1DBlock(Sequential):
+class Conv1DBlock(Sequential):
     """Convolution block containing a 1D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -84,7 +80,7 @@ class Convolution1DBlock(Sequential):
         - Input :math:`(B, C_{in}, S_{in})`
         - Output :math:`(B, C_{out}, S_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`S_{in}` ... input sequence
         - :math:`C_{out}` ... output channels
@@ -106,7 +102,7 @@ class Convolution1DBlock(Sequential):
     stride : int, optional
         Stride used for the convolution operation. Defaults to ``1``.
     dilation : int, optional
-        Dilation used for each axis of the filter. Defaults to ``1``.
+        Dilation used for each dimension of the filter. Defaults to ``1``.
     weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
@@ -121,8 +117,6 @@ class Convolution1DBlock(Sequential):
         Constant for numerical stability used in batch normalization. Defaults to ``1e-5``.
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -148,10 +142,9 @@ class Convolution1DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution1D(
+        conv = Conv1D(
             in_channels,
             out_channels,
             kernel_size,
@@ -159,7 +152,6 @@ class Convolution1DBlock(Sequential):
             stride,
             dilation,
             bias,
-            dtype,
         )
         w_init = get_initializer(weight_init, activation)
         w_init(conv.w)
@@ -170,13 +162,13 @@ class Convolution1DBlock(Sequential):
         act = get_activation(activation)
 
         if batchnorm:
-            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm1D(out_channels, batchnorm_eps, batchnorm_m)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)
 
 
-class Convolution2DBlock(Sequential):
+class Conv2DBlock(Sequential):
     """Convolution block containing a 2D convolutional layer, followed by an
     optional batch normalization and an activation function.
 
@@ -184,7 +176,7 @@ class Convolution2DBlock(Sequential):
         - Input :math:`(B, C_{in}, Y_{in}, X_{in})`
         - Output :math:`(B, C_{out}, Y_{out}, X_{out})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C_{in}` ... input channels
         - :math:`Y_{in}` ... input height
         - :math:`X_{in}` ... input width
@@ -208,7 +200,7 @@ class Convolution2DBlock(Sequential):
     stride : int , optional
         Strides used for the convolution operation. Defaults to ``1``.
     dilation : int , optional
-        Dilations used for each axis of the filter. Defaults to ``1``.
+        Dilations used for each dimension of the filter. Defaults to ``1``.
     weight_init : InitializerLike, optional
         What method to use for initializing weight parameters. Defaults to ``xavier_uniform``.
         See :ref:`initializers` for more details.
@@ -223,8 +215,6 @@ class Convolution2DBlock(Sequential):
         Constant for numerical stability used in batch normalization. Defaults to ``1e-5``.
     batchnorm_m : float, optional
         Momentum used in batch normalization. Defaults to ``0.1``.
-    dtype : DtypeLike, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -250,18 +240,10 @@ class Convolution2DBlock(Sequential):
         batchnorm: bool = False,
         batchnorm_eps: float = 1e-5,
         batchnorm_m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
-        conv = Convolution2D(
-            in_channels,
-            out_channels,
-            kernel_size,
-            padding,
-            stride,
-            dilation,
-            bias,
-            dtype,
+        conv = Conv2D(
+            in_channels, out_channels, kernel_size, padding, stride, dilation, bias
         )
         w_init = get_initializer(weight_init, activation)
         w_init(conv.w)
@@ -272,7 +254,7 @@ class Convolution2DBlock(Sequential):
         act = get_activation(activation)
 
         if batchnorm:
-            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m, dtype)
+            bn = BatchNorm2D(out_channels, batchnorm_eps, batchnorm_m)
             super().__init__(conv, bn, act, label=label)
         else:
             super().__init__(conv, act, label=label)

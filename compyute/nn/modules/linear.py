@@ -3,12 +3,10 @@
 import math
 from typing import Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import uniform
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.linear_funcs import LinearFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_uniform
 from .module import Module
 
 __all__ = ["Linear"]
@@ -24,7 +22,7 @@ class Linear(Module):
         - Input :math:`(B_1, ... , B_n, C_{in})`
         - Output :math:`(B_1, ... , B_n, C_{out})`
     where
-        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`B_1, ... , B_n` ... batch dimensions
         - :math:`C_{in}` ... input channels
         - :math:`C_{out}` ... output channels
 
@@ -36,8 +34,6 @@ class Linear(Module):
         Number of output channels (neurons).
     bias : bool, optional
         Whether to use bias values. Defaults to ``True``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -52,7 +48,6 @@ class Linear(Module):
         in_channels: int,
         out_channels: int,
         bias: bool = True,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -61,15 +56,9 @@ class Linear(Module):
         self.bias = bias
 
         # init parameters
-        self.w = Parameter(empty((out_channels, in_channels), dtype=dtype))
-        self.b = Parameter(empty((out_channels,), dtype=dtype)) if bias else None
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.in_channels)
-        init_uniform(self.w, low=-std, high=std)
-        if self.b:
-            init_uniform(self.b, low=-std, high=std)
+        k = 1.0 / math.sqrt(self.in_channels)
+        self.w = Parameter(uniform((out_channels, in_channels), -k, k))
+        self.b = None if not bias else Parameter(uniform((out_channels,), -k, k))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

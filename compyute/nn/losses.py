@@ -7,7 +7,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Literal
+from typing import Literal
 
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
@@ -26,13 +26,10 @@ DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
 class Loss(ABC):
     """Loss base class."""
 
-    fcache: FunctionCache
-    label: str
-    _is_training = True
-
     def __init__(self) -> None:
         self.fcache = FunctionCache()
         self.label = self.__class__.__name__
+        self._is_training = True
 
     def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         return self.forward(y_pred, y_true)
@@ -65,42 +62,46 @@ class Loss(ABC):
         """
 
     @staticmethod
-    def register_forward(forward_method: Callable) -> Callable:
-        """Decorator for registering a forward method to the loss function."""
+    def register_forward(fwd_fn: Callable) -> Callable:
+        """Registers a the forward method to the loss function."""
 
-        @wraps(forward_method)
-        def wrapper(cls: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
-            cls.fcache.cache.clear()
+        @wraps(fwd_fn)
+        def wrapper(l: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
+            l.fcache.cache.clear()
 
             if DEBUG:
                 dt = time.perf_counter()
-                y = forward_method(cls, y_pred, y_true)
+                y = fwd_fn(l, y_pred, y_true)
                 dt = (time.perf_counter() - dt) * 1e3
                 print(
-                    f"{cls.label:20s} | forward  | {y_pred.dtype:10s} | {y_true.dtype:10s} | {dt=:>10.4f} ms"
+                    f"{l.label:20s} | fwd | "
+                    f"{y_pred.dtype:15s} | "
+                    f"{y_true.dtype:15s} | "
+                    f"{y.dtype:15s} | "
+                    f"{dt=:>10.4f} ms"
                 )
             else:
-                y = forward_method(cls, y_pred, y_true)
+                y = fwd_fn(l, y_pred, y_true)
 
             return y
 
         return wrapper
 
     @staticmethod
-    def register_backward(backward_method: Callable) -> Callable:
-        """Decorator for registering a backward method to the loss function."""
+    def register_backward(bwd_fn: Callable) -> Callable:
+        """Registers a the backward method to the loss function."""
 
-        @wraps(backward_method)
-        def wrapper(cls: Loss) -> Tensor:
+        @wraps(bwd_fn)
+        def wrapper(l: Loss) -> Tensor:
             if DEBUG:
                 dt = time.perf_counter()
-                dx = backward_method(cls)
+                dx = bwd_fn(l)
                 dt = (time.perf_counter() - dt) * 1e3
-                print(f"{cls.label:20s} | backward | {dx.dtype:10s} | {dt=:>10.4f} ms")
+                print(f"{l.label:20s} | bwd | {dx.dtype:15s} | {dt=:>10.4f} ms")
             else:
-                dx = backward_method(cls)
+                dx = bwd_fn(l)
 
-            assert not cls.fcache.cache, "FunctionCache not empty after backward."
+            assert not l.fcache.cache, "FunctionCache not empty after backward."
             return dx
 
         return wrapper
@@ -130,8 +131,8 @@ class CrossEntropy(Loss):
     """
 
     @Loss.register_forward
-    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return CrossEntropyFn.forward(self.fcache, y_pred, y_true)
+    def forward(self, y_pred: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
+        return CrossEntropyFn.forward(self.fcache, y_pred, y_true, eta)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
@@ -154,9 +155,7 @@ class BinaryCrossEntropy(Loss):
         return BinaryCrossEntropyFn.backward(self.fcache)
 
 
-_LossLike = (
-    Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
-)
+LossLike = Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
 LOSSES: dict[str, type[Loss]] = {
     "binary_cross_entropy": BinaryCrossEntropy,
     "cross_entropy": CrossEntropy,
@@ -164,7 +163,7 @@ LOSSES: dict[str, type[Loss]] = {
 }
 
 
-def get_loss_function(loss: _LossLike) -> Loss:
+def get_loss_function(loss: LossLike) -> Loss:
     """Returns an instance of a loss function."""
     if isinstance(loss, Loss):
         return loss

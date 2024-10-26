@@ -81,11 +81,11 @@ class R2(Metric):
         return r2_score(y_pred, y_true, self.eps)
 
 
-_MetricLike = Metric | Literal["accuracy", "r2"]
+MetricLike = Metric | Literal["accuracy", "r2"]
 METRICS = {"accuracy": Accuracy, "r2": R2}
 
 
-def get_metric_function(metric: _MetricLike) -> Metric:
+def get_metric_function(metric: MetricLike) -> Metric:
     """Returns an instance of a metric function."""
     if isinstance(metric, Metric):
         return metric

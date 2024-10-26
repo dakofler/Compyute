@@ -1,5 +1,6 @@
-"""Neural network reshaping functions."""
+"""Neural network shape changing functions."""
 
+from ...tensor_ops.creation_ops import zeros
 from ...tensors import ShapeLike, Tensor
 from .functions import Function, FunctionCache
 
@@ -18,7 +19,7 @@ class FlattenFn(Function):
         return dy.view(x_shape)
 
 
-class FReshape(Function):
+class ReshapeFn(Function):
     """Reshapes tensors."""
 
     @staticmethod
@@ -30,3 +31,21 @@ class FReshape(Function):
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (x_shape,) = cache.pop()
         return dy.view(x_shape)
+
+
+class SliceFn(Function):
+    """Slices tensors."""
+
+    @staticmethod
+    def forward(
+        cache: FunctionCache, x: Tensor, slice: tuple[slice | int, ...]
+    ) -> Tensor:
+        cache.push(x.shape, slice)
+        return x[slice]
+
+    @staticmethod
+    def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
+        x_shape, slice = cache.pop()
+        dx = zeros(x_shape, device=dy.device, dtype=dy.dtype)
+        dx[slice] = dy
+        return dx

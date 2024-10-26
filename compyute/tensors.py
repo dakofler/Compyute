@@ -27,19 +27,23 @@ from .typing import (
     int32,
     int64,
 )
+from .utils import get_debug_mode
 
-__all__ = ["tensor", "Tensor"]
+__all__ = ["tensor", "Tensor", "newaxis"]
 
 ShapeLike: TypeAlias = tuple[int, ...]
-AxisLike: TypeAlias = int | tuple[int, ...]
+DimLike: TypeAlias = int | tuple[int, ...]
 
 
 class ShapeError(Exception):
     """Incompatible tensor shapes."""
 
 
+newaxis: TypeAlias = None
+
+
 def tensor(
-    data: ArrayLike | ScalarLike,
+    data: ArrayLike | ScalarLike | list,
     device: Optional[Device] = None,
     dtype: Optional[DType] = None,
 ) -> Tensor:
@@ -48,7 +52,7 @@ def tensor(
 
     Parameters
     ----------
-    data : ArrayLike | _ScalarLike
+    data : ArrayLike | ScalarLike | list
         Data to initialize the tensor data.
         Can be a list, tuple, NumPy/Cupy ndarray, scalar, and other types.
     device : Device, optional
@@ -61,10 +65,12 @@ def tensor(
     Tensor
         Tensor object.
     """
-    device = device or get_default_device() or get_device_from_array(type(data))
+    device = device or get_default_device() or get_device_from_array(data)
     dtype = dtype or get_default_dtype()
-    np_dtype = dtype.t if dtype is not None else None
-    return Tensor(device.module.asarray(data, np_dtype))
+    array_dtype = dtype.t if dtype is not None else None
+    with device:
+        data = device.module.asarray(data, array_dtype)
+    return Tensor(data)
 
 
 class Tensor:
@@ -81,12 +87,12 @@ class Tensor:
         Data to initialize the tensor. Must be a NumPy array or CuPy array.
     """
 
-    data: ArrayLike
-    grad: Optional[Tensor] = None
-    _iterator = 0
+    __slots__ = "data", "grad", "_iterator"
 
     def __init__(self, data: ArrayLike) -> None:
         self.data = data
+        self.grad: Optional[Tensor] = None
+        self._iterator = 0
 
     # ----------------------------------------------------------------------------------
     # PROPERTIES
@@ -102,8 +108,8 @@ class Tensor:
         return DTYPES[self.data.dtype.name]
 
     @property
-    def n_axes(self) -> int:
-        """Number of tensor axes."""
+    def ndim(self) -> int:
+        """Number of tensor dimensions."""
         return self.data.ndim
 
     @property
@@ -123,32 +129,43 @@ class Tensor:
 
     @property
     def T(self) -> Tensor:
-        """View of the tensor with its last two axes transposed."""
-        if self.n_axes < 2:
+        """View of the tensor with its last two dimensions transposed."""
+        if self.ndim < 2:
             return Tensor(self.data)
-        return self.transpose((*range(self.n_axes - 2), -1, -2))
+        return self.transpose(-1, -2)
 
     @property
     def ptr(self) -> int:
         """Pointer to the tensor data in memory."""
         return id(self.data)
 
+    @property
+    def contiguous(self) -> Optional[bool]:
+        """Whether the tensor data is stored as a C-contiguous array."""
+        return self.data.flags.c_contiguous
+
     # ----------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------
 
     def __repr__(self) -> str:
+        prefix = f"{self.__class__.__name__}("
+        suffix = (
+            ")"
+            if not get_debug_mode()
+            else f", shape={self.shape}, dtype={self.dtype.name}, device={self.device.name}, contiguous={self.contiguous})"
+        )
         return (
-            "Tensor("
+            prefix
             + self.device.module.array2string(
                 self.data,
                 100,
                 4,
                 separator=", ",
-                prefix="Tensor(",
+                prefix=prefix,
                 floatmode="maxprec_equal",
             )
-            + ")"
+            + suffix
         )
 
     def __getitem__(self, key: Any) -> Tensor:
@@ -165,17 +182,18 @@ class Tensor:
         return self
 
     def __next__(self) -> Tensor:
-        if self._iterator < self.shape[0]:
-            self._iterator += 1
-            return self[self._iterator - 1]
-        raise StopIteration
+        if self._iterator == self.shape[0]:
+            raise StopIteration
+        y = self[self._iterator]
+        self._iterator += 1
+        return y
 
     def __add__(self, other: Tensor | ScalarLike) -> Tensor:
         return Tensor(self.data + to_arraylike(other))
 
     def __radd__(self, other: Optional[ScalarLike]) -> Tensor:
         # for gradient accumulation make None += Tensor to be 0 += Tensor
-        return Tensor(self.data + (other or 0.0))
+        return Tensor(self.data + other)
 
     def __iadd__(self, other: Tensor | ScalarLike) -> Tensor:
         self.data += to_arraylike(other)
@@ -243,6 +261,9 @@ class Tensor:
 
     def __neg__(self) -> Tensor:
         return Tensor(self.data.__neg__())
+
+    def __invert__(self) -> Tensor:
+        return Tensor(self.data.__invert__())
 
     def __matmul__(self, other: Tensor) -> Tensor:
         return Tensor(self.data @ other.data)
@@ -361,6 +382,21 @@ class Tensor:
 
         return Tensor(self.data.astype(dtype.t, copy=False))
 
+    def ito_type(self, dtype: DType) -> None:
+        """Inplace operation to cast the tensor to the given dtype.
+
+        Parameters
+        ----------
+        dtype : DType
+            Datatype to cast tensor-elements to.
+        """
+        if self.dtype == dtype:
+            return
+
+        self.data = self.data.astype(dtype.t, copy=False)
+        if self.grad:
+            self.grad.ito_type(dtype)
+
     def to_int(self) -> Tensor:
         """Returns a copy of the tensor with integer values.
 
@@ -425,6 +461,21 @@ class Tensor:
     # OTHER METHODS
     # ----------------------------------------------------------------------------------
 
+    def view(self, shape: ShapeLike) -> Tensor:
+        """Returns a view of the tensor of a given shape.
+
+        Parameters
+        ----------
+        shape : ShapeLike
+            Shape of the view.
+
+        Returns
+        -------
+        Tensor
+            View of the tensor.
+        """
+        return Tensor(self.data.reshape(shape))
+
     def copy(self) -> Tensor:
         """Returns a copy of the tensor.
 
@@ -458,21 +509,6 @@ class Tensor:
         """
         return self.to_cpu().data
 
-    def view(self, shape: ShapeLike) -> Tensor:
-        """Returns a view of the tensor of a given shape.
-
-        Parameters
-        ----------
-        shape : ShapeLike
-            Shape of the view.
-
-        Returns
-        -------
-        Tensor
-            View of the tensor.
-        """
-        return Tensor(self.data.reshape(shape))
-
     def to_list(self) -> list:
         """Returns the tensor data as a list.
 
@@ -482,6 +518,18 @@ class Tensor:
             List of the tensor data.
         """
         return self.data.tolist()
+
+    def to_contiguous(self) -> Tensor:
+        """Returns a C-contiguous tensor.
+
+        Returns
+        -------
+        Tensor
+            C-contiguous tensor.
+        """
+        if self.contiguous:
+            return self
+        return Tensor(self.device.module.ascontiguousarray(self.data))
 
     # ----------------------------------------------------------------------------------
     # UNARY TENSOR OPS
@@ -496,23 +544,23 @@ class Tensor:
         """
         return Tensor(abs(self.data))
 
-    def all(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
+    def all(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
         """Returns ``True`` if all elements in the tensor are ``True``
 
         See Also
         --------
         :func:`compyute.all`
         """
-        return Tensor(self.data.all(axis, keepdims=keepdims))
+        return Tensor(self.data.all(dim, keepdims=keepdims))
 
-    def argmax(self, axis: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
-        """Returns the indices of maximum values along a given axis.
+    def argmax(self, dim: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
+        """Returns the indices of maximum values along a given dimension.
 
         See Also
         --------
         :func:`compyute.argmax`
         """
-        return Tensor(self.data.argmax(axis, keepdims=keepdims))
+        return Tensor(self.data.argmax(dim, keepdims=keepdims))
 
     def imag(self) -> Tensor:
         """Returns the imaginary part of a complex tensor.
@@ -523,34 +571,41 @@ class Tensor:
         """
         return Tensor(self.data.imag)
 
-    def max(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
-        """Computes the maximum of tensor elements over a given axis.
+    def max(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Computes the maximum of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.max`
         """
-        return Tensor(self.data.max(axis, keepdims=keepdims))
+        return Tensor(self.data.max(dim, keepdims=keepdims))
 
-    def mean(
-        self, axis: Optional[AxisLike] = None, *, keepdims: bool = False
-    ) -> Tensor:
-        """Computes the mean of tensor elements over a given axis.
+    def mean(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Computes the mean of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.mean`
         """
-        return Tensor(self.data.mean(axis, keepdims=keepdims))
+        return Tensor(self.data.mean(dim, keepdims=keepdims))
 
-    def min(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
-        """Computes the minimum of tensor elements over a given axis.
+    def min(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Computes the minimum of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.min`
         """
-        return Tensor(self.data.min(axis, keepdims=keepdims))
+        return Tensor(self.data.min(dim, keepdims=keepdims))
+
+    def permute(self, dims: tuple[int, ...]) -> Tensor:
+        """Returns a view of the tensor with permuted dimensions.
+
+        See Also
+        --------
+        :func:`compyute.permute`
+        """
+        return Tensor(self.data.transpose(dims))
 
     def real(self) -> Tensor:
         """Returns the real part of a complex tensor.
@@ -562,7 +617,7 @@ class Tensor:
         return Tensor(self.data.real)
 
     def squeeze(self) -> Tensor:
-        """Returns a tensor with single-dimensional axes removed.
+        """Returns a tensor with single-dimensional dimensions removed.
 
         See Also
         --------
@@ -570,43 +625,47 @@ class Tensor:
         """
         return Tensor(self.data.squeeze())
 
-    def std(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
-        """Computes the standard deviation of tensor elements over a given axis.
+    def std(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Computes the standard deviation of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.std`
         """
-        return Tensor(self.data.std(axis, keepdims=keepdims))
+        return Tensor(self.data.std(dim, keepdims=keepdims))
 
-    def sum(self, axis: Optional[AxisLike] = None, *, keepdims: bool = False) -> Tensor:
-        """Computes the sum of tensor elements over a given axis.
+    def sum(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Computes the sum of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.sum`
         """
-        return Tensor(self.data.sum(axis, keepdims=keepdims))
+        return Tensor(self.data.sum(dim, keepdims=keepdims))
 
-    def transpose(self, axis: Optional[AxisLike] = None) -> Tensor:
-        """Returns a view of the tensor with its axes permuted.
+    def transpose(self, dim1: int, dim2: int) -> Tensor:
+        """Returns a view of the tensor with its dimensions transposed.
 
         See Also
         --------
         :func:`compyute.transpose`
         """
-        return Tensor(self.data.transpose(axis))
+        return Tensor(self.data.swapaxes(dim1, dim2))
 
     def var(
-        self, axis: Optional[AxisLike] = None, *, ddof: int = 0, keepdims: bool = False
+        self,
+        dim: Optional[DimLike] = None,
+        *,
+        ddof: int = 0,
+        keepdims: bool = False,
     ) -> Tensor:
-        """Computes the variance of tensor elements over a given axis.
+        """Computes the variance of tensor elements over a given dimension.
 
         See Also
         --------
         :func:`compyute.var`
         """
-        return Tensor(self.data.var(axis, ddof=ddof, keepdims=keepdims))
+        return Tensor(self.data.var(dim, ddof=ddof, keepdims=keepdims))
 
 
 def to_arraylike(value: Any) -> ArrayLike | ScalarLike:

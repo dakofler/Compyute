@@ -3,8 +3,8 @@
 from itertools import accumulate
 from typing import Optional
 
-from ...tensor_ops.creation_ops import concat, split
 from ...tensor_ops.reduction_ops import tensorsum
+from ...tensor_ops.shape_ops import concat, split
 from ...tensors import Tensor
 from .module import Module, ModuleList
 
@@ -25,12 +25,10 @@ class Sequential(Module):
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    layers: ModuleList
-
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
 
         self.layers = ModuleList(modules)
 
@@ -57,37 +55,34 @@ class ParallelConcat(Module):
     ----------
     *modules : Module
         Modules used in the parallel container.
-    concat_axis : int, optional
-        Axis along which the output of the parallel modules
+    concat_dim : int, optional
+        Dimension along which the output of the parallel modules
         shall be concatinated. Defaults to ``-1``.
     label : str, optional
         Container label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    modules: ModuleList
-    concat_axis: int
-
     def __init__(
-        self, *modules: Module, concat_axis: int = -1, label: Optional[str] = None
+        self, *modules: Module, concat_dim: int = -1, label: Optional[str] = None
     ) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
 
         self.modules = ModuleList(modules)
-        self.concat_axis = concat_axis
+        self.concat_dim = concat_dim
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         ys = [m(x) for m in self.modules]
-        y = concat(ys, axis=self.concat_axis)
-        self.fcache.push(list(accumulate(y.shape[self.concat_axis] for y in ys[:-1])))
+        y = concat(ys, dim=self.concat_dim)
+        self.fcache.push(list(accumulate(y.shape[self.concat_dim] for y in ys[:-1])))
         return y
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         (y_idx,) = self.fcache.pop()
-        splits = split(dy, splits=y_idx, axis=self.concat_axis)
+        splits = split(dy, splits=y_idx, dim=self.concat_dim)
         return tensorsum(m.backward(s) for m, s in zip(self.modules, splits))
 
 
@@ -107,13 +102,10 @@ class ParallelAdd(Module):
         Whether the container and its modules should be in training mode. Defaults to ``False``.
     """
 
-    modules: ModuleList
-
     def __init__(self, *modules: Module, label: Optional[str] = None) -> None:
         super().__init__(label)
         if not modules:
-            raise NoChildModulesError()
-
+            raise EmptyContainerError()
         self.modules = ModuleList(modules)
 
     @Module.register_forward
@@ -144,9 +136,6 @@ class ResidualConnection(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    residual_block: Module
-    residual_proj: Optional[Module] = None
-
     def __init__(
         self,
         *modules: Module,
@@ -154,12 +143,11 @@ class ResidualConnection(Module):
         label: Optional[str] = None
     ) -> None:
         if not modules:
-            raise NoChildModulesError()
+            raise EmptyContainerError()
         super().__init__(label)
 
         self.residual_block = modules[0] if len(modules) == 1 else Sequential(*modules)
-        if residual_proj is not None:
-            self.residual_proj = residual_proj
+        self.residual_proj = residual_proj
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
@@ -174,7 +162,7 @@ class ResidualConnection(Module):
         return dx
 
 
-class NoChildModulesError(Exception):
+class EmptyContainerError(Exception):
     """Exception for empty containers."""
 
     def __init__(self, message: str = "At least one module is required.") -> None:

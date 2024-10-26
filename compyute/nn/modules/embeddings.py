@@ -2,12 +2,11 @@
 
 from typing import Optional
 
+from ...random import normal
 from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.embedding_funcs import EmbeddingFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_normal
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -20,7 +19,7 @@ class Embedding(Module):
         - Input :math:`(B_1, ... , B_n, S)`
         - Output :math:`(B_1, ... , B_n, S, E)`
     where
-        - :math:`B_1, ... , B_n` ... batch axes
+        - :math:`B_1, ... , B_n` ... batch dimensions
         - :math:`S` ... sequence
         - :math:`E` ... embedding dimension
 
@@ -30,8 +29,6 @@ class Embedding(Module):
         Number of embedding vectors.
     embedding_dim : int
         Embedding vector dimensions.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -44,7 +41,6 @@ class Embedding(Module):
         self,
         n_embeddings: int,
         embedding_dim: int,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -52,17 +48,14 @@ class Embedding(Module):
         self.embedding_dim = embedding_dim
 
         # init parameters
-        self.w = Parameter(empty((n_embeddings, embedding_dim), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_normal(self.w)
+        self.w = Parameter(normal((n_embeddings, embedding_dim)))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return EmbeddingFn.forward(self.fcache, x, self.w)
 
     @Module.register_backward
-    def backward(self, dy: Tensor) -> None:
+    def backward(self, dy: Tensor) -> Tensor:
         dw = EmbeddingFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
+        return empty((0,))

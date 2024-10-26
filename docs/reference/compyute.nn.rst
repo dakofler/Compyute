@@ -68,8 +68,8 @@ Blocks
 .. autosummary::
     :toctree: ../_generated/compyute.nn
     
-    Convolution1DBlock
-    Convolution2DBlock
+    Conv1DBlock
+    Conv2DBlock
     DenseBlock
 
 
@@ -89,10 +89,10 @@ Convolution
 .. autosummary::
     :toctree: ../_generated/compyute.nn
     
-    Convolution1D
-    Convolution2D
-    MaxPooling2D
-    AvgPooling2D
+    Conv1D
+    Conv2D
+    ConvTranspose1D
+    ConvTranspose2D
 
 
 Embedding
@@ -122,6 +122,16 @@ Normalizations
     RMSNorm
 
 
+Pooling
+~~~~~~~~~
+.. autosummary::
+    :toctree: ../_generated/compyute.nn
+
+    MaxPooling2D
+    AvgPooling2D
+    Upsample2D
+
+
 Recurrent
 ~~~~~~~~~
 .. autosummary::
@@ -140,13 +150,14 @@ Regularization
     Dropout
 
 
-Reshape
-~~~~~~~
+Shape
+~~~~~
 .. autosummary::
     :toctree: ../_generated/compyute.nn
     
     Flatten
     Reshape
+    Slice
 
 
 Parameter and Buffer

@@ -7,10 +7,9 @@ Gradient computation is implemented from scratch to facilitate understanding of 
 
 ## Installation
 
-All you need is to pip install .
+You can install Compyute directly from GitHub.
 ```bash
-git clone https://github.com/dakofler/Compyute
-pip install .
+pip install git+https://github.com/dakofler/Compyute.git
 ```
 As of `CuPy` v13, the package does not require a GPU toolkit to be installed, so `Compyute` can be used on CPU-only machines. If you want to make use of GPUs, make sure to install the CUDA Toolkit following the installation guide of `CuPy` (https://docs.cupy.dev/en/stable/install.html).
 
@@ -73,7 +72,7 @@ z = cp.random.normal(shape=(10, 10))
 ```
 
 ### Building models
-Models can be built using predefined modules (such as `Linear` or `ReLU`) and containers (such as `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come.
+Models can be built using predefined modules (such as `Linear` or `ReLU`) and containers (such as `Sequential`). `Compyute` provides a variety of modules such as activation, normalization, linear, convolutional and recurrent layers with more to come. For a list of available modules, please check the docs.
 
 ```python
 from compyute import nn
@@ -99,9 +98,9 @@ from compyute import nn
 class MyConvBlock(nn.Sequential):
     def __init__(self, in_channels, out_channels):
 
-        conv = nn.Convolution2D(in_channels, out_channels, kernel_size=3)
+        conv = nn.Conv2D(in_channels, out_channels, kernel_size=3)
         relu = nn.ReLU()
-        bn = Batchnorm1d(out_channels)
+        bn = nn.BatchNorm2D(out_channels)
         
         # pass modules to the `Sequential` base class
         super().__init__(conv, relu, bn)
@@ -143,9 +142,8 @@ All modules can be trained and updated using common optimizer algorithms, such a
 
 ```python
 from compyute.nn.trainer import Trainer
-from compyute.nn.callbacks import EarlyStopping, History, Progressbar
+from compyute.nn.trainer.callbacks import EarlyStopping, History, Progressbar
 
-# define trainer
 trainer = Trainer(
     model=model,
     optimizer="sgd",
@@ -154,7 +152,6 @@ trainer = Trainer(
     callbacks=[EarlyStopping(), History(), Progressbar()]
 )
 
-# train model
 trainer.train(X_train, y_train, epochs=10)
 ```
 
@@ -165,7 +162,8 @@ epochs = 100
 batch_size = 32
 
 train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
-val_dl = nn.utils.Dataloader((X_val, y_val), batch_size)
+val_dl = nn.utils.Dataloader((X_val, y_val), batch_size, shuffle=False)
+
 loss_fn = nn.CrossEntropy()
 optim = nn.optimizers.SGD(model.get_parameters())
 
@@ -186,7 +184,7 @@ for epoch in range(epochs):
     
     # validiation
     model.inference()
-    with nn.no_caching():  # disable caching for gradient computation
+    with nn.no_caching():  # disable caching required for gradient computation
         val_loss = 0
         for x, y in val_dl():
             y_pred = model(x)
@@ -213,6 +211,10 @@ loaded_state = cp.load("my_model.cp")
 model.load_state_dict(loaded_state["model"])
 optim.load_state_dict(loaded_state["optimizer"])
 ```
+
+## Examples
+see [Examples](https://github.com/dakofler/Compyute/tree/main/examples).
+
 
 ## Author
 Daniel Kofler - AI Research Associate ([dkofler@outlook.com](mailto:dkofler@outlook.com))

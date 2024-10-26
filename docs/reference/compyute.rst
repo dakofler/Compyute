@@ -23,9 +23,7 @@ Functions to create new tensors or combine existing tensors.
 .. autosummary::
     :toctree: ../_generated/compyute
     
-    append
     arange
-    concat
     empty
     empty_like
     full
@@ -34,8 +32,6 @@ Functions to create new tensors or combine existing tensors.
     linspace
     ones
     ones_like
-    split
-    stack
     zeros
     zeros_like  
 
@@ -58,7 +54,6 @@ Functions that operate on one tensor.
     histogram
     ifft1d
     ifft2d
-    invert
     log
     log2
     log10
@@ -110,7 +105,7 @@ Functions that aggregate tensors.
     var
 
 
-Reshaping Operations
+Shape Operations
 ~~~~~~~~~~~~~~~~~~~~
 
 Functions that change tensor shapes.
@@ -118,23 +113,27 @@ Functions that change tensor shapes.
 .. autosummary::
     :toctree: ../_generated/compyute
     
+    append
+    broadcast_to
+    concat
     diagonal
-    reshape
     flatten
-    transpose
+    flip
     insert_dim
-    add_dims
-    resize
-    repeat
-    tile
+    movedim
     pad
     pad_to_shape
-    pool1d
-    pool2d
-    moveaxis
+    permute
+    pooling1d
+    pooling2d
+    repeat1d
+    repeat2d
+    reshape
+    split
     squeeze
-    flip
-    broadcast_to
+    stack
+    tile
+    transpose
 
 
 Selecting Operations
@@ -183,6 +182,7 @@ Utilities:
 .. autosummary::
     :toctree: ../_generated/compyute
     
+    set_default_dtype
     use_dtype
     
 
@@ -204,6 +204,7 @@ Utilities:
     :toctree: ../_generated/compyute
     
     Device
+    set_default_device
     use_device
 
 
@@ -214,3 +215,12 @@ Utility Functions
 
     save
     load
+    set_debug_mode
+    debug
+
+
+Constants
+-----------------
+.. data:: newaxis
+
+    A convenient alias for None, useful for indexing arrays.

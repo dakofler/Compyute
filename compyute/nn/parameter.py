@@ -29,27 +29,16 @@ class Parameter(Tensor):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data.data)
 
-    def __repr__(self) -> str:
-        return (
-            "Parameter("
-            + self.device.module.array2string(
-                self.data,
-                100,
-                4,
-                separator=", ",
-                prefix="Parameter(",
-                floatmode="maxprec_equal",
-            )
-            + ")"
-        )
-
 
 def update_parameter_grad(
     parameter: Optional[Parameter], grad: Optional[Tensor]
 ) -> None:
     """Updates the parameter gradients."""
     if parameter and grad:
-        parameter.grad += grad
+        if parameter.grad is None:
+            parameter.grad = grad
+        else:
+            parameter.grad += grad
 
 
 class Buffer(Tensor):
@@ -63,17 +52,3 @@ class Buffer(Tensor):
 
     def __init__(self, data: Tensor) -> None:
         super().__init__(data.data)
-
-    def __repr__(self) -> str:
-        return (
-            "Buffer("
-            + self.device.module.array2string(
-                self.data,
-                100,
-                4,
-                separator=", ",
-                prefix="Buffer(",
-                floatmode="maxprec_equal",
-            )
-            + ")"
-        )

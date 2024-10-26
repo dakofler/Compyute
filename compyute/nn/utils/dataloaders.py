@@ -7,7 +7,8 @@ from typing import Any
 
 from ...backend import Device, cpu
 from ...random.random import permutation
-from ...tensor_ops.creation_ops import arange, concat
+from ...tensor_ops.creation_ops import arange
+from ...tensor_ops.shape_ops import concat
 from ...tensors import Tensor
 from ...typing import int64
 
@@ -31,12 +32,6 @@ class Dataloader:
         Whether to drop data, that remains when the number of samples is not divisible by
         ``batch_size``. Defaults to ``False``.
     """
-
-    data: tuple[Tensor, ...]
-    batch_size: int
-    device: Device
-    shuffle: bool
-    drop_remaining: bool
 
     def __init__(
         self,
@@ -108,6 +103,6 @@ def batched(
     def wrapper(x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         dataloader = Dataloader((x,), batch_size, device, shuffle_data, drop_remaining)
         ys = [func(*x_batch, *args, **kwargs) for x_batch in dataloader()]
-        return concat(ys, axis=0)
+        return concat(ys, dim=0)
 
     return wrapper

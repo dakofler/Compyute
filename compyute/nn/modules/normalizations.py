@@ -2,9 +2,8 @@
 
 from typing import Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...tensor_ops.creation_ops import ones, zeros
 from ...tensors import ShapeLike, Tensor
-from ...typing import DType
 from ..functional.normalization_funcs import (
     BatchNorm1DFn,
     BatchNorm2DFn,
@@ -12,8 +11,7 @@ from ..functional.normalization_funcs import (
     RMSNormFn,
 )
 from ..parameter import Buffer, Parameter, update_parameter_grad
-from ..utils.initializers import init_ones, init_zeros
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
 
@@ -26,13 +24,13 @@ class BatchNorm1D(Module):
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
     where :math:`E[x]` and :math:`Var[x]` are computed over the
-    :math:`B` and :math:`S` axes.
+    :math:`B` and :math:`S` dimensions.
 
     Shapes:
         - Input :math:`(B, C, S)` or :math:`(B, C)`
         - Output :math:`(B, C, S)` or :math:`(B, C)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C` ... channels
         - :math:`S` ... sequence
 
@@ -44,8 +42,6 @@ class BatchNorm1D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -60,7 +56,6 @@ class BatchNorm1D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -69,19 +64,13 @@ class BatchNorm1D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(empty((channels,), dtype=dtype))
-        self.b = Parameter(empty((channels,), dtype=dtype))
-        self.rmean = Buffer(empty((channels,), dtype=dtype))
-        self.rvar = Buffer(empty((channels,), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w, self.rvar)
-        init_zeros(self.b, self.rmean)
+        self.w = Parameter(ones((channels,)))
+        self.b = Parameter(zeros((channels,)))
+        self.rmean = Buffer(zeros((channels,)))
+        self.rvar = Buffer(ones((channels,)))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [2, 3])
         y, rmean, rvar = BatchNorm1DFn.forward(
             self.fcache,
             x,
@@ -97,7 +86,6 @@ class BatchNorm1D(Module):
         self.rvar.data = rvar.data
         return y
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm1DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -113,13 +101,13 @@ class BatchNorm2D(Module):
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
     where :math:`E[x]` and :math:`Var[x]` are computed over the
-    :math:`B`, :math:`Y` and :math:`X` axes.
+    :math:`B`, :math:`Y` and :math:`X` dimensions.
 
     Shapes:
         - Input :math:`(B, C, Y, X)`
         - Output :math:`(B, C, Y, X)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`C` ... channels
         - :math:`Y` ... height
         - :math:`X` ... width
@@ -132,8 +120,6 @@ class BatchNorm2D(Module):
         Constant for numerical stability. Defaults to ``1e-5``.
     m : float, optional
         Momentum used for running mean and variance computation. Defaults to ``0.1``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -148,7 +134,6 @@ class BatchNorm2D(Module):
         channels: int,
         eps: float = 1e-5,
         m: float = 0.1,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -157,19 +142,13 @@ class BatchNorm2D(Module):
         self.m = m
 
         # init parameters and buffers
-        self.w = Parameter(empty((channels,), dtype=dtype))
-        self.b = Parameter(empty((channels,), dtype=dtype))
-        self.rmean = Buffer(empty((channels,), dtype=dtype))
-        self.rvar = Buffer(empty((channels,), dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w, self.rvar)
-        init_zeros(self.b, self.rmean)
+        self.w = Parameter(ones((channels,)))
+        self.b = Parameter(zeros((channels,)))
+        self.rmean = Buffer(zeros((channels,)))
+        self.rvar = Buffer(ones((channels,)))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [4])
         y, rmean, rvar = BatchNorm2DFn.forward(
             self.fcache,
             x,
@@ -185,7 +164,6 @@ class BatchNorm2D(Module):
         self.rvar.data = rvar.data
         return y
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm2DFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -200,14 +178,14 @@ class LayerNorm(Module):
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
 
-    where :math:`E[x]` and :math:`Var[x]` are computed over feature axes
+    where :math:`E[x]` and :math:`Var[x]` are computed over feature dimensions
     specified by `normalized_shape`.
 
     Shapes:
         - Input :math:`(B, ...)`
         - Output :math:`(B, ...)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
 
     Parameters
     ----------
@@ -215,8 +193,6 @@ class LayerNorm(Module):
         Shape of the normalized tensor.
     eps : float, optional
         Constant for numerical stability. Defaults to ``1e-5``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -229,7 +205,6 @@ class LayerNorm(Module):
         self,
         normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -237,19 +212,13 @@ class LayerNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(empty(normalized_shape, dtype=dtype))
-        self.b = Parameter(empty(normalized_shape, dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w)
-        init_zeros(self.b)
+        self.w = Parameter(ones(normalized_shape))
+        self.b = Parameter(zeros(normalized_shape))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return LayerNormFn.forward(self.fcache, x, self.w, self.b, self.eps)
 
-    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = LayerNormFn.backward(self.fcache, dy)
         update_parameter_grad(self.w, dw)
@@ -265,20 +234,18 @@ class RMSNorm(Module):
         y = w \cdot \frac{x}{\text{RMS}(x)} + b
 
     where :math:`\text{RMS}(x) = \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2}`.
-    The :math:`\text{RMS}` is computed over feature axes specified by `normalized_shape`.
+    The :math:`\text{RMS}` is computed over feature dimensions specified by `normalized_shape`.
 
     Shapes:
         - Input :math:`(B, ...)`
         - Output :math:`(B, ...)`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
 
     Parameters
     ----------
     normalized_shape : _ShapeLike
         Shape of the normalized tensor.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -291,7 +258,6 @@ class RMSNorm(Module):
         self,
         normalized_shape: ShapeLike,
         eps: float = 1e-5,
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -299,11 +265,7 @@ class RMSNorm(Module):
         self.eps = eps
 
         # init parameters
-        self.w = Parameter(empty(normalized_shape, dtype=dtype))
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        init_ones(self.w)
+        self.w = Parameter(ones(normalized_shape))
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:

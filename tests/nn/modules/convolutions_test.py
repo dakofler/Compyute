@@ -3,22 +3,27 @@
 import pytest
 import torch
 
-from compyute.nn import AvgPooling2D, Convolution1D, Convolution2D, MaxPooling2D
+from compyute.nn.modules.convolutions import (
+    Conv1D,
+    Conv2D,
+    ConvTranspose1D,
+    ConvTranspose2D,
+)
 from tests.utils import get_random_floats, get_random_params, is_close
 
 conv1d_testdata = [
-    ((16, 64, 32, 16, 5), "valid", 1, 1),
-    ((16, 64, 32, 16, 5), "valid", 1, 2),
-    ((16, 64, 32, 16, 5), "valid", 2, 1),
-    ((16, 64, 32, 16, 5), "valid", 2, 2),
-    ((16, 64, 32, 16, 5), "same", 1, 1),
-    ((16, 64, 32, 16, 5), "same", 1, 2),
-    ((32, 128, 64, 16, 3), "valid", 1, 1),
-    ((32, 128, 64, 16, 3), "valid", 1, 2),
-    ((32, 128, 64, 16, 3), "valid", 2, 1),
-    ((32, 128, 64, 16, 3), "valid", 2, 2),
-    ((32, 128, 64, 16, 3), "same", 1, 1),
-    ((32, 128, 64, 16, 3), "same", 1, 2),
+    ((16, 32, 64, 16, 5), "valid", 1, 1),
+    ((16, 32, 64, 16, 5), "valid", 1, 2),
+    ((16, 32, 64, 16, 5), "valid", 2, 1),
+    ((16, 32, 64, 16, 5), "valid", 2, 2),
+    ((16, 32, 64, 16, 5), "same", 1, 1),
+    ((16, 32, 64, 16, 5), "same", 1, 2),
+    ((32, 64, 128, 8, 3), "valid", 1, 1),
+    ((32, 64, 128, 8, 3), "valid", 1, 2),
+    ((32, 64, 128, 8, 3), "valid", 2, 1),
+    ((32, 64, 128, 8, 3), "valid", 2, 2),
+    ((32, 64, 128, 8, 3), "same", 1, 1),
+    ((32, 64, 128, 8, 3), "same", 1, 2),
 ]
 
 conv2d_testdata = [
@@ -36,11 +41,34 @@ conv2d_testdata = [
     ((32, 1, 64, 32, 32, 3), "same", 1, 2),
 ]
 
-pool_testdata = [
-    ((16, 32, 28, 28), 2),
-    ((16, 32, 28, 28), 3),
-    ((32, 64, 32, 32), 2),
-    ((32, 64, 32, 32), 3),
+deconv1d_testdata = [
+    ((16, 64, 32, 16, 5), 0, 1, 1),
+    ((16, 64, 32, 16, 5), 0, 1, 2),
+    ((16, 64, 32, 16, 5), 0, 2, 1),
+    ((16, 64, 32, 16, 5), 0, 2, 2),
+    ((16, 64, 32, 16, 5), 1, 1, 1),
+    ((16, 64, 32, 16, 5), 1, 1, 2),
+    ((32, 128, 64, 8, 3), 0, 1, 1),
+    ((32, 128, 64, 8, 3), 0, 1, 2),
+    ((32, 128, 64, 8, 3), 0, 2, 1),
+    ((32, 128, 64, 8, 3), 0, 2, 2),
+    ((32, 128, 64, 8, 3), 1, 1, 1),
+    ((32, 128, 64, 8, 3), 1, 1, 2),
+]
+
+deconv2d_testdata = [
+    ((16, 32, 3, 14, 14, 2), 0, 1, 1),
+    ((16, 32, 3, 14, 14, 2), 0, 1, 2),
+    ((16, 32, 3, 14, 14, 2), 0, 2, 1),
+    ((16, 32, 3, 14, 14, 2), 0, 2, 2),
+    ((16, 32, 3, 14, 14, 2), 1, 1, 1),
+    ((16, 32, 3, 14, 14, 2), 1, 1, 2),
+    ((32, 64, 1, 16, 16, 3), 0, 1, 1),
+    ((32, 64, 1, 16, 16, 3), 0, 1, 2),
+    ((32, 64, 1, 16, 16, 3), 0, 2, 1),
+    ((32, 64, 1, 16, 16, 3), 0, 2, 2),
+    ((32, 64, 1, 16, 16, 3), 1, 1, 1),
+    ((32, 64, 1, 16, 16, 3), 1, 1, 2),
 ]
 
 
@@ -48,8 +76,8 @@ pool_testdata = [
 def test_conv1d(shape, padding, strides, dilation) -> None:
     """Test for the conv 1d layer."""
 
-    B, Cin, Cout, X, K = shape
-    shape_x = (B, Cin, X)
+    B, Cin, Cout, T, K = shape
+    shape_x = (B, Cin, T)
     shape_w = (Cout, Cin, K)
     shape_b = (Cout,)
 
@@ -58,7 +86,7 @@ def test_conv1d(shape, padding, strides, dilation) -> None:
     compyute_b, torch_b = get_random_params(shape_b)
 
     # init compyute module
-    compyute_module = Convolution1D(Cin, Cout, K, padding, strides, dilation)
+    compyute_module = Conv1D(Cin, Cout, K, padding, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -95,7 +123,7 @@ def test_conv2d(shape, padding, strides, dilation) -> None:
     compyute_w, torch_w = get_random_params(shape_w)
     compyute_b, torch_b = get_random_params(shape_b)
 
-    compyute_module = Convolution2D(Cin, Cout, K, padding, strides, dilation)
+    compyute_module = Conv2D(Cin, Cout, K, padding, strides, dilation)
     compyute_module.w = compyute_w
     compyute_module.b = compyute_b
 
@@ -118,17 +146,33 @@ def test_conv2d(shape, padding, strides, dilation) -> None:
     assert is_close(compyute_module.b.grad, torch_module.bias.grad, tol=1e-4)
 
 
-@pytest.mark.parametrize("shape,kernel_size", pool_testdata)
-def test_maxpool2d(shape, kernel_size) -> None:
-    """Test for the maxpool layer."""
+@pytest.mark.parametrize("shape,padding,strides,dilation", deconv1d_testdata)
+def test_deconv1d(shape, padding, strides, dilation) -> None:
+    """Test for the deconv 1d layer."""
 
-    # init compyute module
-    compyute_module = MaxPooling2D(kernel_size)
+    B, Cin, Cout, T, K = shape
+    shape_x = (B, Cin, T)
+    shape_w = (Cout, Cin, K)
+    shape_b = (Cout,)
+
+    # init parameters
+    compyute_w, torch_w = get_random_params(shape_w)
+    compyute_b, torch_b = get_random_params(shape_b)
+
+    compyute_module = ConvTranspose1D(Cin, Cout, K, padding, strides, dilation)
+    compyute_module.w = compyute_w
+    compyute_module.b = compyute_b
+
+    torch_module = torch.nn.ConvTranspose1d(
+        Cin, Cout, K, strides, padding, dilation=dilation
+    )
+    torch_module.weight = torch.nn.Parameter(torch_w.transpose(0, 1))
+    torch_module.bias = torch_b
 
     # forward
-    compyute_x, torch_x = get_random_floats(shape)
+    compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch.nn.functional.max_pool2d(torch_x, kernel_size)
+    torch_y = torch_module(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
@@ -136,19 +180,37 @@ def test_maxpool2d(shape, kernel_size) -> None:
     compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
+    assert is_close(compyute_module.w.grad.transpose(0, 1), torch_module.weight.grad)
+    assert is_close(compyute_module.b.grad, torch_module.bias.grad, tol=1e-4)
 
 
-@pytest.mark.parametrize("shape,kernel_size", pool_testdata)
-def test_avgpool2d(shape, kernel_size) -> None:
-    """Test for the avgpool layer."""
+@pytest.mark.parametrize("shape,padding,strides,dilation", deconv2d_testdata)
+def test_deconv2d(shape, padding, strides, dilation) -> None:
+    """Test for the deconv 2d layer."""
 
-    # init compyute module
-    compyute_module = AvgPooling2D(kernel_size)
+    B, Cin, Cout, Y, X, K = shape
+    shape_x = (B, Cin, Y, X)
+    shape_w = (Cout, Cin, K, K)
+    shape_b = (Cout,)
+
+    # init parameters
+    compyute_w, torch_w = get_random_params(shape_w)
+    compyute_b, torch_b = get_random_params(shape_b)
+
+    compyute_module = ConvTranspose2D(Cin, Cout, K, padding, strides, dilation)
+    compyute_module.w = compyute_w
+    compyute_module.b = compyute_b
+
+    torch_module = torch.nn.ConvTranspose2d(
+        Cin, Cout, K, strides, padding, dilation=dilation
+    )
+    torch_module.weight = torch.nn.Parameter(torch_w.transpose(0, 1))
+    torch_module.bias = torch_b
 
     # forward
-    compyute_x, torch_x = get_random_floats(shape)
+    compyute_x, torch_x = get_random_floats(shape_x)
     compyute_y = compyute_module(compyute_x)
-    torch_y = torch.nn.functional.avg_pool2d(torch_x, kernel_size)
+    torch_y = torch_module(torch_x)
     assert is_close(compyute_y, torch_y)
 
     # backward
@@ -156,3 +218,5 @@ def test_avgpool2d(shape, kernel_size) -> None:
     compyute_dx = compyute_module.backward(compyute_dy)
     torch_y.backward(torch_dy)
     assert is_close(compyute_dx, torch_x.grad)
+    assert is_close(compyute_module.w.grad.transpose(0, 1), torch_module.weight.grad)
+    assert is_close(compyute_module.b.grad, torch_module.bias.grad, tol=1e-4)

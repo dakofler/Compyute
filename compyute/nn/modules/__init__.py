@@ -8,6 +8,7 @@ from .embeddings import *
 from .linear import *
 from .module import *
 from .normalizations import *
+from .poolings import *
 from .recurrents import *
 from .regularizations import *
-from .reshapes import *
+from .shapes import *

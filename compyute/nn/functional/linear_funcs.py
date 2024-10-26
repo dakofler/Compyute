@@ -29,8 +29,8 @@ class LinearFn(Function):
         x, w, b = cache.pop()
 
         dx = dy @ w
-        dw = (dy.T @ x).sum(tuple(range(dy.n_axes - 2)))
-        db = None if not b else dy.sum(axis=tuple(range(dy.n_axes - 1)))
+        dw = (dy.T @ x).sum(tuple(range(dy.ndim - 2)))
+        db = None if not b else dy.sum(tuple(range(dy.ndim - 1)))
 
         return dx, dw, db
 

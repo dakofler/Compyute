@@ -3,23 +3,21 @@
 from __future__ import annotations
 
 import gc
-import os
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator
 from functools import wraps
-from typing import Any, Optional, Self
+from typing import Any, Optional
 
-from ...backend import Device, DeviceError, free_cuda_memory, select_device
-from ...tensors import ShapeError, Tensor
+from ...backend import Device, DeviceError, free_cuda_memory
+from ...tensors import Tensor
+from ...typing import DType
+from ...utils import get_debug_mode
 from ..functional.functions import FunctionCache, PseudoCache
 from ..parameter import Buffer, Parameter
 
 __all__ = ["Module", "Identity", "ModuleList"]
-DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
-
-from types import MethodType
 
 
 class Module(ABC):
@@ -31,24 +29,17 @@ class Module(ABC):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
-    label: str
-    fcache: FunctionCache
-    x: Optional[Tensor] = None
-    y: Optional[Tensor] = None
-    _buffers: OrderedDict[str, Buffer]
-    _device = select_device(None)
-    _retain_values = False
-    _trainable = True
-    _is_training = True
-    _modules: OrderedDict[str, Module]
-    _parameters: OrderedDict[str, Parameter]
-
     def __init__(self, label: Optional[str] = None) -> None:
         self.label = label or self.__class__.__name__
         self.fcache = FunctionCache()
-        self._parameters = OrderedDict()
-        self._buffers = OrderedDict()
-        self._modules = OrderedDict()
+        self.x: Optional[Tensor] = None
+        self.y: Optional[Tensor] = None
+        self._is_training = True
+        self._retain_values = False
+        self._trainable = True
+        self._parameters: OrderedDict[str, Parameter] = OrderedDict()
+        self._buffers: OrderedDict[str, Buffer] = OrderedDict()
+        self._modules: OrderedDict[str, Module] = OrderedDict()
 
     # ----------------------------------------------------------------------------------
     # PROPERTIES
@@ -56,28 +47,49 @@ class Module(ABC):
 
     @property
     def device(self) -> Device:
-        """Device the module parametes and variables are stored on."""
-        return self._device
+        """Device module parameters and variables are stored on."""
+        try:
+            return next(self.get_parameters()).device
+        except StopIteration:
+            raise ValueError("Module has no parameters.")
 
     def to_device(self, device: Device) -> None:
-        """Moves the module parameters and variables to the specified device.
+        """Moves module parameters and variables to the specified device.
 
         Parameters
         ----------
         device : Device
             Device to move the module parameters and variables to.
         """
-        if device == self._device:
-            return
-
-        self._device = device
-
         for t in vars(self).values():
             if isinstance(t, Tensor):
                 t.ito_device(device)
 
         for module in self.get_modules(recursive=False):
             module.to_device(device)
+
+    @property
+    def dtype(self) -> DType:
+        """Data type of module parameters and variables."""
+        try:
+            return next(self.get_parameters()).dtype
+        except StopIteration:
+            raise ValueError("Module has no parameters.")
+
+    def to_type(self, dtype: DType) -> None:
+        """Casts module parameters and variables to the specified dtype.
+
+        Parameters
+        ----------
+        dtype : DType
+            DType to cast module parameters and variables to.
+        """
+        for t in vars(self).values():
+            if isinstance(t, Tensor):
+                t.ito_type(dtype)
+
+        for module in self.get_modules(recursive=False):
+            module.to_type(dtype)
 
     @property
     def retain_values(self) -> bool:
@@ -137,9 +149,6 @@ class Module(ABC):
         for module in self.get_modules(recursive=False):
             repr_string += "\n" + repr(module)
         return repr_string
-
-    def __call__(self, x: Tensor) -> Tensor:
-        return self.forward(x)
 
     def __bool__(self) -> bool:
         return True
@@ -256,11 +265,14 @@ class Module(ABC):
             if self_value.device != other_value.device:
                 raise DeviceError(
                     "Device mismatch."
-                    f"Module device: {self.device}, state dict device: {other_value.device}"
+                    f"Module device: {self_value.device}, state dict device: {other_value.device}"
                 )
 
             self_value.data = other_value.data
             self_value.grad = other_value.grad
+
+    def __call__(self, x: Tensor) -> Tensor:
+        return self.forward(x)
 
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
@@ -293,64 +305,62 @@ class Module(ABC):
         """
 
     @staticmethod
-    def register_forward(forward_method: Callable) -> Callable:
-        """Decorator for registering a forward method to the module."""
+    def register_forward(fwd_fn: Callable) -> Callable:
+        """Registers a the forward method to the module."""
 
-        @wraps(forward_method)
-        def wrapper(cls: Module, x: Tensor) -> Tensor:
-            if cls.retain_values:
-                cls.x = x
+        @wraps(fwd_fn)
+        def wrapper(m: Module, x: Tensor) -> Tensor:
 
-            if cls.fcache.cache:
-                cls.fcache.cache.clear()
-
-            if DEBUG:
+            if get_debug_mode():
                 dt = time.perf_counter()
-                y = forward_method(cls, x)
+                y = fwd_fn(m, x)
                 dt = (time.perf_counter() - dt) * 1e3
                 print(
-                    f"{cls.label:20s} | forward  | {x.dtype:15s} | {y.dtype:15s} | {dt=:>10.4f} ms"
+                    f"{m.label:20s} | fwd | "
+                    f"{x.dtype:15s} | "
+                    f"{y.dtype:15s} | "
+                    f"{dt=:>10.4f} ms"
                 )
             else:
-                y = forward_method(cls, x)
+                y = fwd_fn(m, x)
 
-            if cls.retain_values:
-                cls.y = y
+            if m.retain_values:
+                m.x = x
+                m.y = y
+
             return y
 
         return wrapper
 
     @staticmethod
-    def register_backward(backward_method: Callable) -> Callable:
-        """Decorator for registering a backward method to the module."""
+    def register_backward(bwd_fn: Callable) -> Callable:
+        """Registers a the backward method for the module."""
 
-        @wraps(backward_method)
-        def wrapper(cls: Module, dy: Tensor) -> Tensor:
-            if not cls.is_training:
-                raise AttributeError(f"{cls.label} is not in training mode.")
+        @wraps(bwd_fn)
+        def wrapper(m: Module, dy: Tensor) -> Tensor:
+            if not m.is_training:
+                raise AttributeError(f"{m.label} is not in training mode.")
 
-            if cls.retain_values and cls.y:
-                cls.y.grad = dy
-
-            if DEBUG:
+            if get_debug_mode():
                 dt = time.perf_counter()
-                dx = backward_method(cls, dy)
+                dx = bwd_fn(m, dy)
                 dt = (time.perf_counter() - dt) * 1e3
                 if dx:
                     print(
-                        f"{cls.label:20s} | backward | {dx.dtype:15s} | {dy.dtype:15s} | {dt=:>10.4f} ms"
+                        f"{m.label:20s} | bwd | "
+                        f"{dx.dtype:15s} | "
+                        f"{dy.dtype:15s} | "
+                        f"{dt=:>10.4f} ms"
                     )
                 else:
-                    print(
-                        f"{cls.label:20s} | backward | {dy.dtype:15s} | {dt=:>10.4f} ms"
-                    )
+                    print(f"{m.label:20s} | bwd | {dy.dtype:15s} | {dt=:>10.4f} ms")
             else:
-                dx = backward_method(cls, dy)
+                dx = bwd_fn(m, dy)
 
-            assert not cls.fcache.cache, "FunctionCache not empty after backward."
+            if m.retain_values and m.x and m.y:
+                m.x.grad = dx
+                m.y.grad = dy
 
-            if cls.retain_values and cls.x:
-                cls.x.grad = dx
             return dx
 
         return wrapper
@@ -373,8 +383,8 @@ class Module(ABC):
         for module in self.get_modules(recursive=False):
             module.clean(force)
 
-        free_cuda_memory()
         gc.collect()
+        free_cuda_memory()
 
 
 class Identity(Module):
@@ -406,10 +416,6 @@ class ModuleList(list):
         super().__init__(modules)
 
 
-class ModelDefinitionError(Exception):
-    """Model definition error."""
-
-
 def is_repr_attr(attr: str, value: Any) -> bool:
     """Checks if an attribute should be included int the class representation."""
     return all(
@@ -419,14 +425,4 @@ def is_repr_attr(attr: str, value: Any) -> bool:
             not isinstance(value, (Tensor, Module, ModuleList)),
             value is not None,
         ]
-    )
-
-
-def validate_input_axes(module: Module, x: Tensor, valid_n_axes: Iterable[int]) -> None:
-    """Checks if the number of axes of a tensor is valid."""
-    if x.n_axes in valid_n_axes:
-        return
-    vdims = ", ".join(str(d) for d in valid_n_axes)
-    raise ShapeError(
-        f"{module.label}: Invalid input dims {x.n_axes}. Can be one of: {vdims}."
     )

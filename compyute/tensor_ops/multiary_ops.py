@@ -21,10 +21,8 @@ def allclose(
 
     Parameters
     ----------
-    x1 : Tensor
-        Input tensor.
-    x2 : Tensor
-        Input tensor.
+    x1, x2 : Tensor
+        Input tensors.
     rtol : float, optional
         Relative tolerance. Defaults to ``1e-05``.
     atol : float, optional
@@ -39,14 +37,12 @@ def allclose(
 
 
 def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
-    """Computes the convolution of two tensors using FFT over their last axis.
+    """Computes the convolution of two tensors using FFT over their last dimension.
 
     Parameters
     ----------
-    x1 : Tensor
-        First tensor.
-    x2 : Tensor
-        Second tensor.
+    x1, x2 : Tensor
+        Input tensors.
 
     Returns
     -------
@@ -59,14 +55,12 @@ def convolve1d_fft(x1: Tensor, x2: Tensor) -> Tensor:
 
 
 def convolve2d_fft(x1: Tensor, x2: Tensor) -> Tensor:
-    """Computes the convolution of two tensors using FFT over their last two axes.
+    """Computes the convolution of two tensors using FFT over their last two dimensions.
 
     Parameters
     ----------
-    x1 : Tensor
-        First tensor.
-    x2 : Tensor
-        Second tensor.
+    x1, x2 : Tensor
+        Input tensors.
 
     Returns
     -------
@@ -84,17 +78,15 @@ def dot(x1: Tensor, x2: Tensor) -> Tensor:
 
     Parameters
     ----------
-    x1 : Tensor
-        First tensor.
-    x2 : Tensor
-        Second tensor.
+    x1, x2 : Tensor
+        Input tensors.
 
     Returns
     -------
     Tensor
         Dot product of the tensors.
     """
-    if x1.n_axes != 1 or x2.n_axes != 1:
+    if x1.ndim != 1 or x2.ndim != 1:
         raise ShapeError("Inputs must be 1D-tensors.")
     return inner(x1, x2)
 

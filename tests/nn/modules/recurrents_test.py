@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from compyute.nn import GRU, LSTM, Parameter, Recurrent, Sequential
-from compyute.tensor_ops.creation_ops import concat, split
+from compyute.tensor_ops.shape_ops import concat, split
 from tests.utils import get_random_floats, get_random_params, is_close
 
 shape_testdata = [(8, 16, 32, 64), (16, 32, 64, 128)]

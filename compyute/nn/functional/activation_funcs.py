@@ -1,9 +1,10 @@
 """Neural network activation functions."""
 
 from ...tensor_ops.selection_ops import maximum
-from ...tensor_ops.unary_ops import exp, invert
+from ...tensor_ops.unary_ops import exp
 from ...tensor_ops.unary_ops import tanh as _tanh
 from ...tensors import Tensor
+from ...typing import int8
 from .functions import Function, FunctionCache, PseudoCache
 
 __all__ = [
@@ -19,22 +20,22 @@ __all__ = [
 
 
 class ReLUFn(Function):
-    """Applies the softmax function over the last axis of an input tensor."""
+    """Applies the Rectified Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        y = maximum(x, 0)
-        cache.push(y > 0)
+        y = maximum(x, 0.0)
+        cache.push(y > 0.0)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        (y,) = cache.pop()
-        return y * dy
+        (mask,) = cache.pop()
+        return dy * mask
 
 
 def relu(x: Tensor) -> Tensor:
-    """Applies the Rectified Linear Unit activation function to an input tensor.
+    """Applies the Rectified Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -64,8 +65,8 @@ class LeakyReLUFn(Function):
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        alpha, y = cache.pop()
-        return (y + invert(y).to_type(dy.dtype) * alpha) * dy
+        alpha, mask = cache.pop()
+        return dy * (mask + (~mask).to_type(dy.dtype) * alpha)
 
 
 def leaky_relu(x: Tensor, alpha: float = 0.01) -> Tensor:
@@ -126,7 +127,7 @@ def sigmoid(x: Tensor) -> Tensor:
 
 
 class TanhFn(Function):
-    """Applies the hyperbolic tangent activationfunction to an input tensor."""
+    """Applies the hyperbolic tangent activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -141,7 +142,7 @@ class TanhFn(Function):
 
 
 def tanh(x: Tensor) -> Tensor:
-    """Applies the hyperbolic tangent activationfunction to an input tensor.
+    """Applies the hyperbolic tangent activation function to the input.
 
     Parameters
     ----------
@@ -161,7 +162,7 @@ def tanh(x: Tensor) -> Tensor:
 
 
 class GELUFn(Function):
-    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+    """Applies the Gaussian Error Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -181,7 +182,7 @@ class GELUFn(Function):
 
 
 def gelu(x: Tensor) -> Tensor:
-    """Applies the Gaussian Error Linear Unit function to an input tensor.
+    """Applies the Gaussian Error Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -201,7 +202,7 @@ def gelu(x: Tensor) -> Tensor:
 
 
 class FastGELUFn(Function):
-    """Applies the Gaussian Error Linear Unit function to an input tensor."""
+    """Applies the Gaussian Error Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -217,7 +218,7 @@ class FastGELUFn(Function):
 
 
 def fast_gelu(x: Tensor) -> Tensor:
-    """Applies the Gaussian Error Linear Unit function to an input tensor.
+    """Applies the Gaussian Error Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -237,7 +238,7 @@ def fast_gelu(x: Tensor) -> Tensor:
 
 
 class SiLUFn(Function):
-    """Applies the Sigmoid Linear Unit activation function to an input tensor."""
+    """Applies the Sigmoid Linear Unit activation function to the input."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -253,7 +254,7 @@ class SiLUFn(Function):
 
 
 def silu(x: Tensor) -> Tensor:
-    """Applies the Sigmoid Linear Unit activation function to an input tensor.
+    """Applies the Sigmoid Linear Unit activation function to the input.
 
     Parameters
     ----------
@@ -273,7 +274,7 @@ def silu(x: Tensor) -> Tensor:
 
 
 class SoftmaxFn(Function):
-    """Applies the softmax activation function over the last axis of an input tensor."""
+    """Applies the softmax activation function to the last dimension of an input tensor."""
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
@@ -285,11 +286,11 @@ class SoftmaxFn(Function):
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
         (y,) = cache.pop()
-        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thanks to ChatGPT
+        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thank you ChatGPT
 
 
 def softmax(x: Tensor) -> Tensor:
-    """Applies the softmax function over the last axis of an input tensor.
+    """Applies the softmax activation function to the last dimension of an input tensor.
 
     Parameters
     ----------

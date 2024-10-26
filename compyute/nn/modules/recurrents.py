@@ -3,13 +3,11 @@
 import math
 from typing import Literal, Optional
 
-from ...tensor_ops.creation_ops import empty
+from ...random import uniform
 from ...tensors import Tensor
-from ...typing import DType
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
 from ..parameter import Parameter, update_parameter_grad
-from ..utils.initializers import init_uniform
-from .module import Module, validate_input_axes
+from .module import Module
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
 
@@ -26,9 +24,9 @@ class Recurrent(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -43,8 +41,6 @@ class Recurrent(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -60,7 +56,6 @@ class Recurrent(Module):
         h_channels: int,
         bias: bool = True,
         activation: str = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -69,25 +64,20 @@ class Recurrent(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_i = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_i = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
-        # init hidden parameters
-        self.w_h = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_h = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_i = Parameter(w_i_init())
+        self.b_i = Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(self.w_i, self.w_h, low=-std, high=std)
-        if self.b_i and self.b_h:
-            init_uniform(self.b_i, self.b_h, low=-std, high=std)
+        self.w_h = Parameter(w_h_init())
+        self.b_h = Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return RecurrentFn.forward(
             self.fcache, x, self.w_i, self.b_i, self.w_h, self.b_h, self.activation
         )
@@ -103,7 +93,8 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    r"""Long Short-Term Memory module.
+    r"""Long Short-Term Memory module as described by
+    `Hochreiter et al., 1997 <https://www.bioinf.jku.at/publications/older/2604.pdf>`_.
     For each element in the sequence the hidden state is computed as follows:
 
     .. math::
@@ -123,9 +114,9 @@ class LSTM(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -140,8 +131,6 @@ class LSTM(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -157,7 +146,6 @@ class LSTM(Module):
         h_channels: int,
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -166,68 +154,32 @@ class LSTM(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_ii = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ii = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_if = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_if = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_ig = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ig = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_io = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_io = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
-        # init hidden parameters
-        self.w_hi = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hi = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hf = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hf = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hg = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hg = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_ho = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_ho = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_ii = Parameter(w_i_init())
+        self.b_ii = None if not bias else Parameter(b_init())
+        self.w_if = Parameter(w_i_init())
+        self.b_if = None if not bias else Parameter(b_init())
+        self.w_ig = Parameter(w_i_init())
+        self.b_ig = None if not bias else Parameter(b_init())
+        self.w_io = Parameter(w_i_init())
+        self.b_io = None if not bias else Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(
-            self.w_ii,
-            self.w_if,
-            self.w_ig,
-            self.w_io,
-            self.w_hi,
-            self.w_hf,
-            self.w_hg,
-            self.w_ho,
-            low=-std,
-            high=std,
-        )
-        if (
-            self.b_ii
-            and self.b_if
-            and self.b_ig
-            and self.b_io
-            and self.b_hi
-            and self.b_hf
-            and self.b_hg
-            and self.b_ho
-        ):
-            init_uniform(
-                self.b_ii,
-                self.b_if,
-                self.b_ig,
-                self.b_io,
-                self.b_hi,
-                self.b_hf,
-                self.b_hg,
-                self.b_ho,
-                low=-std,
-                high=std,
-            )
+        self.w_hi = Parameter(w_h_init())
+        self.b_hi = None if not bias else Parameter(b_init())
+        self.w_hf = Parameter(w_h_init())
+        self.b_hf = None if not bias else Parameter(b_init())
+        self.w_hg = Parameter(w_h_init())
+        self.b_hg = None if not bias else Parameter(b_init())
+        self.w_ho = Parameter(w_h_init())
+        self.b_ho = None if not bias else Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return LSTMFn.forward(
             self.fcache,
             x,
@@ -291,7 +243,8 @@ class LSTM(Module):
 
 
 class GRU(Module):
-    r"""Gated Recurrent Unit module.
+    r"""Gated Recurrent Unit module as described by
+    `Cho et al., 2014 <https://arxiv.org/pdf/1406.1078>`_.
     For each element in the sequence the hidden state is computed as follows:
 
     .. math::
@@ -309,9 +262,9 @@ class GRU(Module):
 
     Shapes:
         - Input :math:`(B, S, C_{in})`
-        - Output :math:`(B, S, C_{h})` if ``return_sequence=True`` else :math:`(B, C_{h})`
+        - Output :math:`(B, S, C_{h})`
     where
-        - :math:`B` ... batch axis
+        - :math:`B` ... batch dimension
         - :math:`S` ... sequence
         - :math:`C_{in}` ... input channels
         - :math:`C_{h}` ... hidden channels
@@ -326,8 +279,6 @@ class GRU(Module):
         Whether to use bias values. Defaults to ``True``.
     activation : Literal["relu", "tanh"], optional
         Activation function to use. Defaults to ``tanh``.
-    dtype : DType, optional
-        Datatype of weights and biases. Defaults to ``None``.
     label : str, optional
         Module label. Defaults to ``None``. If ``None``, the class name is used.
 
@@ -343,7 +294,6 @@ class GRU(Module):
         h_channels: int,
         bias: bool = True,
         activation: Literal["relu", "tanh"] = "tanh",
-        dtype: Optional[DType] = None,
         label: Optional[str] = None,
     ) -> None:
         super().__init__(label)
@@ -352,58 +302,28 @@ class GRU(Module):
         self.bias = bias
         self.activation = activation
 
-        # init input parameters
-        self.w_ir = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_ir = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_iz = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_iz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_in = Parameter(empty((h_channels, in_channels), dtype=dtype))
-        self.b_in = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        # init parameters
+        k = 1.0 / math.sqrt(self.h_channels)
+        w_i_init = lambda: uniform((h_channels, in_channels), -k, k)
+        w_h_init = lambda: uniform((h_channels, h_channels), -k, k)
+        b_init = lambda: uniform((h_channels,), -k, k)
 
-        # init hidden parameters
-        self.w_hr = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hr = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hz = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hz = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
-        self.w_hn = Parameter(empty((h_channels, h_channels), dtype=dtype))
-        self.b_hn = None if not bias else Parameter(empty((h_channels,), dtype=dtype))
+        self.w_ir = Parameter(w_i_init())
+        self.b_ir = None if not bias else Parameter(b_init())
+        self.w_iz = Parameter(w_i_init())
+        self.b_iz = None if not bias else Parameter(b_init())
+        self.w_in = Parameter(w_i_init())
+        self.b_in = None if not bias else Parameter(b_init())
 
-        self._init_parameters_and_buffers()
-
-    def _init_parameters_and_buffers(self) -> None:
-        std = 1.0 / math.sqrt(self.h_channels)
-        init_uniform(
-            self.w_ir,
-            self.w_iz,
-            self.w_in,
-            self.w_hr,
-            self.w_hz,
-            self.w_hn,
-            low=-std,
-            high=std,
-        )
-        if (
-            self.b_ir
-            and self.b_iz
-            and self.b_in
-            and self.b_hr
-            and self.b_hz
-            and self.b_hn
-        ):
-            init_uniform(
-                self.b_ir,
-                self.b_iz,
-                self.b_in,
-                self.b_hr,
-                self.b_hz,
-                self.b_hn,
-                low=-std,
-                high=std,
-            )
+        self.w_hr = Parameter(w_h_init())
+        self.b_hr = None if not bias else Parameter(b_init())
+        self.w_hz = Parameter(w_h_init())
+        self.b_hz = None if not bias else Parameter(b_init())
+        self.w_hn = Parameter(w_h_init())
+        self.b_hn = None if not bias else Parameter(b_init())
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        validate_input_axes(self, x, [3])
         return GRUFn.forward(
             self.fcache,
             x,

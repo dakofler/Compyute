@@ -15,7 +15,6 @@ __all__ = [
     "histogram",
     "ifft1d",
     "ifft2d",
-    "invert",
     "log",
     "log2",
     "log10",
@@ -116,88 +115,88 @@ def exp(x: Tensor) -> Tensor:
     return Tensor(x.device.module.exp(x.data))
 
 
-def fft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
-    """Computes the 1D Fast Fourier Transform over a given axis.
+def fft1d(x: Tensor, n: Optional[int] = None, dim: int = -1) -> Tensor:
+    """Computes the 1D Fast Fourier Transform over a given dimension.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     n : int, optional
-        Length of the transformed axis of the output. Defaults to ``None``.
-    axis : int, optional
-        Axis over which to compute the FFT. Defaults to ``-1``.
+        Length of the transformed dimension of the output. Defaults to ``None``.
+    dim : int, optional
+        Dimension over which to perform the operation. Defaults to ``-1``.
 
     Returns
     -------
     Tensor
         Complex tensor containing the 1D FFT.
     """
-    return Tensor(x.device.module.fft.fft(x.data, n, axis))
+    return Tensor(x.device.module.fft.fft(x.data, n, dim))
 
 
 def fft2d(
-    x: Tensor, n: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
+    x: Tensor, n: Optional[ShapeLike] = None, dims: tuple[int, int] = (-2, -1)
 ) -> Tensor:
-    """Computes the 2D Fast Fourier Transform over given axes.
+    """Computes the 2D Fast Fourier Transform over given dimensions.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     n : ShapeLike, optional
-        Shape (length of each transformed axis) of the output. Defaults to ``None``.
-    axes : tuple[int, int], optional
-        Axes over which to compute the FFT. Defaults to ``(-2, -1)``.
+        Shape (length of each transformed dimension) of the output. Defaults to ``None``.
+    dim : tuple[int, int], optional
+        Dimensions over which to perform the operation. Defaults to ``(-2, -1)``.
 
     Returns
     -------
     Tensor
         Complex tensor containing the 2D FFT.
     """
-    return Tensor(x.device.module.fft.fft2(x.data, n, axes))
+    return Tensor(x.device.module.fft.fft2(x.data, n, dims))
 
 
-def ifft1d(x: Tensor, n: Optional[int] = None, axis: int = -1) -> Tensor:
-    """Computes the inverse 1D Fast Fourier Transform over a given axis.
+def ifft1d(x: Tensor, n: Optional[int] = None, dim: int = -1) -> Tensor:
+    """Computes the inverse 1D Fast Fourier Transform over a given dimension.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     n : int, optional
-        Length of the transformed axis of the output. Defaults to ``None``.
-    axis : int, optional
-        Axis over which to compute the inverse FFT. Defaults to ``-1``.
+        Length of the transformed dimension of the output. Defaults to ``None``.
+    dim : int, optional
+        Dimension over which to perform the operation. Defaults to ``-1``.
 
     Returns
     -------
     Tensor
         Float tensor containing the inverse 1D FFT.
     """
-    return Tensor(x.device.module.fft.ifft(x.data, n, axis))
+    return Tensor(x.device.module.fft.ifft(x.data, n, dim))
 
 
 def ifft2d(
-    x: Tensor, s: Optional[ShapeLike] = None, axes: tuple[int, int] = (-2, -1)
+    x: Tensor, s: Optional[ShapeLike] = None, dims: tuple[int, int] = (-2, -1)
 ) -> Tensor:
-    """Computes the inverse 2D Fast Fourier Transform over given axes.
+    """Computes the inverse 2D Fast Fourier Transform over given dims.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
     n : ShapeLike, optional
-        Shape (length of each transformed axis) of the output. Defaults to ``None``.
-    axes : tuple[int, int], optional
-        Axes over which to compute the inverse FFT. Defaults to ``(-2, -1)``.
+        Shape (length of each transformed dimension) of the output. Defaults to ``None``.
+    dim : tuple[int, int], optional
+        Dimensions over which to perform the operation. Defaults to ``(-2, -1)``.
 
     Returns
     -------
     Tensor
         Float tensor containing the inverse 2D FFT.
     """
-    return Tensor(x.device.module.fft.ifft2(x.data, s, axes))
+    return Tensor(x.device.module.fft.ifft2(x.data, s, dims))
 
 
 def imag(x: Tensor) -> Tensor:
@@ -214,22 +213,6 @@ def imag(x: Tensor) -> Tensor:
         Tensor containing imaginary values.
     """
     return x.imag()
-
-
-def invert(x: Tensor) -> Tensor:
-    """Returns the element-wise invertion of a boolean tensor.
-
-    Parameters
-    ----------
-    x : Tensor
-        Input tensor.
-
-    Returns
-    -------
-    Tensor
-        Tensor containing inverted values.
-    """
-    return Tensor(x.device.module.invert(x.data))
 
 
 def histogram(

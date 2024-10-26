@@ -37,8 +37,6 @@ class StepLrScheduler(Callback):
     :class:`compyute.nn.utils.lr_schedulers.StepLrScheduler`
     """
 
-    scheduler: _LrScheduler
-
     def __init__(
         self, optimizer: Optimizer, t_decay: int, lr_decay: float = 0.1
     ) -> None:
@@ -168,7 +166,7 @@ class AdaptiveLrScheduler(Callback):
             optimizer, patience, lr_downscale_factor, lr_upscale_factor
         )
 
-    def on_step_start(self, trainer_cache: dict[str, Any]) -> None:
+    def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:
         if self.target not in trainer_cache:
             raise AttributeError(f"Target {self.target} not found in trainer_cache")
         self.scheduler.step(**{self.target: trainer_cache[self.target]})

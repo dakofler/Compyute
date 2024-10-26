@@ -1,20 +1,25 @@
 """Compyute engine utilities."""
 
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+from abc import ABC
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Optional, TypeAlias
+from typing import Any, ClassVar, Optional, TypeAlias
 
 import cupy
 import numpy
 
-__all__ = ["cpu", "cuda", "Device", "use_device"]
+__all__ = ["cpu", "cuda", "Device", "CUDA", "CPU", "set_default_device", "use_device"]
 
 
 class CUDARuntimeError(Exception):
     """Cuda error."""
+
+    def __init__(self, message: str = "invalid device ordinal.") -> None:
+        super().__init__(message)
 
 
 @dataclass(eq=False, repr=False, frozen=True)
@@ -23,35 +28,36 @@ class Device(ABC):
 
     t: str
     index: int = 0
+    module: ClassVar[ModuleType] = numpy
 
     def __eq__(self, other: Any) -> bool:
         return repr(self) == repr(other)
 
     def __repr__(self) -> str:
-        return f"Device({self.t}:{self.index})"
+        return f"Device({self.name})"
 
     def __format__(self, __format_spec: str) -> str:
         return self.__repr__().__format__(__format_spec)
 
+    def __enter__(self) -> None: ...
+
+    def __exit__(self, *args: Any) -> None: ...
+
     @property
-    @abstractmethod
-    def module(self) -> ModuleType:
-        """Computation engine."""
-        ...
+    def name(self) -> str:
+        return f"{self.t}:{self.index}"
 
 
 @dataclass(eq=False, repr=False, frozen=True)
 class CPU(Device):
     """CPU device."""
 
-    @property
-    def module(self) -> ModuleType:
-        return numpy
-
 
 @dataclass(eq=False, repr=False, frozen=True)
 class CUDA(Device):
     """GPU device."""
+
+    module: ClassVar[ModuleType] = cupy
 
     def __enter__(self) -> None:
         return self.cupy_device.__enter__()
@@ -64,15 +70,11 @@ class CUDA(Device):
         return cupy.cuda.Device(self.index)
 
     @property
-    def module(self) -> ModuleType:
-        return cupy
-
-    @property
     def properties(self) -> Optional[dict[str, Any]]:
         try:
             return cupy.cuda.runtime.getDeviceProperties(self.index)
         except Exception:
-            raise CUDARuntimeError("No such device.")
+            raise CUDARuntimeError()
 
     @property
     def memory_info(self) -> dict[str, int]:
@@ -80,7 +82,7 @@ class CUDA(Device):
             free, total = self.cupy_device.mem_info
             return {"used": total - free, "free": free, "total": total}
         except Exception:
-            raise CUDARuntimeError("No such device.")
+            raise CUDARuntimeError()
 
 
 cpu = CPU("cpu")
@@ -137,15 +139,26 @@ fallback_default_device: Device = cpu
 default_device: Optional[Device] = None
 
 
+def get_default_device() -> Optional[Device]:
+    """Returns the default device."""
+    return default_device
+
+
 def set_default_device(device: Optional[Device]) -> None:
-    """Sets the default device."""
+    """Sets the default device for new tensors.
+
+    Parameters
+    ----------
+    device : Device, optional
+        The device to use. Defaults to ``None``.
+    """
     global default_device
     default_device = device
 
 
 @contextmanager
 def use_device(device: Device) -> Generator:
-    """Context manager to set the default device when creating tensors."""
+    """Context manager to set the default device for new tensors."""
     set_default_device(device)
     try:
         yield
@@ -158,11 +171,6 @@ def get_device_from_array(array: ArrayLike) -> Device:
     if isinstance(array, cupy.ndarray):
         return cuda
     return cpu
-
-
-def get_default_device() -> Optional[Device]:
-    """Returns the default device."""
-    return default_device
 
 
 def select_device(device: Optional[Device]) -> Device:
