@@ -54,10 +54,18 @@ def get_module_summary(
 
     # perform forward pass to get output shapes
     x = ones((1,) + input_shape, dtype=input_dtype, device=module.device)
-    ret_vals = module.retain_values
+
+    retain_values = module.retain_values
     module.retain_values = True
+
+    training = module.is_training
+    module.inference()
+
     _ = module(x)
-    module.retain_values = ret_vals
+
+    module.retain_values = retain_values
+    if training:
+        module.training()
 
     # get model summary
     module_summaries: list[dict[str, Any]] = []

@@ -217,3 +217,10 @@ Utility Functions
     load
     set_debug_mode
     debug
+
+
+Constants
+-----------------
+.. data:: newaxis
+
+    A convenient alias for None, useful for indexing arrays.

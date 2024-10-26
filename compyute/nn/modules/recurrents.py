@@ -93,7 +93,8 @@ class Recurrent(Module):
 
 
 class LSTM(Module):
-    r"""Long Short-Term Memory module.
+    r"""Long Short-Term Memory module as described by
+    `Hochreiter et al., 1997 <https://www.bioinf.jku.at/publications/older/2604.pdf>`_.
     For each element in the sequence the hidden state is computed as follows:
 
     .. math::
@@ -242,7 +243,8 @@ class LSTM(Module):
 
 
 class GRU(Module):
-    r"""Gated Recurrent Unit module.
+    r"""Gated Recurrent Unit module as described by
+    `Cho et al., 2014 <https://arxiv.org/pdf/1406.1078>`_.
     For each element in the sequence the hidden state is computed as follows:
 
     .. math::

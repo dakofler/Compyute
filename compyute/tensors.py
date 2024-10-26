@@ -29,7 +29,7 @@ from .typing import (
 )
 from .utils import get_debug_mode
 
-__all__ = ["tensor", "Tensor"]
+__all__ = ["tensor", "Tensor", "newaxis"]
 
 ShapeLike: TypeAlias = tuple[int, ...]
 DimLike: TypeAlias = int | tuple[int, ...]
@@ -37,6 +37,9 @@ DimLike: TypeAlias = int | tuple[int, ...]
 
 class ShapeError(Exception):
     """Incompatible tensor shapes."""
+
+
+newaxis: TypeAlias = None
 
 
 def tensor(

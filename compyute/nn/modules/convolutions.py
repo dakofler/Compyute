@@ -205,7 +205,8 @@ class Conv2D(Module):
 
 
 class ConvTranspose1D(Module):
-    r"""Applies a 1D transposed convolution to the input for upsampling.
+    r"""Applies a 1D transposed convolution to the input for upsampling as descirbed by
+    `Shelhamer et al., 2016 <https://arxiv.org/pdf/1605.06211v1>`_.
 
     Shapes:
         - Input :math:`(B, C_{in}, S_{in})`
@@ -287,7 +288,8 @@ class ConvTranspose1D(Module):
 
 
 class ConvTranspose2D(Module):
-    r"""Applies a 2D transposed convolution to the input for upsampling.
+    r"""Applies a 2D transposed convolution to the input for upsampling as descirbed by
+    `Shelhamer et al., 2016 <https://arxiv.org/pdf/1605.06211v1>`_.
 
     Shapes:
         - Input :math:`(B, C_{in}, Y_{in}, X_{in})`

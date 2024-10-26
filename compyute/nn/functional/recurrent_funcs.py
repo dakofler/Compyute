@@ -51,7 +51,6 @@ class RecurrentFn(Function):
     ) -> tuple[Tensor, Tensor, Optional[Tensor], Tensor, Optional[Tensor]]:
         h_shape, act, b = cache.pop()
 
-        # ugly inits :(
         B, T, H = h_shape
         dh = zeros((B, H), device=dy.device, dtype=dy.dtype)
         dw_h = zeros((H, H), device=dy.device, dtype=dy.dtype)
@@ -165,13 +164,13 @@ class LSTMFn(Function):
             f[:, t] = SigmoidFn.forward(cache, x_f[:, t] + h_f)  # forget gate
             o[:, t] = SigmoidFn.forward(cache, x_o[:, t] + h_o)  # output gate
 
-            # input node
+            # candidate cell state
             g[:, t] = act.forward(cache, x_g[:, t] + h_g)
 
-            # carry state c_t = f_t * c_t-1 + i_t * g_t
+            # cell state c_t = f_t * c_t-1 + i_t * g_t
             c[:, t] = f[:, t] * c[:, t - 1] + i[:, t] * g[:, t]
 
-            # memory state h_t = o_t * act(c_t)
+            # hidden state h_t = o_t * act(c_t)
             act_c[:, t] = act.forward(cache, c[:, t])
             h[:, t] = o[:, t] * act_c[:, t]
 
@@ -200,7 +199,6 @@ class LSTMFn(Function):
     ]:
         i, f, g, o, b, c, act, act_c = cache.pop()
 
-        # ugly inits :(
         B, T, H = i.shape
         dh = zeros((B, H), device=dy.device, dtype=dy.dtype)
         dw_hi = zeros((H, H), device=dy.device, dtype=dy.dtype)
@@ -213,19 +211,19 @@ class LSTMFn(Function):
         do_preact, dc = empty_like(o), zeros_like(c)
 
         for t in range(T - 1, -1, -1):
-            # memory state gradients
+            # hidden state gradients
             dh += dy[:, t]
             do = act_c[:, t] * dh
             dc[:, t] += act.backward(cache, dh) * o[:, t]
 
-            # carry state gradients
+            # cell state gradients
             df = zeros_like(dh) if t < 1 else c[:, t - 1] * dc[:, t]
             if t > 0:
                 dc[:, t - 1] += f[:, t] * dc[:, t]
             di = g[:, t] * dc[:, t]
             dg = i[:, t] * dc[:, t]
 
-            # input node gradients
+            # candidate cell state gradients
             dg_preact[:, t] = act.backward(cache, dg)
 
             # gate gradients
@@ -316,9 +314,9 @@ def lstm(
     b_if : Tensor, optional
         Bias tensor for the input projection of the forget gate.
     w_ig : Tensor
-        Weight tensor for the input projection of the input node.
+        Weight tensor for the input projection of the candidate cell state.
     b_ig : Tensor, optional
-        Bias tensor for the input projection of the input node.
+        Bias tensor for the input projection of the candidate cell state.
     w_io : Tensor
         Weight tensor for the input projection of the output gate.
     b_io : Tensor, optional
@@ -332,9 +330,9 @@ def lstm(
     b_hf : Tensor, optional
         Bias tensor for the hidden projection of the forget gate.
     w_hg : Tensor
-        Weight tensor for the hidden projection of the input node.
+        Weight tensor for the hidden projection of the candidate cell state.
     b_hg : Tensor, optional
-        Bias tensor for the hidden projection of the input node.
+        Bias tensor for the hidden projection of the candidate cell state.
     w_ho : Tensor
         Weight tensor for the hidden projection of the output gate.
     b_ho : Tensor, optional
