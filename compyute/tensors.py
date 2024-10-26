@@ -144,6 +144,11 @@ class Tensor:
         """Whether the tensor data is stored as a C-contiguous array."""
         return self.data.flags.c_contiguous
 
+    @property
+    def nbytes(self) -> int:
+        """Number of bytes the tensor data occupies."""
+        return self.data.nbytes
+
     # ----------------------------------------------------------------------------------
     # MAGIC METHODS
     # ----------------------------------------------------------------------------------

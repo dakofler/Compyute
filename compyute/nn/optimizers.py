@@ -273,7 +273,7 @@ class Adam(Optimizer):
 
 class AdamW(Optimizer):
     r"""Updates parameters following the AdamW learning algorithm as described by
-    `Loshchilov et al., 2019 <https://arxiv.org/pdf/1711.05101>`_.
+    `Loshchilov et al., 2017 <https://arxiv.org/pdf/1711.05101>`_.
 
     .. math::
         \begin{aligned}

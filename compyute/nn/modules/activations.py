@@ -28,7 +28,8 @@ __all__ = [
 
 
 class GELU(Module):
-    r"""Gaussian Error Linear Unit activation function (using the :math:`tanh` approximation).
+    r"""Gaussian Error Linear Unit activation function (using the :math:`tanh` approximation)
+    as described by `Hendrycks et al., 2016 <https://arxiv.org/pdf/1606.08415>`_.
 
     .. math::
         y = 0.5 \cdot x \cdot \left( 1 + \text{tanh} \left( x \sqrt{\frac{2}{\pi}} \cdot (1 + 0.044715 \cdot x^2) \right) \right)
@@ -49,7 +50,8 @@ class GELU(Module):
 
 
 class FastGELU(Module):
-    r"""Gaussian Error Linear Unit activation function (using the :math:`sigmoid` approximation).
+    r"""Gaussian Error Linear Unit activation function (using the :math:`sigmoid` approximation)
+    as described by `Hendrycks et al., 2016 <https://arxiv.org/pdf/1606.08415>`_.
 
     .. math::
         y = x \cdot \sigma{1.702x}

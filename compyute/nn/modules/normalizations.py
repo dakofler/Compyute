@@ -18,7 +18,7 @@ __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
 
 class BatchNorm1D(Module):
     r"""Implements Batch Normalization as described by
-    `Ioffe et al., 2015 <https://arxiv.org/pdf/1502.03167>`_.
+    `Ioffe et al., 2015 <https://asvk.cs.msu.ru/~sveta/%D1%80%D0%B5%D1%84%D0%B5%D1%80%D0%B0%D1%82/batch_normalization.pdf>`_.
 
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
@@ -95,7 +95,7 @@ class BatchNorm1D(Module):
 
 class BatchNorm2D(Module):
     r"""Implements Batch Normalization as described by
-    `Ioffe et al., 2015 <https://arxiv.org/pdf/1502.03167>`_.
+    `Ioffe et al., 2015 <https://asvk.cs.msu.ru/~sveta/%D1%80%D0%B5%D1%84%D0%B5%D1%80%D0%B0%D1%82/batch_normalization.pdf>`_.
 
     .. math::
         y = w \cdot \frac{x - E[x]}{\sqrt{Var[x] + \epsilon}} + b
@@ -228,7 +228,7 @@ class LayerNorm(Module):
 
 class RMSNorm(Module):
     r"""Implements Root Mean Square Layer Normalization as described by
-    `Zhang et al., 2019 <https://arxiv.org/pdf/1910.07467>`_.
+    `Zhang et al., 2019 <https://proceedings.neurips.cc/paper/2019/file/1e8a19426224ca89e83cef47f1e7f53b-Paper.pdf>`_.
 
     .. math::
         y = w \cdot \frac{x}{\text{RMS}(x)} + b
