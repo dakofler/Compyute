@@ -74,7 +74,7 @@ class Dataloader:
             yield tuple(t[idx[n_trunc:]].to_device(self.device) for t in self.data)
 
     def __len__(self) -> int:
-        return max(1, math.ceil(self.data[0].shape[0] / self.batch_size))
+        return max(1, len(self.data[0]) // self.batch_size + (not self.drop_remaining))
 
 
 def batched(

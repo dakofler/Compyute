@@ -10,6 +10,9 @@ from collections.abc import Callable, Iterable, Iterator
 from functools import wraps
 from typing import Any, Optional
 
+import cupy
+import numpy
+
 from ...backend import Device, DeviceError, free_cuda_memory
 from ...tensors import Tensor
 from ...typing import DType
@@ -328,6 +331,8 @@ class Module(ABC):
                 m.x = x
                 m.y = y
 
+            assert not y.device.module.isnan(y.data).any(), repr(m)
+
             return y
 
         return wrapper
@@ -360,6 +365,8 @@ class Module(ABC):
             if m.retain_values and m.x and m.y:
                 m.x.grad = dx
                 m.y.grad = dy
+
+            assert not dx.device.module.isnan(dx.data).any(), repr(m)
 
             return dx
 

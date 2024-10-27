@@ -68,7 +68,7 @@ class ProgressBar(Callback):
             self.pbar = tqdm(
                 desc=f"Epoch {trainer_cache['t']}/{trainer_cache['epochs']}",
                 unit=" steps",
-                total=trainer_cache["train_steps"] + 1,
+                total=trainer_cache["train_steps"],
             )
 
     def on_epoch_end(self, trainer_cache: dict[str, Any]) -> None:

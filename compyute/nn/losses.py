@@ -83,6 +83,8 @@ class Loss(ABC):
             else:
                 y = fwd_fn(l, y_pred, y_true)
 
+            assert not y.device.module.isnan(y.data).any(), repr(l)
+
             return y
 
         return wrapper
@@ -102,6 +104,7 @@ class Loss(ABC):
                 dx = bwd_fn(l)
 
             assert not l.fcache.cache, "FunctionCache not empty after backward."
+            assert not dx.device.module.isnan(dx.data).any(), repr(l)
             return dx
 
         return wrapper
@@ -112,6 +115,10 @@ class MeanSquaredError(Loss):
 
     .. math::
         L = \frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2
+
+    where
+        - :math:`\hat{y}` ... model logits
+        - :math:`y` ... ground truth
     """
 
     @Loss.register_forward
@@ -124,10 +131,14 @@ class MeanSquaredError(Loss):
 
 
 class CrossEntropy(Loss):
-    r"""Computes the cross entropy loss.
+    r"""Computes the cross entropy loss from logits.
 
     .. math::
-        L = \frac{1}{N} \sum_{i=1}^N -\hat{y}_i \cdot \log(y_i)
+        L = -\frac{1}{N} \sum_{i=1}^N y_i \cdot \log(\text{softmax}(\hat{y}_i))
+
+    where
+        - :math:`\hat{y}` ... model logits
+        - :math:`y` ... ground truth
     """
 
     @Loss.register_forward
@@ -140,10 +151,19 @@ class CrossEntropy(Loss):
 
 
 class BinaryCrossEntropy(Loss):
-    r"""Computes the binary cross entropy loss.
+    r"""Computes the binary cross entropy loss from logits.
 
     .. math::
-        L = -\frac{1}{N} \sum_{i=1}^N \hat{y}_i \log(y_i) - (1 - \hat{y}_i) \log(1 - y_i)
+        L = -\frac{1}{N} \sum_{i=1}^N y_i \cdot \log(\hat{y}_i) - (1 - y_i) \cdot \log(1 - \hat{y}_i)
+
+    The above version can be numerically instable, therefore this equivalent formulation is used:
+
+    .. math::
+        L = -\frac{1}{N} \sum_{i=1}^N \text{max}(0,\hat{y}_i) - \hat{y}_i \cdot y_i + \text{log}(1+e^{-|y_i|})
+
+    where
+        - :math:`\hat{y}` ... model logits
+        - :math:`y` ... ground truth
     """
 
     @Loss.register_forward
