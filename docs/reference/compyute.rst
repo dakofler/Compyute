@@ -54,6 +54,7 @@ Functions that operate on one tensor.
     histogram
     ifft1d
     ifft2d
+    is_nan
     log
     log2
     log10
@@ -95,6 +96,7 @@ Functions that aggregate tensors.
     :toctree: ../_generated/compyute
 
     all
+    any
     mean
     norm
     prod

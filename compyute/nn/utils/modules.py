@@ -85,7 +85,7 @@ def get_module_summary(
     param_ptrs: list[int] = []
 
     for m in module_summaries:
-        m_name = m["name"]
+        m_name = m["name"][:30]
         m_in_shape = str(m["in_shape"])
         m_out_shape = str(m["out_shape"])
         m_n_params = sum(m["n_params"].values())

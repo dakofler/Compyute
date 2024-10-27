@@ -9,6 +9,7 @@ from ..tensors import DimLike, Tensor
 
 __all__ = [
     "all",
+    "any",
     "mean",
     "norm",
     "prod",
@@ -37,9 +38,31 @@ def all(x: Tensor, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> 
     Returns
     -------
     Tensor
-        ``True`` if all elements are ``True``.
+        Boolean tensor.
     """
     return x.all(dim, keepdims=keepdims)
+
+
+def any(x: Tensor, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+    """Returns ``True`` if at least one element in the tensor is ``True`` over given dimensions.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+    dim : DimLike, optional
+        Dimension on which to perform the operation. Defaults to ``None``.
+        If ``None`` it is performed on the flattened tensor.
+    keepdims : bool, optional
+        Whether to keep the tensors dimensions. Defaults to ``False``.
+        if ``False`` the tensor is collapsed along the given dimensions.
+
+    Returns
+    -------
+    Tensor
+        Boolean tensor.
+    """
+    return x.any(dim, keepdims=keepdims)
 
 
 def mean(x: Tensor, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:

@@ -15,6 +15,7 @@ __all__ = [
     "histogram",
     "ifft1d",
     "ifft2d",
+    "is_nan",
     "log",
     "log2",
     "log10",
@@ -213,6 +214,22 @@ def imag(x: Tensor) -> Tensor:
         Tensor containing imaginary values.
     """
     return x.imag()
+
+
+def is_nan(x: Tensor) -> Tensor:
+    """Returns ``True`` if the element in a tensor is not a number.
+
+    Parameters
+    ----------
+    x : Tensor
+        Input tensor.
+
+    Returns
+    -------
+    Tensor
+        Boolean tensor.
+    """
+    return Tensor(x.device.module.isnan(x.data))
 
 
 def histogram(

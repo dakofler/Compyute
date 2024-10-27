@@ -550,13 +550,22 @@ class Tensor:
         return Tensor(abs(self.data))
 
     def all(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
-        """Returns ``True`` if all elements in the tensor are ``True``
+        """Returns ``True`` if all elements in the tensor are ``True`` over given dimensions.
 
         See Also
         --------
         :func:`compyute.all`
         """
         return Tensor(self.data.all(dim, keepdims=keepdims))
+
+    def any(self, dim: Optional[DimLike] = None, *, keepdims: bool = False) -> Tensor:
+        """Returns ``True`` if at least one element in the tensor is ``True`` over given dimensions.
+
+        See Also
+        --------
+        :func:`compyute.any`
+        """
+        return Tensor(self.data.any(dim, keepdims=keepdims))
 
     def argmax(self, dim: Optional[int] = None, *, keepdims: bool = False) -> Tensor:
         """Returns the indices of maximum values along a given dimension.

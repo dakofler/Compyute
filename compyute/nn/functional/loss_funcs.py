@@ -16,8 +16,8 @@ class MeanSquaredErrorFn(Function):
     """Computes the mean squared error loss."""
 
     @staticmethod
-    def forward(cache: FunctionCache, logits: Tensor, y_true: Tensor) -> Tensor:
-        diff = logits - y_true
+    def forward(cache: FunctionCache, logits: Tensor, targets: Tensor) -> Tensor:
+        diff = logits - targets
         loss = (diff * diff).mean()
         cache.push(logits.size, diff)
         return loss
@@ -28,14 +28,14 @@ class MeanSquaredErrorFn(Function):
         return 2.0 * diff / float(logits_size)
 
 
-def mean_squared_error(logits: Tensor, y_true: Tensor) -> Tensor:
+def mean_squared_error(logits: Tensor, targets: Tensor) -> Tensor:
     """Computes the mean squared error loss.
 
     Parameters
     ----------
     logits : Tensor
         Model logits.
-    y_true : Tensor
+    targets : Tensor
         Target values.
 
     Returns
@@ -47,7 +47,7 @@ def mean_squared_error(logits: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.MeanSquaredError`
     """
-    return MeanSquaredErrorFn.forward(PseudoCache(), logits, y_true)
+    return MeanSquaredErrorFn.forward(PseudoCache(), logits, targets)
 
 
 class CrossEntropyFn(Function):
@@ -55,28 +55,28 @@ class CrossEntropyFn(Function):
 
     @staticmethod
     def forward(
-        cache: FunctionCache, logits: Tensor, y_true: Tensor, eta: float
+        cache: FunctionCache, logits: Tensor, targets: Tensor, eta: float
     ) -> Tensor:
         probs = softmax(logits)
-        y_true = one_hot_encode(y_true, logits.shape[-1], probs.dtype)
-        loss = -(log(probs + eta) * y_true).sum(-1).mean()
-        cache.push(y_true, probs)
+        targets = one_hot_encode(targets, logits.shape[-1], probs.dtype)
+        loss = -(log(probs + eta) * targets).sum(-1).mean()
+        cache.push(targets, probs)
         return loss
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        y_true, probs = cache.pop()
-        return (probs - y_true) / float(math.prod(y_true.shape[:-1]))
+        targets, probs = cache.pop()
+        return (probs - targets) / float(math.prod(targets.shape[:-1]))
 
 
-def cross_entropy(logits: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
+def cross_entropy(logits: Tensor, targets: Tensor, eta: float = 1e-8) -> Tensor:
     """Computes the cross entropy loss from logits.
 
     Parameters
     ----------
     logits : Tensor
         Model logits.
-    y_true : Tensor
+    targets : Tensor
         Target class labels, must be of type ``int``.
     eta : float, optional
         A small constant added for numerical stability. Defaults to ``1e-8``.
@@ -91,33 +91,33 @@ def cross_entropy(logits: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
     --------
     :class:`compyute.nn.CrossEntropy`
     """
-    return CrossEntropyFn.forward(PseudoCache(), logits, y_true, eta)
+    return CrossEntropyFn.forward(PseudoCache(), logits, targets, eta)
 
 
 class BinaryCrossEntropyFn(Function):
     """Computes the binary cross entropy loss from logits."""
 
     @staticmethod
-    def forward(cache: FunctionCache, logits: Tensor, y_true: Tensor) -> Tensor:
+    def forward(cache: FunctionCache, logits: Tensor, targets: Tensor) -> Tensor:
         max_logits = maximum(logits, 0.0)
-        loss = (max_logits - logits * y_true + log(1 + exp(-abs(logits)))).mean()
-        cache.push(logits, y_true)
+        loss = (max_logits - logits * targets + log(1 + exp(-abs(logits)))).mean()
+        cache.push(logits, targets)
         return loss
 
     @staticmethod
     def backward(cache: FunctionCache) -> Tensor:
-        logits, y_true = cache.pop()
-        return (sigmoid(logits) - y_true) / float(logits.size)  # thank you ChatGPT
+        logits, targets = cache.pop()
+        return (sigmoid(logits) - targets) / float(logits.size)  # thank you ChatGPT
 
 
-def binary_cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
+def binary_cross_entropy(logits: Tensor, targets: Tensor) -> Tensor:
     """Computes the binary cross entropy loss from logits.
 
     Parameters
     ----------
-    y_pred : Tensor
+    logits : Tensor
         Model logits.
-    y_true : Tensor
+    targets : Tensor
         Binary target class labels, must be either ``0`` or ``1``.
 
     Returns
@@ -129,4 +129,4 @@ def binary_cross_entropy(y_pred: Tensor, y_true: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.BinaryCrossEntropy`
     """
-    return BinaryCrossEntropyFn.forward(PseudoCache(), y_pred, y_true)
+    return BinaryCrossEntropyFn.forward(PseudoCache(), logits, targets)
