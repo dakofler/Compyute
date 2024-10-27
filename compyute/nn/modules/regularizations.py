@@ -10,7 +10,8 @@ __all__ = ["Dropout"]
 
 
 class Dropout(Module):
-    """Dropout layer used for regularization.
+    """Dropout layer used for regularization as described by
+    `Srivastava et al., 2019 <https://www.jmlr.org/papers/volume15/srivastava14a/srivastava14a.pdf?utm_content=buffer79b43&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer>`_.
 
     Parameters
     ----------

@@ -64,11 +64,11 @@ def test_binary_cross_entropy(shape) -> None:
     compyute_loss = BinaryCrossEntropy()
 
     # init torch loss
-    torch_loss = torch.nn.BCELoss()
+    torch_loss = torch.nn.BCEWithLogitsLoss()
 
     # forward
-    compyute_x, torch_x = get_random_floats(shape, low=0)
-    compyute_t, torch_t = get_random_floats(shape, low=0)
+    compyute_x, torch_x = get_random_floats(shape)
+    compyute_t, torch_t = get_random_floats(shape)
     compyute_y = compyute_loss(compyute_x, compyute_t)
     torch_y = torch_loss(torch_x, torch_t)
     assert is_close(compyute_y, torch_y)
