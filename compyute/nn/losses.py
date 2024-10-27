@@ -9,6 +9,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Literal
 
+from ..tensor_ops.unary_ops import is_nan
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
 from .functional.loss_funcs import (
@@ -31,18 +32,18 @@ class Loss(ABC):
         self.label = self.__class__.__name__
         self._is_training = True
 
-    def __call__(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return self.forward(y_pred, y_true)
+    def __call__(self, logits: Tensor, targets: Tensor) -> Tensor:
+        return self.forward(logits, targets)
 
     @abstractmethod
-    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
+    def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
         """Computes the loss given model predictions and target values.
 
         Parameters
         ----------
-        y_pred : Tensor
-            A model's predictions.
-        y_true : Tensor
+        logits : Tensor
+            Model logits.
+        targets : Tensor
             Target values.
 
         Returns
@@ -66,26 +67,25 @@ class Loss(ABC):
         """Registers a the forward method to the loss function."""
 
         @wraps(fwd_fn)
-        def wrapper(l: Loss, y_pred: Tensor, y_true: Tensor) -> Tensor:
+        def wrapper(l: Loss, logits: Tensor, targets: Tensor) -> Tensor:
             l.fcache.cache.clear()
 
             if DEBUG:
                 dt = time.perf_counter()
-                y = fwd_fn(l, y_pred, y_true)
+                loss = fwd_fn(l, logits, targets)
                 dt = (time.perf_counter() - dt) * 1e3
                 print(
                     f"{l.label:20s} | fwd | "
-                    f"{y_pred.dtype:15s} | "
-                    f"{y_true.dtype:15s} | "
-                    f"{y.dtype:15s} | "
+                    f"{logits.dtype:15s} | "
+                    f"{targets.dtype:15s} | "
+                    f"{loss.dtype:15s} | "
                     f"{dt=:>10.4f} ms"
                 )
             else:
-                y = fwd_fn(l, y_pred, y_true)
+                loss = fwd_fn(l, logits, targets)
 
-            assert not y.device.module.isnan(y.data).any(), repr(l)
-
-            return y
+            assert not is_nan(loss).any().item(), l
+            return loss
 
         return wrapper
 
@@ -104,7 +104,7 @@ class Loss(ABC):
                 dx = bwd_fn(l)
 
             assert not l.fcache.cache, "FunctionCache not empty after backward."
-            assert not dx.device.module.isnan(dx.data).any(), repr(l)
+            assert not is_nan(dx).any().item(), l
             return dx
 
         return wrapper
@@ -122,8 +122,8 @@ class MeanSquaredError(Loss):
     """
 
     @Loss.register_forward
-    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return MeanSquaredErrorFn.forward(self.fcache, y_pred, y_true)
+    def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
+        return MeanSquaredErrorFn.forward(self.fcache, logits, targets)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
@@ -142,8 +142,8 @@ class CrossEntropy(Loss):
     """
 
     @Loss.register_forward
-    def forward(self, y_pred: Tensor, y_true: Tensor, eta: float = 1e-8) -> Tensor:
-        return CrossEntropyFn.forward(self.fcache, y_pred, y_true, eta)
+    def forward(self, logits: Tensor, targets: Tensor, eta: float = 1e-8) -> Tensor:
+        return CrossEntropyFn.forward(self.fcache, logits, targets, eta)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
@@ -167,8 +167,8 @@ class BinaryCrossEntropy(Loss):
     """
 
     @Loss.register_forward
-    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
-        return BinaryCrossEntropyFn.forward(self.fcache, y_pred, y_true)
+    def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
+        return BinaryCrossEntropyFn.forward(self.fcache, logits, targets)
 
     @Loss.register_backward
     def backward(self) -> Tensor:

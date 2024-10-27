@@ -42,10 +42,11 @@ class Dataloader:
         drop_remaining: bool = False,
     ) -> None:
         self.data = data
-        self.batch_size = batch_size
+        self._n = len(self.data[0])
+        self.batch_size = min(batch_size, self._n)
         self.device = device
         self.shuffle = shuffle_data
-        self.drop_remaining = drop_remaining
+        self._additional_batch = not drop_remaining and self._n % self.batch_size > 0
 
     def __call__(self) -> Iterator[tuple[Tensor, ...]]:
         """Yields batched data.
@@ -58,23 +59,14 @@ class Dataloader:
             Batched labels.
 
         """
-        t1 = self.data[0]
-        n = t1.shape[0]
-        n_steps = len(self)
-        b = min(self.batch_size, n)
+        idx = permutation(self._n) if self.shuffle else arange(self._n, dtype=int64)
 
-        idx = permutation(n) if self.shuffle else arange(n, dtype=int64)
-
-        for i in range(n_steps):
-            batch_idx = idx[i * b : (i + 1) * b]
+        for i in range(len(self)):
+            batch_idx = idx[i * self.batch_size : (i + 1) * self.batch_size]
             yield tuple(t[batch_idx].to_device(self.device) for t in self.data)
 
-        if not self.drop_remaining and n_steps * b < n:
-            n_trunc = n_steps * b
-            yield tuple(t[idx[n_trunc:]].to_device(self.device) for t in self.data)
-
     def __len__(self) -> int:
-        return max(1, len(self.data[0]) // self.batch_size + (not self.drop_remaining))
+        return max(1, self._n // self.batch_size + self._additional_batch)
 
 
 def batched(

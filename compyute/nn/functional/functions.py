@@ -10,10 +10,8 @@ __all__ = ["Function", "FunctionCache"]
 
 
 class FunctionCache:
-    """
-    LiFo Cache for intermediate data that need
-    to be cached for gradient computation.
-    """
+    """Cache for intermediate data that needs to be cached for gradient computation.
+    Data is stored as a stack (last in - first out)"""
 
     cache: deque[tuple[Any, ...]]
 
@@ -31,7 +29,7 @@ class FunctionCache:
 
 
 class PseudoCache(FunctionCache):
-    """Pseudo cache as a placeholder."""
+    """Pseudo cache as a placeholder that does not cache anything."""
 
     def push(self, *values: Any) -> None: ...
 
