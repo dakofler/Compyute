@@ -1,0 +1,30 @@
+﻿compyute.nn.FunctionCache
+=========================
+
+.. currentmodule:: compyute.nn
+
+.. autoclass:: FunctionCache
+
+    
+    
+    .. rubric:: Methods
+
+    .. autosummary::
+        :toctree:
+    
+        ~FunctionCache.__init__
+        ~FunctionCache.pop
+        ~FunctionCache.push
+    
+    
+
+
+    
+    
+    .. rubric:: Attributes
+
+    .. autosummary::
+    
+        ~FunctionCache.cache
+    
+    
