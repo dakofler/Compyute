@@ -12,13 +12,9 @@ from typing import Literal
 from ..tensor_ops.unary_ops import is_nan
 from ..tensors import Tensor
 from .functional.functions import FunctionCache
-from .functional.loss_funcs import (
-    BinaryCrossEntropyFn,
-    CrossEntropyFn,
-    MeanSquaredErrorFn,
-)
+from .functional.loss_funcs import BCELossFn, CrossEntropyLossFn, DiceLossFn, MSELossFn
 
-__all__ = ["Loss", "BinaryCrossEntropy", "CrossEntropy", "MeanSquaredError"]
+__all__ = ["Loss", "BCELoss", "CrossEntropyLoss", "MSELoss", "DiceLoss"]
 
 
 DEBUG = bool(os.environ.get("COMPYUTE_DEBUG", False))
@@ -110,7 +106,7 @@ class Loss(ABC):
         return wrapper
 
 
-class MeanSquaredError(Loss):
+class MSELoss(Loss):
     r"""Computes the mean squared error loss.
 
     .. math::
@@ -123,14 +119,14 @@ class MeanSquaredError(Loss):
 
     @Loss.register_forward
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
-        return MeanSquaredErrorFn.forward(self.fcache, logits, targets)
+        return MSELossFn.forward(self.fcache, logits, targets)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return MeanSquaredErrorFn.backward(self.fcache)
+        return MSELossFn.backward(self.fcache)
 
 
-class CrossEntropy(Loss):
+class CrossEntropyLoss(Loss):
     r"""Computes the cross entropy loss from logits.
 
     .. math::
@@ -143,14 +139,14 @@ class CrossEntropy(Loss):
 
     @Loss.register_forward
     def forward(self, logits: Tensor, targets: Tensor, eta: float = 1e-8) -> Tensor:
-        return CrossEntropyFn.forward(self.fcache, logits, targets, eta)
+        return CrossEntropyLossFn.forward(self.fcache, logits, targets, eta)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return CrossEntropyFn.backward(self.fcache)
+        return CrossEntropyLossFn.backward(self.fcache)
 
 
-class BinaryCrossEntropy(Loss):
+class BCELoss(Loss):
     r"""Computes the binary cross entropy loss from logits.
 
     .. math::
@@ -168,18 +164,41 @@ class BinaryCrossEntropy(Loss):
 
     @Loss.register_forward
     def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
-        return BinaryCrossEntropyFn.forward(self.fcache, logits, targets)
+        return BCELossFn.forward(self.fcache, logits, targets)
 
     @Loss.register_backward
     def backward(self) -> Tensor:
-        return BinaryCrossEntropyFn.backward(self.fcache)
+        return BCELossFn.backward(self.fcache)
 
 
-LossLike = Loss | Literal["binary_cross_entropy", "cross_entropy", "mean_squared_error"]
+class DiceLoss(Loss):
+    r"""Computes the dice loss from logits as described by
+    `Milletari et al., 2016 <https://arxiv.org/pdf/1606.04797>`_.
+
+    .. math::
+        L = 1 - \frac{1}{C} \sum_{c=0}^{C-1} \frac{2 \sum_{n=1}^N \hat{y}_n^cy_n^c}{\sum_{n=1}^N \hat{y}_n^c + y_n^c}
+
+    where
+        - :math:`C` ... number of classes
+        - :math:`\hat{y}` ... model logits
+        - :math:`y` ... ground truth
+    """
+
+    @Loss.register_forward
+    def forward(self, logits: Tensor, targets: Tensor) -> Tensor:
+        return DiceLossFn.forward(self.fcache, logits, targets)
+
+    @Loss.register_backward
+    def backward(self) -> Tensor:
+        return DiceLossFn.backward(self.fcache)
+
+
+LossLike = Loss | Literal["bce", "cross_entropy", "mse", "dice"]
 LOSSES: dict[str, type[Loss]] = {
-    "binary_cross_entropy": BinaryCrossEntropy,
-    "cross_entropy": CrossEntropy,
-    "mean_squared_error": MeanSquaredError,
+    "bce": BCELoss,
+    "cross_entropy": CrossEntropyLoss,
+    "mse": MSELoss,
+    "dice": DiceLoss,
 }
 
 

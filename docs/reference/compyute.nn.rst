@@ -6,6 +6,8 @@ compyute.nn
 .. autosummary::
     :toctree: ../_generated/compyute.nn
 
+    Function
+    FunctionCache
     no_caching
 
 
@@ -17,9 +19,10 @@ Losses
     :toctree: ../_generated/compyute.nn
 
     Loss
-    BinaryCrossEntropy
-    CrossEntropy
-    MeanSquaredError
+    BCELoss
+    CrossEntropyLoss
+    MSELoss
+    DiceLoss
 
 
 .. _metrics:

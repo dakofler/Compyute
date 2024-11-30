@@ -206,15 +206,15 @@ class FastGELUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        sig = 1.0 / (1.0 + exp(x * -1.702))
-        y = x * sig
-        cache.push(x, sig)
+        sigm = 1.0 / (1.0 + exp(x * -1.702))
+        y = x * sigm
+        cache.push(x, sigm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, sig = cache.pop()
-        return dy * sig * (1.0 + x * 1.702 * (1.0 - sig))
+        x, sigm = cache.pop()
+        return dy * sigm * (1.0 + x * 1.702 * (1.0 - sigm))
 
 
 def fast_gelu(x: Tensor) -> Tensor:
@@ -242,15 +242,15 @@ class SiLUFn(Function):
 
     @staticmethod
     def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        sig = 1.0 / (1.0 + exp(-x))
-        y = x * sig
-        cache.push(x, sig)
+        sigm = 1.0 / (1.0 + exp(-x))
+        y = x * sigm
+        cache.push(x, sigm)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        x, sig = cache.pop()
-        return dy * sig * (1.0 + x * (1.0 - sig))
+        x, sigm = cache.pop()
+        return dy * sigm * (1.0 + x * (1.0 - sigm))
 
 
 def silu(x: Tensor) -> Tensor:
@@ -277,25 +277,27 @@ class SoftmaxFn(Function):
     """Applies the softmax activation function to the last dimension of an input tensor."""
 
     @staticmethod
-    def forward(cache: FunctionCache, x: Tensor) -> Tensor:
-        x = exp(x - x.max(-1, keepdims=True))
-        y = x / x.sum(-1, keepdims=True)
-        cache.push(y)
+    def forward(cache: FunctionCache, x: Tensor, dim: int) -> Tensor:
+        x = exp(x - x.max(dim, keepdims=True))
+        y = x / x.sum(dim, keepdims=True)
+        cache.push(dim, y)
         return y
 
     @staticmethod
     def backward(cache: FunctionCache, dy: Tensor) -> Tensor:
-        (y,) = cache.pop()
-        return y * (dy - (dy * y).sum(-1, keepdims=True))  # thank you ChatGPT
+        dim, y = cache.pop()
+        return y * (dy - (dy * y).sum(dim, keepdims=True))  # thank you ChatGPT
 
 
-def softmax(x: Tensor) -> Tensor:
+def softmax(x: Tensor, dim: int = -1) -> Tensor:
     """Applies the softmax activation function to the last dimension of an input tensor.
 
     Parameters
     ----------
     x : Tensor
         Input tensor.
+    dim : int, optional
+        Dimension to apply softmax to. Defaults to ``-1``.
 
     Returns
     -------
@@ -306,4 +308,4 @@ def softmax(x: Tensor) -> Tensor:
     --------
     :class:`compyute.nn.Softmax`
     """
-    return SoftmaxFn.forward(PseudoCache(), x)
+    return SoftmaxFn.forward(PseudoCache(), x, dim)

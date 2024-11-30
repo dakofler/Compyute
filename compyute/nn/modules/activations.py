@@ -176,7 +176,7 @@ class Softmax(Module):
 
     @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
-        return SoftmaxFn.forward(self.fcache, x)
+        return SoftmaxFn.forward(self.fcache, x, -1)
 
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
