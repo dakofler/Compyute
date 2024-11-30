@@ -18,5 +18,4 @@ Compyute reference
     compyute.nn.utils.lr_schedulers
     compyute.nn.utils.tensorboard
     compyute.preprocessing
-    compyute.preprocessing.text
     compyute.random

@@ -147,7 +147,7 @@ from compyute.nn.trainer.callbacks import EarlyStopping, History, Progressbar
 trainer = Trainer(
     model=model,
     optimizer="sgd",
-    loss_function="crossentropy",
+    loss_function="cross_entropy",
     metric_function="accuracy",
     callbacks=[EarlyStopping(), History(), Progressbar()]
 )
@@ -164,7 +164,7 @@ batch_size = 32
 train_dl = nn.utils.Dataloader((X_train, y_train), batch_size)
 val_dl = nn.utils.Dataloader((X_val, y_val), batch_size, shuffle=False)
 
-loss_fn = nn.CrossEntropy()
+loss_fn = nn.CrossEntropyLoss()
 optim = nn.optimizers.SGD(model.get_parameters())
 
 for epoch in range(epochs):

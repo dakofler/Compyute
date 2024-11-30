@@ -54,9 +54,10 @@ Losses
 .. autosummary::
     :toctree: ../_generated/compyute.nn.functional
     
-    mean_squared_error
-    binary_cross_entropy
-    cross_entropy
+    mse_loss
+    bce_loss
+    cross_entropy_loss
+    dice_loss
 
 
 Metrics
