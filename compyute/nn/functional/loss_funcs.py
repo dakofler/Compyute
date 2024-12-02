@@ -155,7 +155,7 @@ class DiceLossFn(Function):
         targets = one_hot_encode(targets, logits.shape[1], probs.dtype).T
 
         intersection = (probs * targets).sum(dim=-1, keepdims=True)
-        union = (probs**2).sum(-1, keepdims=True) + (targets**2).sum(-1, keepdims=True)
+        union = (probs * probs + targets * targets).sum(-1, keepdims=True)
         dice_coeff = (2 * intersection + eps) / (union + eps)
         loss = 1 - dice_coeff.mean()
 
