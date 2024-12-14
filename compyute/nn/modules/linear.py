@@ -6,7 +6,7 @@ from typing import Optional
 from ...random import uniform
 from ...tensors import Tensor
 from ..functional.linear_funcs import LinearFn
-from ..parameter import Parameter, update_parameter_grad
+from ..parameter import Parameter
 from .module import Module
 
 __all__ = ["Linear"]
@@ -67,6 +67,6 @@ class Linear(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = LinearFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
-        update_parameter_grad(self.b, db)
+        self.update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.b, db)
         return dx

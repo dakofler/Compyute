@@ -6,7 +6,7 @@ from typing import Literal, Optional
 from ...random import uniform
 from ...tensors import Tensor
 from ..functional.recurrent_funcs import GRUFn, LSTMFn, RecurrentFn
-from ..parameter import Parameter, update_parameter_grad
+from ..parameter import Parameter
 from .module import Module
 
 __all__ = ["GRU", "LSTM", "Recurrent"]
@@ -85,10 +85,10 @@ class Recurrent(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw_i, db_i, dw_h, db_h = RecurrentFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w_i, dw_i)
-        update_parameter_grad(self.b_i, db_i)
-        update_parameter_grad(self.w_h, dw_h)
-        update_parameter_grad(self.b_h, db_h)
+        self.update_parameter_grad(self.w_i, dw_i)
+        self.update_parameter_grad(self.b_i, db_i)
+        self.update_parameter_grad(self.w_h, dw_h)
+        self.update_parameter_grad(self.b_h, db_h)
         return dx
 
 
@@ -223,22 +223,22 @@ class LSTM(Module):
             dw_ho,
             db_ho,
         ) = LSTMFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w_ii, dw_ii)
-        update_parameter_grad(self.b_ii, db_ii)
-        update_parameter_grad(self.w_if, dw_if)
-        update_parameter_grad(self.b_if, db_if)
-        update_parameter_grad(self.w_ig, dw_ig)
-        update_parameter_grad(self.b_ig, db_ig)
-        update_parameter_grad(self.w_io, dw_io)
-        update_parameter_grad(self.b_io, db_io)
-        update_parameter_grad(self.w_hi, dw_hi)
-        update_parameter_grad(self.b_hi, db_hi)
-        update_parameter_grad(self.w_hf, dw_hf)
-        update_parameter_grad(self.b_hf, db_hf)
-        update_parameter_grad(self.w_hg, dw_hg)
-        update_parameter_grad(self.b_hg, db_hg)
-        update_parameter_grad(self.w_ho, dw_ho)
-        update_parameter_grad(self.b_ho, db_ho)
+        self.update_parameter_grad(self.w_ii, dw_ii)
+        self.update_parameter_grad(self.b_ii, db_ii)
+        self.update_parameter_grad(self.w_if, dw_if)
+        self.update_parameter_grad(self.b_if, db_if)
+        self.update_parameter_grad(self.w_ig, dw_ig)
+        self.update_parameter_grad(self.b_ig, db_ig)
+        self.update_parameter_grad(self.w_io, dw_io)
+        self.update_parameter_grad(self.b_io, db_io)
+        self.update_parameter_grad(self.w_hi, dw_hi)
+        self.update_parameter_grad(self.b_hi, db_hi)
+        self.update_parameter_grad(self.w_hf, dw_hf)
+        self.update_parameter_grad(self.b_hf, db_hf)
+        self.update_parameter_grad(self.w_hg, dw_hg)
+        self.update_parameter_grad(self.b_hg, db_hg)
+        self.update_parameter_grad(self.w_ho, dw_ho)
+        self.update_parameter_grad(self.b_ho, db_ho)
         return dx
 
 
@@ -359,16 +359,16 @@ class GRU(Module):
             dw_hn,
             db_hn,
         ) = GRUFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w_ir, dw_ir)
-        update_parameter_grad(self.b_ir, db_ir)
-        update_parameter_grad(self.w_iz, dw_iz)
-        update_parameter_grad(self.b_iz, db_iz)
-        update_parameter_grad(self.w_in, dw_in)
-        update_parameter_grad(self.b_in, db_in)
-        update_parameter_grad(self.w_hr, dw_hr)
-        update_parameter_grad(self.b_hr, db_hr)
-        update_parameter_grad(self.w_hz, dw_hz)
-        update_parameter_grad(self.b_hz, db_hz)
-        update_parameter_grad(self.w_hn, dw_hn)
-        update_parameter_grad(self.b_hn, db_hn)
+        self.update_parameter_grad(self.w_ir, dw_ir)
+        self.update_parameter_grad(self.b_ir, db_ir)
+        self.update_parameter_grad(self.w_iz, dw_iz)
+        self.update_parameter_grad(self.b_iz, db_iz)
+        self.update_parameter_grad(self.w_in, dw_in)
+        self.update_parameter_grad(self.b_in, db_in)
+        self.update_parameter_grad(self.w_hr, dw_hr)
+        self.update_parameter_grad(self.b_hr, db_hr)
+        self.update_parameter_grad(self.w_hz, dw_hz)
+        self.update_parameter_grad(self.b_hz, db_hz)
+        self.update_parameter_grad(self.w_hn, dw_hn)
+        self.update_parameter_grad(self.b_hn, db_hn)
         return dx

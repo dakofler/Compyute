@@ -369,7 +369,7 @@ class Module(ABC):
         return wrapper
 
     def clean(self, force: bool = False) -> None:
-        """Removes temporary values like outputs and gradients.
+        """Cleans up temporary values like outputs and gradients.
 
         Parameters
         ----------
@@ -389,6 +389,16 @@ class Module(ABC):
         gc.collect()
         free_cuda_memory()
 
+    def update_parameter_grad(
+        self, parameter: Optional[Parameter], grad: Optional[Tensor]
+    ) -> None:
+        """Updates the parameter gradients."""
+        if self.trainable and parameter and grad:
+            if parameter.grad is None:
+                parameter.grad = grad
+            else:
+                parameter.grad += grad
+
 
 class Identity(Module):
     """Identity module that just forwards inputs and gradients.
@@ -399,9 +409,11 @@ class Identity(Module):
         Module label. Defaults to ``None``. If ``None``, the class name is used.
     """
 
+    @Module.register_forward
     def forward(self, x: Tensor) -> Tensor:
         return x
 
+    @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         return dy
 

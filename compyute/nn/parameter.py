@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from ..tensors import Tensor
 from ..typing import is_float
 
@@ -28,17 +26,6 @@ class Parameter(Tensor):
         if not is_float(data.dtype):
             raise TypeError("Invalid data type for parameter. Must be float.")
         super().__init__(data.data)
-
-
-def update_parameter_grad(
-    parameter: Optional[Parameter], grad: Optional[Tensor]
-) -> None:
-    """Updates the parameter gradients."""
-    if parameter and grad:
-        if parameter.grad is None:
-            parameter.grad = grad
-        else:
-            parameter.grad += grad
 
 
 class Buffer(Tensor):
