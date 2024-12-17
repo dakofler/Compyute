@@ -122,7 +122,7 @@ def free_cuda_memory() -> None:
 
 
 def synchronize() -> None:
-    """Synchronizes devices tot he current thread."""
+    """Synchronizes devices to the current thread."""
     if not gpu_available():
         return
     cupy.cuda.runtime.deviceSynchronize()
