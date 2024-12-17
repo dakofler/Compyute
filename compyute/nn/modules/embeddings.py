@@ -6,7 +6,7 @@ from ...random import normal
 from ...tensor_ops.creation_ops import empty
 from ...tensors import Tensor
 from ..functional.embedding_funcs import EmbeddingFn
-from ..parameter import Parameter, update_parameter_grad
+from ..parameter import Parameter
 from .module import Module
 
 __all__ = ["Embedding"]
@@ -57,5 +57,5 @@ class Embedding(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dw = EmbeddingFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.w, dw)
         return empty((0,))

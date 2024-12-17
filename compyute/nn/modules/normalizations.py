@@ -10,7 +10,7 @@ from ..functional.normalization_funcs import (
     LayerNormFn,
     RMSNormFn,
 )
-from ..parameter import Buffer, Parameter, update_parameter_grad
+from ..parameter import Buffer, Parameter
 from .module import Module
 
 __all__ = ["BatchNorm1D", "BatchNorm2D", "LayerNorm", "RMSNorm"]
@@ -88,8 +88,8 @@ class BatchNorm1D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm1DFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
-        update_parameter_grad(self.b, db)
+        self.update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.b, db)
         return dx
 
 
@@ -166,8 +166,8 @@ class BatchNorm2D(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = BatchNorm2DFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
-        update_parameter_grad(self.b, db)
+        self.update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.b, db)
         return dx
 
 
@@ -221,8 +221,8 @@ class LayerNorm(Module):
 
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw, db = LayerNormFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
-        update_parameter_grad(self.b, db)
+        self.update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.b, db)
         return dx
 
 
@@ -274,5 +274,5 @@ class RMSNorm(Module):
     @Module.register_backward
     def backward(self, dy: Tensor) -> Tensor:
         dx, dw = RMSNormFn.backward(self.fcache, dy)
-        update_parameter_grad(self.w, dw)
+        self.update_parameter_grad(self.w, dw)
         return dx

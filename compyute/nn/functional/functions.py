@@ -6,7 +6,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
-__all__ = ["Function", "FunctionCache"]
+__all__ = ["Function", "FunctionCache", "no_caching"]
 
 
 class FunctionCache:
