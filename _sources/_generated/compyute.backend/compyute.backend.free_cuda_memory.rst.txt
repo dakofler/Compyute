@@ -1,0 +1,6 @@
+﻿compyute.backend.free\_cuda\_memory
+===================================
+
+.. currentmodule:: compyute.backend
+
+.. autofunction:: free_cuda_memory

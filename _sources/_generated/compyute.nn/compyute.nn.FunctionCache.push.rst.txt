@@ -1,0 +1,6 @@
+compyute.nn.FunctionCache.push
+==============================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: FunctionCache.push

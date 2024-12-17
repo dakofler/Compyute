@@ -1,0 +1,6 @@
+compyute.nn.FunctionCache.pop
+=============================
+
+.. currentmodule:: compyute.nn
+
+.. automethod:: FunctionCache.pop
