@@ -325,11 +325,12 @@ class Module(ABC):
             else:
                 y = fwd_fn(m, x)
 
+            assert not is_nan(y).any().item(), "NaNs detected in " + repr(m)
+
             if m.retain_values:
                 m.x = x
                 m.y = y
 
-            assert not is_nan(y).any().item(), repr(m)
             return y
 
         return wrapper
@@ -359,11 +360,12 @@ class Module(ABC):
             else:
                 dx = bwd_fn(m, dy)
 
+            assert not is_nan(dx).any().item(), "NaNs detected in " + repr(m)
+
             if m.retain_values and m.x and m.y:
                 m.x.grad = dx
                 m.y.grad = dy
 
-            assert not is_nan(dx).any().item()
             return dx
 
         return wrapper
@@ -393,11 +395,12 @@ class Module(ABC):
         self, parameter: Optional[Parameter], grad: Optional[Tensor]
     ) -> None:
         """Updates the parameter gradients."""
-        if self.trainable and parameter and grad:
-            if parameter.grad is None:
-                parameter.grad = grad
-            else:
-                parameter.grad += grad
+        if not (self.trainable and parameter and grad):
+            return
+        if parameter.grad is None:
+            parameter.grad = grad
+        else:
+            parameter.grad += grad
 
 
 class Identity(Module):
