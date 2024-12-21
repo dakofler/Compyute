@@ -65,6 +65,8 @@ class RecurrentFn(Function):
 
             # hidden projection gradients
             dh, dw_h_t, db_h_t = LinearFn.backward(cache, dpreact[:, t])
+
+            # accumulate parameter gradients
             if t > 0:
                 dw_h += dw_h_t
             if db_h_t:
@@ -172,7 +174,7 @@ class LSTMFn(Function):
         dh = zeros((B, H), device=dy.device, dtype=dy.dtype)
         dw_h = zeros((4 * H, H), device=dy.device, dtype=dy.dtype)
         db_h = None if not b else zeros((4 * H,), device=dy.device, dtype=dy.dtype)
-        difgo_hat = empty((B, T, 4 * H), device=dy.device, dtype=dy.dtype)
+        difgo_preact = empty((B, T, 4 * H), device=dy.device, dtype=dy.dtype)
         dc = zeros_like(c)
 
         for t in range(T - 1, -1, -1):
@@ -192,21 +194,22 @@ class LSTMFn(Function):
             dg_hat = act.backward(cache, dg)
 
             # gate gradients
-            do_hat = SigmoidFn.backward(cache, do)
-            df_hat = SigmoidFn.backward(cache, df)
-            di_hat = SigmoidFn.backward(cache, di)
+            do_preact = SigmoidFn.backward(cache, do)
+            df_preact = SigmoidFn.backward(cache, df)
+            di_preact = SigmoidFn.backward(cache, di)
 
             # hidden projection gradients
-            difgo_hat[:, t] = concat([di_hat, df_hat, dg_hat, do_hat], dim=-1)
-            dh, dw_h_t, db_h_t = LinearFn.backward(cache, difgo_hat[:, t])
+            difgo_preact[:, t] = concat([di_preact, df_preact, dg_hat, do_preact])
+            dh, dw_h_t, db_h_t = LinearFn.backward(cache, difgo_preact[:, t])
 
+            # accumulate parameter gradients
             if t > 0:
                 dw_h += dw_h_t
             if db_h_t:
                 db_h += db_h_t
 
         # input projection gradients
-        dx, dw_i, db_i = LinearFn.backward(cache, difgo_hat)
+        dx, dw_i, db_i = LinearFn.backward(cache, difgo_preact)
 
         return dx, dw_i, db_i, dw_h, db_h
 
@@ -298,12 +301,11 @@ class GRUFn(Function):
     ) -> tuple[Tensor, Tensor, Optional[Tensor], Tensor, Optional[Tensor]]:
         r, z, n, b, h_n, act, h = cache.pop()
 
-        # ugly inits :(
         B, T, H = r.shape
         dh = zeros((B, H), device=dy.device, dtype=dy.dtype)
         dw_h = zeros((3 * H, H), device=dy.device, dtype=dy.dtype)
         db_h = None if not b else zeros((3 * H,), device=dy.device, dtype=dy.dtype)
-        drzn_hat = empty((B, T, 3 * H), device=dy.device, dtype=dy.dtype)
+        drzn_preact = empty((B, T, 3 * H), device=dy.device, dtype=dy.dtype)
 
         for t in range(T - 1, -1, -1):
             # hidden state gradients
@@ -313,27 +315,27 @@ class GRUFn(Function):
             dh = z[:, t] * dh
 
             # candidate hidden state gradients
-            dn_hat = act.backward(cache, dn)
-            dr = h_n[:, t] * dn_hat
+            dn_preact = act.backward(cache, dn)
+            dr = h_n[:, t] * dn_preact
 
             # gate gradients
-            dz_hat = SigmoidFn.backward(cache, dz)
-            dr_hat = SigmoidFn.backward(cache, dr)
+            dz_preact = SigmoidFn.backward(cache, dz)
+            dr_preact = SigmoidFn.backward(cache, dr)
 
             # hidden projection gradients
-            drzn_hat[:, t] = concat([dr_hat, dz_hat, dn_hat], dim=-1)
-            drzn_hat_h = concat([dr_hat, dz_hat, r[:, t] * dn_hat], dim=-1)
-            dh_t, dw_h_t, db_h_t = LinearFn.backward(cache, drzn_hat_h)
+            drzn_preact[:, t] = concat([dr_preact, dz_preact, dn_preact])
+            drzn_preact_h = concat([dr_preact, dz_preact, r[:, t] * dn_preact])
+            dh_t, dw_h_t, db_h_t = LinearFn.backward(cache, drzn_preact_h)
+            dh += dh_t
 
+            # accumulate parameter gradients
             if t > 0:
                 dw_h += dw_h_t
             if db_h_t:
                 db_h += db_h_t
 
-            dh += dh_t
-
         # input projection gradients
-        dx, dw_i, db_i = LinearFn.backward(cache, drzn_hat)
+        dx, dw_i, db_i = LinearFn.backward(cache, drzn_preact)
 
         return dx, dw_i, db_i, dw_h, db_h
 
