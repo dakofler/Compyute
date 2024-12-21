@@ -12,11 +12,11 @@ class EmbeddingFn(Function):
     """Performs lookup embedding on a tensor of indices."""
 
     @staticmethod
-    def forward(cache: FunctionCache, x: Tensor, emb_table: Tensor) -> Tensor:
+    def forward(cache: FunctionCache, x: Tensor, embed_table: Tensor) -> Tensor:
         if not is_integer(x.dtype):
             raise ValueError(f"Input must be an integer, got '{x.dtype}'.")
-        y = emb_table[x]
-        cache.push(x, emb_table.shape[0])
+        y = embed_table[x]
+        cache.push(x, embed_table.shape[0])
         return y
 
     @staticmethod
@@ -27,8 +27,8 @@ class EmbeddingFn(Function):
         return (x.T @ dy).sum(batch_dims)
 
 
-def embedding(x: Tensor, emb_table: Tensor) -> Tensor:
-    """Performs lookup embedding on a tensor of indices.
+def embedding(x: Tensor, embed_table: Tensor) -> Tensor:
+    """Performs lookup embedding using a tensor of integer indices.
 
     Parameters
     ----------
@@ -42,4 +42,4 @@ def embedding(x: Tensor, emb_table: Tensor) -> Tensor:
     Tensor
         Output tensor.
     """
-    return EmbeddingFn.forward(PseudoCache(), x, emb_table)
+    return EmbeddingFn.forward(PseudoCache(), x, embed_table)
